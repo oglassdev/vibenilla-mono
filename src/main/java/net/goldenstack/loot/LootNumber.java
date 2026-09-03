@@ -33,8 +33,10 @@ public interface LootNumber {
         registry.register("binomial", Binomial.CODEC);
         registry.register("constant", Constant.CODEC);
         registry.register("enchantment_level", EnchantmentLevel.CODEC);
+        registry.register("environment_attribute", EnvironmentAttribute.CODEC);
         registry.register("score", Score.CODEC);
         registry.register("storage", Storage.CODEC);
+        registry.register("sum", Sum.CODEC);
         registry.register("uniform", Uniform.CODEC);
         return registry;
     }
@@ -69,13 +71,13 @@ public interface LootNumber {
 
         @Override
         public int getInt(@NotNull LootContext context) {
-            int trials = trials().getInt(context);
-            double probability = probability().getDouble(context);
-            Random random = context.require(LootContext.RANDOM);
+            var trials = this.trials.getInt(context);
+            var probability = (float) this.probability.getDouble(context);
+            var random = context.require(LootContext.RANDOM);
 
-            int successes = 0;
-            for (int trial = 0; trial < trials; trial++) {
-                if (random.nextDouble() < probability) {
+            var successes = 0;
+            for (var trial = 0; trial < trials; trial++) {
+                if (random.nextFloat() < probability) {
                     successes++;
                 }
             }
@@ -84,7 +86,7 @@ public interface LootNumber {
 
         @Override
         public double getDouble(@NotNull LootContext context) {
-            return getInt(context);
+            return this.getInt(context);
         }
 
         @Override
@@ -101,12 +103,12 @@ public interface LootNumber {
 
         @Override
         public int getInt(@NotNull LootContext context) {
-            return value.intValue();
+            return (int) Math.round(this.value.floatValue());
         }
 
         @Override
         public double getDouble(@NotNull LootContext context) {
-            return value;
+            return this.value;
         }
 
         @Override
@@ -123,12 +125,12 @@ public interface LootNumber {
 
         @Override
         public int getInt(@NotNull LootContext context) {
-            return (int) Math.round(getDouble(context));
+            return (int) Math.round(this.getDouble(context));
         }
 
         @Override
         public double getDouble(@NotNull LootContext context) {
-            return amount.calc(context.require(LootContext.ENCHANTMENT_LEVEL));
+            return this.amount.calc(context.require(LootContext.ENCHANTMENT_LEVEL));
         }
 
         @Override
@@ -141,20 +143,20 @@ public interface LootNumber {
         public static final @NotNull StructCodec<Score> CODEC = StructCodec.struct(
                 "target", LootScore.CODEC, Score::target,
                 "score", Codec.STRING, Score::objective,
-                "scale", Codec.DOUBLE, Score::scale,
+                "scale", Codec.DOUBLE.optional(1.0), Score::scale,
                 Score::new
         );
 
         @Override
         public int getInt(@NotNull LootContext context) {
-            return (int) Math.round(getDouble(context));
+            return (int) Math.round(this.getDouble(context));
         }
 
         @Override
         public double getDouble(@NotNull LootContext context) {
             var score = target.apply(context).apply(objective);
 
-            return score != null ? score * scale : 0;
+            return score != null ? score * this.scale : 0;
         }
 
         @Override
@@ -172,18 +174,18 @@ public interface LootNumber {
 
         @Override
         public int getInt(@NotNull LootContext context) {
-            return get(context).intValue();
+            return this.get(context).intValue();
         }
 
         @Override
         public double getDouble(@NotNull LootContext context) {
-            return get(context).doubleValue();
+            return this.get(context).doubleValue();
         }
 
         private NumberBinaryTag get(@NotNull LootContext context) {
-            CompoundBinaryTag compound = context.vanilla().commandStorage(storage);
+            var compound = context.vanilla().commandStorage(this.storage);
 
-            List<NBTReference> refs = path.get(compound != null ? compound : CompoundBinaryTag.empty());
+            var refs = this.path.get(compound != null ? compound : CompoundBinaryTag.empty());
             if (refs.size() != 1) return IntBinaryTag.intBinaryTag(0);
 
             if (refs.getFirst().get() instanceof NumberBinaryTag number) {
@@ -191,6 +193,55 @@ public interface LootNumber {
             } else {
                 return IntBinaryTag.intBinaryTag(0);
             }
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootNumber> codec() {
+            return CODEC;
+        }
+    }
+
+    record EnvironmentAttribute(@NotNull Key attribute) implements LootNumber {
+        public static final @NotNull StructCodec<EnvironmentAttribute> CODEC = StructCodec.struct(
+                "attribute", Codec.KEY, EnvironmentAttribute::attribute,
+                EnvironmentAttribute::new
+        );
+
+        @Override
+        public int getInt(@NotNull LootContext context) {
+            return Math.round((float) this.getDouble(context));
+        }
+
+        @Override
+        public double getDouble(@NotNull LootContext context) {
+            var value = context.vanilla().environmentAttribute(this.attribute, context);
+            return value instanceof NumberBinaryTag number ? number.doubleValue() : 0.0;
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootNumber> codec() {
+            return CODEC;
+        }
+    }
+
+    record Sum(@NotNull List<LootNumber> summands) implements LootNumber {
+        public static final @NotNull StructCodec<Sum> CODEC = StructCodec.struct(
+                "summands", LootNumber.CODEC.list(), Sum::summands,
+                Sum::new
+        );
+
+        @Override
+        public int getInt(@NotNull LootContext context) {
+            return (int) Math.floor(this.getDouble(context));
+        }
+
+        @Override
+        public double getDouble(@NotNull LootContext context) {
+            var value = 0.0;
+            for (var summand : this.summands) {
+                value += summand.getDouble(context);
+            }
+            return value;
         }
 
         @Override
@@ -208,12 +259,15 @@ public interface LootNumber {
 
         @Override
         public int getInt(@NotNull LootContext context) {
-            return context.require(LootContext.RANDOM).nextInt(min().getInt(context), max().getInt(context) + 1);
+            return context.require(LootContext.RANDOM).nextInt(this.min.getInt(context), this.max.getInt(context) + 1);
         }
 
         @Override
         public double getDouble(@NotNull LootContext context) {
-            return context.require(LootContext.RANDOM).nextDouble(min().getDouble(context), max().getDouble(context));
+            var random = context.require(LootContext.RANDOM);
+            var minimum = (float) this.min.getDouble(context);
+            var maximum = (float) this.max.getDouble(context);
+            return minimum + random.nextFloat() * (maximum - minimum);
         }
 
         @Override
