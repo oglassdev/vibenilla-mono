@@ -71,7 +71,7 @@ public interface LootEntry {
          * @param context the context object, to use if required
          * @return the weight of this choice
          */
-        @Range(from = 1L, to = Long.MAX_VALUE) long getWeight(@NotNull LootContext context);
+            @Range(from = 0L, to = Long.MAX_VALUE) long getWeight(@NotNull LootContext context);
 
         
         /**
@@ -94,8 +94,8 @@ public interface LootEntry {
             @Range(from = 0L, to = Long.MAX_VALUE) long quality();
 
             @Override
-            default @Range(from = 1L, to = Long.MAX_VALUE) long getWeight(@NotNull LootContext context) {
-                return Math.max(1, (long) Math.floor(weight() + quality() * context.get(LootContext.LUCK, 0d)));
+            default @Range(from = 0L, to = Long.MAX_VALUE) long getWeight(@NotNull LootContext context) {
+                return Math.max(0L, (long) Math.floor(weight() + quality() * context.get(LootContext.LUCK, 0d)));
             }
 
         }

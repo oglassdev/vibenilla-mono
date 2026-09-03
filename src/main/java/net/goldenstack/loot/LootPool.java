@@ -63,7 +63,7 @@ public record LootPool(@NotNull LootNumber rolls,
      * @return the picked choice, or null if no choices were generated
      */
     static @Nullable LootEntry.Choice pickChoice(@NotNull List<LootEntry> entries, @NotNull LootContext context) {
-        List<LootEntry.Choice> choices = new ArrayList<>();
+        var choices = new ArrayList<LootEntry.Choice>();
         for (LootEntry entry : entries) {
             choices.addAll(entry.requestChoices(context));
         }
@@ -72,24 +72,40 @@ public record LootPool(@NotNull LootNumber rolls,
             return null;
         }
 
-        long totalWeight = 0;
-        long[] weightMilestones = new long[choices.size()];
-        for (int i = 0; i < choices.size(); i++) {
-            // Prevent the weight of this choice from being less than 1
-            totalWeight += Math.max(1, choices.get(i).getWeight(context));
-
-            weightMilestones[i] = totalWeight;
+        var weightedChoices = new ArrayList<LootEntry.Choice>();
+        var weights = new ArrayList<Long>();
+        for (var choice : choices) {
+            var weight = choice.getWeight(context);
+            if (weight > 0L) {
+                weightedChoices.add(choice);
+                weights.add(weight);
+            }
         }
 
-        long value = context.require(LootContext.RANDOM).nextLong(0, totalWeight);
+        if (weightedChoices.isEmpty()) {
+            return null;
+        }
 
-        LootEntry.Choice choice = choices.getLast();
+        var totalWeight = 0L;
+        var weightMilestones = new long[weightedChoices.size()];
+        var weightIndex = 0;
+        for (var weight : weights) {
+            totalWeight += weight;
+            weightMilestones[weightIndex] = totalWeight;
+            weightIndex++;
+        }
 
-        for (int i = 0; i < weightMilestones.length; i++) {
-            if (value < weightMilestones[i]) {
-                choice = choices.get(i);
+        var value = context.require(LootContext.RANDOM).nextLong(0, totalWeight);
+
+        var choice = weightedChoices.getLast();
+
+        weightIndex = 0;
+        for (var weightMilestone : weightMilestones) {
+            if (value < weightMilestone) {
+                choice = weightedChoices.get(weightIndex);
                 break;
             }
+            weightIndex++;
         }
 
         return choice;
