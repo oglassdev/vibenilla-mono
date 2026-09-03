@@ -16,6 +16,7 @@ import net.minestom.server.codec.Result;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.codec.Transcoder;
 import net.minestom.server.color.Color;
+import net.minestom.server.color.DyeColor;
 import net.minestom.server.component.DataComponent;
 import net.minestom.server.component.DataComponentMap;
 import net.minestom.server.component.DataComponents;
@@ -100,6 +101,8 @@ public interface LootFunction {
         registry.register("set_name", SetName.CODEC);
         registry.register("set_ominous_bottle_amplifier", SetOminousBottleAmplifier.CODEC);
         registry.register("set_potion", SetPotion.CODEC);
+        registry.register("set_random_dyes", SetRandomDyes.CODEC);
+        registry.register("set_random_potion", SetRandomPotion.CODEC);
         registry.register("set_stew_effect", SetStewEffect.CODEC);
         registry.register("set_writable_book_pages", SetWritableBookPages.CODEC);
         registry.register("set_written_book_pages", SetWrittenBookPages.CODEC);
@@ -1442,6 +1445,90 @@ public interface LootFunction {
             PotionContents existing = input.get(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
             PotionContents updated = new PotionContents(PotionType.fromKey(id), existing.customColor(), existing.customEffects());
 
+            return input.with(DataComponents.POTION_CONTENTS, updated);
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootFunction> codec() {
+            return CODEC;
+        }
+    }
+
+    record SetRandomDyes(@NotNull List<LootPredicate> predicates, @NotNull LootNumber numberOfDyes) implements LootFunction {
+        public static final @NotNull StructCodec<SetRandomDyes> CODEC = StructCodec.struct(
+                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetRandomDyes::predicates,
+                "number_of_dyes", LootNumber.CODEC, SetRandomDyes::numberOfDyes,
+                SetRandomDyes::new
+        );
+
+        @Override
+        public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
+            if (!LootPredicate.all(this.predicates, context)) return input;
+
+            var count = this.numberOfDyes.getInt(context);
+            if (count <= 0) return input;
+
+            var random = context.require(LootContext.RANDOM);
+            var currentColor = input.get(DataComponents.DYED_COLOR);
+            var redTotal = currentColor == null ? 0 : currentColor.red();
+            var greenTotal = currentColor == null ? 0 : currentColor.green();
+            var blueTotal = currentColor == null ? 0 : currentColor.blue();
+            var intensityTotal = currentColor == null ? 0 : Math.max(currentColor.red(), Math.max(currentColor.green(), currentColor.blue()));
+            var colorCount = currentColor == null ? 0 : 1;
+
+            for (var dyeCount = 0; dyeCount < count; dyeCount++) {
+                var dye = DyeColor.values()[random.nextInt(DyeColor.values().length)];
+                redTotal += dye.red();
+                greenTotal += dye.green();
+                blueTotal += dye.blue();
+                intensityTotal += Math.max(dye.red(), Math.max(dye.green(), dye.blue()));
+                colorCount++;
+            }
+
+            var red = redTotal / colorCount;
+            var green = greenTotal / colorCount;
+            var blue = blueTotal / colorCount;
+            var averageIntensity = (float) intensityTotal / colorCount;
+            var resultIntensity = Math.max(red, Math.max(green, blue));
+            red = (int) (red * averageIntensity / resultIntensity);
+            green = (int) (green * averageIntensity / resultIntensity);
+            blue = (int) (blue * averageIntensity / resultIntensity);
+
+            return input.with(DataComponents.DYED_COLOR, new Color(red, green, blue));
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootFunction> codec() {
+            return CODEC;
+        }
+    }
+
+    record SetRandomPotion(@NotNull List<LootPredicate> predicates, @Nullable RegistryTag<PotionType> options) implements LootFunction {
+        public static final @NotNull StructCodec<SetRandomPotion> CODEC = StructCodec.struct(
+                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetRandomPotion::predicates,
+                "options", RegistryTag.codec(Registries::potionType).optional(), SetRandomPotion::options,
+                SetRandomPotion::new
+        );
+
+        @Override
+        public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
+            if (!LootPredicate.all(this.predicates, context)) return input;
+
+            var potions = new ArrayList<PotionType>();
+            if (this.options == null) {
+                potions.addAll(PotionType.values());
+            } else {
+                for (var key : this.options) {
+                    var potion = PotionType.fromKey(key.key());
+                    if (potion != null) potions.add(potion);
+                }
+            }
+
+            if (potions.isEmpty()) return input;
+
+            var potion = potions.get(context.require(LootContext.RANDOM).nextInt(potions.size()));
+            var existing = input.get(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
+            var updated = new PotionContents(potion, existing.customColor(), existing.customEffects(), existing.customName());
             return input.with(DataComponents.POTION_CONTENTS, updated);
         }
 
