@@ -21,7 +21,7 @@ public interface LootSlotSource {
             static final @NotNull DynamicRegistry<StructCodec<? extends LootSlotSource>> CODEC = createDefaultRegistry();
         }
         return Holder.CODEC;
-    }, LootSlotSource::codec, "type").orElse(Group.INLINE_CODEC, value -> value);
+    }, LootSlotSource::codec, "type").orElse(Codec.ForwardRef(() -> Group.INLINE_CODEC), value -> value);
 
     static @NotNull DynamicRegistry<StructCodec<? extends LootSlotSource>> createDefaultRegistry() {
         var registry = DynamicRegistry.<StructCodec<? extends LootSlotSource>>create(Key.key("loot_slot_sources"));
@@ -98,9 +98,22 @@ public interface LootSlotSource {
     }
 
     record Limit(@NotNull LootSlotSource slotSource, int limit) implements LootSlotSource {
+        private static final @NotNull Codec<Integer> POSITIVE_CODEC = Codec.INT.transform(value -> {
+            if (value <= 0) {
+                throw new IllegalArgumentException("Slot source limit must be positive");
+            }
+            return value;
+        }, value -> value);
+
+        public Limit {
+            if (limit <= 0) {
+                throw new IllegalArgumentException("Slot source limit must be positive");
+            }
+        }
+
         public static final @NotNull StructCodec<Limit> CODEC = StructCodec.struct(
                 "slot_source", LootSlotSource.CODEC, Limit::slotSource,
-                "limit", Codec.INT, Limit::limit,
+                "limit", POSITIVE_CODEC, Limit::limit,
                 Limit::new
         );
 

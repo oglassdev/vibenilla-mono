@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Random;
@@ -28,6 +29,7 @@ public sealed interface LootContext permits LootContextImpl {
     @NotNull LootContext.Key<ItemStack> TOOL = LootContext.key("minecraft:tool");
     @NotNull LootContext.Key<Boolean> ENCHANTMENT_ACTIVE = LootContext.key("minecraft:enchantment_active");
     @NotNull LootContext.Key<Block> BLOCK_STATE = LootContext.key("minecraft:block_state");
+    @NotNull LootContext.Key<List<ItemStack>> CONTAINER = LootContext.key("minecraft:container");
     @NotNull LootContext.Key<DamageType> DAMAGE_SOURCE = LootContext.key("minecraft:damage_source");
     @NotNull LootContext.Key<Point> ORIGIN = LootContext.key("minecraft:origin");
     @NotNull LootContext.Key<Entity> DIRECT_ATTACKING_ENTITY = LootContext.key("minecraft:direct_attacking_entity");

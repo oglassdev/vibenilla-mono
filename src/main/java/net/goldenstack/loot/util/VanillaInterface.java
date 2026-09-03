@@ -22,6 +22,7 @@ import net.minestom.server.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -153,7 +154,23 @@ public interface VanillaInterface {
     default @NotNull List<ItemStack> slotRange(@NotNull String source,
                                                @NotNull List<Integer> slots,
                                                @NotNull LootContext context) {
-        return List.of();
+        if (!source.equals("container")) {
+            return List.of();
+        }
+
+        var container = context.get(LootContext.CONTAINER);
+        if (container == null) {
+            return List.of();
+        }
+
+        var items = new ArrayList<ItemStack>();
+        for (var slot : slots) {
+            if (slot >= 0 && slot < container.size()) {
+                items.add(container.get(slot));
+            }
+        }
+
+        return items;
     }
 
     @NotNull ItemStack enchant(@NotNull Random random, @NotNull ItemStack item, int levels, @Nullable RegistryTag<Enchantment> enchantments);
