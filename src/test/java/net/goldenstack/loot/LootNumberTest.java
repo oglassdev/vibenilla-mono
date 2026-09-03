@@ -1,6 +1,7 @@
 package net.goldenstack.loot;
 
 import net.goldenstack.loot.util.VanillaInterface;
+import net.goldenstack.loot.util.RelevantEntity;
 import net.minestom.server.MinecraftServer;
 import org.junit.jupiter.api.Test;
 
@@ -21,8 +22,10 @@ class LootNumberTest {
                 new LootNumber.Constant(1.2),
                 new LootNumber.Constant(2.2)
         ));
+        var score = new LootNumber.Score(new LootScore.Context(RelevantEntity.THIS), "missing", 1.0);
 
         assertEquals(2, constant.getInt(context));
         assertEquals(3, sum.getInt(context));
+        assertEquals(0.0, score.getDouble(context));
     }
 }

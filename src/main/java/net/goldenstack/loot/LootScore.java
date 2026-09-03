@@ -46,7 +46,8 @@ public interface LootScore extends Function<@NotNull LootContext, Function<@NotN
 
         @Override
         public @NotNull Function<@NotNull String, @Nullable Integer> apply(@NotNull LootContext context) {
-            return objective -> context.vanilla().score(context.require(name.key()), objective);
+            var entity = context.get(this.name.key());
+            return objective -> entity == null ? null : context.vanilla().score(entity, objective);
         }
 
         @Override
