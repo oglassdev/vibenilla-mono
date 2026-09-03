@@ -3,6 +3,7 @@ package net.goldenstack.loot.util;
 import net.goldenstack.loot.LootContext;
 import net.goldenstack.loot.LootFunction;
 import net.goldenstack.loot.LootPredicate;
+import net.goldenstack.loot.LootSlotSource;
 import net.goldenstack.loot.LootTable;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.BinaryTag;
@@ -109,6 +110,10 @@ public interface VanillaInterface {
     }
 
     default @Nullable BinaryTag environmentAttribute(@NotNull Key attribute, @NotNull LootContext context) {
+        return null;
+    }
+
+    default @Nullable LootSlotSource slotSource(@NotNull Key name, @NotNull LootContext context) {
         return null;
     }
 

@@ -41,6 +41,7 @@ public interface LootEntry {
         registry.register("item", Item.CODEC);
         registry.register("loot_table", LootTable.CODEC);
         registry.register("sequence", Sequence.CODEC);
+        registry.register("slots", Slots.CODEC);
         registry.register("tag", Tag.CODEC);
         return registry;
     }
@@ -367,6 +368,37 @@ public interface LootEntry {
                 items.add(LootFunction.apply(functions, ItemStack.of(material), context));
             }
 
+            return items;
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootEntry> codec() {
+            return CODEC;
+        }
+    }
+
+    record Slots(@NotNull List<LootPredicate> predicates,
+                 @NotNull List<LootFunction> functions,
+                 long weight,
+                 long quality,
+                 @NotNull LootSlotSource slotSource) implements Choice.Single {
+        public static final @NotNull StructCodec<Slots> CODEC = StructCodec.struct(
+                "conditions", LootPredicate.CODEC.list().optional(List.of()), Slots::predicates,
+                "functions", LootFunction.CODEC.list().optional(List.of()), Slots::functions,
+                "weight", Codec.LONG.optional(1L), Slots::weight,
+                "quality", Codec.LONG.optional(0L), Slots::quality,
+                "slot_source", LootSlotSource.CODEC, Slots::slotSource,
+                Slots::new
+        );
+
+        @Override
+        public @NotNull List<ItemStack> generate(@NotNull LootContext context) {
+            var items = new ArrayList<ItemStack>();
+            for (var item : this.slotSource.provide(context)) {
+                if (!item.isAir()) {
+                    items.add(LootFunction.apply(this.functions, item, context));
+                }
+            }
             return items;
         }
 
