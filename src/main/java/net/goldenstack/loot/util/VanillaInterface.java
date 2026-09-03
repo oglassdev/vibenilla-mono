@@ -14,6 +14,7 @@ import net.minestom.server.coordinate.Point;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
+import net.minestom.server.instance.block.predicate.BlockPredicate;
 import net.minestom.server.item.enchant.Enchantment;
 import net.minestom.server.registry.RegistryTag;
 import net.minestom.server.registry.TagKey;
@@ -107,6 +108,22 @@ public interface VanillaInterface {
     }
 
     default @Nullable Entity entityLookedAt(@NotNull Entity entity) {
+        return null;
+    }
+
+    default @Nullable Boolean locationStructure(@NotNull Key structure,
+                                                @NotNull Instance instance,
+                                                @NotNull Point point) {
+        return null;
+    }
+
+    default @Nullable Boolean locationSmokey(@NotNull Instance instance, @NotNull Point point) {
+        return null;
+    }
+
+    default @Nullable Boolean locationFluid(@NotNull BlockPredicate predicate,
+                                             @NotNull Instance instance,
+                                             @NotNull Point point) {
         return null;
     }
 

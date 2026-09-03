@@ -8,7 +8,6 @@ import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.instance.Instance;
-import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.predicate.BlockPredicate;
 import net.minestom.server.registry.Registries;
 import net.minestom.server.registry.RegistryTag;
@@ -25,6 +24,12 @@ public interface LocationPredicate {
     @NotNull Codec<LocationPredicate> CODEC = Properties.CODEC.transform(value -> value, value -> (Properties) value);
 
     boolean test(@NotNull Instance instance, @NotNull Point point);
+
+    default boolean test(@NotNull Instance instance,
+                         @NotNull Point point,
+                         @NotNull VanillaInterface vanilla) {
+        return this.test(instance, point);
+    }
 
     record Properties(@Nullable Position position,
                       @Nullable RegistryTag<Biome> biomes,
@@ -50,7 +55,14 @@ public interface LocationPredicate {
 
         @Override
         public boolean test(@NotNull Instance instance, @NotNull Point point) {
-            if (this.position != null && !this.position.test(point)) {
+            return this.test(instance, point, VanillaInterface.defaults());
+        }
+
+        @Override
+        public boolean test(@NotNull Instance instance,
+                            @NotNull Point point,
+                            @NotNull VanillaInterface vanilla) {
+            if (this.position != null && !this.position.test(point, vanilla)) {
 
                 return false;
             }
@@ -60,8 +72,8 @@ public interface LocationPredicate {
                 return false;
             }
 
-            var needsBlock = this.biomes != null || this.smokey != null || this.light != null
-                    || this.block != null || this.fluid != null || this.canSeeSky != null;
+            var needsBlock = this.biomes != null || this.structures != null || this.smokey != null
+                    || this.light != null || this.block != null || this.fluid != null || this.canSeeSky != null;
             if (!needsBlock) {
 
                 return true;
@@ -78,7 +90,18 @@ public interface LocationPredicate {
                 return false;
             }
 
-            if (this.smokey != null && this.smokey != isSmokey(block)) {
+            if (this.structures != null && this.structures.stream().noneMatch(structure ->
+                    Boolean.TRUE.equals(vanilla.locationStructure(structure, instance, point)))) {
+
+                return false;
+            }
+
+            var smokey = vanilla.locationSmokey(instance, point);
+            if (smokey == null) {
+                smokey = isSmokey(instance, point);
+            }
+
+            if (this.smokey != null && this.smokey != smokey) {
 
                 return false;
             }
@@ -101,7 +124,7 @@ public interface LocationPredicate {
                 return false;
             }
 
-            if (this.fluid != null && !this.fluid.test(block)) {
+            if (this.fluid != null && !Boolean.TRUE.equals(vanilla.locationFluid(this.fluid, instance, point))) {
 
                 return false;
             }
@@ -110,10 +133,18 @@ public interface LocationPredicate {
             return this.canSeeSky == null || this.canSeeSky == canSeeSky;
         }
 
-        private static boolean isSmokey(@NotNull Block block) {
-            var key = block.key().asString();
-            return (key.equals("minecraft:campfire") || key.equals("minecraft:soul_campfire"))
-                    && Boolean.parseBoolean(block.getProperty("lit"));
+        private static boolean isSmokey(@NotNull Instance instance, @NotNull Point point) {
+            for (var offset = 1; offset <= 5; offset++) {
+                var block = instance.getBlock(point.blockX(), point.blockY() - offset, point.blockZ());
+                var key = block.key().asString();
+                if ((key.equals("minecraft:campfire") || key.equals("minecraft:soul_campfire"))
+                        && Boolean.parseBoolean(block.getProperty("lit"))) {
+
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 
@@ -128,7 +159,11 @@ public interface LocationPredicate {
         );
 
         public boolean test(@NotNull Point point) {
-            var context = LootContext.from(VanillaInterface.defaults(), Map.of());
+            return this.test(point, VanillaInterface.defaults());
+        }
+
+        public boolean test(@NotNull Point point, @NotNull VanillaInterface vanilla) {
+            var context = LootContext.from(vanilla, Map.of());
             return this.x.check(context, point.x()) && this.y.check(context, point.y()) && this.z.check(context, point.z());
         }
     }

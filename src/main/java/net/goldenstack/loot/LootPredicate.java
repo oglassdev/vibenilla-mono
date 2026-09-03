@@ -322,7 +322,7 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
             if (origin == null) return false;
             if (predicate == null) return true;
 
-            return predicate.test(context.require(LootContext.WORLD), origin.add(offsetX, offsetY, offsetZ));
+            return predicate.test(context.require(LootContext.WORLD), origin.add(offsetX, offsetY, offsetZ), context.vanilla());
         }
 
         @Override
