@@ -16,12 +16,20 @@ import java.util.List;
  * @param functions the functions applied to each output item of this table
  * @param randomSequence An ID specifying the name of the random sequence that is used to generate loot from this loot table.
  */
-public record LootTable(@NotNull List<LootPool> pools, @NotNull List<LootFunction> functions, @Nullable Key randomSequence) implements LootGenerator {
+public record LootTable(@Nullable Key type,
+                        @NotNull List<LootPool> pools,
+                        @NotNull List<LootFunction> functions,
+                        @Nullable Key randomSequence) implements LootGenerator {
 
-    public static final @NotNull LootTable EMPTY = new LootTable(List.of(), List.of(), null);
+    public static final @NotNull LootTable EMPTY = new LootTable(null, List.of(), List.of(), null);
+
+    public LootTable(@NotNull List<LootPool> pools, @NotNull List<LootFunction> functions, @Nullable Key randomSequence) {
+        this(null, pools, functions, randomSequence);
+    }
 
     @SuppressWarnings("UnstableApiUsage")
     public static final @NotNull StructCodec<LootTable> CODEC = StructCodec.struct(
+            "type", Codec.KEY.optional(), LootTable::type,
             "pools", LootPool.CODEC.list().optional(List.of()), LootTable::pools,
             "functions", LootFunction.CODEC.list().optional(List.of()), LootTable::functions,
             "random_sequence", Codec.KEY.optional(), LootTable::randomSequence,
