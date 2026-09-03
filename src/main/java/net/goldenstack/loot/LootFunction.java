@@ -30,6 +30,7 @@ import net.minestom.server.item.book.FilteredText;
 import net.minestom.server.item.component.*;
 import net.minestom.server.item.enchant.Enchantment;
 import net.minestom.server.item.instrument.Instrument;
+import net.minestom.server.network.player.ResolvableProfile;
 import net.minestom.server.potion.PotionEffect;
 import net.minestom.server.potion.PotionType;
 import net.minestom.server.registry.DynamicRegistry;
@@ -614,7 +615,7 @@ public interface LootFunction {
             PlayerSkin skin = player.getSkin();
             if (skin == null) return input;
 
-            return input.with(DataComponents.PROFILE, new HeadProfile(skin));
+            return input.with(DataComponents.PROFILE, new ResolvableProfile(skin));
         }
 
         @Override
@@ -953,11 +954,11 @@ public interface LootFunction {
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), SetCustomData::predicates,
                 "tag", Codec.STRING.transform(s -> {
                     try {
-                        return TagStringIO.get().asCompound(s);
+                        return TagStringIO.tagStringIO().asCompound(s);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                }, TagStringIOExt::writeTag), SetCustomData::tag,
+                }, TagStringIO.tagStringIO()::asString), SetCustomData::tag,
                 SetCustomData::new
         );
 
@@ -1141,7 +1142,7 @@ public interface LootFunction {
                 it.next();
             }
 
-            return input.with(DataComponents.INSTRUMENT, new InstrumentComponent(Either.right(it.next())));
+            return input.with(DataComponents.INSTRUMENT, it.next());
         }
 
         @Override

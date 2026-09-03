@@ -118,7 +118,7 @@ public record NBTPath(@NotNull List<Selector> selectors) {
             @Override
             public String toString() {
                 try {
-                    return TagStringIO.get().asString(filter);
+                    return TagStringIO.tagStringIO().asString(filter);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -210,7 +210,7 @@ public record NBTPath(@NotNull List<Selector> selectors) {
             @Override
             public String toString() {
                 try {
-                    return "[" + TagStringIO.get().asString(filter) + "]";
+                    return "[" + TagStringIO.tagStringIO().asString(filter) + "]";
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -469,10 +469,49 @@ class Parser {
 
         String dump = builder.toString();
 
-        Map.Entry<BinaryTag, String> entry = TagStringIOExt.readTagEmbedded(dump);
+        int end = findTagEnd(dump);
+        BinaryTag tag = TagStringIO.tagStringIO().asTag(dump.substring(0, end));
 
-        reader.skip(-count + entry.getValue().length());
-        return entry.getKey();
+        reader.skip(-count + end);
+        return tag;
+    }
+
+    private static int findTagEnd(@NotNull String input) throws IOException {
+        if (input.isEmpty()) {
+            throw new IOException("Expected an NBT tag");
+        }
+
+        int depth = 0;
+        char quote = 0;
+        boolean escaped = false;
+
+        for (int i = 0; i < input.length(); i++) {
+            char character = input.charAt(i);
+
+            if (quote != 0) {
+                if (escaped) {
+                    escaped = false;
+                } else if (character == '\\') {
+                    escaped = true;
+                } else if (character == quote) {
+                    quote = 0;
+                }
+                continue;
+            }
+
+            if (character == '\'' || character == '"') {
+                quote = character;
+            } else if (character == '{' || character == '[') {
+                depth++;
+            } else if (character == '}' || character == ']') {
+                depth--;
+                if (depth == 0) {
+                    return i + 1;
+                }
+            }
+        }
+
+        throw new IOException("Unterminated NBT tag");
     }
 
     private static CompoundBinaryTag readCompound(@NotNull StringReader reader) throws IOException {
