@@ -320,6 +320,21 @@ public interface EntityPredicate {
             var blockPosition = new Pos(entityPosition.blockX() + 0.5, entityPosition.blockY() - 0.5, entityPosition.blockZ() + 0.5);
             return this.predicate.test(instance, blockPosition);
         }
+
+        @Override
+        public boolean test(@NotNull Instance instance,
+                            @Nullable Point position,
+                            @Nullable Entity entity,
+                            @NotNull VanillaInterface vanilla) {
+            if (entity == null || !entity.isOnGround()) {
+
+                return false;
+            }
+
+            var entityPosition = entity.getPosition();
+            var blockPosition = new Pos(entityPosition.blockX() + 0.5, entityPosition.blockY() - 0.5, entityPosition.blockZ() + 0.5);
+            return this.predicate.test(instance, blockPosition, vanilla);
+        }
     }
 
     record EntityMovementAffectedBy(@NotNull LocationPredicate predicate) implements EntityPredicate {
@@ -333,6 +348,21 @@ public interface EntityPredicate {
             var entityPosition = entity.getPosition();
             var blockPosition = new Pos(entityPosition.blockX() + 0.5, entityPosition.blockY() - 0.5, entityPosition.blockZ() + 0.5);
             return this.predicate.test(instance, blockPosition);
+        }
+
+        @Override
+        public boolean test(@NotNull Instance instance,
+                            @Nullable Point position,
+                            @Nullable Entity entity,
+                            @NotNull VanillaInterface vanilla) {
+            if (entity == null) {
+
+                return false;
+            }
+
+            var entityPosition = entity.getPosition();
+            var blockPosition = new Pos(entityPosition.blockX() + 0.5, entityPosition.blockY() - 0.5, entityPosition.blockZ() + 0.5);
+            return this.predicate.test(instance, blockPosition, vanilla);
         }
     }
 
@@ -799,6 +829,14 @@ public interface EntityPredicate {
         @Override
         public boolean test(@NotNull Instance instance, @Nullable Point position, @Nullable Entity entity) {
             return entity != null && this.predicate.test(instance, entity.getPosition());
+        }
+
+        @Override
+        public boolean test(@NotNull Instance instance,
+                            @Nullable Point position,
+                            @Nullable Entity entity,
+                            @NotNull VanillaInterface vanilla) {
+            return entity != null && this.predicate.test(instance, entity.getPosition(), vanilla);
         }
     }
 
