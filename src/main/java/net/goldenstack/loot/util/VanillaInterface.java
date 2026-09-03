@@ -1,5 +1,6 @@
 package net.goldenstack.loot.util;
 
+import net.goldenstack.loot.LootContext;
 import net.goldenstack.loot.LootFunction;
 import net.goldenstack.loot.LootPredicate;
 import net.goldenstack.loot.LootTable;
@@ -105,6 +106,10 @@ public interface VanillaInterface {
 
     default @NotNull Random randomSequence(@NotNull Key sequence, @NotNull Random fallback) {
         return fallback;
+    }
+
+    default @Nullable BinaryTag environmentAttribute(@NotNull Key attribute, @NotNull LootContext context) {
+        return null;
     }
 
     @NotNull ItemStack enchant(@NotNull Random random, @NotNull ItemStack item, int levels, @Nullable RegistryTag<Enchantment> enchantments);

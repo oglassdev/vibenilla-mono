@@ -8,6 +8,7 @@ import net.goldenstack.loot.util.predicate.EntityPredicate;
 import net.goldenstack.loot.util.predicate.ItemPredicate;
 import net.goldenstack.loot.util.predicate.LocationPredicate;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.nbt.BinaryTag;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.coordinate.Point;
@@ -52,6 +53,7 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
         registry.register("enchantment_active_check", EnchantmentActiveCheck.CODEC);
         registry.register("entity_properties", EntityProperties.CODEC);
         registry.register("entity_scores", EntityScores.CODEC);
+        registry.register("environment_attribute_check", EnvironmentAttributeCheck.CODEC);
         registry.register("inverted", Inverted.CODEC);
         registry.register("killed_by_player", KilledByPlayer.CODEC);
         registry.register("location_check", LocationCheck.CODEC);
@@ -197,6 +199,25 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
         @Override
         public boolean test(@NotNull LootContext context) {
             return context.require(LootContext.ENCHANTMENT_ACTIVE) == active;
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record EnvironmentAttributeCheck(@NotNull Key attribute, @NotNull BinaryTag value) implements LootPredicate {
+        public static final @NotNull StructCodec<EnvironmentAttributeCheck> CODEC = StructCodec.struct(
+                "attribute", Codec.KEY, EnvironmentAttributeCheck::attribute,
+                "value", Codec.NBT, EnvironmentAttributeCheck::value,
+                EnvironmentAttributeCheck::new
+        );
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            var actualValue = context.vanilla().environmentAttribute(this.attribute, context);
+            return this.value.equals(actualValue);
         }
 
         @Override
