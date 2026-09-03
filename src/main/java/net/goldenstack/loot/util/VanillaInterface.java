@@ -8,10 +8,13 @@ import net.kyori.adventure.nbt.BinaryTag;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.text.Component;
 import net.minestom.server.entity.Entity;
+import net.minestom.server.coordinate.Point;
+import net.minestom.server.instance.Instance;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.item.enchant.Enchantment;
 import net.minestom.server.registry.RegistryTag;
+import net.minestom.server.registry.TagKey;
 import net.minestom.server.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -87,6 +90,17 @@ public interface VanillaInterface {
 
     default @NotNull Component resolveComponent(@NotNull Component component, @Nullable Entity entity) {
         return component;
+    }
+
+    default @NotNull ItemStack explorationMap(@NotNull ItemStack input,
+                                               @NotNull Instance world,
+                                               @NotNull Point origin,
+                                               @NotNull TagKey<?> destination,
+                                               @NotNull Key decoration,
+                                               byte zoom,
+                                               int searchRadius,
+                                               boolean skipExistingChunks) {
+        return input;
     }
 
     @NotNull ItemStack enchant(@NotNull Random random, @NotNull ItemStack item, int levels, @Nullable RegistryTag<Enchantment> enchantments);

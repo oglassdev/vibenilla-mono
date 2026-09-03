@@ -39,6 +39,7 @@ import net.minestom.server.registry.Registries;
 import net.minestom.server.registry.RegistryKey;
 import net.minestom.server.registry.RegistryTag;
 import net.minestom.server.registry.RegistryTranscoder;
+import net.minestom.server.registry.TagKey;
 import net.minestom.server.utils.Either;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -602,9 +603,19 @@ public interface LootFunction {
         }
     }
 
-    record ExplorationMap(@NotNull List<LootPredicate> predicates) implements LootFunction {
+    record ExplorationMap(@NotNull List<LootPredicate> predicates,
+                           @NotNull TagKey<Object> destination,
+                           @NotNull Key decoration,
+                           byte zoom,
+                           int searchRadius,
+                           boolean skipExistingChunks) implements LootFunction {
         public static final @NotNull StructCodec<ExplorationMap> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), ExplorationMap::predicates,
+                "destination", Codec.STRING.transform(TagKey::ofHash, TagKey::hashedKey).optional(TagKey.ofHash("#minecraft:on_treasure_maps")), ExplorationMap::destination,
+                "decoration", Codec.KEY.optional(Key.key("minecraft:woodland_mansion")), ExplorationMap::decoration,
+                "zoom", Codec.BYTE.optional((byte) 2), ExplorationMap::zoom,
+                "search_radius", Codec.INT.optional(50), ExplorationMap::searchRadius,
+                "skip_existing_chunks", Codec.BOOLEAN.optional(true), ExplorationMap::skipExistingChunks,
                 ExplorationMap::new
         );
 
@@ -612,8 +623,22 @@ public interface LootFunction {
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
             if (!LootPredicate.all(predicates, context)) return input;
 
-            // TODO: Incomplete
-            throw new UnsupportedOperationException("TODO: Implement ExplorationMap functionality and serialization");
+            if (!input.material().equals(Material.FILLED_MAP)) return input;
+
+            var world = context.get(LootContext.WORLD);
+            var origin = context.get(LootContext.ORIGIN);
+            if (world == null || origin == null) return input;
+
+            return context.vanilla().explorationMap(
+                    input,
+                    world,
+                    origin,
+                    this.destination,
+                    this.decoration,
+                    this.zoom,
+                    this.searchRadius,
+                    this.skipExistingChunks
+            );
         }
 
         @Override
