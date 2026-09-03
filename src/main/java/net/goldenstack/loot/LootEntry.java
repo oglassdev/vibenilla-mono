@@ -161,20 +161,26 @@ public interface LootEntry {
 
         @Override
         public @NotNull List<ItemStack> generate(@NotNull LootContext context) {
-            Block block = context.get(LootContext.BLOCK_STATE);
+            var block = context.get(LootContext.BLOCK_STATE);
             if (block == null) return List.of();
 
-            return switch (name.asString()) {
+            var items = switch (this.name.asString()) {
                 case "minecraft:sherds" -> {
-                    List<ItemStack> items = new ArrayList<>();
-                    for (Material material : block.getTag(VanillaInterface.DECORATED_POT_SHERDS)) {
-                        items.add(ItemStack.of(material));
+                    var sherds = new ArrayList<ItemStack>();
+                    for (var material : block.getTag(VanillaInterface.DECORATED_POT_SHERDS)) {
+                        sherds.add(ItemStack.of(material));
                     }
-                    yield items;
+                    yield sherds;
                 }
-                case "minecraft:contents" -> block.getTag(VanillaInterface.CONTAINER_ITEMS);
-                default -> List.of();
+                case "minecraft:contents" -> containerItems(block);
+                default -> List.<ItemStack>of();
             };
+
+            return LootFunction.apply(this.functions, items, context);
+        }
+
+        private static @NotNull List<ItemStack> containerItems(@NotNull Block block) {
+            return block.getTag(VanillaInterface.CONTAINER_ITEMS);
         }
 
         @Override
@@ -341,7 +347,7 @@ public interface LootEntry {
 
                     @Override
                     public @NotNull List<ItemStack> generate(@NotNull LootContext context) {
-                        return List.of(ItemStack.of(material));
+                        return List.of(LootFunction.apply(Tag.this.functions, ItemStack.of(material), context));
                     }
 
                 });
