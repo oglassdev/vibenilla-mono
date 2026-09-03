@@ -32,6 +32,8 @@ public sealed interface LootContext permits LootContextImpl {
     @NotNull LootContext.Key<Point> ORIGIN = LootContext.key("minecraft:origin");
     @NotNull LootContext.Key<Entity> DIRECT_ATTACKING_ENTITY = LootContext.key("minecraft:direct_attacking_entity");
     @NotNull LootContext.Key<Entity> ATTACKING_ENTITY = LootContext.key("minecraft:attacking_entity");
+    @NotNull LootContext.Key<Entity> TARGET_ENTITY = LootContext.key("minecraft:target_entity");
+    @NotNull LootContext.Key<Entity> INTERACTING_ENTITY = LootContext.key("minecraft:interacting_entity");
     @NotNull LootContext.Key<Entity> THIS_ENTITY = LootContext.key("minecraft:this_entity");
     @NotNull LootContext.Key<Double> LUCK = LootContext.key("minecraft:luck");
     @NotNull LootContext.Key<Integer> ENCHANTMENT_LEVEL = LootContext.key("minecraft:enchantment_level");
