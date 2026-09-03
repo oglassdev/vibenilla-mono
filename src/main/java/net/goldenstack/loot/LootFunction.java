@@ -1031,10 +1031,17 @@ public interface LootFunction {
         }
     }
 
-    record SetCustomModelData(@NotNull List<LootPredicate> predicates, @NotNull LootNumber value) implements LootFunction {
+    record SetCustomModelData(@NotNull List<LootPredicate> predicates,
+                              @Nullable ListOperation.WithValues<LootNumber> floats,
+                              @Nullable ListOperation.WithValues<Boolean> flags,
+                              @Nullable ListOperation.WithValues<String> strings,
+                              @Nullable ListOperation.WithValues<LootNumber> colors) implements LootFunction {
         public static final @NotNull StructCodec<SetCustomModelData> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), SetCustomModelData::predicates,
-                "value", LootNumber.CODEC, SetCustomModelData::value,
+                "floats", ListOperation.WithValues.codec(LootNumber.CODEC).optional(), SetCustomModelData::floats,
+                "flags", ListOperation.WithValues.codec(Codec.BOOLEAN).optional(), SetCustomModelData::flags,
+                "strings", ListOperation.WithValues.codec(Codec.STRING).optional(), SetCustomModelData::strings,
+                "colors", ListOperation.WithValues.codec(LootNumber.CODEC).optional(), SetCustomModelData::colors,
                 SetCustomModelData::new
         );
 
@@ -1042,9 +1049,44 @@ public interface LootFunction {
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
             if (!LootPredicate.all(predicates, context)) return input;
 
-            return input;
-            // TODO: Incomplete
-//            return input.with(ItemComponent.CUSTOM_MODEL_DATA, new CustomModelData(value.getInt(context));
+            var current = input.get(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(List.of(), List.of(), List.of(), List.of()));
+            var updatedFloats = applyFloats(this.floats, current.floats(), context);
+            var updatedFlags = applyValues(this.flags, current.flags());
+            var updatedStrings = applyValues(this.strings, current.strings());
+            var updatedColors = applyColors(this.colors, current.colors(), context);
+
+            return input.with(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(updatedFloats, updatedFlags, updatedStrings, updatedColors));
+        }
+
+        private static @NotNull List<Float> applyFloats(@Nullable ListOperation.WithValues<LootNumber> operation,
+                                                        @NotNull List<Float> current,
+                                                        @NotNull LootContext context) {
+            if (operation == null) {
+
+                return current;
+            }
+
+            return operation.operation().apply(
+                    operation.values().stream().map(value -> (float) value.getDouble(context)).toList(), current
+            );
+        }
+
+        private static @NotNull List<RGBLike> applyColors(@Nullable ListOperation.WithValues<LootNumber> operation,
+                                                          @NotNull List<RGBLike> current,
+                                                          @NotNull LootContext context) {
+            if (operation == null) {
+
+                return current;
+            }
+
+            return operation.operation().apply(
+                    operation.values().stream().map(value -> (RGBLike) new Color(value.getInt(context))).toList(), current
+            );
+        }
+
+        private static <T> @NotNull List<T> applyValues(@Nullable ListOperation.WithValues<T> operation,
+                                                        @NotNull List<T> current) {
+            return operation == null ? current : operation.operation().apply(operation.values(), current);
         }
 
         @Override
