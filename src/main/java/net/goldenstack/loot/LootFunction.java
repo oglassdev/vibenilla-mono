@@ -1336,13 +1336,13 @@ public interface LootFunction {
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
             if (!LootPredicate.all(predicates, context)) return input;
 
-            List<Component> components = input.get(DataComponents.LORE, List.of());
+            var components = input.get(DataComponents.LORE, List.of());
+            var resolutionEntity = this.entity == null ? null : context.get(this.entity.key());
+            var resolvedLore = this.lore.stream()
+                    .map(line -> context.vanilla().resolveComponent(line, resolutionEntity))
+                    .toList();
 
-            // TODO: Incomplete
-            // TODO: https://minecraft.wiki/w/Raw_JSON_text_format#Component_resolution
-            //       This is not used in vanilla so it's fine for now.
-
-            return input.with(DataComponents.LORE, operation.apply(lore, components));
+            return input.with(DataComponents.LORE, this.operation.apply(resolvedLore, components));
         }
 
         @Override
@@ -1390,12 +1390,10 @@ public interface LootFunction {
 
             if (name == null) return input;
 
-            Component component = this.name;
-            // TODO: Incomplete
-            // TODO: https://minecraft.wiki/w/Raw_JSON_text_format#Component_resolution
-            //       This is not used in vanilla so it's fine for now.
+            var resolutionEntity = this.entity == null ? null : context.get(this.entity.key());
+            var component = context.vanilla().resolveComponent(this.name, resolutionEntity);
 
-            return input.with(target.component(), component);
+            return input.with(this.target.component(), component);
         }
 
         @Override

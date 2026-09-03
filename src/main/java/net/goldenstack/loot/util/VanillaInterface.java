@@ -85,6 +85,10 @@ public interface VanillaInterface {
 
     @NotNull BinaryTag serializeEntity(@NotNull Entity entity);
 
+    default @NotNull Component resolveComponent(@NotNull Component component, @Nullable Entity entity) {
+        return component;
+    }
+
     @NotNull ItemStack enchant(@NotNull Random random, @NotNull ItemStack item, int levels, @Nullable RegistryTag<Enchantment> enchantments);
 
     @Nullable ItemStack smelt(@NotNull ItemStack input);
