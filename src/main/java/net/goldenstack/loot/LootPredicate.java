@@ -173,7 +173,13 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
                 return false;
             }
 
-            return predicate.test(world, origin, damage);
+            return predicate.test(
+                    world,
+                    origin,
+                    damage,
+                    context.get(LootContext.DIRECT_ATTACKING_ENTITY),
+                    context.get(LootContext.ATTACKING_ENTITY)
+            );
         }
 
         @Override
@@ -489,4 +495,3 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
     }
 
 }
-
