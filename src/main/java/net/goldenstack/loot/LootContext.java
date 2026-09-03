@@ -99,6 +99,8 @@ public sealed interface LootContext permits LootContextImpl {
      */
     @NotNull VanillaInterface vanilla();
 
+    @NotNull LootContext withRandom(@NotNull Random random);
+
 }
 
 record LootContextImpl(@NotNull VanillaInterface vanilla, @NotNull Map<String, Object> data) implements LootContext {
@@ -141,5 +143,12 @@ record LootContextImpl(@NotNull VanillaInterface vanilla, @NotNull Map<String, O
         }
 
         throw new NoSuchElementException("No value for key '" + key + "'");
+    }
+
+    @Override
+    public @NotNull LootContext withRandom(@NotNull Random random) {
+        Map<String, Object> updatedData = new HashMap<>(this.data);
+        updatedData.put(LootContext.RANDOM.id(), random);
+        return new LootContextImpl(this.vanilla, updatedData);
     }
 }

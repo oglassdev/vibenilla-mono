@@ -30,11 +30,14 @@ public record LootTable(@NotNull List<LootPool> pools, @NotNull List<LootFunctio
 
     @Override
     public @NotNull List<ItemStack> generate(@NotNull LootContext context) {
-        List<ItemStack> items = new ArrayList<>();
+        var generationContext = this.randomSequence == null
+                ? context
+                : context.withRandom(context.vanilla().randomSequence(this.randomSequence, context.require(LootContext.RANDOM)));
+        var items = new ArrayList<ItemStack>();
 
-        for (var pool : pools) {
-            for (var item : pool.generate(context)) {
-                items.add(LootFunction.apply(functions, item, context));
+        for (var pool : this.pools) {
+            for (var item : pool.generate(generationContext)) {
+                items.add(LootFunction.apply(this.functions, item, generationContext));
             }
         }
 

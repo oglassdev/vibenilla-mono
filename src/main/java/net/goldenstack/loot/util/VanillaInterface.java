@@ -103,6 +103,10 @@ public interface VanillaInterface {
         return input;
     }
 
+    default @NotNull Random randomSequence(@NotNull Key sequence, @NotNull Random fallback) {
+        return fallback;
+    }
+
     @NotNull ItemStack enchant(@NotNull Random random, @NotNull ItemStack item, int levels, @Nullable RegistryTag<Enchantment> enchantments);
 
     @Nullable ItemStack smelt(@NotNull ItemStack input);
