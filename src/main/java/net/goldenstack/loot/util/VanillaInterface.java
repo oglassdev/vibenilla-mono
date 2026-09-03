@@ -117,6 +117,12 @@ public interface VanillaInterface {
         return null;
     }
 
+    default @NotNull List<ItemStack> slotRange(@NotNull String source,
+                                               @NotNull List<Integer> slots,
+                                               @NotNull LootContext context) {
+        return List.of();
+    }
+
     @NotNull ItemStack enchant(@NotNull Random random, @NotNull ItemStack item, int levels, @Nullable RegistryTag<Enchantment> enchantments);
 
     @Nullable ItemStack smelt(@NotNull ItemStack input);

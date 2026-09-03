@@ -31,6 +31,7 @@ public interface LootSlotSource {
         registry.register("group", Group.CODEC);
         registry.register("limit_slots", Limit.CODEC);
         registry.register("reference", Reference.CODEC);
+        registry.register("slot_range", Range.CODEC);
         return registry;
     }
 
@@ -133,6 +134,24 @@ public interface LootSlotSource {
                 }
             }
             return items;
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootSlotSource> codec() {
+            return CODEC;
+        }
+    }
+
+    record Range(@NotNull String source, @NotNull List<Integer> slots) implements LootSlotSource {
+        public static final @NotNull StructCodec<Range> CODEC = StructCodec.struct(
+                "source", Codec.STRING.optional("container"), Range::source,
+                "slots", Codec.INT.list(), Range::slots,
+                Range::new
+        );
+
+        @Override
+        public @NotNull List<ItemStack> provide(@NotNull LootContext context) {
+            return context.vanilla().slotRange(this.source, this.slots, context);
         }
 
         @Override
