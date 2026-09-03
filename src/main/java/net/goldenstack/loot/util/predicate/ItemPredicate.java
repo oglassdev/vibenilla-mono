@@ -25,9 +25,7 @@ public record ItemPredicate(@Nullable RegistryTag<Material> items, @NotNull Loot
 
         if (items != null && !items.contains(itemStack.material())) return false;
 
-        return count.check(context, itemStack.amount()) && false;
-        // TODO: Waiting for #2732
-        // return count.check(context, itemStack.amount()) && predicate.test(itemStack);
+        return count.check(context, itemStack.amount()) && predicate.test(itemStack);
     }
 
 }
