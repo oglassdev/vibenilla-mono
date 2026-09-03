@@ -94,6 +94,22 @@ public interface VanillaInterface {
         return component;
     }
 
+    default @Nullable Double entityFallDistance(@NotNull Entity entity) {
+        return null;
+    }
+
+    default @Nullable Boolean entityBoolean(@NotNull Key attribute, @NotNull Entity entity) {
+        return null;
+    }
+
+    default @Nullable Integer entityInteger(@NotNull Key attribute, @NotNull Entity entity) {
+        return null;
+    }
+
+    default @Nullable Entity entityLookedAt(@NotNull Entity entity) {
+        return null;
+    }
+
     default @NotNull ItemStack explorationMap(@NotNull ItemStack input,
                                                @NotNull Instance world,
                                                @NotNull Point origin,

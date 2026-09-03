@@ -238,7 +238,7 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
             Entity entity = context.get(this.entity.key());
             Point origin = context.get(LootContext.ORIGIN);
 
-            return predicate == null || predicate.test(context.require(LootContext.WORLD), origin, entity);
+            return predicate == null || predicate.test(context.require(LootContext.WORLD), origin, entity, context.vanilla());
         }
 
         @Override
