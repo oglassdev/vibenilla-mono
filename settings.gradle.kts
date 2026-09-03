@@ -1,2 +1,1 @@
-rootProject.name = "trove"
-
+rootProject.name = "loot"

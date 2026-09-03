@@ -1,75 +1,88 @@
-import com.vanniktech.maven.publish.SonatypeHost
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 plugins {
-    id("java-library")
-    id("maven-publish")
-    id("signing")
-    id("com.vanniktech.maven.publish") version "0.30.0"
+    `java-library`
+    `maven-publish`
 }
 
-group = "net.goldenstack.trove"
-version = "3.0"
+description = "Loot table parser and evaluator for Minestom"
+group = "rocks.minestom"
+
+val minestomVersion = "2026.08.28-26.2"
+val mcVersion = minestomVersion.split("-")[1]
+val date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
+version = "$date-$mcVersion"
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+
+            pom {
+                name = project.name
+                description = project.description
+                url = "https://github.com/vibenilla/loot"
+
+                licenses {
+                    license {
+                        name = "MIT"
+                        url = "https://opensource.org/license/mit"
+                    }
+                }
+
+                developers {
+                    developer {
+                        name = "mudkip"
+                        id = "mudkipdev"
+                        email = "mudkip@mudkip.dev"
+                        url = "https://mudkip.dev"
+                    }
+                }
+
+                scm {
+                    url = "https://github.com/vibenilla/loot"
+                    connection = "scm:git:git://github.com/vibenilla/loot.git"
+                    developerConnection = "scm:git:ssh://git@github.com/vibenilla/loot.git"
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "skylite"
+            url = uri("https://maven.skylite.gg/releases")
+            credentials(PasswordCredentials::class)
+            authentication {
+                create<BasicAuthentication>("basic")
+            }
+        }
+    }
+}
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    api("org.jetbrains:annotations:24.0.1")
-
-    val minestom = "net.minestom:minestom:2025.07.04-1.21.5"
-
-    compileOnly(minestom)
-
-    testImplementation(minestom)
-
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    compileOnly("net.minestom:minestom:$minestomVersion")
+    compileOnly("it.unimi.dsi:fastutil:8.5.18")
+    testImplementation("net.minestom:minestom:$minestomVersion")
+    testImplementation("net.minestom:testing:$minestomVersion")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.2")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.test {
     useJUnitPlatform()
-}
-
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
-
-mavenPublishing {
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
-
-    signAllPublications()
-
-    coordinates("net.goldenstack", "trove", version.toString())
-
-    pom {
-        name.set("trove")
-        description.set("Loot table parser and evaluator for Minestom")
-        url.set("https://github.com/goldenstack/trove")
-        licenses {
-            license {
-                name.set("MIT")
-                url.set("https://github.com/goldenstack/trove/blob/master/LICENSE")
-            }
-        }
-        developers {
-            developer {
-                id.set("goldenstack")
-                name.set("GoldenStack")
-                email.set("git@goldenstack.net")
-            }
-        }
-        scm {
-            connection.set("scm:git:git://github.com/goldenstack/trove.git")
-            developerConnection.set("scm:git:git@github.com:goldenstack/trove.git")
-            url.set("https://github.com/goldenstack/trove")
-        }
-    }
-}
-
-signing {
-    useGpgCmd()
-    sign(publishing.publications)
+    systemProperty("minestom.inside-test", "true")
+    failOnNoDiscoveredTests = false
 }
