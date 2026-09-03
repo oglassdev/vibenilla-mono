@@ -37,6 +37,7 @@ import net.minestom.server.registry.DynamicRegistry;
 import net.minestom.server.registry.Registries;
 import net.minestom.server.registry.RegistryKey;
 import net.minestom.server.registry.RegistryTag;
+import net.minestom.server.registry.RegistryTranscoder;
 import net.minestom.server.utils.Either;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -283,8 +284,63 @@ public interface LootFunction {
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
             if (!LootPredicate.all(predicates, context)) return input;
 
-            // TODO: Incomplete
-            throw new UnsupportedOperationException("TODO: Implement Tag<DataComponentMap> for blocks.");
+            DataComponentMap sourceComponents = switch (source) {
+                case BLOCK_ENTITY -> blockComponents(context.get(LootContext.BLOCK_STATE));
+                case THIS, ATTACKING_ENTITY, LAST_DAMAGE_PLAYER -> holderComponents(context.get(source.key()));
+            };
+
+            if (sourceComponents == null) return input;
+
+            ItemStack.Builder builder = input.builder();
+            for (DataComponent.Value entry : sourceComponents.entrySet()) {
+                DataComponent<?> component = entry.component();
+
+                if (include != null && !include.contains(component)) continue;
+
+                if (exclude != null && exclude.contains(component)) continue;
+
+                setComponent(builder, component, entry.value());
+            }
+
+            return builder.build();
+        }
+
+        private static @Nullable DataComponentMap holderComponents(@Nullable Object source) {
+            if (!(source instanceof DataComponent.Holder holder)) return null;
+
+            DataComponentMap.Builder builder = DataComponentMap.builder();
+            for (DataComponent<?> component : DataComponent.values()) {
+                copyComponent(builder, holder, component);
+            }
+
+            return builder.build();
+        }
+
+        private static @Nullable DataComponentMap blockComponents(@Nullable Block block) {
+            if (block == null || !block.hasNbt()) return null;
+
+            BinaryTag components = block.nbt().get("components");
+            if (!(components instanceof CompoundBinaryTag compound)) return DataComponentMap.EMPTY;
+
+            Transcoder<BinaryTag> coder = new RegistryTranscoder<>(Transcoder.NBT, MinecraftServer.process());
+            Result<DataComponentMap> result = DataComponent.MAP_NBT_TYPE.decode(coder, compound);
+
+            return result instanceof Result.Ok(DataComponentMap componentMap) ? componentMap : DataComponentMap.EMPTY;
+        }
+
+        private static <T> void copyComponent(@NotNull DataComponentMap.Builder builder,
+                                               @NotNull DataComponent.Holder holder,
+                                               @NotNull DataComponent<T> component) {
+            T value = holder.get(component);
+
+            if (value != null) builder.set(component, value);
+        }
+
+        @SuppressWarnings("unchecked")
+        private static <T> void setComponent(@NotNull ItemStack.Builder builder,
+                                             @NotNull DataComponent<?> component,
+                                             @Nullable Object value) {
+            builder.set((DataComponent<T>) component, (T) value);
         }
 
         @Override
