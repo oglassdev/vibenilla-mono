@@ -69,6 +69,7 @@ public interface LootFunction {
         registry.register("copy_custom_data", CopyCustomData.CODEC);
         registry.register("copy_name", CopyName.CODEC);
         registry.register("copy_state", CopyState.CODEC);
+        registry.register("discard", Discard.CODEC);
         registry.register("enchanted_count_increase", EnchantedCountIncrease.CODEC);
         registry.register("enchant_randomly", EnchantRandomly.CODEC);
         registry.register("enchant_with_levels", EnchantWithLevels.CODEC);
@@ -680,18 +681,48 @@ public interface LootFunction {
         }
     }
     
-    record Filtered(@NotNull List<LootPredicate> predicates, @NotNull ItemPredicate predicate, @NotNull LootFunction modifier) implements LootFunction {
+    record Filtered(@NotNull List<LootPredicate> predicates, @NotNull ItemPredicate predicate,
+                    @Nullable LootFunction onPass, @Nullable LootFunction onFail) implements LootFunction {
         public static final @NotNull StructCodec<Filtered> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), Filtered::predicates,
                 "item_filter", ItemPredicate.CODEC, Filtered::predicate,
-                "modifier", LootFunction.CODEC, Filtered::modifier,
+                "on_pass", LootFunction.CODEC.optional(), Filtered::onPass,
+                "on_fail", LootFunction.CODEC.optional(), Filtered::onFail,
                 Filtered::new
         );
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
-            return LootPredicate.all(predicates, context) && predicate.test(input, context) ?
-                    modifier.apply(input, context) : input;
+            if (!LootPredicate.all(this.predicates, context)) {
+
+                return input;
+            }
+
+            var function = this.predicate.test(input, context) ? this.onPass : this.onFail;
+
+            return function == null ? input : function.apply(input, context);
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootFunction> codec() {
+            return CODEC;
+        }
+    }
+
+    record Discard(@NotNull List<LootPredicate> predicates) implements LootFunction {
+        public static final @NotNull StructCodec<Discard> CODEC = StructCodec.struct(
+                "conditions", LootPredicate.CODEC.list().optional(List.of()), Discard::predicates,
+                Discard::new
+        );
+
+        @Override
+        public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
+            if (!LootPredicate.all(this.predicates, context)) {
+
+                return input;
+            }
+
+            return ItemStack.AIR;
         }
 
         @Override
