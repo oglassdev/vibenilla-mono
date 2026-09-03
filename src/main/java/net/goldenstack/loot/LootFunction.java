@@ -291,7 +291,7 @@ public interface LootFunction {
 
             DataComponentMap sourceComponents = switch (source) {
                 case BLOCK_ENTITY -> blockComponents(context.get(LootContext.BLOCK_STATE));
-                case THIS, ATTACKING_ENTITY, LAST_DAMAGE_PLAYER, TARGET_ENTITY, INTERACTING_ENTITY -> holderComponents(context.get(source.key()));
+                case THIS, ATTACKER, DIRECT_ATTACKER, ATTACKING_PLAYER, TARGET_ENTITY, INTERACTING_ENTITY -> holderComponents(context.get(source.key()));
             };
 
             if (sourceComponents == null) return input;

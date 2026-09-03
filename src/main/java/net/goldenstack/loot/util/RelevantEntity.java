@@ -18,7 +18,7 @@ public enum RelevantEntity {
         case "this" -> THIS;
         case "attacker" -> ATTACKER;
         case "direct_attacker" -> DIRECT_ATTACKER;
-        case "attacking_player", "killer_player" -> LAST_PLAYER_DAMAGE;
+        case "attacking_player" -> LAST_PLAYER_DAMAGE;
         case "target_entity" -> TARGET_ENTITY;
         case "interacting_entity" -> INTERACTING_ENTITY;
         default -> throw new IllegalArgumentException("Unknown entity target: " + value);

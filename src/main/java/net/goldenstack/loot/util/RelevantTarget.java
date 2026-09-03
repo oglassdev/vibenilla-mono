@@ -6,8 +6,9 @@ import org.jetbrains.annotations.NotNull;
 
 public enum RelevantTarget {
     THIS("this", LootContext.THIS_ENTITY),
-    ATTACKING_ENTITY("attacking_entity", LootContext.ATTACKING_ENTITY),
-    LAST_DAMAGE_PLAYER("last_damage_player", LootContext.LAST_DAMAGE_PLAYER),
+    ATTACKER("attacker", LootContext.ATTACKING_ENTITY),
+    DIRECT_ATTACKER("direct_attacker", LootContext.DIRECT_ATTACKING_ENTITY),
+    ATTACKING_PLAYER("attacking_player", LootContext.LAST_DAMAGE_PLAYER),
     BLOCK_ENTITY("block_entity", LootContext.BLOCK_STATE),
     TARGET_ENTITY("target_entity", LootContext.TARGET_ENTITY),
     INTERACTING_ENTITY("interacting_entity", LootContext.INTERACTING_ENTITY);
@@ -15,8 +16,9 @@ public enum RelevantTarget {
     @SuppressWarnings("UnstableApiUsage")
     public static final Codec<RelevantTarget> CODEC = Codec.STRING.transform(value -> switch (value) {
         case "this" -> THIS;
-        case "attacking_entity" -> ATTACKING_ENTITY;
-        case "last_damage_player" -> LAST_DAMAGE_PLAYER;
+        case "attacker" -> ATTACKER;
+        case "direct_attacker" -> DIRECT_ATTACKER;
+        case "attacking_player" -> ATTACKING_PLAYER;
         case "block_entity" -> BLOCK_ENTITY;
         case "target_entity" -> TARGET_ENTITY;
         case "interacting_entity" -> INTERACTING_ENTITY;
