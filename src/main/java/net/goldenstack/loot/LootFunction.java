@@ -1279,15 +1279,23 @@ public interface LootFunction {
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
-            if (!LootPredicate.all(predicates, context)) return input;
+            if (!LootPredicate.all(this.predicates, context)) {
+                return input;
+            }
 
-            return EnchantmentUtils.modifyItem(input, map -> {
+            var item = input.material().equals(Material.BOOK)
+                    ? input.builder().material(Material.ENCHANTED_BOOK).build()
+                    : input;
+
+            return EnchantmentUtils.modifyItem(item, enchantmentMap -> {
                 this.enchantments.forEach((enchantment, number) -> {
-                    int count = number.getInt(context);
-                    if (add) {
-                        count += map.getOrDefault(enchantment, 0);
+                    var level = number.getInt(context);
+
+                    if (this.add) {
+                        level += enchantmentMap.getOrDefault(enchantment, 0);
                     }
-                    map.put(enchantment, count);
+
+                    enchantmentMap.put(enchantment, Math.max(0, Math.min(255, level)));
                 });
             });
         }

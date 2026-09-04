@@ -4,6 +4,7 @@ import net.goldenstack.loot.util.LootNumberRange;
 import net.goldenstack.loot.util.VanillaInterface;
 import net.goldenstack.loot.util.ListOperation;
 import net.goldenstack.loot.util.predicate.ItemPredicate;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.StringBinaryTag;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.adventure.MinestomAdventure;
@@ -13,6 +14,9 @@ import net.minestom.server.codec.Transcoder;
 import net.minestom.server.instance.block.predicate.DataComponentPredicates;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
+import net.minestom.server.item.component.EnchantmentList;
+import net.minestom.server.item.enchant.Enchantment;
+import net.minestom.server.registry.RegistryKey;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -158,5 +162,21 @@ class LootFunctionTest {
                 """);
 
         assertThrows(IllegalArgumentException.class, () -> LootPredicate.RandomChanceWithEnchantedBonus.CODEC.decode(Transcoder.NBT, input).orElseThrow());
+    }
+
+    @Test
+    void setEnchantmentsConvertsBooksAndClampsLevels() {
+        MinecraftServer.init();
+
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of());
+        var enchantment = RegistryKey.<Enchantment>unsafeOf(Key.key("minecraft:sharpness"));
+        var function = new LootFunction.SetEnchantments(
+                List.of(), Map.of(enchantment, new LootNumber.Constant(300.0)), false
+        );
+        var result = function.apply(ItemStack.of(Material.BOOK), context);
+        var enchantments = result.get(DataComponents.STORED_ENCHANTMENTS, EnchantmentList.EMPTY);
+
+        assertEquals(Material.ENCHANTED_BOOK, result.material());
+        assertEquals(255, enchantments.level(enchantment));
     }
 }
