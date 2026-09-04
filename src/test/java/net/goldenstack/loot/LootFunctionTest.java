@@ -4,9 +4,12 @@ import net.goldenstack.loot.util.LootNumberRange;
 import net.goldenstack.loot.util.VanillaInterface;
 import net.goldenstack.loot.util.ListOperation;
 import net.goldenstack.loot.util.predicate.ItemPredicate;
+import net.kyori.adventure.nbt.StringBinaryTag;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.adventure.MinestomAdventure;
 import net.minestom.server.color.Color;
 import net.minestom.server.component.DataComponents;
+import net.minestom.server.codec.Transcoder;
 import net.minestom.server.instance.block.predicate.DataComponentPredicates;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
@@ -81,5 +84,17 @@ class LootFunctionTest {
 
         assertEquals(Color.class, dyedItem.get(DataComponents.DYED_COLOR).getClass());
         assertNotNull(potionItem.get(DataComponents.POTION_CONTENTS).potion());
+    }
+
+    @Test
+    void setNameUsesVanillaTargetNames() throws Exception {
+        MinecraftServer.init();
+
+        var serialized = MinestomAdventure.tagStringIO().asTag("\"item_name\"");
+        var target = LootFunction.SetName.Target.CODEC.decode(Transcoder.NBT, serialized).orElseThrow();
+
+        assertEquals(LootFunction.SetName.Target.ITEM_NAME, target);
+        var encoded = LootFunction.SetName.Target.CODEC.encode(Transcoder.NBT, target).orElseThrow();
+        assertEquals("item_name", ((StringBinaryTag) encoded).value());
     }
 }

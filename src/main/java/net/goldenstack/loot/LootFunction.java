@@ -1393,7 +1393,11 @@ public interface LootFunction {
             ITEM_NAME("item_name", DataComponents.ITEM_NAME),
             CUSTOM_NAME("custom_name", DataComponents.CUSTOM_NAME);
 
-            public static final @NotNull Codec<Target> CODEC = Codec.Enum(Target.class); // Relies on the enum names themselves being accurate
+            public static final @NotNull Codec<Target> CODEC = Codec.STRING.transform(value -> switch (value) {
+                case "item_name" -> ITEM_NAME;
+                case "custom_name" -> CUSTOM_NAME;
+                default -> throw new IllegalArgumentException("Unknown set name target: " + value);
+            }, Target::id);
 
             private final String id;
             private final DataComponent<Component> component;
@@ -1404,19 +1408,19 @@ public interface LootFunction {
             }
 
             public String id() {
-                return id;
+                return this.id;
             }
 
             public DataComponent<Component> component() {
-                return component;
+                return this.component;
             }
         }
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
-            if (!LootPredicate.all(predicates, context)) return input;
+            if (!LootPredicate.all(this.predicates, context)) return input;
 
-            if (name == null) return input;
+            if (this.name == null) return input;
 
             var resolutionEntity = this.entity == null ? null : context.get(this.entity.key());
             var component = context.vanilla().resolveComponent(this.name, resolutionEntity);
