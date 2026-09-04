@@ -115,6 +115,18 @@ class LootPredicateTest {
     }
 
     @Test
+    void timeCheckUsesVanillaIntegerConversion() {
+        MinecraftServer.init();
+
+        var world = MinecraftServer.getInstanceManager().createInstanceContainer();
+        world.setTime(WorldClock.OVERWORLD, 4_294_967_296L);
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of(LootContext.WORLD, world));
+        var range = new LootNumberRange(new LootNumber.Constant(0.0), new LootNumber.Constant(0.0));
+
+        assertEquals(true, new LootPredicate.TimeCheck(WorldClock.OVERWORLD, null, range).test(context));
+    }
+
+    @Test
     void damageSourceEntityPredicatesReceiveTheVanillaInterface() {
         MinecraftServer.init();
 

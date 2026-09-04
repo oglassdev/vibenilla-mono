@@ -497,7 +497,7 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
                 time %= period;
             }
 
-            return value.check(context, time);
+            return value.check(context, (int) time);
         }
 
         @Override
