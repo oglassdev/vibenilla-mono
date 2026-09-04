@@ -40,7 +40,7 @@ public interface LocationPredicate {
                       @Nullable Boolean smokey,
                       @Nullable LootNumberRange light,
                       @Nullable BlockPredicate block,
-                      @Nullable BlockPredicate fluid,
+                      @Nullable FluidPredicate fluid,
                       @Nullable Boolean canSeeSky) implements LocationPredicate {
         public static final @NotNull StructCodec<Properties> CODEC = StructCodec.struct(
                 "position", Position.CODEC.optional(), Properties::position,
@@ -50,7 +50,7 @@ public interface LocationPredicate {
                 "smokey", Codec.BOOLEAN.optional(), Properties::smokey,
                 "light", LootNumberRange.CODEC.optional(), Properties::light,
                 "block", BlockPredicate.CODEC.optional(), Properties::block,
-                "fluid", BlockPredicate.CODEC.optional(), Properties::fluid,
+                "fluid", FluidPredicate.CODEC.optional(), Properties::fluid,
                 "can_see_sky", Codec.BOOLEAN.optional(), Properties::canSeeSky,
                 Properties::new
         );
@@ -127,9 +127,15 @@ public interface LocationPredicate {
                 return false;
             }
 
-            if (this.fluid != null && !Boolean.TRUE.equals(vanilla.locationFluid(this.fluid, instance, point))) {
+            if (this.fluid != null) {
+                var fluidMatches = vanilla.locationFluid(this.fluid, instance, point);
+                if (fluidMatches == null) {
+                    fluidMatches = this.fluid.matches(instance, point);
+                }
 
-                return false;
+                if (!fluidMatches) {
+                    return false;
+                }
             }
 
             var canSeeSky = vanilla.locationCanSeeSky(instance, point);

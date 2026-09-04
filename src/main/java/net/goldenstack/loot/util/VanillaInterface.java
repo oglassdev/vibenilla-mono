@@ -5,6 +5,7 @@ import net.goldenstack.loot.LootFunction;
 import net.goldenstack.loot.LootPredicate;
 import net.goldenstack.loot.LootSlotSource;
 import net.goldenstack.loot.LootTable;
+import net.goldenstack.loot.util.predicate.FluidPredicate;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.BinaryTag;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
@@ -16,7 +17,6 @@ import net.minestom.server.coordinate.Point;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
-import net.minestom.server.instance.block.predicate.BlockPredicate;
 import net.minestom.server.item.enchant.Enchantment;
 import net.minestom.server.registry.RegistryTag;
 import net.minestom.server.registry.TagKey;
@@ -129,7 +129,7 @@ public interface VanillaInterface {
         return null;
     }
 
-    default @Nullable Boolean locationFluid(@NotNull BlockPredicate predicate,
+    default @Nullable Boolean locationFluid(@NotNull FluidPredicate predicate,
                                              @NotNull Instance instance,
                                              @NotNull Point point) {
         return null;
