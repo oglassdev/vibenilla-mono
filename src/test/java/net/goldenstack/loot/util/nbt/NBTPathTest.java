@@ -2,9 +2,11 @@ package net.goldenstack.loot.util.nbt;
 
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.nbt.IntBinaryTag;
+import net.kyori.adventure.nbt.ListBinaryTag;
 import org.junit.jupiter.api.Test;
 
 import java.io.StringReader;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -45,6 +47,27 @@ final class NBTPathTest {
 
         assertTrue(path.getWithDefaults(reference, CompoundBinaryTag::empty).isEmpty());
         assertEquals(IntBinaryTag.intBinaryTag(2), ((CompoundBinaryTag) reference.get()).get("value"));
+    }
+
+    @Test
+    void listFiltersRequireVanillaListOrdering() {
+        var filter = CompoundBinaryTag.builder()
+                .put("values", ListBinaryTag.builder()
+                        .add(IntBinaryTag.intBinaryTag(1))
+                        .add(IntBinaryTag.intBinaryTag(2))
+                        .build())
+                .build();
+        var path = new NBTPath(List.of(new NBTPath.Selector.ListFilter(filter)));
+        var source = ListBinaryTag.builder()
+                .add(CompoundBinaryTag.builder()
+                        .put("values", ListBinaryTag.builder()
+                                .add(IntBinaryTag.intBinaryTag(2))
+                                .add(IntBinaryTag.intBinaryTag(1))
+                                .build())
+                        .build())
+                .build();
+
+        assertTrue(path.get(source).isEmpty());
     }
 
     @Test

@@ -102,7 +102,7 @@ public record NBTPath(@NotNull List<Selector> selectors) {
         record CompoundFilter(@NotNull CompoundBinaryTag filter) implements Selector {
             @Override
             public void get(@NotNull NBTReference source, @NotNull Consumer<NBTReference> consumer) {
-                if (NBTUtils.compareNBT(filter, source.get(), false)) {
+                if (NBTUtils.compareNBT(filter, source.get(), true)) {
                     consumer.accept(source);
                 }
             }
@@ -130,7 +130,7 @@ public record NBTPath(@NotNull List<Selector> selectors) {
             public void get(@NotNull NBTReference source, @NotNull Consumer<NBTReference> consumer) {
                 var reference = source.get(this.key);
 
-                if (NBTUtils.compareNBT(this.filter, reference.get(), false)) {
+                if (NBTUtils.compareNBT(this.filter, reference.get(), true)) {
                     consumer.accept(reference);
                 }
             }
@@ -214,7 +214,7 @@ public record NBTPath(@NotNull List<Selector> selectors) {
                 int listSize = source.listSize();
                 for (int i = 0; i < listSize; i++) {
                     NBTReference ref = source.get(i);
-                    if (NBTUtils.compareNBT(filter, ref.get(), false)) {
+                    if (NBTUtils.compareNBT(filter, ref.get(), true)) {
                         consumer.accept(ref);
                     }
                 }
@@ -226,7 +226,7 @@ public record NBTPath(@NotNull List<Selector> selectors) {
                 if (listSize == -1) return;
 
                 for (int i = 0; i < listSize; i++) {
-                    if (NBTUtils.compareNBT(filter, source.get(i).get(), false)) {
+                    if (NBTUtils.compareNBT(filter, source.get(i).get(), true)) {
                         return;
                     }
                 }
