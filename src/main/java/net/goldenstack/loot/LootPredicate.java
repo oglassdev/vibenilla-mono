@@ -315,12 +315,12 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
         }
     }
 
-    record LocationCheck(@Nullable LocationPredicate predicate, double offsetX, double offsetY, double offsetZ) implements LootPredicate {
+    record LocationCheck(@Nullable LocationPredicate predicate, int offsetX, int offsetY, int offsetZ) implements LootPredicate {
         public static final @NotNull StructCodec<LocationCheck> CODEC = StructCodec.struct(
                 "predicate", LocationPredicate.CODEC, LocationCheck::predicate,
-                "offsetX", Codec.DOUBLE.optional(0D), LocationCheck::offsetX,
-                "offsetY", Codec.DOUBLE.optional(0D), LocationCheck::offsetY,
-                "offsetZ", Codec.DOUBLE.optional(0D), LocationCheck::offsetZ,
+                "offsetX", Codec.INT.optional(0), LocationCheck::offsetX,
+                "offsetY", Codec.INT.optional(0), LocationCheck::offsetY,
+                "offsetZ", Codec.INT.optional(0), LocationCheck::offsetZ,
                 LocationCheck::new
         );
 
