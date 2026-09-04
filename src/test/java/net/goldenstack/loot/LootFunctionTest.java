@@ -3,6 +3,7 @@ package net.goldenstack.loot;
 import net.goldenstack.loot.util.LootNumberRange;
 import net.goldenstack.loot.util.VanillaInterface;
 import net.goldenstack.loot.util.ListOperation;
+import net.goldenstack.loot.util.RelevantTarget;
 import net.goldenstack.loot.util.predicate.ItemPredicate;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.BinaryTag;
@@ -18,6 +19,7 @@ import net.minestom.server.component.DataComponents;
 import net.minestom.server.codec.Transcoder;
 import net.minestom.server.entity.EquipmentSlotGroup;
 import net.minestom.server.entity.Entity;
+import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.attribute.Attribute;
 import net.minestom.server.entity.attribute.AttributeOperation;
 import net.minestom.server.instance.block.predicate.DataComponentPredicates;
@@ -329,6 +331,20 @@ class LootFunctionTest {
         var result = function.apply(input, context);
 
         assertEquals(1, result.get(DataComponents.MAX_STACK_SIZE));
+        assertNull(result.get(DataComponents.CUSTOM_NAME));
+    }
+
+    @Test
+    void copyNameClearsAnExistingNameWhenTheSourceHasNoName() {
+        MinecraftServer.init();
+
+        var entity = new Entity(EntityType.ZOMBIE);
+        var input = ItemStack.of(Material.STONE).with(DataComponents.CUSTOM_NAME, Component.text("stone"));
+        var function = new LootFunction.CopyName(List.of(), RelevantTarget.THIS);
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of(LootContext.THIS_ENTITY, entity));
+
+        var result = function.apply(input, context);
+
         assertNull(result.get(DataComponents.CUSTOM_NAME));
     }
 }

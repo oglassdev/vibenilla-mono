@@ -470,20 +470,23 @@ public interface LootFunction {
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
-            if (!LootPredicate.all(predicates, context)) return input;
-
-            Object key = context.get(source.key());
-
-            Component customName;
-            if (key instanceof Entity entity && entity.getCustomName() != null) {
-                customName = entity.getCustomName();
-            } else if (key instanceof Block block && block.hasTag(VanillaInterface.CUSTOM_NAME)) {
-                customName = block.getTag(VanillaInterface.CUSTOM_NAME);
-            } else {
+            if (!LootPredicate.all(this.predicates, context)) {
                 return input;
             }
 
-            return input.with(DataComponents.CUSTOM_NAME, customName);
+            var key = context.get(this.source.key());
+
+            if (key instanceof Entity entity) {
+                var customName = entity.getCustomName();
+                return customName == null ? input.without(DataComponents.CUSTOM_NAME) : input.with(DataComponents.CUSTOM_NAME, customName);
+            }
+
+            if (key instanceof Block block && block.hasTag(VanillaInterface.CUSTOM_NAME)) {
+                var customName = block.getTag(VanillaInterface.CUSTOM_NAME);
+                return customName == null ? input.without(DataComponents.CUSTOM_NAME) : input.with(DataComponents.CUSTOM_NAME, customName);
+            }
+
+            return input;
         }
 
         @Override
@@ -1086,7 +1089,6 @@ public interface LootFunction {
 
             return input.with(builder -> {
                 for (var entry : this.changes.entrySet()) {
-
                     if (entry.value() == null) {
                         builder.remove(entry.component());
                     } else {
