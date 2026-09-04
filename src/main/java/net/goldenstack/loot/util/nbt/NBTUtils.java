@@ -53,7 +53,7 @@ public class NBTUtils {
         if (standard instanceof CompoundBinaryTag standardCompound) {
             CompoundBinaryTag comparisonCompound = ((CompoundBinaryTag) comparison);
             for (String key : standardCompound.keySet()) {
-                if (!compareNBT(comparisonCompound.get(key), comparisonCompound.get(key), assureListOrder)) {
+                if (!compareNBT(standardCompound.get(key), comparisonCompound.get(key), assureListOrder)) {
                     return false;
                 }
             }
