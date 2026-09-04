@@ -5,12 +5,14 @@ import net.goldenstack.loot.util.RelevantEntity;
 import net.goldenstack.loot.util.LootNumberRange;
 import net.goldenstack.loot.util.predicate.DamageSourcePredicate;
 import net.goldenstack.loot.util.predicate.EntityPredicate;
+import net.minestom.server.MinecraftServer;
+import net.minestom.server.adventure.MinestomAdventure;
+import net.minestom.server.codec.Transcoder;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.damage.DamageType;
-import net.minestom.server.MinecraftServer;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.world.clock.WorldClock;
 import org.junit.jupiter.api.Test;
@@ -54,6 +56,21 @@ class LootPredicateTest {
 
         assertEquals(true, new LootPredicate.EntityProperties(null, RelevantEntity.THIS).test(context));
         assertEquals(true, new LootPredicate.DamageSourceProperties(null).test(context));
+    }
+
+    @Test
+    void entityPropertiesPredicateIsOptionalInTheVanillaSchema() throws Exception {
+        MinecraftServer.init();
+
+        var input = MinestomAdventure.tagStringIO().asTag("""
+                {
+                  "condition": "minecraft:entity_properties",
+                  "entity": "this"
+                }
+                """);
+        var predicate = LootPredicate.EntityProperties.CODEC.decode(Transcoder.NBT, input).orElseThrow();
+
+        assertEquals(new LootPredicate.EntityProperties(null, RelevantEntity.THIS), predicate);
     }
 
     @Test

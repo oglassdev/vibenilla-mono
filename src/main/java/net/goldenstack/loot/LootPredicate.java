@@ -233,7 +233,7 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
 
     record EntityProperties(@Nullable EntityPredicate predicate, @NotNull RelevantEntity entity) implements LootPredicate {
         public static final @NotNull StructCodec<EntityProperties> CODEC = StructCodec.struct(
-                "predicate", EntityPredicate.CODEC, EntityProperties::predicate,
+                "predicate", EntityPredicate.CODEC.optional(), EntityProperties::predicate,
                 "entity", RelevantEntity.CODEC, EntityProperties::entity,
                 EntityProperties::new
         );
