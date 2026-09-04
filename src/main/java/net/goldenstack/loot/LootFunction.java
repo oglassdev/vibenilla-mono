@@ -859,17 +859,23 @@ public interface LootFunction {
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
-            if (!LootPredicate.all(predicates, context)) return input;
+            if (!LootPredicate.all(this.predicates, context)) {
+                return input;
+            }
 
             if (input.isAir()) {
                 return input;
             }
 
-            List<ItemStack> items = input.get(component);
-            if (items == null) return input;
+            var items = input.get(this.component);
 
-            List<ItemStack> updated = new ArrayList<>();
-            for (ItemStack item : items) {
+            if (items == null) {
+                return input;
+            }
+
+            var updated = new ArrayList<ItemStack>();
+
+            for (var item : items) {
                 if (item.isAir()) {
                     updated.add(item);
                     continue;
@@ -879,7 +885,7 @@ public interface LootFunction {
                 updated.add(modifiedItem.withAmount(Math.min(modifiedItem.amount(), modifiedItem.maxStackSize())));
             }
 
-            return input.with(component, updated);
+            return input.with(this.component, updated);
         }
 
         @Override
@@ -1090,23 +1096,25 @@ public interface LootFunction {
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
-            if (!LootPredicate.all(predicates, context)) return input;
+            if (!LootPredicate.all(this.predicates, context)) {
+                return input;
+            }
 
             if (input.isAir()) {
                 return input;
             }
 
-            List<ItemStack> contents = new ArrayList<>();
+            var contents = new ArrayList<ItemStack>();
 
-            for (LootEntry entry : entries) {
-                for (LootEntry.Choice choice : entry.requestChoices(context)) {
+            for (var entry : this.entries) {
+                for (var choice : entry.requestChoices(context)) {
                     for (var item : choice.generate(context)) {
                         LootFunction.addStackSplits(contents, item);
                     }
                 }
             }
 
-            return input.with(type, contents);
+            return input.with(this.type, contents);
         }
 
         @Override
