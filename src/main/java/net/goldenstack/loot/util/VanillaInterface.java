@@ -132,6 +132,10 @@ public interface VanillaInterface {
         return null;
     }
 
+    default @Nullable Boolean locationCanSeeSky(@NotNull Instance instance, @NotNull Point point) {
+        return null;
+    }
+
     default @NotNull ItemStack explorationMap(@NotNull ItemStack input,
                                                @NotNull Instance world,
                                                @NotNull Point origin,

@@ -21,7 +21,9 @@ import java.util.Map;
 @SuppressWarnings("UnstableApiUsage")
 public interface LocationPredicate {
 
-    @NotNull Codec<LocationPredicate> CODEC = Properties.CODEC.transform(value -> value, value -> (Properties) value);
+    @NotNull Codec<LocationPredicate> CODEC = Codec.ForwardRef(
+            () -> Properties.CODEC.transform(value -> value, value -> (Properties) value)
+    );
 
     boolean test(@NotNull Instance instance, @NotNull Point point);
 
@@ -72,19 +74,18 @@ public interface LocationPredicate {
                 return false;
             }
 
-            var needsBlock = this.biomes != null || this.structures != null || this.smokey != null
-                    || this.light != null || this.block != null || this.fluid != null || this.canSeeSky != null;
-            if (!needsBlock) {
+            var needsLoadedChunk = this.biomes != null || this.structures != null || this.smokey != null;
+            if (!needsLoadedChunk && this.light == null && this.block == null && this.fluid == null && this.canSeeSky == null) {
 
                 return true;
             }
 
-            if (!instance.isChunkLoaded(point)) {
+            if (needsLoadedChunk && !instance.isChunkLoaded(point)) {
 
                 return false;
             }
 
-            var block = instance.getBlock(point);
+            var block = this.block == null ? null : instance.getBlock(point);
             if (this.biomes != null && !this.biomes.contains(instance.getBiome(point.blockX(), point.blockY(), point.blockZ()))) {
 
                 return false;
@@ -96,14 +97,16 @@ public interface LocationPredicate {
                 return false;
             }
 
-            var smokey = vanilla.locationSmokey(instance, point);
-            if (smokey == null) {
-                smokey = isSmokey(instance, point);
-            }
+            if (this.smokey != null) {
+                var smokey = vanilla.locationSmokey(instance, point);
+                if (smokey == null) {
+                    smokey = isSmokey(instance, point);
+                }
 
-            if (this.smokey != null && this.smokey != smokey) {
+                if (this.smokey != smokey) {
 
-                return false;
+                    return false;
+                }
             }
 
             if (this.light != null) {
@@ -129,7 +132,11 @@ public interface LocationPredicate {
                 return false;
             }
 
-            var canSeeSky = instance.getSkyLight(point.blockX(), point.blockY(), point.blockZ()) == 15;
+            var canSeeSky = vanilla.locationCanSeeSky(instance, point);
+            if (canSeeSky == null) {
+                canSeeSky = instance.getSkyLight(point.blockX(), point.blockY(), point.blockZ()) == 15;
+            }
+
             return this.canSeeSky == null || this.canSeeSky == canSeeSky;
         }
 
