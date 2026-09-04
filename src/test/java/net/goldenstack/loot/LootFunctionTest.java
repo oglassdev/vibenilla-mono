@@ -358,4 +358,18 @@ class LootFunctionTest {
 
         assertEquals(255, result.get(DataComponents.FIREWORKS).flightDuration());
     }
+
+    @Test
+    void setDamageUsesVanillaFloatPrecision() {
+        MinecraftServer.init();
+
+        var input = ItemStack.of(Material.DIAMOND_SWORD);
+        var function = new LootFunction.SetDamage(
+                List.of(), new LootNumber.Constant(0.2639333760409993), false
+        );
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of());
+        var result = function.apply(input, context);
+
+        assertEquals(1148, result.get(DataComponents.DAMAGE));
+    }
 }

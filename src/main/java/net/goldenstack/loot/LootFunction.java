@@ -1270,19 +1270,20 @@ public interface LootFunction {
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
-            if (!LootPredicate.all(predicates, context)) return input;
+            if (!LootPredicate.all(this.predicates, context)) {
+                return input;
+            }
 
-            int maxDamage = input.get(DataComponents.MAX_DAMAGE, -1);
-            if (maxDamage == -1) return input;
+            var maxDamage = input.get(DataComponents.MAX_DAMAGE, -1);
+            if (maxDamage <= 0) {
+                return input;
+            }
 
-            double damage = input.get(DataComponents.DAMAGE, 0) / (double) maxDamage;
+            var currentDamage = input.get(DataComponents.DAMAGE, 0);
+            var base = this.add ? 1.0F - (float) currentDamage / (float) maxDamage : 0.0F;
+            var percentage = 1.0F - Math.max(0.0F, Math.min(1.0F, (float) this.damage.getDouble(context) + base));
 
-            double currentDura = add ? 1 - damage : 0;
-            double newDura = Math.max(0, Math.min(1, currentDura + this.damage.getDouble(context)));
-
-            double newDamage = 1 - newDura;
-
-            return input.with(DataComponents.DAMAGE, (int) Math.floor(newDamage * maxDamage));
+            return input.with(DataComponents.DAMAGE, (int) Math.floor(percentage * (float) maxDamage));
         }
 
         @Override
