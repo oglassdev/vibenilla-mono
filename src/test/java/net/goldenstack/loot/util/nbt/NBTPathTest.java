@@ -71,6 +71,15 @@ final class NBTPathTest {
     }
 
     @Test
+    void preservesQuotedKeysWhenFormattingPaths() throws Exception {
+        var path = Parser.readPath(new StringReader("\"a.b\""));
+        var source = CompoundBinaryTag.builder().put("a.b", IntBinaryTag.intBinaryTag(1)).build();
+
+        assertEquals("\"a.b\"", path.toString());
+        assertEquals(1, path.get(source).size());
+    }
+
+    @Test
     void rejectsUnclosedListSelectors() {
         assertThrows(IllegalArgumentException.class, () -> Parser.readPath(new StringReader("foo[0")));
     }

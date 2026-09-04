@@ -26,6 +26,18 @@ public record NBTPath(@NotNull List<Selector> selectors) {
     @SuppressWarnings("UnstableApiUsage")
     public static final @NotNull Codec<NBTPath> CODEC = Parser.CODEC;
 
+    private static @NotNull String formatKey(@NotNull String key) {
+        for (var character : key.toCharArray()) {
+            if (character == ' ' || character == '.' || character == '\'' || character == '"'
+                    || character == '{' || character == '}' || character == '[' || character == ']') {
+                var escaped = key.replace("\\", "\\\\").replace("\"", "\\\"");
+                return "\"" + escaped + "\"";
+            }
+        }
+
+        return key;
+    }
+
     /**
      * Selects an arbitrary number of elements from provided NBT.
      */
@@ -69,7 +81,7 @@ public record NBTPath(@NotNull List<Selector> selectors) {
 
             @Override
             public String toString() {
-                return key;
+                return NBTPath.formatKey(this.key);
             }
         }
 
@@ -95,7 +107,7 @@ public record NBTPath(@NotNull List<Selector> selectors) {
 
             @Override
             public String toString() {
-                return "." + key;
+                return "." + NBTPath.formatKey(this.key);
             }
         }
 
@@ -150,7 +162,7 @@ public record NBTPath(@NotNull List<Selector> selectors) {
             @Override
             public String toString() {
                 try {
-                    return this.key + TagStringIO.tagStringIO().asString(this.filter);
+                    return NBTPath.formatKey(this.key) + TagStringIO.tagStringIO().asString(this.filter);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
