@@ -4,17 +4,24 @@ import net.goldenstack.loot.util.VanillaInterface;
 import net.goldenstack.loot.util.RelevantEntity;
 import net.goldenstack.loot.util.LootNumberRange;
 import net.goldenstack.loot.util.predicate.DamageSourcePredicate;
+import net.goldenstack.loot.util.predicate.EntityPredicate;
 import net.minestom.server.coordinate.Pos;
+import net.minestom.server.coordinate.Point;
+import net.minestom.server.entity.Entity;
+import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.instance.Instance;
 import net.minestom.server.world.clock.WorldClock;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LootPredicateTest {
 
@@ -64,5 +71,29 @@ class LootPredicateTest {
         var range = new LootNumberRange(new LootNumber.Constant(42.0), new LootNumber.Constant(42.0));
 
         assertEquals(true, new LootPredicate.TimeCheck(WorldClock.OVERWORLD, null, range).test(context));
+    }
+
+    @Test
+    void damageSourceEntityPredicatesReceiveTheVanillaInterface() {
+        MinecraftServer.init();
+
+        var world = MinecraftServer.getInstanceManager().createInstanceContainer();
+        var entity = new Entity(EntityType.ITEM);
+        var vanilla = VanillaInterface.defaults();
+        var entityPredicate = new EntityPredicate() {
+            @Override
+            public boolean test(Instance instance, Point position, Entity entity) {
+                return false;
+            }
+
+            @Override
+            public boolean test(Instance instance, Point position, Entity entity, VanillaInterface activeVanilla) {
+                return activeVanilla == vanilla;
+            }
+        };
+        var predicate = new DamageSourcePredicate.Properties(List.of(), entityPredicate, null, null);
+        var damageType = DamageType.create("test", "default", 0.0F, null, null);
+
+        assertTrue(predicate.test(world, new Pos(0.0, 0.0, 0.0), damageType, entity, null, vanilla));
     }
 }

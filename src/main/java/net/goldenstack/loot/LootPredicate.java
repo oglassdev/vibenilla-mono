@@ -184,7 +184,8 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
                     origin,
                     damage,
                     context.get(LootContext.DIRECT_ATTACKING_ENTITY),
-                    context.get(LootContext.ATTACKING_ENTITY)
+                    context.get(LootContext.ATTACKING_ENTITY),
+                    context.vanilla()
             );
         }
 

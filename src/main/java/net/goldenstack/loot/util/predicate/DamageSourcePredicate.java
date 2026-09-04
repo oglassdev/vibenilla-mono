@@ -1,6 +1,7 @@
 package net.goldenstack.loot.util.predicate;
 
 import net.goldenstack.loot.LootContext;
+import net.goldenstack.loot.util.VanillaInterface;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
@@ -32,6 +33,15 @@ public interface DamageSourcePredicate {
                          @NotNull DamageType type,
                          @Nullable Entity directEntity,
                          @Nullable Entity sourceEntity) {
+        return this.test(instance, position, type, directEntity, sourceEntity, VanillaInterface.defaults());
+    }
+
+    default boolean test(@NotNull Instance instance,
+                         @NotNull Point position,
+                         @NotNull DamageType type,
+                         @Nullable Entity directEntity,
+                         @Nullable Entity sourceEntity,
+                         @NotNull VanillaInterface vanilla) {
         return this.test(instance, position, type);
     }
 
@@ -50,6 +60,13 @@ public interface DamageSourcePredicate {
         @Override
         public boolean test(@NotNull Instance instance, @NotNull Point position, @NotNull DamageType type,
                             @Nullable Entity directEntity, @Nullable Entity sourceEntity) {
+            return this.test(instance, position, type, directEntity, sourceEntity, VanillaInterface.defaults());
+        }
+
+        @Override
+        public boolean test(@NotNull Instance instance, @NotNull Point position, @NotNull DamageType type,
+                            @Nullable Entity directEntity, @Nullable Entity sourceEntity,
+                            @NotNull VanillaInterface vanilla) {
             for (var tag : this.tags) {
                 var typeKey = MinecraftServer.getDamageTypeRegistry().getKey(type);
                 var registryTag = MinecraftServer.getDamageTypeRegistry().getTag(tag.id().key());
@@ -62,13 +79,13 @@ public interface DamageSourcePredicate {
             }
 
             if (this.directEntity != null
-                    && (directEntity == null || !this.directEntity.test(instance, position, directEntity))) {
+                    && (directEntity == null || !this.directEntity.test(instance, position, directEntity, vanilla))) {
 
                 return false;
             }
 
             if (this.sourceEntity != null
-                    && (sourceEntity == null || !this.sourceEntity.test(instance, position, sourceEntity))) {
+                    && (sourceEntity == null || !this.sourceEntity.test(instance, position, sourceEntity, vanilla))) {
 
                 return false;
             }
