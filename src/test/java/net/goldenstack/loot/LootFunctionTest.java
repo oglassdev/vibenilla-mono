@@ -9,9 +9,11 @@ import net.kyori.adventure.nbt.BinaryTag;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.nbt.IntBinaryTag;
 import net.kyori.adventure.nbt.StringBinaryTag;
+import net.kyori.adventure.text.Component;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.adventure.MinestomAdventure;
 import net.minestom.server.color.Color;
+import net.minestom.server.component.DataComponentMap;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.codec.Transcoder;
 import net.minestom.server.entity.EquipmentSlotGroup;
@@ -309,5 +311,24 @@ class LootFunctionTest {
         assertEquals(current.get("keep"), result.get("keep"));
         assertEquals(IntBinaryTag.intBinaryTag(2), ((CompoundBinaryTag) result.get("nested")).get("old"));
         assertEquals(IntBinaryTag.intBinaryTag(3), ((CompoundBinaryTag) result.get("nested")).get("new"));
+    }
+
+    @Test
+    void setComponentsAppliesAndRemovesComponents() {
+        MinecraftServer.init();
+
+        var changes = DataComponentMap.patchBuilder()
+                .set(DataComponents.MAX_STACK_SIZE, 1)
+                .remove(DataComponents.CUSTOM_NAME)
+                .build();
+        var input = ItemStack.of(Material.STONE).with(builder -> builder
+                .set(DataComponents.MAX_STACK_SIZE, 64)
+                .set(DataComponents.CUSTOM_NAME, Component.text("stone")));
+        var function = new LootFunction.SetComponents(List.of(), changes);
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of());
+        var result = function.apply(input, context);
+
+        assertEquals(1, result.get(DataComponents.MAX_STACK_SIZE));
+        assertNull(result.get(DataComponents.CUSTOM_NAME));
     }
 }

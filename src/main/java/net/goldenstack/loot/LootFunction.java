@@ -1080,21 +1080,25 @@ public interface LootFunction {
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
-            if (!LootPredicate.all(predicates, context)) return input;
-
-            ItemStack.Builder builder = input.builder();
-
-            // This and .constantGeneric are hacks for until there exists a way to apply a patch to an item
-            for (DataComponent.Value entry : changes.entrySet()) {
-                constantGeneric(builder, entry.component(), entry.value());
+            if (!LootPredicate.all(this.predicates, context)) {
+                return input;
             }
 
-            return builder.build();
+            return input.with(builder -> {
+                for (var entry : this.changes.entrySet()) {
+
+                    if (entry.value() == null) {
+                        builder.remove(entry.component());
+                    } else {
+                        this.setComponent(builder, entry.component(), entry.value());
+                    }
+                }
+            });
         }
 
         @SuppressWarnings("unchecked")
-        private static <T> void constantGeneric(@NotNull ItemStack.Builder builder, @NotNull DataComponent<T> key, Object value) {
-            builder.set(key, (T) value);
+        private <T> void setComponent(@NotNull ItemStack.Builder builder, @NotNull DataComponent<T> component, Object value) {
+            builder.set(component, (T) value);
         }
 
         @Override
