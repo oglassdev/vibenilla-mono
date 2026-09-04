@@ -74,6 +74,16 @@ class LootPredicateTest {
     }
 
     @Test
+    void locationCheckPredicateIsOptionalInTheVanillaSchema() throws Exception {
+        MinecraftServer.init();
+
+        var input = MinestomAdventure.tagStringIO().asTag("{}");
+        var predicate = LootPredicate.LocationCheck.CODEC.decode(Transcoder.NBT, input).orElseThrow();
+
+        assertEquals(new LootPredicate.LocationCheck(null, 0, 0, 0), predicate);
+    }
+
+    @Test
     void damageSourcePredicateCodecInitializesOnFirstUse() {
         assertNotNull(DamageSourcePredicate.CODEC);
     }
