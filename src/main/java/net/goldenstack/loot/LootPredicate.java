@@ -371,9 +371,18 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
     }
 
     record RandomChanceWithEnchantedBonus(@NotNull RegistryKey<Enchantment> enchantment, float unenchantedChance, @NotNull LevelBasedValue enchantedChance) implements LootPredicate {
+        private static final @NotNull Codec<Float> CHANCE_CODEC = Codec.FLOAT.transform(value -> {
+
+            if (value < 0.0F || value > 1.0F) {
+                throw new IllegalArgumentException("Chance must be between 0.0F and 1.0F");
+            }
+
+            return value;
+        }, value -> value);
+
         public static final @NotNull StructCodec<RandomChanceWithEnchantedBonus> CODEC = StructCodec.struct(
                 "enchantment", RegistryKey.codec(Registries::enchantment), RandomChanceWithEnchantedBonus::enchantment,
-                "unenchanted_chance", Codec.FLOAT, RandomChanceWithEnchantedBonus::unenchantedChance,
+                "unenchanted_chance", CHANCE_CODEC, RandomChanceWithEnchantedBonus::unenchantedChance,
                 "enchanted_chance", LevelBasedValue.CODEC, RandomChanceWithEnchantedBonus::enchantedChance,
                 RandomChanceWithEnchantedBonus::new
         );

@@ -144,4 +144,19 @@ class LootFunctionTest {
 
         assertThrows(IllegalArgumentException.class, () -> LootFunction.SetStewEffect.CODEC.decode(Transcoder.NBT, input).orElseThrow());
     }
+
+    @Test
+    void randomChanceWithEnchantedBonusRejectsChanceOutsideVanillaRange() throws Exception {
+        MinecraftServer.init();
+
+        var input = MinestomAdventure.tagStringIO().asTag("""
+                {
+                  enchantment: "minecraft:looting",
+                  unenchanted_chance: 1.1F,
+                  enchanted_chance: 0.5F
+                }
+                """);
+
+        assertThrows(IllegalArgumentException.class, () -> LootPredicate.RandomChanceWithEnchantedBonus.CODEC.decode(Transcoder.NBT, input).orElseThrow());
+    }
 }
