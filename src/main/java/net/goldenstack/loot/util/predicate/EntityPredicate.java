@@ -18,6 +18,7 @@ import net.minestom.server.entity.metadata.AgeableMobMeta;
 import net.minestom.server.entity.metadata.animal.SheepMeta;
 import net.minestom.server.entity.metadata.cube.AbstractCubeMeta;
 import net.minestom.server.entity.metadata.monster.raider.RaiderMeta;
+import net.minestom.server.entity.vehicle.PlayerInputs;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.predicate.DataComponentPredicates;
 import net.minestom.server.instance.block.predicate.NbtPredicate;
@@ -680,8 +681,11 @@ public interface EntityPredicate {
         );
 
         public boolean test(@NotNull Player player) {
-            var input = player.inputs();
-            return this.forward == null || this.forward == input.forward()
+            return this.matches(player.inputs());
+        }
+
+        private boolean matches(@NotNull PlayerInputs input) {
+            return (this.forward == null || this.forward == input.forward())
                     && (this.backward == null || this.backward == input.backward())
                     && (this.left == null || this.left == input.left())
                     && (this.right == null || this.right == input.right())

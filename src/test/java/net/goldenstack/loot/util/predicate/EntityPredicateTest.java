@@ -3,9 +3,14 @@ package net.goldenstack.loot.util.predicate;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.adventure.MinestomAdventure;
 import net.minestom.server.codec.Transcoder;
+import net.minestom.server.entity.Player;
+import net.minestom.server.network.player.GameProfile;
 import org.junit.jupiter.api.Test;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EntityPredicateTest {
@@ -48,5 +53,16 @@ class EntityPredicateTest {
 
         assertInstanceOf(EntityPredicate.Composite.class, predicate);
         assertTrue(((EntityPredicate.Composite) predicate).parts().size() >= 20);
+    }
+
+    @Test
+    void playerInputChecksEverySpecifiedField() {
+        MinecraftServer.init();
+
+        var player = new Player(null, new GameProfile(UUID.randomUUID(), "test"));
+        player.inputs().refresh(false, true, false, false, false, false, false);
+        var predicate = new EntityPredicate.FishingHookInput(null, false, null, null, null, null, null);
+
+        assertFalse(predicate.test(player));
     }
 }
