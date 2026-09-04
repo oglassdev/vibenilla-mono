@@ -154,6 +154,23 @@ public interface LootFunction {
         return newItems;
     }
 
+    private static void addStackSplits(@NotNull List<ItemStack> items, @NotNull ItemStack item) {
+        var maximumStackSize = item.maxStackSize();
+
+        if (item.amount() < maximumStackSize) {
+            items.add(item);
+            return;
+        }
+
+        var remainingAmount = item.amount();
+
+        while (remainingAmount > 0) {
+            var splitAmount = Math.min(maximumStackSize, remainingAmount);
+            items.add(item.withAmount(splitAmount));
+            remainingAmount -= splitAmount;
+        }
+    }
+
     record ApplyBonus(@NotNull List<LootPredicate> predicates, @NotNull RegistryKey<Enchantment> enchantment, @NotNull Formula.Wrapper formula) implements LootFunction {
         public static final @NotNull StructCodec<ApplyBonus> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), ApplyBonus::predicates,
@@ -844,12 +861,22 @@ public interface LootFunction {
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
             if (!LootPredicate.all(predicates, context)) return input;
 
+            if (input.isAir()) {
+                return input;
+            }
+
             List<ItemStack> items = input.get(component);
             if (items == null) return input;
 
             List<ItemStack> updated = new ArrayList<>();
             for (ItemStack item : items) {
-                updated.add(LootFunction.apply(modifier, item, context));
+                if (item.isAir()) {
+                    updated.add(item);
+                    continue;
+                }
+
+                var modifiedItem = LootFunction.apply(modifier, item, context);
+                updated.add(modifiedItem.withAmount(Math.min(modifiedItem.amount(), modifiedItem.maxStackSize())));
             }
 
             return input.with(component, updated);
@@ -1065,11 +1092,17 @@ public interface LootFunction {
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
             if (!LootPredicate.all(predicates, context)) return input;
 
+            if (input.isAir()) {
+                return input;
+            }
+
             List<ItemStack> contents = new ArrayList<>();
 
             for (LootEntry entry : entries) {
                 for (LootEntry.Choice choice : entry.requestChoices(context)) {
-                    contents.addAll(choice.generate(context));
+                    for (var item : choice.generate(context)) {
+                        LootFunction.addStackSplits(contents, item);
+                    }
                 }
             }
 

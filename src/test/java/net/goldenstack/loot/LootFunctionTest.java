@@ -97,4 +97,33 @@ class LootFunctionTest {
         var encoded = LootFunction.SetName.Target.CODEC.encode(Transcoder.NBT, target).orElseThrow();
         assertEquals("item_name", ((StringBinaryTag) encoded).value());
     }
+
+    @Test
+    void containerFunctionsMatchVanillaStackHandling() {
+        MinecraftServer.init();
+
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of());
+        var setCount = new LootFunction.SetCount(List.of(), new LootNumber.Constant(70.0), false);
+        var entry = new LootEntry.Item(List.of(), List.of(setCount), 1L, 0L, Material.STONE);
+        var setContents = new LootFunction.SetContents(List.of(), List.of(entry), DataComponents.CONTAINER);
+        var container = setContents.apply(ItemStack.of(Material.BUNDLE), context);
+        var contents = container.get(DataComponents.CONTAINER);
+
+        assertEquals(2, contents.size());
+        assertEquals(Material.STONE, contents.get(0).material());
+        assertEquals(64, contents.get(0).amount());
+        assertEquals(Material.STONE, contents.get(1).material());
+        assertEquals(6, contents.get(1).amount());
+
+        var modifyContents = new LootFunction.ModifyContents(
+                List.of(), List.of(new LootFunction.SetCount(List.of(), new LootNumber.Constant(70.0), false)), DataComponents.CONTAINER
+        );
+        var modified = modifyContents.apply(container, context).get(DataComponents.CONTAINER);
+
+        assertEquals(2, modified.size());
+        assertEquals(Material.STONE, modified.get(0).material());
+        assertEquals(64, modified.get(0).amount());
+        assertEquals(Material.STONE, modified.get(1).material());
+        assertEquals(64, modified.get(1).amount());
+    }
 }
