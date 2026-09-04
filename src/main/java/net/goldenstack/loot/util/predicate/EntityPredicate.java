@@ -478,9 +478,11 @@ public interface EntityPredicate {
 
     record PeriodicTickPredicate(int periodicTick) implements EntityPredicate {
         public static final @NotNull Codec<PeriodicTickPredicate> CODEC = Codec.INT.transform(value -> {
+
             if (value <= 0) {
                 throw new IllegalArgumentException("Periodic tick must be positive");
             }
+
             return new PeriodicTickPredicate(value);
         }, PeriodicTickPredicate::periodicTick);
 
