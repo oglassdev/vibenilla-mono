@@ -42,7 +42,8 @@ public record LootPool(@NotNull LootNumber rolls,
 
         var luck = context.get(LootContext.LUCK);
         if (luck != null) {
-            rolls += (int) Math.floor(luck * this.bonusRolls.getDouble(context));
+            var bonusRolls = (float) this.bonusRolls.getDouble(context);
+            rolls += (int) Math.floor(bonusRolls * luck.floatValue());
         }
 
         var items = new ArrayList<ItemStack>();

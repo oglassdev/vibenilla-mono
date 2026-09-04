@@ -43,4 +43,22 @@ class LootPoolTest {
         assertNotNull(LootPool.pickChoice(List.of(entry), context));
         assertEquals(expectedRandom.nextInt(), random.nextInt());
     }
+
+    @Test
+    void bonusRollsUseVanillaFloatPrecision() {
+        MinecraftServer.init();
+
+        var context = LootContext.from(
+                VanillaInterface.defaults(),
+                Map.of(LootContext.LUCK, 1.0, LootContext.RANDOM, new Random(1L))
+        );
+        var entry = new LootEntry.Item(List.of(), List.of(), 1L, 0L, Material.STONE);
+        var pool = new LootPool(
+                new LootNumber.Constant(0.0),
+                new LootNumber.Constant(0.99999999),
+                List.of(entry), List.of(), List.of()
+        );
+
+        assertEquals(1, pool.generate(context).size());
+    }
 }
