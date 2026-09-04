@@ -1654,11 +1654,28 @@ public interface LootFunction {
     }
 
     record SetStewEffect(@NotNull List<LootPredicate> predicates, @NotNull List<AddedEffect> effects) implements LootFunction {
+        private static final @NotNull Codec<List<AddedEffect>> EFFECTS_CODEC = AddedEffect.CODEC.list().transform(
+                SetStewEffect::validateEffects,
+                effects -> effects
+        );
+
         public static final @NotNull StructCodec<SetStewEffect> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), SetStewEffect::predicates,
-                "effects", AddedEffect.CODEC.list().optional(List.of()), SetStewEffect::effects,
+                "effects", EFFECTS_CODEC.optional(List.of()), SetStewEffect::effects,
                 SetStewEffect::new
         );
+
+        private static @NotNull List<AddedEffect> validateEffects(@NotNull List<AddedEffect> effects) {
+            var seenEffects = new HashSet<PotionEffect>();
+
+            for (var effect : effects) {
+                if (!seenEffects.add(effect.effect())) {
+                    throw new IllegalArgumentException("Encountered duplicate mob effect: '" + effect.effect() + "'");
+                }
+            }
+
+            return effects;
+        }
 
         public record AddedEffect(@NotNull PotionEffect effect, @NotNull LootNumber duration) {
             public static final @NotNull StructCodec<AddedEffect> CODEC = StructCodec.struct(
@@ -1677,7 +1694,7 @@ public interface LootFunction {
             AddedEffect effect = effects.get(context.require(LootContext.RANDOM).nextInt(effects.size()));
 
             long duration = effect.duration().getInt(context);
-            if (!effect.effect().registry().isInstantaneous()) {
+            if (!effect.effect().instantaneous()) {
                 duration *= ServerFlag.SERVER_TICKS_PER_SECOND;
             }
 

@@ -22,6 +22,7 @@ import java.util.Random;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class LootFunctionTest {
 
@@ -125,5 +126,22 @@ class LootFunctionTest {
         assertEquals(64, modified.get(0).amount());
         assertEquals(Material.STONE, modified.get(1).material());
         assertEquals(64, modified.get(1).amount());
+    }
+
+    @Test
+    void setStewEffectRejectsDuplicateEffects() throws Exception {
+        MinecraftServer.init();
+
+        var input = MinestomAdventure.tagStringIO().asTag("""
+                {
+                  conditions: [],
+                  effects: [
+                    {type: "minecraft:speed", duration: 1},
+                    {type: "minecraft:speed", duration: 2}
+                  ]
+                }
+                """);
+
+        assertThrows(IllegalArgumentException.class, () -> LootFunction.SetStewEffect.CODEC.decode(Transcoder.NBT, input).orElseThrow());
     }
 }
