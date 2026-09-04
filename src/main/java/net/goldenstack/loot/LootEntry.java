@@ -95,7 +95,7 @@ public interface LootEntry {
 
             @Override
             default @Range(from = 0L, to = Long.MAX_VALUE) long getWeight(@NotNull LootContext context) {
-                return Math.max(0L, (long) Math.floor(weight() + quality() * context.get(LootContext.LUCK, 0d)));
+                return Math.max(0L, (long) Math.floor((float) this.weight() + (float) this.quality() * context.get(LootContext.LUCK, 0.0).floatValue()));
             }
 
         }

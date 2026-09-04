@@ -82,4 +82,17 @@ class LootPoolTest {
         assertSame(expectedChoice, choice);
         assertEquals(expectedRandom.nextInt(), random.nextInt());
     }
+
+    @Test
+    void effectiveWeightUsesVanillaFloatPrecision() {
+        MinecraftServer.init();
+
+        var context = LootContext.from(
+                VanillaInterface.defaults(),
+                Map.of(LootContext.LUCK, 0.99999999, LootContext.RANDOM, new Random(1L))
+        );
+        var entry = new LootEntry.Item(List.of(), List.of(), 1L, 1L, Material.STONE);
+
+        assertEquals(2L, entry.getWeight(context));
+    }
 }
