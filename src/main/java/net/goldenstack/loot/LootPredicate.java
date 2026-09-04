@@ -429,6 +429,12 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
     }
 
     record TableBonus(@NotNull RegistryKey<Enchantment> enchantment, @NotNull List<Float> chances) implements LootPredicate {
+        public TableBonus {
+            if (chances.isEmpty()) {
+                throw new IllegalArgumentException("Table bonus chances must not be empty");
+            }
+        }
+
         public static final @NotNull StructCodec<TableBonus> CODEC = StructCodec.struct(
                 "enchantment", RegistryKey.codec(Registries::enchantment), TableBonus::enchantment,
                 "chances", Codec.FLOAT.list(), TableBonus::chances,
