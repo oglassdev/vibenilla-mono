@@ -795,9 +795,18 @@ public interface EntityPredicate {
             }
 
             var blocks = vanilla.entityInteger(Key.key("minecraft:blocks_set_on_fire"), entity);
-            return blocks != null
-                    && this.blocksSetOnFire.check(LootContext.from(vanilla, Map.of()), blocks)
-                    && (this.entityStruck == null || false);
+
+            if (blocks == null || !this.blocksSetOnFire.check(LootContext.from(vanilla, Map.of()), blocks)) {
+                return false;
+            }
+
+            if (this.entityStruck == null) {
+                return true;
+            }
+
+            var struckEntities = vanilla.lightningStruckEntities(entity);
+            return struckEntities != null && struckEntities.stream()
+                    .anyMatch(struckEntity -> this.entityStruck.test(instance, position, struckEntity, vanilla));
         }
     }
 

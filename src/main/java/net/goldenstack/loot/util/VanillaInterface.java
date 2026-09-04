@@ -108,6 +108,10 @@ public interface VanillaInterface {
         return null;
     }
 
+    default @Nullable List<Entity> lightningStruckEntities(@NotNull Entity lightning) {
+        return null;
+    }
+
     default @Nullable Entity entityLookedAt(@NotNull Entity entity) {
         return null;
     }
