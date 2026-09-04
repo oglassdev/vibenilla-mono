@@ -159,6 +159,10 @@ public interface VanillaInterface {
         return null;
     }
 
+    default @Nullable List<ItemStack> dynamicDrops(@NotNull Key name, @NotNull LootContext context) {
+        return null;
+    }
+
     default @NotNull List<ItemStack> slotRange(@NotNull String source,
                                                @NotNull List<Integer> slots,
                                                @NotNull LootContext context) {

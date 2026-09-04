@@ -162,6 +162,11 @@ public interface LootEntry {
 
         @Override
         public @NotNull List<ItemStack> generate(@NotNull LootContext context) {
+            var dynamicDrops = context.vanilla().dynamicDrops(this.name, context);
+            if (dynamicDrops != null) {
+                return LootFunction.apply(this.functions, dynamicDrops, context);
+            }
+
             var block = context.get(LootContext.BLOCK_STATE);
             if (block == null) return List.of();
 

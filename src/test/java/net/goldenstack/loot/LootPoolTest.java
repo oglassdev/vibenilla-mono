@@ -1,10 +1,13 @@
 package net.goldenstack.loot;
 
 import net.goldenstack.loot.util.VanillaInterface;
+import net.kyori.adventure.key.Key;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -94,5 +97,20 @@ class LootPoolTest {
         var entry = new LootEntry.Item(List.of(), List.of(), 1L, 1L, Material.STONE);
 
         assertEquals(2L, entry.getWeight(context));
+    }
+
+    @Test
+    void dynamicEntriesUseHostProvidedDropsWithoutBlockState() {
+        var vanilla = (VanillaInterface) Proxy.newProxyInstance(
+                VanillaInterface.class.getClassLoader(),
+                new Class<?>[]{VanillaInterface.class},
+                (proxy, method, arguments) -> method.getName().equals("dynamicDrops")
+                        ? List.of(ItemStack.of(Material.DIAMOND))
+                        : null
+        );
+        var context = LootContext.from(vanilla, Map.of());
+        var entry = new LootEntry.Dynamic(List.of(), List.of(), 1L, 0L, Key.key("minecraft:test"));
+
+        assertEquals(List.of(Material.DIAMOND), entry.generate(context).stream().map(ItemStack::material).toList());
     }
 }
