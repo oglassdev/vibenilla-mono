@@ -13,6 +13,7 @@ import net.minestom.server.coordinate.Pos;
 import net.minestom.server.instance.Instance;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Proxy;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -110,5 +111,17 @@ class EntityPredicateTest {
         vehicle.addPassenger(passenger);
 
         assertTrue(new EntityPredicate.EntityVehicle(nestedPredicate).test(instance, null, passenger, vanilla));
+    }
+
+    @Test
+    void entityFlagsUseHostProvidedWaterState() {
+        var vanilla = (VanillaInterface) Proxy.newProxyInstance(
+                VanillaInterface.class.getClassLoader(),
+                new Class<?>[]{VanillaInterface.class},
+                (proxy, method, arguments) -> method.getName().equals("entityBoolean") ? true : null
+        );
+        var predicate = new EntityPredicate.EntityFlagsPredicate(null, null, null, null, null, null, null, true, null);
+
+        assertTrue(predicate.test(null, null, new Entity(EntityType.ITEM), vanilla));
     }
 }

@@ -165,6 +165,14 @@ public interface EntityPredicate {
 
         @Override
         public boolean test(@NotNull Instance instance, @Nullable Point position, @Nullable Entity entity) {
+            return this.test(instance, position, entity, VanillaInterface.defaults());
+        }
+
+        @Override
+        public boolean test(@NotNull Instance instance,
+                            @Nullable Point position,
+                            @Nullable Entity entity,
+                            @NotNull VanillaInterface vanilla) {
             if (entity == null) {
 
                 return false;
@@ -209,7 +217,10 @@ public interface EntityPredicate {
             }
 
             if (this.isInWater != null) {
-                var isInWater = instance.getBlock(entity.getPosition()).fluid();
+                var isInWater = vanilla.entityBoolean(Key.key("minecraft:in_water"), entity);
+                if (isInWater == null) {
+                    isInWater = instance.getBlock(entity.getPosition()).fluid();
+                }
 
                 if (isInWater != this.isInWater) {
                     return false;
