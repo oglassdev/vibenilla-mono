@@ -32,6 +32,7 @@ import net.minestom.server.item.enchant.Enchantment;
 import net.minestom.server.potion.PotionType;
 import net.minestom.server.registry.RegistryKey;
 import net.minestom.server.registry.RegistryTag;
+import net.minestom.server.registry.RegistryTranscoder;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -39,6 +40,7 @@ import java.util.Map;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -357,6 +359,36 @@ class LootFunctionTest {
         var result = function.apply(ItemStack.of(Material.FIREWORK_ROCKET), context);
 
         assertEquals(255, result.get(DataComponents.FIREWORKS).flightDuration());
+    }
+
+    @Test
+    void containerFunctionCodecsUseVanillaFields() throws Exception {
+        MinecraftServer.init();
+
+        var setContentsInput = MinestomAdventure.tagStringIO().asTag("""
+                {
+                  function: "set_contents",
+                  conditions: [],
+                  component: "minecraft:container",
+                  entries: []
+                }
+                """);
+        var modifyContentsInput = MinestomAdventure.tagStringIO().asTag("""
+                {
+                  function: "modify_contents",
+                  conditions: [],
+                  component: "minecraft:container",
+                  modifier: {
+                    function: "set_count",
+                    conditions: [],
+                    count: 1
+                  }
+                }
+                """);
+        var transcoder = new RegistryTranscoder<>(Transcoder.NBT, MinecraftServer.process());
+
+        assertInstanceOf(LootFunction.SetContents.class, LootFunction.CODEC.decode(transcoder, setContentsInput).orElseThrow());
+        assertInstanceOf(LootFunction.ModifyContents.class, LootFunction.CODEC.decode(transcoder, modifyContentsInput).orElseThrow());
     }
 
     @Test

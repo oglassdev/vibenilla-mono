@@ -867,12 +867,17 @@ public interface LootFunction {
         }
     }
 
-    record ModifyContents(@NotNull List<LootPredicate> predicates, @NotNull List<LootFunction> modifier,
-                          @NotNull DataComponent<List<ItemStack>> component) implements LootFunction {
+    record ModifyContents(@NotNull List<LootPredicate> predicates, @NotNull DataComponent<List<ItemStack>> component,
+                          @NotNull LootFunction modifier) implements LootFunction {
+        public ModifyContents(@NotNull List<LootPredicate> predicates, @NotNull List<LootFunction> modifier,
+                              @NotNull DataComponent<List<ItemStack>> component) {
+            this(predicates, component, new Sequence(modifier));
+        }
+
         public static final @NotNull StructCodec<ModifyContents> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), ModifyContents::predicates,
-                "modifier", LootFunction.CODEC.list(), ModifyContents::modifier,
                 "component", Template.CONTAINER, ModifyContents::component,
+                "modifier", LootFunction.CODEC, ModifyContents::modifier,
                 ModifyContents::new
         );
 
@@ -900,7 +905,7 @@ public interface LootFunction {
                     continue;
                 }
 
-                var modifiedItem = LootFunction.apply(modifier, item, context);
+                var modifiedItem = this.modifier.apply(item, context);
                 updated.add(modifiedItem.withAmount(Math.min(modifiedItem.amount(), modifiedItem.maxStackSize())));
             }
 
@@ -1109,12 +1114,17 @@ public interface LootFunction {
         }
     }
 
-    record SetContents(@NotNull List<LootPredicate> predicates, @NotNull List<LootEntry> entries,
-                       @NotNull DataComponent<List<ItemStack>> type) implements LootFunction {
+    record SetContents(@NotNull List<LootPredicate> predicates, @NotNull DataComponent<List<ItemStack>> component,
+                       @NotNull List<LootEntry> entries) implements LootFunction {
+        public SetContents(@NotNull List<LootPredicate> predicates, @NotNull List<LootEntry> entries,
+                           @NotNull DataComponent<List<ItemStack>> component) {
+            this(predicates, component, entries);
+        }
+
         public static final @NotNull StructCodec<SetContents> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), SetContents::predicates,
-                "modifier", LootEntry.CODEC.list(), SetContents::entries,
-                "type", Template.CONTAINER, SetContents::type,
+                "component", Template.CONTAINER, SetContents::component,
+                "entries", LootEntry.CODEC.list(), SetContents::entries,
                 SetContents::new
         );
 
@@ -1138,7 +1148,7 @@ public interface LootFunction {
                 }
             }
 
-            return input.with(this.type, contents);
+            return input.with(this.component, contents);
         }
 
         @Override
