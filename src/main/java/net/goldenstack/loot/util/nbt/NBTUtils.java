@@ -35,6 +35,11 @@ public class NBTUtils {
             if (guaranteeList.size() == 0) {
                 return comparisonList.size() == 0;
             }
+
+            if (comparisonList.size() < guaranteeList.size()) {
+                return false;
+            }
+
             for (BinaryTag nbt : guaranteeList) {
                 boolean contains = false;
                 for (BinaryTag compare : comparisonList) {

@@ -2,6 +2,7 @@ package net.goldenstack.loot.util.nbt;
 
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.nbt.IntBinaryTag;
+import net.kyori.adventure.nbt.ListBinaryTag;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -30,5 +31,13 @@ final class NBTUtilsTest {
         assertTrue(NBTUtils.compareNBT(expected, matching, false));
         assertFalse(NBTUtils.compareNBT(expected, missing, false));
         assertFalse(NBTUtils.compareNBT(expected, mismatched, false));
+    }
+
+    @Test
+    void requiresEnoughValuesForUnorderedPartialLists() {
+        var expected = ListBinaryTag.builder().add(IntBinaryTag.intBinaryTag(1)).add(IntBinaryTag.intBinaryTag(1)).build();
+        var candidate = ListBinaryTag.builder().add(IntBinaryTag.intBinaryTag(1)).build();
+
+        assertFalse(NBTUtils.compareNBT(expected, candidate, false));
     }
 }
