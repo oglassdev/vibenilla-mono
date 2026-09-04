@@ -19,7 +19,9 @@ import java.util.List;
 @SuppressWarnings("UnstableApiUsage")
 public interface DamageSourcePredicate {
 
-    @NotNull Codec<DamageSourcePredicate> CODEC = Properties.CODEC.transform(value -> value, value -> (Properties) value);
+    @NotNull Codec<DamageSourcePredicate> CODEC = Codec.ForwardRef(
+            () -> Properties.CODEC.transform(value -> value, value -> (Properties) value)
+    );
 
     default boolean test(@NotNull Instance instance, @NotNull Point position, @NotNull DamageType type) {
         return this.test(instance, position, type, null, null);
