@@ -18,7 +18,9 @@ import net.minestom.server.instance.block.predicate.DataComponentPredicates;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.item.component.EnchantmentList;
+import net.minestom.server.item.component.PotionContents;
 import net.minestom.server.item.enchant.Enchantment;
+import net.minestom.server.potion.PotionType;
 import net.minestom.server.registry.RegistryKey;
 import org.junit.jupiter.api.Test;
 
@@ -28,6 +30,7 @@ import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -198,5 +201,24 @@ class LootFunctionTest {
                 Key.key("minecraft:test"), attribute, AttributeOperation.ADD_VALUE,
                 new LootNumber.Constant(1.0), List.of()
         ));
+    }
+
+    @Test
+    void setPotionReplacesAllPotionContents() {
+        MinecraftServer.init();
+
+        var potion = PotionType.values().iterator().next();
+        var input = ItemStack.of(Material.POTION).with(
+                DataComponents.POTION_CONTENTS,
+                new PotionContents(potion, new Color(1, 2, 3), List.of(), "custom")
+        );
+        var function = new LootFunction.SetPotion(List.of(), potion.key());
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of());
+        var result = function.apply(input, context).get(DataComponents.POTION_CONTENTS);
+
+        assertEquals(potion, result.potion());
+        assertNull(result.customColor());
+        assertEquals(List.of(), result.customEffects());
+        assertNull(result.customName());
     }
 }

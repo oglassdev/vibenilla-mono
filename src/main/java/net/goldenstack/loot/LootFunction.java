@@ -1559,24 +1559,34 @@ public interface LootFunction {
     }
 
     record SetPotion(@NotNull List<LootPredicate> predicates, @NotNull Key id) implements LootFunction {
+        private static final @NotNull Codec<Key> POTION_CODEC = Codec.KEY.transform(key -> {
+
+            if (PotionType.fromKey(key) == null) {
+                throw new IllegalArgumentException("Unknown potion: " + key);
+            }
+
+            return key;
+        }, key -> key);
+
         public static final @NotNull StructCodec<SetPotion> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), SetPotion::predicates,
-                "id", Codec.KEY, SetPotion::id,
+                "id", POTION_CODEC, SetPotion::id,
                 SetPotion::new
         );
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
-            if (!LootPredicate.all(predicates, context)) return input;
-
-            if (id.asString().equals("minecraft:empty")) {
-                return input.without(DataComponents.POTION_CONTENTS);
+            if (!LootPredicate.all(this.predicates, context)) {
+                return input;
             }
 
-            PotionContents existing = input.get(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
-            PotionContents updated = new PotionContents(PotionType.fromKey(id), existing.customColor(), existing.customEffects());
+            var potion = PotionType.fromKey(this.id);
 
-            return input.with(DataComponents.POTION_CONTENTS, updated);
+            if (potion == null) {
+                return input;
+            }
+
+            return input.with(DataComponents.POTION_CONTENTS, new PotionContents(potion));
         }
 
         @Override
@@ -1658,9 +1668,7 @@ public interface LootFunction {
             if (potions.isEmpty()) return input;
 
             var potion = potions.get(context.require(LootContext.RANDOM).nextInt(potions.size()));
-            var existing = input.get(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
-            var updated = new PotionContents(potion, existing.customColor(), existing.customEffects(), existing.customName());
-            return input.with(DataComponents.POTION_CONTENTS, updated);
+            return input.with(DataComponents.POTION_CONTENTS, new PotionContents(potion));
         }
 
         @Override
