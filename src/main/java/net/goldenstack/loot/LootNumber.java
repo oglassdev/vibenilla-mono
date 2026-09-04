@@ -232,15 +232,23 @@ public interface LootNumber {
 
         @Override
         public int getInt(@NotNull LootContext context) {
-            return (int) Math.floor(this.getDouble(context));
+            var value = 0.0F;
+
+            for (var summand : this.summands) {
+                value += (float) summand.getDouble(context);
+            }
+
+            return (int) Math.floor(value);
         }
 
         @Override
         public double getDouble(@NotNull LootContext context) {
-            var value = 0.0;
+            var value = 0.0F;
+
             for (var summand : this.summands) {
-                value += summand.getDouble(context);
+                value += (float) summand.getDouble(context);
             }
+
             return value;
         }
 

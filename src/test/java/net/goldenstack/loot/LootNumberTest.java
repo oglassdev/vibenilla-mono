@@ -28,4 +28,18 @@ class LootNumberTest {
         assertEquals(3, sum.getInt(context));
         assertEquals(0.0, score.getDouble(context));
     }
+
+    @Test
+    void sumsUsingVanillaFloatPrecision() {
+        MinecraftServer.init();
+
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of());
+        var sum = new LootNumber.Sum(List.of(
+                new LootNumber.Constant(16_777_216.0),
+                new LootNumber.Constant(1.0)
+        ));
+
+        assertEquals(16_777_216, sum.getInt(context));
+        assertEquals(16_777_216.0, sum.getDouble(context));
+    }
 }
