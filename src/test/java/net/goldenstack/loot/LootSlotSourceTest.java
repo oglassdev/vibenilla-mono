@@ -1,6 +1,8 @@
 package net.goldenstack.loot;
 
 import net.goldenstack.loot.util.VanillaInterface;
+import net.minestom.server.adventure.MinestomAdventure;
+import net.minestom.server.codec.Transcoder;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
@@ -40,5 +42,20 @@ class LootSlotSourceTest {
         );
 
         assertEquals(4, entry.generate(context).getFirst().amount());
+    }
+
+    @Test
+    void decodesVanillaSlotRangeNames() throws Exception {
+        MinecraftServer.init();
+
+        var input = MinestomAdventure.tagStringIO().asTag("""
+                {
+                  "source": "container",
+                  "slots": "hotbar.*"
+                }
+                """);
+        var source = LootSlotSource.Range.CODEC.decode(Transcoder.NBT, input).orElseThrow();
+
+        assertEquals(List.of(0, 1, 2, 3, 4, 5, 6, 7, 8), source.slots());
     }
 }
