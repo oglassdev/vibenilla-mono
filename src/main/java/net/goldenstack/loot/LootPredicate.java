@@ -342,7 +342,7 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
 
     record MatchTool(@Nullable ItemPredicate predicate) implements LootPredicate {
         public static final @NotNull StructCodec<MatchTool> CODEC = StructCodec.struct(
-                "predicate", ItemPredicate.CODEC, MatchTool::predicate,
+                "predicate", ItemPredicate.CODEC.optional(), MatchTool::predicate,
                 MatchTool::new
         );
 

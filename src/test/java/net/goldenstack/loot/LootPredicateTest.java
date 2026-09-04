@@ -74,6 +74,20 @@ class LootPredicateTest {
     }
 
     @Test
+    void matchToolPredicateIsOptionalInTheVanillaSchema() throws Exception {
+        MinecraftServer.init();
+
+        var input = MinestomAdventure.tagStringIO().asTag("""
+                {
+                  "condition": "minecraft:match_tool"
+                }
+                """);
+        var predicate = LootPredicate.MatchTool.CODEC.decode(Transcoder.NBT, input).orElseThrow();
+
+        assertEquals(new LootPredicate.MatchTool(null), predicate);
+    }
+
+    @Test
     void locationCheckPredicateIsOptionalInTheVanillaSchema() throws Exception {
         MinecraftServer.init();
 
