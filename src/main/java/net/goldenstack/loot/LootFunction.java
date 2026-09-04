@@ -679,7 +679,7 @@ public interface LootFunction {
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
             if (!LootPredicate.all(predicates, context)) return input;
 
-            if (!input.material().equals(Material.FILLED_MAP)) return input;
+            if (!input.material().equals(Material.MAP)) return input;
 
             var world = context.get(LootContext.WORLD);
             var origin = context.get(LootContext.ORIGIN);

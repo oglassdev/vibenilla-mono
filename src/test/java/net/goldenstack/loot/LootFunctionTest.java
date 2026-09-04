@@ -17,11 +17,14 @@ import net.minestom.server.color.Color;
 import net.minestom.server.component.DataComponentMap;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.codec.Transcoder;
+import net.minestom.server.coordinate.Point;
+import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.EquipmentSlotGroup;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.attribute.Attribute;
 import net.minestom.server.entity.attribute.AttributeOperation;
+import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.predicate.DataComponentPredicates;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
@@ -33,6 +36,7 @@ import net.minestom.server.potion.PotionType;
 import net.minestom.server.registry.RegistryKey;
 import net.minestom.server.registry.RegistryTag;
 import net.minestom.server.registry.RegistryTranscoder;
+import net.minestom.server.registry.TagKey;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -389,6 +393,76 @@ class LootFunctionTest {
 
         assertInstanceOf(LootFunction.SetContents.class, LootFunction.CODEC.decode(transcoder, setContentsInput).orElseThrow());
         assertInstanceOf(LootFunction.ModifyContents.class, LootFunction.CODEC.decode(transcoder, modifyContentsInput).orElseThrow());
+    }
+
+    @Test
+    void explorationMapTargetsEmptyMaps() {
+        MinecraftServer.init();
+
+        var vanilla = new VanillaInterface() {
+            @Override
+            public Integer score(Entity entity, String objective) {
+                return null;
+            }
+
+            @Override
+            public Integer score(String name, String objective) {
+                return null;
+            }
+
+            @Override
+            public BinaryTag serializeEntity(Entity entity) {
+                return CompoundBinaryTag.empty();
+            }
+
+            @Override
+            public ItemStack enchant(Random random, ItemStack item, int levels, RegistryTag<Enchantment> enchantments) {
+                return item;
+            }
+
+            @Override
+            public ItemStack smelt(ItemStack input) {
+                return null;
+            }
+
+            @Override
+            public LootTable tableRegistry(Key key) {
+                return null;
+            }
+
+            @Override
+            public LootPredicate predicateRegistry(Key key) {
+                return null;
+            }
+
+            @Override
+            public LootFunction functionRegistry(Key key) {
+                return null;
+            }
+
+            @Override
+            public CompoundBinaryTag commandStorage(Key key) {
+                return null;
+            }
+
+            @Override
+            public ItemStack explorationMap(ItemStack input, Instance world, Point origin, TagKey<?> destination,
+                                            Key decoration, byte zoom, int searchRadius, boolean skipExistingChunks) {
+                return ItemStack.of(Material.DIAMOND);
+            }
+        };
+        var world = MinecraftServer.getInstanceManager().createInstanceContainer();
+        var context = LootContext.from(vanilla, Map.of(
+                LootContext.WORLD, world,
+                LootContext.ORIGIN, new Pos(0.0, 0.0, 0.0)
+        ));
+        var function = new LootFunction.ExplorationMap(
+                List.of(), TagKey.ofHash("#minecraft:on_treasure_maps"), Key.key("minecraft:woodland_mansion"),
+                (byte) 2, 50, true
+        );
+
+        assertEquals(Material.DIAMOND, function.apply(ItemStack.of(Material.MAP), context).material());
+        assertEquals(Material.FILLED_MAP, function.apply(ItemStack.of(Material.FILLED_MAP), context).material());
     }
 
     @Test
