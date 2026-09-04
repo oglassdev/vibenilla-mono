@@ -74,7 +74,8 @@ public interface LocationPredicate {
                 return false;
             }
 
-            var needsLoadedChunk = this.biomes != null || this.structures != null || this.smokey != null;
+            var needsLoadedChunk = this.biomes != null || this.structures != null || this.smokey != null
+                    || this.light != null || this.block != null || this.fluid != null;
             if (!needsLoadedChunk && this.light == null && this.block == null && this.fluid == null && this.canSeeSky == null) {
 
                 return true;
@@ -138,12 +139,16 @@ public interface LocationPredicate {
                 }
             }
 
+            if (this.canSeeSky == null) {
+                return true;
+            }
+
             var canSeeSky = vanilla.locationCanSeeSky(instance, point);
             if (canSeeSky == null) {
                 canSeeSky = instance.getSkyLight(point.blockX(), point.blockY(), point.blockZ()) == 15;
             }
 
-            return this.canSeeSky == null || this.canSeeSky == canSeeSky;
+            return this.canSeeSky == canSeeSky;
         }
 
         private static boolean isSmokey(@NotNull Instance instance, @NotNull Point point) {

@@ -37,6 +37,7 @@ class LocationPredicateTest {
         MinecraftServer.init();
 
         var instance = MinecraftServer.getInstanceManager().createInstanceContainer();
+        instance.loadChunk(0, 0).join();
         var observedPredicate = new AtomicReference<FluidPredicate>();
         var vanilla = (VanillaInterface) Proxy.newProxyInstance(
                 VanillaInterface.class.getClassLoader(),
