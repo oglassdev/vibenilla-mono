@@ -1,6 +1,9 @@
 package net.goldenstack.loot;
 
 import net.goldenstack.loot.util.VanillaInterface;
+import net.goldenstack.loot.util.RelevantEntity;
+import net.minestom.server.coordinate.Pos;
+import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.MinecraftServer;
 import org.junit.jupiter.api.Test;
 
@@ -27,5 +30,18 @@ class LootPredicateTest {
         expectedRandom.nextFloat();
 
         assertEquals(expectedRandom.nextFloat(), random.nextFloat());
+    }
+
+    @Test
+    void optionalPredicatesOnlyRequireVanillaContextValuesUsedByVanilla() {
+        MinecraftServer.init();
+
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of(
+                LootContext.ORIGIN, new Pos(0.0, 0.0, 0.0),
+                LootContext.DAMAGE_SOURCE, DamageType.create("test", "default", 0.0F, null, null)
+        ));
+
+        assertEquals(true, new LootPredicate.EntityProperties(null, RelevantEntity.THIS).test(context));
+        assertEquals(true, new LootPredicate.DamageSourceProperties(null).test(context));
     }
 }

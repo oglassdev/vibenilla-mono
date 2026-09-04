@@ -167,16 +167,19 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
 
         @Override
         public boolean test(@NotNull LootContext context) {
-            var world = context.get(LootContext.WORLD);
             var origin = context.get(LootContext.ORIGIN);
             var damage = context.get(LootContext.DAMAGE_SOURCE);
 
-            if (world == null || origin == null || damage == null) {
+            if (origin == null || damage == null) {
                 return false;
             }
 
-            return this.predicate == null || this.predicate.test(
-                    world,
+            if (this.predicate == null) {
+                return true;
+            }
+
+            return this.predicate.test(
+                    context.require(LootContext.WORLD),
                     origin,
                     damage,
                     context.get(LootContext.DIRECT_ATTACKING_ENTITY),
@@ -238,7 +241,11 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
             Entity entity = context.get(this.entity.key());
             Point origin = context.get(LootContext.ORIGIN);
 
-            return predicate == null || predicate.test(context.require(LootContext.WORLD), origin, entity, context.vanilla());
+            if (this.predicate == null) {
+                return true;
+            }
+
+            return this.predicate.test(context.require(LootContext.WORLD), origin, entity, context.vanilla());
         }
 
         @Override
