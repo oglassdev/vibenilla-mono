@@ -2,10 +2,12 @@ package net.goldenstack.loot;
 
 import net.goldenstack.loot.util.VanillaInterface;
 import net.goldenstack.loot.util.RelevantEntity;
+import net.goldenstack.loot.util.LootNumberRange;
 import net.goldenstack.loot.util.predicate.DamageSourcePredicate;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.world.clock.WorldClock;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -50,5 +52,17 @@ class LootPredicateTest {
     @Test
     void damageSourcePredicateCodecInitializesOnFirstUse() {
         assertNotNull(DamageSourcePredicate.CODEC);
+    }
+
+    @Test
+    void timeCheckUsesTheConfiguredWorldClock() {
+        MinecraftServer.init();
+
+        var world = MinecraftServer.getInstanceManager().createInstanceContainer();
+        world.setTime(WorldClock.OVERWORLD, 42L);
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of(LootContext.WORLD, world));
+        var range = new LootNumberRange(new LootNumber.Constant(42.0), new LootNumber.Constant(42.0));
+
+        assertEquals(true, new LootPredicate.TimeCheck(WorldClock.OVERWORLD, null, range).test(context));
     }
 }

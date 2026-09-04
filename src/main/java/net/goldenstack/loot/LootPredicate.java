@@ -24,6 +24,7 @@ import net.minestom.server.item.enchant.LevelBasedValue;
 import net.minestom.server.registry.DynamicRegistry;
 import net.minestom.server.registry.Registries;
 import net.minestom.server.registry.RegistryKey;
+import net.minestom.server.world.clock.WorldClock;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -474,8 +475,14 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
         }
     }
 
-    record TimeCheck(@Nullable Long period, @NotNull LootNumberRange value) implements LootPredicate {
+    record TimeCheck(@NotNull RegistryKey<WorldClock> clock, @Nullable Long period,
+                     @NotNull LootNumberRange value) implements LootPredicate {
+        public TimeCheck(@Nullable Long period, @NotNull LootNumberRange value) {
+            this(RegistryKey.unsafeOf("overworld"), period, value);
+        }
+
         public static final @NotNull StructCodec<TimeCheck> CODEC = StructCodec.struct(
+                "clock", WorldClock.CODEC, TimeCheck::clock,
                 "period", Codec.LONG.optional(), TimeCheck::period,
                 "value", LootNumberRange.CODEC, TimeCheck::value,
                 TimeCheck::new
@@ -483,7 +490,7 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
 
         @Override
         public boolean test(@NotNull LootContext context) {
-            long time = context.require(LootContext.WORLD).getTime();
+            long time = context.require(LootContext.WORLD).getTime(this.clock);
 
             if (period != null) {
                 time %= period;
