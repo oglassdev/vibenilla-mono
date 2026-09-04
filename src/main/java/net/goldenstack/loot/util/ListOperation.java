@@ -19,7 +19,16 @@ public sealed interface ListOperation {
             static final @NotNull DynamicRegistry<StructCodec<? extends ListOperation>> CODEC = createDefaultRegistry();
         }
         return Holder.CODEC;
-    }, ListOperation::codec, "type");
+    }, ListOperation::codec, "mode");
+
+    @NotNull Codec<Integer> NON_NEGATIVE_INT = Codec.INT.transform(value -> {
+
+        if (value < 0) {
+            throw new IllegalArgumentException("Value must not be negative");
+        }
+
+        return value;
+    }, value -> value);
 
     static @NotNull DynamicRegistry<StructCodec<? extends ListOperation>> createDefaultRegistry() {
         final DynamicRegistry<StructCodec<? extends ListOperation>> registry = DynamicRegistry.create(Key.key("list_operations"));
@@ -30,7 +39,24 @@ public sealed interface ListOperation {
         return registry;
     }
 
-    <T> @NotNull List<T> apply(@NotNull List<T> values, @NotNull List<T> input);
+    static @NotNull Codec<ListOperation> codec(int maxSize) {
+        return CODEC.transform(operation -> {
+
+            if (operation instanceof ReplaceSection replaceSection
+                    && replaceSection.size() != null
+                    && replaceSection.size() > maxSize) {
+                throw new IllegalArgumentException("Size value too large: " + replaceSection.size());
+            }
+
+            return operation;
+        }, operation -> operation);
+    }
+
+    default <T> @NotNull List<T> apply(@NotNull List<T> values, @NotNull List<T> input) {
+        return this.apply(values, input, Integer.MAX_VALUE);
+    }
+
+    <T> @NotNull List<T> apply(@NotNull List<T> values, @NotNull List<T> input, int maxSize);
 
     /**
      * @return the codec that can encode this list operation
@@ -39,9 +65,13 @@ public sealed interface ListOperation {
 
     record WithValues<T>(@NotNull ListOperation operation, @NotNull List<T> values) {
         public static <T> Codec<WithValues<T>> codec(Codec<T> codec) {
+            return codec(codec, Integer.MAX_VALUE);
+        }
+
+        public static <T> Codec<WithValues<T>> codec(Codec<T> codec, int maxSize) {
             return StructCodec.struct(
-                    StructCodec.INLINE, ListOperation.CODEC, WithValues::operation,
-                    "values", codec.list(), WithValues::values,
+                    StructCodec.INLINE, ListOperation.codec(maxSize), WithValues::operation,
+                    "values", codec.list(maxSize), WithValues::values,
                     WithValues::new
             );
         }
@@ -51,7 +81,11 @@ public sealed interface ListOperation {
         public static final @NotNull StructCodec<Append> CODEC = StructCodec.struct(Append::new);
 
         @Override
-        public @NotNull <T> List<T> apply(@NotNull List<T> values, @NotNull List<T> input) {
+        public @NotNull <T> List<T> apply(@NotNull List<T> values, @NotNull List<T> input, int maxSize) {
+            if (input.size() + values.size() > maxSize) {
+                return input;
+            }
+
             return Stream.concat(input.stream(), values.stream()).toList();
         }
 
@@ -63,13 +97,17 @@ public sealed interface ListOperation {
 
     record Insert(int offset) implements ListOperation {
         public static final @NotNull StructCodec<Insert> CODEC = StructCodec.struct(
-                "offset", Codec.INT.optional(0), Insert::offset,
+                "offset", NON_NEGATIVE_INT.optional(0), Insert::offset,
                 Insert::new
         );
 
         @Override
-        public @NotNull <T> List<T> apply(@NotNull List<T> values, @NotNull List<T> input) {
-            List<T> items = new ArrayList<>();
+        public @NotNull <T> List<T> apply(@NotNull List<T> values, @NotNull List<T> input, int maxSize) {
+            if (this.offset > input.size() || input.size() + values.size() > maxSize) {
+                return input;
+            }
+
+            var items = new ArrayList<T>();
             items.addAll(input.subList(0, this.offset));
             items.addAll(values);
             items.addAll(input.subList(this.offset, input.size()));
@@ -86,7 +124,7 @@ public sealed interface ListOperation {
         public static final @NotNull StructCodec<ReplaceAll> CODEC = StructCodec.struct(ReplaceAll::new);
 
         @Override
-        public @NotNull <T> List<T> apply(@NotNull List<T> values, @NotNull List<T> input) {
+        public @NotNull <T> List<T> apply(@NotNull List<T> values, @NotNull List<T> input, int maxSize) {
             return values;
         }
 
@@ -98,22 +136,30 @@ public sealed interface ListOperation {
 
     record ReplaceSection(int offset, @Nullable Integer size) implements ListOperation {
         public static final @NotNull StructCodec<ReplaceSection> CODEC = StructCodec.struct(
-                "offset", Codec.INT.optional(0), ReplaceSection::offset,
-                "size", Codec.INT.optional(), ReplaceSection::size,
+                "offset", NON_NEGATIVE_INT.optional(0), ReplaceSection::offset,
+                "size", NON_NEGATIVE_INT.optional(), ReplaceSection::size,
                 ReplaceSection::new
         );
 
         @Override
-        public @NotNull <T> List<T> apply(@NotNull List<T> values, @NotNull List<T> input) {
-            List<T> items = new ArrayList<>();
-            items.addAll(input.subList(0, offset));
+        public @NotNull <T> List<T> apply(@NotNull List<T> values, @NotNull List<T> input, int maxSize) {
+            if (this.offset > input.size() || this.size != null && this.size < 0) {
+                return input;
+            }
+
+            var items = new ArrayList<T>();
+            items.addAll(input.subList(0, this.offset));
             items.addAll(values);
 
-            int size = this.size != null ? this.size : values.size();
+            var size = this.size != null ? this.size : values.size();
+            var resumeIndex = this.offset + size;
 
-            // Add truncated part of list of possible
-            if (offset + size < input.size()) {
-                items.addAll(input.subList(offset + size, input.size()));
+            if (resumeIndex < input.size()) {
+                items.addAll(input.subList(resumeIndex, input.size()));
+            }
+
+            if (items.size() > maxSize) {
+                return input;
             }
 
             return items;

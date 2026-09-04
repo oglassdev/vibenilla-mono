@@ -1358,7 +1358,7 @@ public interface LootFunction {
         public static final @NotNull StructCodec<SetFireworks> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), SetFireworks::predicates,
                 "flight_duration", UNSIGNED_BYTE_CODEC.optional(), SetFireworks::flightDuration,
-                "explosions", ListOperation.WithValues.codec(FireworkExplosion.CODEC).optional(), SetFireworks::explosions,
+                "explosions", ListOperation.WithValues.codec(FireworkExplosion.CODEC, 256).optional(), SetFireworks::explosions,
                 SetFireworks::new
         );
 
@@ -1456,8 +1456,8 @@ public interface LootFunction {
                    @NotNull ListOperation operation, @Nullable RelevantEntity entity) implements LootFunction {
         public static final @NotNull StructCodec<SetLore> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), SetLore::predicates,
-                "lore", Codec.COMPONENT.list(), SetLore::lore,
-                StructCodec.INLINE, ListOperation.CODEC, SetLore::operation,
+                "lore", Codec.COMPONENT.list(256), SetLore::lore,
+                StructCodec.INLINE, ListOperation.codec(256), SetLore::operation,
                 "entity", RelevantEntity.CODEC.optional(), SetLore::entity,
                 SetLore::new
         );
@@ -1472,7 +1472,7 @@ public interface LootFunction {
                     .map(line -> context.vanilla().resolveComponent(line, resolutionEntity))
                     .toList();
 
-            return input.with(DataComponents.LORE, this.operation.apply(resolvedLore, components));
+            return input.with(DataComponents.LORE, this.operation.apply(resolvedLore, components, 256));
         }
 
         @Override
@@ -1741,8 +1741,8 @@ public interface LootFunction {
     record SetWritableBookPages(@NotNull List<LootPredicate> predicates, @NotNull List<FilteredText<String>> pages, @NotNull ListOperation operation) implements LootFunction {
         public static final @NotNull StructCodec<SetWritableBookPages> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), SetWritableBookPages::predicates,
-                "pages", FilteredText.STRING_CODEC.list(), SetWritableBookPages::pages,
-                StructCodec.INLINE, ListOperation.CODEC, SetWritableBookPages::operation,
+                "pages", FilteredText.STRING_CODEC.list(100), SetWritableBookPages::pages,
+                StructCodec.INLINE, ListOperation.codec(100), SetWritableBookPages::operation,
                 SetWritableBookPages::new
         );
 
@@ -1752,7 +1752,7 @@ public interface LootFunction {
 
             WritableBookContent content = input.get(DataComponents.WRITABLE_BOOK_CONTENT, WritableBookContent.EMPTY);
 
-            return input.with(DataComponents.WRITABLE_BOOK_CONTENT, new WritableBookContent(operation.apply(pages, content.pages())));
+            return input.with(DataComponents.WRITABLE_BOOK_CONTENT, new WritableBookContent(operation.apply(pages, content.pages(), 100)));
         }
 
         @Override
