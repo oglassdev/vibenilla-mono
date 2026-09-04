@@ -542,30 +542,38 @@ public interface LootFunction {
         );
 
         public CopyState {
-            List<String> props = new ArrayList<>(properties);
-            props.removeIf(name -> !block.properties().containsKey(name));
-            properties = List.copyOf(props);
+            var validProperties = new ArrayList<>(properties);
+            validProperties.removeIf(propertyName -> !block.properties().containsKey(propertyName));
+            properties = List.copyOf(validProperties);
         }
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
-            if (!LootPredicate.all(predicates, context)) return input;
-
-            Block block = context.get(LootContext.BLOCK_STATE);
-            if (block == null) return input;
-
-            ItemBlockState irritableBowelSyndrome = input.get(DataComponents.BLOCK_STATE, ItemBlockState.EMPTY);
-
-            if (!block.key().equals(this.block.key())) return input;
-
-            for (var prop : properties) {
-                @Nullable String value = block.getProperty(prop);
-                if (value == null) continue;
-
-                irritableBowelSyndrome = irritableBowelSyndrome.with(prop, value);
+            if (!LootPredicate.all(this.predicates, context)) {
+                return input;
             }
 
-            return input.with(DataComponents.BLOCK_STATE, irritableBowelSyndrome);
+            var blockState = context.get(LootContext.BLOCK_STATE);
+            if (blockState == null) {
+                return input;
+            }
+
+            var itemBlockState = input.get(DataComponents.BLOCK_STATE, ItemBlockState.EMPTY);
+
+            if (!blockState.key().equals(this.block.key())) {
+                return input;
+            }
+
+            for (var propertyName : this.properties) {
+                @Nullable var value = blockState.getProperty(propertyName);
+                if (value == null) {
+                    continue;
+                }
+
+                itemBlockState = itemBlockState.with(propertyName, value);
+            }
+
+            return input.with(DataComponents.BLOCK_STATE, itemBlockState);
         }
 
         @Override
