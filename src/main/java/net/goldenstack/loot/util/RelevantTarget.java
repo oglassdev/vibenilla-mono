@@ -10,6 +10,7 @@ public enum RelevantTarget {
     DIRECT_ATTACKER("direct_attacker", LootContext.DIRECT_ATTACKING_ENTITY),
     ATTACKING_PLAYER("attacking_player", LootContext.LAST_DAMAGE_PLAYER),
     BLOCK_ENTITY("block_entity", LootContext.BLOCK_STATE),
+    TOOL("tool", LootContext.TOOL),
     TARGET_ENTITY("target_entity", LootContext.TARGET_ENTITY),
     INTERACTING_ENTITY("interacting_entity", LootContext.INTERACTING_ENTITY);
 
@@ -20,9 +21,22 @@ public enum RelevantTarget {
         case "direct_attacker" -> DIRECT_ATTACKER;
         case "attacking_player" -> ATTACKING_PLAYER;
         case "block_entity" -> BLOCK_ENTITY;
+        case "tool" -> TOOL;
         case "target_entity" -> TARGET_ENTITY;
         case "interacting_entity" -> INTERACTING_ENTITY;
         default -> throw new IllegalArgumentException("Unknown context target: " + value);
+    }, RelevantTarget::id);
+
+    @SuppressWarnings("UnstableApiUsage")
+    public static final Codec<RelevantTarget> ENTITY_OR_BLOCK_CODEC = Codec.STRING.transform(value -> switch (value) {
+        case "this" -> THIS;
+        case "attacker" -> ATTACKER;
+        case "direct_attacker" -> DIRECT_ATTACKER;
+        case "attacking_player" -> ATTACKING_PLAYER;
+        case "block_entity" -> BLOCK_ENTITY;
+        case "target_entity" -> TARGET_ENTITY;
+        case "interacting_entity" -> INTERACTING_ENTITY;
+        default -> throw new IllegalArgumentException("Unknown entity or block target: " + value);
     }, RelevantTarget::id);
 
     private final @NotNull String id;

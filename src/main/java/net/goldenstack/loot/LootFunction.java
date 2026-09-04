@@ -291,7 +291,7 @@ public interface LootFunction {
 
             DataComponentMap sourceComponents = switch (source) {
                 case BLOCK_ENTITY -> blockComponents(context.get(LootContext.BLOCK_STATE));
-                case THIS, ATTACKER, DIRECT_ATTACKER, ATTACKING_PLAYER, TARGET_ENTITY, INTERACTING_ENTITY -> holderComponents(context.get(source.key()));
+                case THIS, ATTACKER, DIRECT_ATTACKER, ATTACKING_PLAYER, TOOL, TARGET_ENTITY, INTERACTING_ENTITY -> holderComponents(context.get(source.key()));
             };
 
             if (sourceComponents == null) return input;
@@ -447,7 +447,7 @@ public interface LootFunction {
     record CopyName(@NotNull List<LootPredicate> predicates, @NotNull RelevantTarget source) implements LootFunction {
         public static final @NotNull StructCodec<CopyName> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), CopyName::predicates,
-                "source", RelevantTarget.CODEC, CopyName::source,
+                "source", RelevantTarget.ENTITY_OR_BLOCK_CODEC, CopyName::source,
                 CopyName::new
         );
 
