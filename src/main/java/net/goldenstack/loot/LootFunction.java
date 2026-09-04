@@ -929,54 +929,55 @@ public interface LootFunction {
         );
 
         public record AttributeDirective(@NotNull Key id, @NotNull Attribute attribute, @NotNull AttributeOperation operation,
-                                         @NotNull LootNumber amount, @NotNull List<EquipmentSlot> slots) {
+                                         @NotNull LootNumber amount, @NotNull List<EquipmentSlotGroup> slots) {
 
-            public static final @NotNull Codec<EquipmentSlot> CUSTOM_SLOT = Template.constant(
-                    slot -> slot.name().toLowerCase(Locale.ROOT).replace("_", ""), EquipmentSlot.values()
-            );
+            private static final @NotNull Codec<List<EquipmentSlotGroup>> SLOTS_CODEC = EquipmentSlotGroup.CODEC.listOrSingle(Integer.MAX_VALUE).transform(slots -> {
+
+                if (slots.isEmpty()) {
+                    throw new IllegalArgumentException("Attribute modifier slots must not be empty");
+                }
+
+                return slots;
+            }, slots -> slots);
 
             public static final @NotNull Codec<AttributeDirective> CODEC = StructCodec.struct(
                     "id", Codec.KEY, AttributeDirective::id,
                     "attribute", Attribute.CODEC, AttributeDirective::attribute,
                     "operation", AttributeOperation.CODEC, AttributeDirective::operation,
                     "amount", LootNumber.CODEC, AttributeDirective::amount,
-                    "slot", CUSTOM_SLOT.listOrSingle(Integer.MAX_VALUE), AttributeDirective::slots,
+                    "slot", SLOTS_CODEC, AttributeDirective::slots,
                     AttributeDirective::new
             );
+
+            public AttributeDirective {
+
+                if (slots.isEmpty()) {
+                    throw new IllegalArgumentException("Attribute modifier slots must not be empty");
+                }
+            }
 
         }
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
-            if (!LootPredicate.all(predicates, context)) return input;
+            if (!LootPredicate.all(this.predicates, context)) {
+                return input;
+            }
 
             var component = input.get(DataComponents.ATTRIBUTE_MODIFIERS, AttributeList.EMPTY);
 
-            List<AttributeList.Modifier> list = replace ? new ArrayList<>() : new ArrayList<>(component.modifiers());
+            var list = this.replace ? new ArrayList<AttributeList.Modifier>() : new ArrayList<>(component.modifiers());
 
-            for (var modifier : modifiers) {
-                if (modifier.slots().isEmpty()) continue;
-
-                AttributeModifier mod = new AttributeModifier(
+            for (var modifier : this.modifiers) {
+                var attributeModifier = new AttributeModifier(
                         modifier.id(),
-                        modifier.amount().getDouble(context),
+                        (float) modifier.amount().getDouble(context),
                         modifier.operation()
                 );
 
-                EquipmentSlot slot = modifier.slots().get(context.require(LootContext.RANDOM).nextInt(modifier.slots().size()));
+                var slot = modifier.slots().get(context.require(LootContext.RANDOM).nextInt(modifier.slots().size()));
 
-                EquipmentSlotGroup group = switch (slot) {
-                    case MAIN_HAND -> EquipmentSlotGroup.MAIN_HAND;
-                    case OFF_HAND -> EquipmentSlotGroup.OFF_HAND;
-                    case BOOTS -> EquipmentSlotGroup.FEET;
-                    case LEGGINGS -> EquipmentSlotGroup.LEGS;
-                    case CHESTPLATE -> EquipmentSlotGroup.CHEST;
-                    case HELMET -> EquipmentSlotGroup.HEAD;
-                    case BODY -> EquipmentSlotGroup.BODY;
-                    case SADDLE -> EquipmentSlotGroup.SADDLE;
-                };
-
-                list.add(new AttributeList.Modifier(modifier.attribute(), mod, group));
+                list.add(new AttributeList.Modifier(modifier.attribute(), attributeModifier, slot));
             }
 
             return input.with(DataComponents.ATTRIBUTE_MODIFIERS, new AttributeList(list));

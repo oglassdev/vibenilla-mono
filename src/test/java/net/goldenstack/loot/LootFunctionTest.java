@@ -11,6 +11,9 @@ import net.minestom.server.adventure.MinestomAdventure;
 import net.minestom.server.color.Color;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.codec.Transcoder;
+import net.minestom.server.entity.EquipmentSlotGroup;
+import net.minestom.server.entity.attribute.Attribute;
+import net.minestom.server.entity.attribute.AttributeOperation;
 import net.minestom.server.instance.block.predicate.DataComponentPredicates;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
@@ -178,5 +181,22 @@ class LootFunctionTest {
 
         assertEquals(Material.ENCHANTED_BOOK, result.material());
         assertEquals(255, enchantments.level(enchantment));
+    }
+
+    @Test
+    void setAttributesRequiresVanillaSlotGroups() {
+        MinecraftServer.init();
+
+        var attribute = Attribute.values().iterator().next();
+        var directive = new LootFunction.SetAttributes.AttributeDirective(
+                Key.key("minecraft:test"), attribute, AttributeOperation.ADD_VALUE,
+                new LootNumber.Constant(1.0), List.of(EquipmentSlotGroup.HAND)
+        );
+
+        assertEquals(List.of(EquipmentSlotGroup.HAND), directive.slots());
+        assertThrows(IllegalArgumentException.class, () -> new LootFunction.SetAttributes.AttributeDirective(
+                Key.key("minecraft:test"), attribute, AttributeOperation.ADD_VALUE,
+                new LootNumber.Constant(1.0), List.of()
+        ));
     }
 }
