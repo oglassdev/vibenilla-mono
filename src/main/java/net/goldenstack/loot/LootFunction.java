@@ -643,6 +643,10 @@ public interface LootFunction {
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
+            if (!LootPredicate.all(this.predicates, context)) {
+                return input;
+            }
+
             var enchantmentRegistry = MinecraftServer.getEnchantmentRegistry();
 
             var values = new ArrayList<RegistryKey<Enchantment>>();

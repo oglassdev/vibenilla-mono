@@ -82,6 +82,18 @@ class LootFunctionTest {
     }
 
     @Test
+    void enchantRandomlySkipsFailedConditions() {
+        MinecraftServer.init();
+
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of());
+        var item = ItemStack.of(Material.STONE);
+        var predicate = new LootPredicate.AnyOf(List.of());
+        var function = new LootFunction.EnchantRandomly(List.of(predicate), null, true, false);
+
+        assertSame(item, function.apply(item, context));
+    }
+
+    @Test
     void customModelDataAppliesListOperations() {
         MinecraftServer.init();
 
