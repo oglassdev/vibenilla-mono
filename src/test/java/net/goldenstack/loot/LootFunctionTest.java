@@ -5,6 +5,8 @@ import net.goldenstack.loot.util.VanillaInterface;
 import net.goldenstack.loot.util.ListOperation;
 import net.goldenstack.loot.util.predicate.ItemPredicate;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.nbt.BinaryTag;
+import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.nbt.StringBinaryTag;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.adventure.MinestomAdventure;
@@ -12,6 +14,7 @@ import net.minestom.server.color.Color;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.codec.Transcoder;
 import net.minestom.server.entity.EquipmentSlotGroup;
+import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.attribute.Attribute;
 import net.minestom.server.entity.attribute.AttributeOperation;
 import net.minestom.server.instance.block.predicate.DataComponentPredicates;
@@ -22,6 +25,7 @@ import net.minestom.server.item.component.PotionContents;
 import net.minestom.server.item.enchant.Enchantment;
 import net.minestom.server.potion.PotionType;
 import net.minestom.server.registry.RegistryKey;
+import net.minestom.server.registry.RegistryTag;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -221,5 +225,66 @@ class LootFunctionTest {
         assertNull(result.customColor());
         assertEquals(List.of(), result.customEffects());
         assertNull(result.customName());
+    }
+
+    @Test
+    void furnaceSmeltUsesConfiguredInputCount() {
+        MinecraftServer.init();
+
+        var defaults = VanillaInterface.defaults();
+        var vanilla = new VanillaInterface() {
+            @Override
+            public Integer score(Entity entity, String objective) {
+                return defaults.score(entity, objective);
+            }
+
+            @Override
+            public Integer score(String name, String objective) {
+                return defaults.score(name, objective);
+            }
+
+            @Override
+            public BinaryTag serializeEntity(Entity entity) {
+                return CompoundBinaryTag.empty();
+            }
+
+            @Override
+            public ItemStack enchant(Random random, ItemStack item, int levels, RegistryTag<Enchantment> enchantments) {
+                return item;
+            }
+
+            @Override
+            public ItemStack smelt(ItemStack input) {
+                return ItemStack.of(Material.IRON_INGOT, 2);
+            }
+
+            @Override
+            public LootTable tableRegistry(Key key) {
+                return null;
+            }
+
+            @Override
+            public LootPredicate predicateRegistry(Key key) {
+                return null;
+            }
+
+            @Override
+            public LootFunction functionRegistry(Key key) {
+                return null;
+            }
+
+            @Override
+            public CompoundBinaryTag commandStorage(Key key) {
+                return null;
+            }
+        };
+        var context = LootContext.from(vanilla, Map.of());
+        var input = ItemStack.of(Material.IRON_ORE, 3);
+
+        var multiplied = new LootFunction.FurnaceSmelt(List.of(), true).apply(input, context);
+        var single = new LootFunction.FurnaceSmelt(List.of(), false).apply(input, context);
+
+        assertEquals(6, multiplied.amount());
+        assertEquals(2, single.amount());
     }
 }

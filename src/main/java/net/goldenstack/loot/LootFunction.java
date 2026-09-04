@@ -812,19 +812,31 @@ public interface LootFunction {
         }
     }
     
-    record FurnaceSmelt(@NotNull List<LootPredicate> predicates) implements LootFunction {
+    record FurnaceSmelt(@NotNull List<LootPredicate> predicates, boolean useInputCount) implements LootFunction {
+        public FurnaceSmelt(@NotNull List<LootPredicate> predicates) {
+            this(predicates, true);
+        }
+
         public static final @NotNull StructCodec<FurnaceSmelt> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), FurnaceSmelt::predicates,
+                "use_input_count", Codec.BOOLEAN.optional(true), FurnaceSmelt::useInputCount,
                 FurnaceSmelt::new
         );
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
-            if (!LootPredicate.all(predicates, context)) return input;
+            if (!LootPredicate.all(this.predicates, context)) {
+                return input;
+            }
 
-            ItemStack smelted = context.vanilla().smelt(input);
+            var smelted = context.vanilla().smelt(input);
 
-            return smelted != null ? smelted.withAmount(input.amount()) : input;
+            if (smelted == null || smelted.isAir()) {
+                return input;
+            }
+
+            var amount = this.useInputCount ? input.amount() * smelted.amount() : smelted.amount();
+            return smelted.withAmount(Math.min(amount, smelted.maxStackSize()));
         }
 
         @Override
