@@ -1,19 +1,24 @@
 package net.goldenstack.loot.util.predicate;
 
+import net.goldenstack.loot.util.LootNumberRange;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.adventure.MinestomAdventure;
+import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.Transcoder;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.Player;
 import net.minestom.server.network.player.GameProfile;
 import net.goldenstack.loot.util.VanillaInterface;
+import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.instance.Instance;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -123,5 +128,31 @@ class EntityPredicateTest {
         var predicate = new EntityPredicate.EntityFlagsPredicate(null, null, null, null, null, null, null, true, null);
 
         assertTrue(predicate.test(null, null, new Entity(EntityType.ITEM), vanilla));
+    }
+
+    @Test
+    void playerPredicateUsesHostProvidedProgressionState() {
+        MinecraftServer.init();
+
+        var vanilla = (VanillaInterface) Proxy.newProxyInstance(
+                VanillaInterface.class.getClassLoader(),
+                new Class<?>[]{VanillaInterface.class},
+                (proxy, method, arguments) -> method.getName().startsWith("matchesPlayer") ? true : null
+        );
+        var player = new Player(null, new GameProfile(UUID.randomUUID(), "test"));
+        var range = new LootNumberRange(null, null);
+        var rawValue = Codec.RawValue.of(Transcoder.NBT, CompoundBinaryTag.empty());
+        var predicate = new EntityPredicate.PlayerPredicate(
+                range,
+                new EntityPredicate.FoodPredicate(range, range),
+                List.of("survival"),
+                null,
+                null,
+                List.of(rawValue),
+                Map.of("minecraft:test", true),
+                Map.of("minecraft:test", rawValue)
+        );
+
+        assertTrue(predicate.test(null, null, player, vanilla));
     }
 }

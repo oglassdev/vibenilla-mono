@@ -766,9 +766,9 @@ public interface EntityPredicate {
                     || !this.food.test(player)
                     || !this.gamemode.contains(gameMode)
                     || this.input != null && !this.input.test(player)
-                    || !this.stats.isEmpty()
-                    || !this.recipes.isEmpty()
-                    || !this.advancements.isEmpty()) {
+                    || !vanilla.matchesPlayerStats(player, this.stats, context)
+                    || !vanilla.matchesPlayerRecipes(player, this.recipes, context)
+                    || !vanilla.matchesPlayerAdvancements(player, this.advancements, context)) {
 
                 return false;
             }

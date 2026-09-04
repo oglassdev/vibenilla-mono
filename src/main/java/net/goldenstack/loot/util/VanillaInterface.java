@@ -9,7 +9,9 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.BinaryTag;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.text.Component;
+import net.minestom.server.codec.Codec;
 import net.minestom.server.entity.Entity;
+import net.minestom.server.entity.Player;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.item.ItemStack;
@@ -24,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 public interface VanillaInterface {
@@ -161,6 +164,24 @@ public interface VanillaInterface {
 
     default @Nullable List<ItemStack> dynamicDrops(@NotNull Key name, @NotNull LootContext context) {
         return null;
+    }
+
+    default boolean matchesPlayerStats(@NotNull Player player,
+                                       @NotNull List<Codec.RawValue> stats,
+                                       @NotNull LootContext context) {
+        return stats.isEmpty();
+    }
+
+    default boolean matchesPlayerRecipes(@NotNull Player player,
+                                         @NotNull Map<String, Boolean> recipes,
+                                         @NotNull LootContext context) {
+        return recipes.isEmpty();
+    }
+
+    default boolean matchesPlayerAdvancements(@NotNull Player player,
+                                              @NotNull Map<String, Codec.RawValue> advancements,
+                                              @NotNull LootContext context) {
+        return advancements.isEmpty();
     }
 
     default @NotNull List<ItemStack> slotRange(@NotNull String source,
