@@ -3,6 +3,8 @@ package net.goldenstack.loot;
 import net.goldenstack.loot.util.VanillaInterface;
 import net.goldenstack.loot.util.RelevantEntity;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.adventure.MinestomAdventure;
+import net.minestom.server.codec.Transcoder;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -55,5 +57,21 @@ class LootNumberTest {
 
         assertEquals(4, uniform.getInt(context));
         assertEquals(4.0, uniform.getDouble(context));
+    }
+
+    @Test
+    void scoreScaleUsesVanillaFloatPrecision() throws Exception {
+        MinecraftServer.init();
+
+        var input = MinestomAdventure.tagStringIO().asTag("""
+                {
+                  target: "this",
+                  score: "missing",
+                  scale: 16777217.0
+                }
+                """);
+        var score = LootNumber.Score.CODEC.decode(Transcoder.NBT, input).orElseThrow();
+
+        assertEquals(16_777_216.0, score.scale());
     }
 }

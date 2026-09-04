@@ -140,10 +140,12 @@ public interface LootNumber {
     }
 
     record Score(@NotNull LootScore target, @NotNull String objective, double scale) implements LootNumber {
+        private static final @NotNull Codec<Double> SCALE_CODEC = Codec.FLOAT.transform(value -> (double) value, value -> value.floatValue());
+
         public static final @NotNull StructCodec<Score> CODEC = StructCodec.struct(
                 "target", LootScore.CODEC, Score::target,
                 "score", Codec.STRING, Score::objective,
-                "scale", Codec.DOUBLE.optional(1.0), Score::scale,
+                "scale", SCALE_CODEC.optional(1.0), Score::scale,
                 Score::new
         );
 
@@ -154,9 +156,9 @@ public interface LootNumber {
 
         @Override
         public double getDouble(@NotNull LootContext context) {
-            var score = target.apply(context).apply(objective);
+            var score = this.target.apply(context).apply(this.objective);
 
-            return score != null ? score * this.scale : 0;
+            return score != null ? (float) (score * (float) this.scale) : 0.0F;
         }
 
         @Override
