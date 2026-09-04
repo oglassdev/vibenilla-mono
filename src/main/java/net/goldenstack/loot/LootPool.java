@@ -34,25 +34,30 @@ public record LootPool(@NotNull LootNumber rolls,
 
     @Override
     public @NotNull List<ItemStack> generate(@NotNull LootContext context) {
-        if (!(LootPredicate.all(predicates, context))) return List.of();
+        if (!LootPredicate.all(this.predicates, context)) {
+            return List.of();
+        }
 
-        int rolls = this.rolls.getInt(context);
+        var rolls = this.rolls.getInt(context);
 
-        Double luck = context.get(LootContext.LUCK);
+        var luck = context.get(LootContext.LUCK);
         if (luck != null) {
             rolls += (int) Math.floor(luck * this.bonusRolls.getDouble(context));
         }
 
-        List<ItemStack> items = new ArrayList<>();
+        var items = new ArrayList<ItemStack>();
 
-        for (int i = 0; i < rolls; i++) {
-            LootEntry.Choice choice = pickChoice(entries, context);
-            if (choice == null) continue;
+        for (var roll = 0; roll < rolls; roll++) {
+            var choice = pickChoice(this.entries, context);
+
+            if (choice == null) {
+                continue;
+            }
 
             items.addAll(choice.generate(context));
         }
 
-        return LootFunction.apply(functions, items, context);
+        return LootFunction.apply(this.functions, items, context);
     }
     
     /**
@@ -64,7 +69,8 @@ public record LootPool(@NotNull LootNumber rolls,
      */
     static @Nullable LootEntry.Choice pickChoice(@NotNull List<LootEntry> entries, @NotNull LootContext context) {
         var choices = new ArrayList<LootEntry.Choice>();
-        for (LootEntry entry : entries) {
+
+        for (var entry : entries) {
             choices.addAll(entry.requestChoices(context));
         }
 
@@ -74,8 +80,10 @@ public record LootPool(@NotNull LootNumber rolls,
 
         var weightedChoices = new ArrayList<LootEntry.Choice>();
         var weights = new ArrayList<Long>();
+
         for (var choice : choices) {
             var weight = choice.getWeight(context);
+
             if (weight > 0L) {
                 weightedChoices.add(choice);
                 weights.add(weight);
@@ -86,9 +94,14 @@ public record LootPool(@NotNull LootNumber rolls,
             return null;
         }
 
+        if (weightedChoices.size() == 1) {
+            return weightedChoices.getFirst();
+        }
+
         var totalWeight = 0L;
         var weightMilestones = new long[weightedChoices.size()];
         var weightIndex = 0;
+
         for (var weight : weights) {
             totalWeight += weight;
             weightMilestones[weightIndex] = totalWeight;
@@ -100,7 +113,9 @@ public record LootPool(@NotNull LootNumber rolls,
         var choice = weightedChoices.getLast();
 
         weightIndex = 0;
+
         for (var weightMilestone : weightMilestones) {
+
             if (value < weightMilestone) {
                 choice = weightedChoices.get(weightIndex);
                 break;
