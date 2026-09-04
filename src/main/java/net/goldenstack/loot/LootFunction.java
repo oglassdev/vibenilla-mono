@@ -1368,7 +1368,6 @@ public interface LootFunction {
 
     record SetFireworks(@NotNull List<LootPredicate> predicates, @Nullable Integer flightDuration, @Nullable ListOperation.WithValues<FireworkExplosion> explosions) implements LootFunction {
         private static final @NotNull Codec<Integer> UNSIGNED_BYTE_CODEC = Codec.INT.transform(value -> {
-
             if (value < 0 || value > 255) {
                 throw new IllegalArgumentException("Flight duration must be an unsigned byte");
             }
@@ -1390,7 +1389,7 @@ public interface LootFunction {
             FireworkList list = input.get(DataComponents.FIREWORKS, FireworkList.EMPTY);
 
             FireworkList updated = new FireworkList(
-                    this.flightDuration != null ? this.flightDuration.byteValue() : list.flightDuration(),
+                    this.flightDuration != null ? this.flightDuration : list.flightDuration(),
                     this.explosions == null ? list.explosions() : this.explosions.operation().apply(this.explosions.values(), list.explosions())
             );
 

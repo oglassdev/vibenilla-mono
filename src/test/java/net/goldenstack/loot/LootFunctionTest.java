@@ -347,4 +347,15 @@ class LootFunctionTest {
 
         assertNull(result.get(DataComponents.CUSTOM_NAME));
     }
+
+    @Test
+    void setFireworksPreservesUnsignedFlightDuration() {
+        MinecraftServer.init();
+
+        var function = new LootFunction.SetFireworks(List.of(), 255, null);
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of());
+        var result = function.apply(ItemStack.of(Material.FIREWORK_ROCKET), context);
+
+        assertEquals(255, result.get(DataComponents.FIREWORKS).flightDuration());
+    }
 }
