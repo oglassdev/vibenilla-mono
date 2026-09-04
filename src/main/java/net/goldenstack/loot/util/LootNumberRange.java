@@ -86,4 +86,13 @@ public record LootNumberRange(@Nullable LootNumber min, @Nullable LootNumber max
                 (this.max == null || this.max.getDouble(context) >= number);
     }
 
+    public boolean checkSquared(@NotNull LootContext context, double number) {
+        return (this.min == null || square(this.min.getDouble(context)) <= number) &&
+                (this.max == null || square(this.max.getDouble(context)) >= number);
+    }
+
+    private static double square(double number) {
+        return number * number;
+    }
+
 }

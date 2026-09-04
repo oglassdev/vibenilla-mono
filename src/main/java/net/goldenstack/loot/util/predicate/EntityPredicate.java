@@ -242,14 +242,14 @@ public interface EntityPredicate {
             var deltaX = Math.abs((float) (position.x() - entity.getPosition().x()));
             var deltaY = Math.abs((float) (position.y() - entity.getPosition().y()));
             var deltaZ = Math.abs((float) (position.z() - entity.getPosition().z()));
-            var horizontalDistance = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
-            var absoluteDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
+            var horizontalDistanceSquared = deltaX * deltaX + deltaZ * deltaZ;
+            var absoluteDistanceSquared = deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ;
             var context = LootContext.from(VanillaInterface.defaults(), Map.of());
             return this.x.check(context, deltaX)
                     && this.y.check(context, deltaY)
                     && this.z.check(context, deltaZ)
-                    && this.horizontal.check(context, horizontalDistance)
-                    && this.absolute.check(context, absoluteDistance);
+                    && this.horizontal.checkSquared(context, horizontalDistanceSquared)
+                    && this.absolute.checkSquared(context, absoluteDistanceSquared);
         }
     }
 
@@ -294,15 +294,15 @@ public interface EntityPredicate {
             var x = velocity.x() * 20.0;
             var y = velocity.y() * 20.0;
             var z = velocity.z() * 20.0;
-            var speed = Math.sqrt(x * x + y * y + z * z);
-            var horizontalSpeed = Math.sqrt(x * x + z * z);
+            var speedSquared = x * x + y * y + z * z;
+            var horizontalSpeedSquared = x * x + z * z;
             var verticalSpeed = Math.abs(y);
             var context = LootContext.from(VanillaInterface.defaults(), Map.of());
             return this.x.check(context, x)
                     && this.y.check(context, y)
                     && this.z.check(context, z)
-                    && this.speed.check(context, speed)
-                    && this.horizontalSpeed.check(context, horizontalSpeed)
+                    && this.speed.checkSquared(context, speedSquared)
+                    && this.horizontalSpeed.checkSquared(context, horizontalSpeedSquared)
                     && this.verticalSpeed.check(context, verticalSpeed)
                     && this.fallDistance.check(context, fallDistance);
         }
