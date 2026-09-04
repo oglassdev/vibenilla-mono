@@ -12,6 +12,7 @@ import java.util.Random;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 class LootPoolTest {
 
@@ -60,5 +61,25 @@ class LootPoolTest {
         );
 
         assertEquals(1, pool.generate(context).size());
+    }
+
+    @Test
+    void multipleChoicesUseVanillaIntegerRandomness() {
+        MinecraftServer.init();
+
+        var random = new Random(1L);
+        var expectedRandom = new Random(1L);
+        var context = LootContext.from(
+                VanillaInterface.defaults(),
+                Map.of(LootContext.LUCK, 0.0, LootContext.RANDOM, random)
+        );
+        var first = new LootEntry.Item(List.of(), List.of(), 1L, 0L, Material.STONE);
+        var second = new LootEntry.Item(List.of(), List.of(), 1L, 0L, Material.DIRT);
+        var expectedChoice = expectedRandom.nextInt(2) == 0 ? first : second;
+
+        var choice = LootPool.pickChoice(List.of(first, second), context);
+
+        assertSame(expectedChoice, choice);
+        assertEquals(expectedRandom.nextInt(), random.nextInt());
     }
 }

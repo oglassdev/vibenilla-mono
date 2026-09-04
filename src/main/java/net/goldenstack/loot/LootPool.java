@@ -109,14 +109,16 @@ public record LootPool(@NotNull LootNumber rolls,
             weightIndex++;
         }
 
-        var value = context.require(LootContext.RANDOM).nextLong(0, totalWeight);
+        var random = context.require(LootContext.RANDOM);
+        var value = totalWeight <= Integer.MAX_VALUE
+                ? random.nextInt((int) totalWeight)
+                : random.nextLong(totalWeight);
 
         var choice = weightedChoices.getLast();
 
         weightIndex = 0;
 
         for (var weightMilestone : weightMilestones) {
-
             if (value < weightMilestone) {
                 choice = weightedChoices.get(weightIndex);
                 break;
