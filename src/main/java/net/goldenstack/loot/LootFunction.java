@@ -1482,11 +1482,17 @@ public interface LootFunction {
         }
     }
 
-    record SetLootTable(@NotNull List<LootPredicate> predicates, @NotNull Key name, long seed) implements LootFunction {
+    record SetLootTable(@NotNull List<LootPredicate> predicates, @NotNull Key name, long seed,
+                        @Nullable Key type) implements LootFunction {
+        public SetLootTable(@NotNull List<LootPredicate> predicates, @NotNull Key name, long seed) {
+            this(predicates, name, seed, null);
+        }
+
         public static final @NotNull StructCodec<SetLootTable> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), SetLootTable::predicates,
                 "name", Codec.KEY, SetLootTable::name,
                 "seed", Codec.LONG.optional(0L), SetLootTable::seed,
+                "type", Codec.KEY, SetLootTable::type,
                 SetLootTable::new
         );
 

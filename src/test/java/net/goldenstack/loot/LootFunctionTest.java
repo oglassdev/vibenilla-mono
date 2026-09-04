@@ -481,6 +481,21 @@ class LootFunctionTest {
     }
 
     @Test
+    void setLootTableDecodesTheVanillaBlockEntityType() throws Exception {
+        MinecraftServer.init();
+
+        var input = MinestomAdventure.tagStringIO().asTag("""
+                {
+                  name: "minecraft:chests/simple_dungeon",
+                  type: "minecraft:chest"
+                }
+                """);
+        var function = LootFunction.SetLootTable.CODEC.decode(Transcoder.NBT, input).orElseThrow();
+
+        assertEquals(Key.key("minecraft:chest"), function.type());
+    }
+
+    @Test
     void setDamageUsesVanillaFloatPrecision() {
         MinecraftServer.init();
 
