@@ -154,6 +154,25 @@ public interface LootFunction {
         return newItems;
     }
 
+    private static @NotNull Codec<String> limitedStringCodec(int maximumLength) {
+        return Codec.STRING.transform(value -> {
+            if (value.length() > maximumLength) {
+                throw new IllegalArgumentException("String length exceeds " + maximumLength);
+            }
+
+            return value;
+        }, value -> value);
+    }
+
+    private static @NotNull Codec<FilteredText<String>> filteredStringCodec(int maximumLength) {
+        var stringCodec = limitedStringCodec(maximumLength);
+        return StructCodec.struct(
+                "raw", stringCodec, FilteredText::text,
+                "filtered", stringCodec.optional(), FilteredText::filtered,
+                FilteredText::new
+        );
+    }
+
     private static void addStackSplits(@NotNull List<ItemStack> items, @NotNull ItemStack item) {
         var maximumStackSize = item.maxStackSize();
 
@@ -1041,6 +1060,8 @@ public interface LootFunction {
 
     record SetBookCover(@NotNull List<LootPredicate> predicates, @Nullable FilteredText<String> title,
                         @Nullable String author, @Nullable Integer generation) implements LootFunction {
+        private static final @NotNull Codec<FilteredText<String>> TITLE_CODEC = filteredStringCodec(32);
+
         public SetBookCover {
 
             if (generation != null && (generation < 0 || generation > 3)) {
@@ -1050,7 +1071,7 @@ public interface LootFunction {
 
         public static final @NotNull StructCodec<SetBookCover> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), SetBookCover::predicates,
-                "title", FilteredText.STRING_CODEC.optional(), SetBookCover::title,
+                "title", TITLE_CODEC.optional(), SetBookCover::title,
                 "author", Codec.STRING.optional(), SetBookCover::author,
                 "generation", Codec.INT.optional(), SetBookCover::generation,
                 SetBookCover::new
@@ -1770,9 +1791,11 @@ public interface LootFunction {
     }
 
     record SetWritableBookPages(@NotNull List<LootPredicate> predicates, @NotNull List<FilteredText<String>> pages, @NotNull ListOperation operation) implements LootFunction {
+        private static final @NotNull Codec<FilteredText<String>> PAGE_CODEC = filteredStringCodec(1024);
+
         public static final @NotNull StructCodec<SetWritableBookPages> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), SetWritableBookPages::predicates,
-                "pages", FilteredText.STRING_CODEC.list(100), SetWritableBookPages::pages,
+                "pages", PAGE_CODEC.list(100), SetWritableBookPages::pages,
                 StructCodec.INLINE, ListOperation.codec(100), SetWritableBookPages::operation,
                 SetWritableBookPages::new
         );
@@ -1795,7 +1818,7 @@ public interface LootFunction {
     record SetWrittenBookPages(@NotNull List<LootPredicate> predicates, @NotNull List<FilteredText<Component>> pages, @NotNull ListOperation operation) implements LootFunction {
         public static final @NotNull StructCodec<SetWrittenBookPages> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), SetWrittenBookPages::predicates,
-                "pages", FilteredText.COMPONENT_CODEC.list(), SetWrittenBookPages::pages,
+                "pages", FilteredText.COMPONENT_CODEC.list(100), SetWrittenBookPages::pages,
                 StructCodec.INLINE, ListOperation.CODEC, SetWrittenBookPages::operation,
                 SetWrittenBookPages::new
         );

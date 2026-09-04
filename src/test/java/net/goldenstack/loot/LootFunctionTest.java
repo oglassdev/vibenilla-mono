@@ -466,6 +466,21 @@ class LootFunctionTest {
     }
 
     @Test
+    void setBookCoverEnforcesVanillaTitleLength() throws Exception {
+        MinecraftServer.init();
+
+        var input = MinestomAdventure.tagStringIO().asTag("""
+                {
+                  conditions: [],
+                  title: {raw: "123456789012345678901234567890123"},
+                  author: "author"
+                }
+                """);
+
+        assertThrows(IllegalArgumentException.class, () -> LootFunction.SetBookCover.CODEC.decode(Transcoder.NBT, input).orElseThrow());
+    }
+
+    @Test
     void setDamageUsesVanillaFloatPrecision() {
         MinecraftServer.init();
 
