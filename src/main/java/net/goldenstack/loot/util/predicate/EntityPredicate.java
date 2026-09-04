@@ -25,6 +25,9 @@ import net.minestom.server.instance.block.predicate.NbtPredicate;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.potion.PotionEffect;
 import net.minestom.server.potion.TimedPotion;
+import net.minestom.server.registry.Registries;
+import net.minestom.server.registry.RegistryKey;
+import net.minestom.server.registry.RegistryTag;
 import net.minestom.server.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -130,14 +133,19 @@ public interface EntityPredicate {
         }
     }
 
-    record EntityTypePredicate(@NotNull List<EntityType> types) implements EntityPredicate {
-        public static final @NotNull Codec<EntityTypePredicate> CODEC = EntityType.CODEC.list()
-                .orElse(EntityType.CODEC, List::of)
+    record EntityTypePredicate(@NotNull RegistryTag<EntityType> types) implements EntityPredicate {
+        public static final @NotNull Codec<EntityTypePredicate> CODEC = RegistryTag.codec(Registries::entityType)
                 .transform(EntityTypePredicate::new, EntityTypePredicate::types);
+
+        public EntityTypePredicate(@NotNull List<EntityType> types) {
+            this(RegistryTag.<EntityType>direct(types.stream()
+                    .map(entityType -> RegistryKey.<EntityType>unsafeOf(entityType.key().asString()))
+                    .toList()));
+        }
 
         @Override
         public boolean test(@NotNull Instance instance, @Nullable Point position, @Nullable Entity entity) {
-            return entity != null && this.types.contains(entity.getEntityType());
+            return entity != null && this.types.contains(RegistryKey.<EntityType>unsafeOf(entity.getEntityType().key().asString()));
         }
     }
 

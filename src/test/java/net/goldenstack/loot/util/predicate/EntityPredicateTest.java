@@ -68,6 +68,21 @@ class EntityPredicateTest {
     }
 
     @Test
+    void decodesEntityTypeListsThroughTheVanillaHolderSetSchema() throws Exception {
+        MinecraftServer.init();
+
+        var input = MinestomAdventure.tagStringIO().asTag("""
+                {
+                  entity_type: ["minecraft:zombie", "minecraft:skeleton"]
+                }
+                """);
+
+        var predicate = EntityPredicate.CODEC.decode(Transcoder.NBT, input).orElseThrow();
+
+        assertTrue(predicate.test(null, null, new Entity(EntityType.ZOMBIE)));
+    }
+
+    @Test
     void playerInputChecksEverySpecifiedField() {
         MinecraftServer.init();
 
