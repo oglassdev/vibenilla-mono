@@ -248,6 +248,11 @@ public interface VanillaInterface {
                 continue;
             }
 
+            if (slot >= 500 && slot < 504) {
+                items.add(player.getInventory().getItemStack(37 + slot - 500));
+                continue;
+            }
+
             var equipment = equipmentSlot(slot);
             if (equipment != null) {
                 items.add(player.getEquipment(equipment));

@@ -78,4 +78,20 @@ class LootSlotSourceTest {
                 source.provide(context).stream().map(ItemStack::material).toList()
         );
     }
+
+    @Test
+    void readsVanillaPlayerCraftingSlots() {
+        MinecraftServer.init();
+
+        var player = new Player(null, new GameProfile(UUID.randomUUID(), "test"));
+        player.getInventory().setItemStack(37, ItemStack.of(Material.STONE));
+        player.getInventory().setItemStack(39, ItemStack.of(Material.DIRT));
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of(LootContext.THIS_ENTITY, player));
+        var source = new LootSlotSource.Range("this", List.of(500, 501, 502, 503));
+
+        assertEquals(
+                List.of(Material.STONE, Material.AIR, Material.DIRT, Material.AIR),
+                source.provide(context).stream().map(ItemStack::material).toList()
+        );
+    }
 }
