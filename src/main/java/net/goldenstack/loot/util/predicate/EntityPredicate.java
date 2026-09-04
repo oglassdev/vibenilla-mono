@@ -203,19 +203,21 @@ public interface EntityPredicate {
             }
 
             var isBaby = entity.getEntityMeta() instanceof AgeableMobMeta ageableMobMeta && ageableMobMeta.isBaby();
-            if (this.isBaby != null && isBaby != this.isBaby) {
+            if (this.isBaby != null && entity instanceof LivingEntity && isBaby != this.isBaby) {
 
                 return false;
             }
 
-            var isInWater = instance.getBlock(entity.getPosition()).fluid();
-            if (this.isInWater != null && isInWater != this.isInWater) {
+            if (this.isInWater != null) {
+                var isInWater = instance.getBlock(entity.getPosition()).fluid();
 
-                return false;
+                if (isInWater != this.isInWater) {
+                    return false;
+                }
             }
 
             var isFallFlying = entity instanceof LivingEntity livingEntity && livingEntity.isFlyingWithElytra();
-            return this.isFallFlying == null || isFallFlying == this.isFallFlying;
+            return this.isFallFlying == null || !(entity instanceof LivingEntity) || isFallFlying == this.isFallFlying;
         }
     }
 

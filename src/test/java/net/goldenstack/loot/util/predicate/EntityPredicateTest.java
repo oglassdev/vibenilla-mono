@@ -3,6 +3,8 @@ package net.goldenstack.loot.util.predicate;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.adventure.MinestomAdventure;
 import net.minestom.server.codec.Transcoder;
+import net.minestom.server.entity.Entity;
+import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.Player;
 import net.minestom.server.network.player.GameProfile;
 import org.junit.jupiter.api.Test;
@@ -71,5 +73,13 @@ class EntityPredicateTest {
         var predicate = new EntityPredicate.FishingHookPredicate(null);
 
         assertTrue(predicate.test(null, null, null));
+    }
+
+    @Test
+    void entityFlagsIgnoreLivingOnlyFieldsForNonLivingEntities() {
+        var predicate = new EntityPredicate.EntityFlagsPredicate(null, null, null, null, null, null, true, null, true);
+        var entity = new Entity(EntityType.ITEM);
+
+        assertTrue(predicate.test(null, null, entity));
     }
 }
