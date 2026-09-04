@@ -11,9 +11,11 @@ import net.kyori.adventure.nbt.BinaryTag;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.text.Component;
 import net.minestom.server.codec.Codec;
-import net.minestom.server.entity.Entity;
-import net.minestom.server.entity.Player;
 import net.minestom.server.coordinate.Point;
+import net.minestom.server.entity.Entity;
+import net.minestom.server.entity.EquipmentSlot;
+import net.minestom.server.entity.Player;
+import net.minestom.server.inventory.EquipmentHandler;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
@@ -187,19 +189,107 @@ public interface VanillaInterface {
     default @NotNull List<ItemStack> slotRange(@NotNull String source,
                                                @NotNull List<Integer> slots,
                                                @NotNull LootContext context) {
-        if (!source.equals("container")) {
-            return List.of();
+        if (source.equals("container")) {
+            var container = context.get(LootContext.CONTAINER);
+            if (container == null) {
+                return List.of();
+            }
+
+            var items = new ArrayList<ItemStack>();
+            for (var slot : slots) {
+                if (slot >= 0 && slot < container.size()) {
+                    items.add(container.get(slot));
+                }
+            }
+
+            return items;
         }
 
-        var container = context.get(LootContext.CONTAINER);
-        if (container == null) {
-            return List.of();
+        var entity = switch (source) {
+            case "this" -> context.get(LootContext.THIS_ENTITY);
+            case "attacker" -> context.get(LootContext.ATTACKING_ENTITY);
+            case "direct_attacker" -> context.get(LootContext.DIRECT_ATTACKING_ENTITY);
+            case "attacking_player" -> context.get(LootContext.LAST_DAMAGE_PLAYER);
+            case "target_entity" -> context.get(LootContext.TARGET_ENTITY);
+            case "interacting_entity" -> context.get(LootContext.INTERACTING_ENTITY);
+            default -> null;
+        };
+
+        if (entity instanceof Player player) {
+            return playerSlots(player, slots);
         }
 
+        if (entity instanceof EquipmentHandler equipment) {
+            return equipmentSlots(equipment, slots);
+        }
+
+        if (source.equals("block_entity")) {
+            var block = context.get(LootContext.BLOCK_STATE);
+            if (block == null) {
+                return List.of();
+            }
+
+            return indexedSlots(block.getTag(CONTAINER_ITEMS), slots);
+        }
+
+        return List.of();
+    }
+
+    private static @NotNull List<ItemStack> playerSlots(@NotNull Player player, @NotNull List<Integer> slots) {
         var items = new ArrayList<ItemStack>();
         for (var slot : slots) {
-            if (slot >= 0 && slot < container.size()) {
-                items.add(container.get(slot));
+            if (slot >= 0 && slot < 36) {
+                items.add(player.getInventory().getItemStack(slot));
+                continue;
+            }
+
+            if (slot == 499) {
+                items.add(player.getInventory().getCursorItem());
+                continue;
+            }
+
+            var equipment = equipmentSlot(slot);
+            if (equipment != null) {
+                items.add(player.getEquipment(equipment));
+            }
+        }
+
+        return items;
+    }
+
+    private static @NotNull List<ItemStack> equipmentSlots(@NotNull EquipmentHandler equipment,
+                                                           @NotNull List<Integer> slots) {
+        var items = new ArrayList<ItemStack>();
+        for (var slot : slots) {
+            var equipmentSlot = equipmentSlot(slot);
+            if (equipmentSlot != null) {
+                items.add(equipment.getEquipment(equipmentSlot));
+            }
+        }
+
+        return items;
+    }
+
+    private static @Nullable EquipmentSlot equipmentSlot(int slot) {
+        return switch (slot) {
+            case 98 -> EquipmentSlot.MAIN_HAND;
+            case 99 -> EquipmentSlot.OFF_HAND;
+            case 100 -> EquipmentSlot.BOOTS;
+            case 101 -> EquipmentSlot.LEGGINGS;
+            case 102 -> EquipmentSlot.CHESTPLATE;
+            case 103 -> EquipmentSlot.HELMET;
+            case 105 -> EquipmentSlot.BODY;
+            case 106 -> EquipmentSlot.SADDLE;
+            default -> null;
+        };
+    }
+
+    private static @NotNull List<ItemStack> indexedSlots(@NotNull List<ItemStack> source,
+                                                         @NotNull List<Integer> slots) {
+        var items = new ArrayList<ItemStack>();
+        for (var slot : slots) {
+            if (slot >= 0 && slot < source.size()) {
+                items.add(source.get(slot));
             }
         }
 
