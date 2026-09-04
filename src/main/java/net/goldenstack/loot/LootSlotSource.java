@@ -99,7 +99,6 @@ public interface LootSlotSource {
 
     record Limit(@NotNull LootSlotSource slotSource, int limit) implements LootSlotSource {
         private static final @NotNull Codec<Integer> POSITIVE_CODEC = Codec.INT.transform(value -> {
-
             if (value <= 0) {
                 throw new IllegalArgumentException("Slot source limit must be positive");
             }
@@ -108,7 +107,6 @@ public interface LootSlotSource {
         }, value -> value);
 
         public Limit {
-
             if (limit <= 0) {
                 throw new IllegalArgumentException("Slot source limit must be positive");
             }
