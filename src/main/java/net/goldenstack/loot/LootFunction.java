@@ -535,9 +535,10 @@ public interface LootFunction {
 
             if (level == 0) return input;
 
-            int newAmount = input.amount() + level * count.getInt(context);
+            var addition = Math.round(level * (float) this.count.getDouble(context));
+            var newAmount = input.amount() + addition;
 
-            return input.withAmount(limit != null ? Math.min(limit, newAmount) : newAmount);
+            return input.withAmount(this.limit != null && this.limit > 0 ? Math.min(this.limit, newAmount) : newAmount);
         }
 
         @Override
@@ -1258,7 +1259,7 @@ public interface LootFunction {
         }
     }
 
-    record SetFireworks(@NotNull List<LootPredicate> predicates, @Nullable Integer flightDuration, @NotNull ListOperation.WithValues<FireworkExplosion> explosions) implements LootFunction {
+    record SetFireworks(@NotNull List<LootPredicate> predicates, @Nullable Integer flightDuration, @Nullable ListOperation.WithValues<FireworkExplosion> explosions) implements LootFunction {
         private static final @NotNull Codec<Integer> UNSIGNED_BYTE_CODEC = Codec.INT.transform(value -> {
             if (value < 0 || value > 255) {
                 throw new IllegalArgumentException("Flight duration must be an unsigned byte");
@@ -1269,7 +1270,7 @@ public interface LootFunction {
         public static final @NotNull StructCodec<SetFireworks> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), SetFireworks::predicates,
                 "flight_duration", UNSIGNED_BYTE_CODEC.optional(), SetFireworks::flightDuration,
-                "explosions", ListOperation.WithValues.codec(FireworkExplosion.CODEC), SetFireworks::explosions,
+                "explosions", ListOperation.WithValues.codec(FireworkExplosion.CODEC).optional(), SetFireworks::explosions,
                 SetFireworks::new
         );
 
@@ -1281,7 +1282,7 @@ public interface LootFunction {
 
             FireworkList updated = new FireworkList(
                     this.flightDuration != null ? this.flightDuration.byteValue() : list.flightDuration(),
-                    explosions.operation().apply(this.explosions.values(), list.explosions())
+                    this.explosions == null ? list.explosions() : this.explosions.operation().apply(this.explosions.values(), list.explosions())
             );
 
             return input.with(DataComponents.FIREWORKS, updated);
