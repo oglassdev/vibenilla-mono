@@ -1635,7 +1635,7 @@ public interface LootFunction {
             green = (int) (green * averageIntensity / resultIntensity);
             blue = (int) (blue * averageIntensity / resultIntensity);
 
-            return input.with(DataComponents.DYED_COLOR, new Color(red, green, blue));
+            return input.withAmount(1).with(DataComponents.DYED_COLOR, new Color(red, green, blue));
         }
 
         @Override

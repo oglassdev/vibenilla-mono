@@ -90,10 +90,11 @@ class LootFunctionTest {
         var dyed = new LootFunction.SetRandomDyes(List.of(), new LootNumber.Constant(1.0));
         var potion = new LootFunction.SetRandomPotion(List.of(), null);
 
-        var dyedItem = dyed.apply(ItemStack.of(Material.LEATHER_HELMET), context);
+        var dyedItem = dyed.apply(ItemStack.of(Material.LEATHER_HELMET, 3), context);
         var potionItem = potion.apply(ItemStack.of(Material.POTION), context);
 
         assertEquals(Color.class, dyedItem.get(DataComponents.DYED_COLOR).getClass());
+        assertEquals(1, dyedItem.amount());
         assertNotNull(potionItem.get(DataComponents.POTION_CONTENTS).potion());
     }
 
