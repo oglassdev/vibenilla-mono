@@ -2,6 +2,8 @@ package net.goldenstack.loot;
 
 import net.goldenstack.loot.util.VanillaInterface;
 import net.goldenstack.loot.util.RelevantEntity;
+import net.goldenstack.loot.util.LootNumberRange;
+import net.kyori.adventure.nbt.IntBinaryTag;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.adventure.MinestomAdventure;
 import net.minestom.server.codec.Transcoder;
@@ -11,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class LootNumberTest {
 
@@ -73,5 +76,27 @@ class LootNumberTest {
         var score = LootNumber.Score.CODEC.decode(Transcoder.NBT, input).orElseThrow();
 
         assertEquals(16_777_216.0, score.scale());
+    }
+
+    @Test
+    void numberProviderCodecsUseVanillaFloatPrecision() throws Exception {
+        MinecraftServer.init();
+
+        var input = MinestomAdventure.tagStringIO().asTag("16777217");
+        var number = LootNumber.CODEC.decode(Transcoder.NBT, input).orElseThrow();
+
+        assertEquals(16_777_216.0, number.getDouble(LootContext.from(VanillaInterface.defaults(), Map.of())));
+    }
+
+    @Test
+    void exactRangesUseIntegerScalarEncoding() throws Exception {
+        MinecraftServer.init();
+
+        var integer = MinestomAdventure.tagStringIO().asTag("3");
+        var integerRange = LootNumberRange.CODEC.decode(Transcoder.NBT, integer).orElseThrow();
+        var encoded = LootNumberRange.CODEC.encode(Transcoder.NBT, integerRange).orElseThrow();
+
+        assertEquals(3.0, integerRange.min().getDouble(LootContext.from(VanillaInterface.defaults(), Map.of())));
+        assertInstanceOf(IntBinaryTag.class, encoded);
     }
 }

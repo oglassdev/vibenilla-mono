@@ -21,7 +21,10 @@ import java.util.Random;
 @SuppressWarnings("UnstableApiUsage")
 public interface LootNumber {
     
-    @NotNull Codec<LootNumber> CODEC = Codec.DOUBLE.<LootNumber>transform(Constant::new, a -> ((Constant) a).value()).orElse(Codec.RegistryTaggedUnion(registries -> {
+    @NotNull Codec<LootNumber> CODEC = Codec.FLOAT.<LootNumber>transform(
+            value -> new Constant((double) value),
+            value -> ((Constant) value).value().floatValue()
+    ).orElse(Codec.RegistryTaggedUnion(registries -> {
         class Holder {
             static final @NotNull DynamicRegistry<StructCodec<? extends LootNumber>> CODEC = createDefaultRegistry();
         }
@@ -97,7 +100,7 @@ public interface LootNumber {
 
     record Constant(@NotNull Double value) implements LootNumber {
         public static final @NotNull StructCodec<Constant> CODEC = StructCodec.struct(
-                "value", Codec.DOUBLE, Constant::value,
+                "value", Codec.FLOAT.transform(value -> (double) value, value -> value.floatValue()), Constant::value,
                 Constant::new
         );
 

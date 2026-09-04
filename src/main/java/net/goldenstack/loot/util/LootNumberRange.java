@@ -15,8 +15,16 @@ import org.jetbrains.annotations.Nullable;
 public record LootNumberRange(@Nullable LootNumber min, @Nullable LootNumber max) {
 
     @SuppressWarnings({"UnstableApiUsage", "NumberEquality"})
-    public static final @NotNull Codec<LootNumberRange> CODEC = Codec.DOUBLE.transform(LootNumber.Constant::new, LootNumber.Constant::value)
-            .transform(n -> new LootNumberRange(n, n), r -> {
+    public static final @NotNull Codec<LootNumberRange> CODEC = Codec.INT.<LootNumber>transform(
+                    value -> new LootNumber.Constant((double) value),
+                    value -> {
+                        if (!(value instanceof LootNumber.Constant constant) || constant.value() != Math.floor(constant.value())) {
+                            throw new UnsupportedOperationException("Using struct codec");
+                        }
+
+                        return constant.value().intValue();
+                    }
+            ).transform(n -> new LootNumberRange(n, n), r -> {
                 if (r.min() instanceof LootNumber.Constant(Double min) && r.max() instanceof LootNumber.Constant(Double max) && min == max) {
                     return (LootNumber.Constant) r.min();
                 } else throw new UnsupportedOperationException("Using struct codec");
