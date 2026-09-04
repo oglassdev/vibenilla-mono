@@ -951,6 +951,12 @@ public interface LootFunction {
 
     record SetBookCover(@NotNull List<LootPredicate> predicates, @Nullable FilteredText<String> title,
                         @Nullable String author, @Nullable Integer generation) implements LootFunction {
+        public SetBookCover {
+            if (generation != null && (generation < 0 || generation > 3)) {
+                throw new IllegalArgumentException("Book generation must be between 0 and 3");
+            }
+        }
+
         public static final @NotNull StructCodec<SetBookCover> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), SetBookCover::predicates,
                 "title", FilteredText.STRING_CODEC.optional(), SetBookCover::title,
@@ -1188,7 +1194,7 @@ public interface LootFunction {
     record SetEnchantments(@NotNull List<LootPredicate> predicates, @NotNull Map<RegistryKey<Enchantment>, LootNumber> enchantments, boolean add) implements LootFunction {
         public static final @NotNull StructCodec<SetEnchantments> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), SetEnchantments::predicates,
-                "enchantments", RegistryKey.codec(Registries::enchantment).mapValue(LootNumber.CODEC), SetEnchantments::enchantments,
+                "enchantments", RegistryKey.codec(Registries::enchantment).mapValue(LootNumber.CODEC).optional(Map.of()), SetEnchantments::enchantments,
                 "add", Codec.BOOLEAN.optional(false), SetEnchantments::add,
                 SetEnchantments::new
         );
@@ -1222,8 +1228,8 @@ public interface LootFunction {
                 "shape", Codec.Enum(FireworkExplosion.Shape.class).optional(), SetFireworkExplosion::shape,
                 "colors", Color.CODEC.list().optional(), SetFireworkExplosion::colors,
                 "fade_colors", Color.CODEC.list().optional(), SetFireworkExplosion::fadeColors,
-                "has_trail", Codec.BOOLEAN.optional(), SetFireworkExplosion::trail,
-                "has_twinkle", Codec.BOOLEAN.optional(), SetFireworkExplosion::twinkle,
+                "trail", Codec.BOOLEAN.optional(), SetFireworkExplosion::trail,
+                "twinkle", Codec.BOOLEAN.optional(), SetFireworkExplosion::twinkle,
                 SetFireworkExplosion::new
         );
 
@@ -1253,9 +1259,16 @@ public interface LootFunction {
     }
 
     record SetFireworks(@NotNull List<LootPredicate> predicates, @Nullable Integer flightDuration, @NotNull ListOperation.WithValues<FireworkExplosion> explosions) implements LootFunction {
+        private static final @NotNull Codec<Integer> UNSIGNED_BYTE_CODEC = Codec.INT.transform(value -> {
+            if (value < 0 || value > 255) {
+                throw new IllegalArgumentException("Flight duration must be an unsigned byte");
+            }
+            return value;
+        }, value -> value);
+
         public static final @NotNull StructCodec<SetFireworks> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), SetFireworks::predicates,
-                "flight_duration", Codec.INT.optional(), SetFireworks::flightDuration,
+                "flight_duration", UNSIGNED_BYTE_CODEC.optional(), SetFireworks::flightDuration,
                 "explosions", ListOperation.WithValues.codec(FireworkExplosion.CODEC), SetFireworks::explosions,
                 SetFireworks::new
         );
@@ -1570,7 +1583,7 @@ public interface LootFunction {
     record SetStewEffect(@NotNull List<LootPredicate> predicates, @NotNull List<AddedEffect> effects) implements LootFunction {
         public static final @NotNull StructCodec<SetStewEffect> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), SetStewEffect::predicates,
-                "effects", AddedEffect.CODEC.list(), SetStewEffect::effects,
+                "effects", AddedEffect.CODEC.list().optional(List.of()), SetStewEffect::effects,
                 SetStewEffect::new
         );
 
