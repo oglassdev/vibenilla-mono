@@ -57,8 +57,8 @@ public record NBTPath(@NotNull List<Selector> selectors) {
 
             @Override
             public void prepare(@NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {
-                if (!source.has(key)) {
-                    source.get(key).set(nextElement.get());
+                if (!source.has(this.key)) {
+                    source.get(this.key).set(nextElement.get());
                 }
             }
 
@@ -128,17 +128,17 @@ public record NBTPath(@NotNull List<Selector> selectors) {
         record ObjectFilter(@NotNull String key, @NotNull CompoundBinaryTag filter) implements Selector {
             @Override
             public void get(@NotNull NBTReference source, @NotNull Consumer<NBTReference> consumer) {
-                var reference = source.get(key);
+                var reference = source.get(this.key);
 
-                if (NBTUtils.compareNBT(filter, reference.get(), false)) {
+                if (NBTUtils.compareNBT(this.filter, reference.get(), false)) {
                     consumer.accept(reference);
                 }
             }
 
             @Override
             public void prepare(@NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {
-                if (!source.has(key)) {
-                    source.get(key).set(filter);
+                if (!source.has(this.key)) {
+                    source.get(this.key).set(this.filter);
                 }
             }
 
@@ -150,7 +150,7 @@ public record NBTPath(@NotNull List<Selector> selectors) {
             @Override
             public String toString() {
                 try {
-                    return key + TagStringIO.tagStringIO().asString(filter);
+                    return this.key + TagStringIO.tagStringIO().asString(this.filter);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
