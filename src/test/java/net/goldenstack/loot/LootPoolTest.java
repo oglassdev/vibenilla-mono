@@ -5,6 +5,8 @@ import net.kyori.adventure.key.Key;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
+import net.minestom.server.registry.RegistryKey;
+import net.minestom.server.registry.RegistryTag;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
@@ -112,5 +114,22 @@ class LootPoolTest {
         var entry = new LootEntry.Dynamic(List.of(), List.of(), 1L, 0L, Key.key("minecraft:test"));
 
         assertEquals(List.of(Material.DIAMOND), entry.generate(context).stream().map(ItemStack::material).toList());
+    }
+
+    @Test
+    void expandedTagEntriesDoNotApplyTagFunctions() {
+        MinecraftServer.init();
+
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of());
+        var entry = new LootEntry.Tag(
+                List.of(),
+                List.of(new LootFunction.SetCount(List.of(), new LootNumber.Constant(4.0), false)),
+                1L,
+                0L,
+                RegistryTag.direct(RegistryKey.unsafeOf("minecraft:stone")),
+                true
+        );
+
+        assertEquals(1, entry.requestChoices(context).getFirst().generate(context).getFirst().amount());
     }
 }

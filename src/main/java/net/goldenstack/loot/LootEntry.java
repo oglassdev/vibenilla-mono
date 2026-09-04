@@ -353,7 +353,7 @@ public interface LootEntry {
 
                     @Override
                     public @NotNull List<ItemStack> generate(@NotNull LootContext context) {
-                        return List.of(LootFunction.apply(Tag.this.functions, ItemStack.of(material), context));
+                        return List.of(ItemStack.of(material));
                     }
 
                 });
