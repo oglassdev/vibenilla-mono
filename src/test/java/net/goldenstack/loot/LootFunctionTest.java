@@ -94,6 +94,19 @@ class LootFunctionTest {
     }
 
     @Test
+    void applyBonusSkipsFailedConditions() {
+        MinecraftServer.init();
+
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of());
+        var item = ItemStack.of(Material.STONE);
+        var enchantment = RegistryKey.<Enchantment>unsafeOf(Key.key("minecraft:fortune"));
+        var formula = new LootFunction.ApplyBonus.Formula.Wrapper(new LootFunction.ApplyBonus.Formula.OreDrops());
+        var function = new LootFunction.ApplyBonus(List.of(new LootPredicate.AnyOf(List.of())), enchantment, formula);
+
+        assertSame(item, function.apply(item, context));
+    }
+
+    @Test
     void customModelDataAppliesListOperations() {
         MinecraftServer.init();
 
