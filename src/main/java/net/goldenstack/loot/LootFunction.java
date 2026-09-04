@@ -64,6 +64,25 @@ public interface LootFunction {
         }, LootFunction::codec, "function");
     }
 
+    final class Codecs {
+        private static final @NotNull Codec<RGBLike> FIREWORK_COLOR_CODEC = Codec.INT.transform(
+                Color::new,
+                color -> Color.fromRGBLike(color).asRGB()
+        );
+
+        private static final @NotNull Codec<FireworkExplosion> FIREWORK_EXPLOSION_CODEC = StructCodec.struct(
+                "shape", Codec.Enum(FireworkExplosion.Shape.class), FireworkExplosion::shape,
+                "colors", FIREWORK_COLOR_CODEC.list().optional(List.of()), FireworkExplosion::colors,
+                "fade_colors", FIREWORK_COLOR_CODEC.list().optional(List.of()), FireworkExplosion::fadeColors,
+                "has_trail", Codec.BOOLEAN.optional(false), FireworkExplosion::hasTrail,
+                "has_twinkle", Codec.BOOLEAN.optional(false), FireworkExplosion::hasTwinkle,
+                FireworkExplosion::new
+        );
+
+        private Codecs() {
+        }
+    }
+
     static @NotNull DynamicRegistry<StructCodec<? extends LootFunction>> createDefaultRegistry() {
         final DynamicRegistry<StructCodec<? extends LootFunction>> registry = DynamicRegistry.create(Key.key("loot_functions"));
         registry.register("apply_bonus", ApplyBonus.CODEC);
@@ -1366,8 +1385,8 @@ public interface LootFunction {
         public static final @NotNull StructCodec<SetFireworkExplosion> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), SetFireworkExplosion::predicates,
                 "shape", Codec.Enum(FireworkExplosion.Shape.class).optional(), SetFireworkExplosion::shape,
-                "colors", Color.CODEC.list().optional(), SetFireworkExplosion::colors,
-                "fade_colors", Color.CODEC.list().optional(), SetFireworkExplosion::fadeColors,
+                "colors", Codecs.FIREWORK_COLOR_CODEC.list().optional(), SetFireworkExplosion::colors,
+                "fade_colors", Codecs.FIREWORK_COLOR_CODEC.list().optional(), SetFireworkExplosion::fadeColors,
                 "trail", Codec.BOOLEAN.optional(), SetFireworkExplosion::trail,
                 "twinkle", Codec.BOOLEAN.optional(), SetFireworkExplosion::twinkle,
                 SetFireworkExplosion::new
@@ -1410,7 +1429,7 @@ public interface LootFunction {
         public static final @NotNull StructCodec<SetFireworks> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), SetFireworks::predicates,
                 "flight_duration", UNSIGNED_BYTE_CODEC.optional(), SetFireworks::flightDuration,
-                "explosions", ListOperation.WithValues.codec(FireworkExplosion.CODEC, 256).optional(), SetFireworks::explosions,
+                "explosions", ListOperation.WithValues.codec(Codecs.FIREWORK_EXPLOSION_CODEC, 256).optional(), SetFireworks::explosions,
                 SetFireworks::new
         );
 

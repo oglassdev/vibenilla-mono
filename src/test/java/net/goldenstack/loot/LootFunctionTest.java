@@ -496,6 +496,23 @@ class LootFunctionTest {
     }
 
     @Test
+    void setFireworkExplosionDecodesIntegerRgbColors() throws Exception {
+        MinecraftServer.init();
+
+        var input = MinestomAdventure.tagStringIO().asTag("""
+                {
+                  colors: [1193046]
+                }
+                """);
+        var function = LootFunction.SetFireworkExplosion.CODEC.decode(Transcoder.NBT, input).orElseThrow();
+        var color = function.colors().getFirst();
+
+        assertEquals(18, color.red());
+        assertEquals(52, color.green());
+        assertEquals(86, color.blue());
+    }
+
+    @Test
     void setDamageUsesVanillaFloatPrecision() {
         MinecraftServer.init();
 
