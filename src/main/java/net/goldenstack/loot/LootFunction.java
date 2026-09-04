@@ -20,6 +20,7 @@ import net.minestom.server.color.DyeColor;
 import net.minestom.server.component.DataComponent;
 import net.minestom.server.component.DataComponentMap;
 import net.minestom.server.component.DataComponents;
+import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.*;
 import net.minestom.server.entity.attribute.Attribute;
 import net.minestom.server.entity.attribute.AttributeModifier;
@@ -68,6 +69,17 @@ public interface LootFunction {
         private static final @NotNull Codec<RGBLike> FIREWORK_COLOR_CODEC = Codec.INT.transform(
                 Color::new,
                 color -> Color.fromRGBLike(color).asRGB()
+        );
+
+        private static final @NotNull Codec<LootNumber> CUSTOM_MODEL_DATA_COLOR_CODEC = LootNumber.CODEC.orElse(
+                Codec.VECTOR3D.transform(
+                        vector -> new LootNumber.Constant((double) new Color((float) vector.x(), (float) vector.y(), (float) vector.z()).asRGB()),
+                        value -> {
+                            var color = new Color(value.value().intValue());
+                            return new Vec(color.red() / 255.0, color.green() / 255.0, color.blue() / 255.0);
+                        }
+                ),
+                value -> value
         );
 
         private static final @NotNull Codec<FireworkExplosion> FIREWORK_EXPLOSION_CODEC = StructCodec.struct(
@@ -1264,7 +1276,7 @@ public interface LootFunction {
                 "floats", ListOperation.WithValues.codec(LootNumber.CODEC).optional(), SetCustomModelData::floats,
                 "flags", ListOperation.WithValues.codec(Codec.BOOLEAN).optional(), SetCustomModelData::flags,
                 "strings", ListOperation.WithValues.codec(Codec.STRING).optional(), SetCustomModelData::strings,
-                "colors", ListOperation.WithValues.codec(LootNumber.CODEC).optional(), SetCustomModelData::colors,
+                "colors", ListOperation.WithValues.codec(Codecs.CUSTOM_MODEL_DATA_COLOR_CODEC).optional(), SetCustomModelData::colors,
                 SetCustomModelData::new
         );
 

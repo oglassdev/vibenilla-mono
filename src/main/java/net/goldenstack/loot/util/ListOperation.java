@@ -2,7 +2,9 @@ package net.goldenstack.loot.util;
 
 import net.kyori.adventure.key.Key;
 import net.minestom.server.codec.Codec;
+import net.minestom.server.codec.Result;
 import net.minestom.server.codec.StructCodec;
+import net.minestom.server.codec.Transcoder;
 import net.minestom.server.registry.DynamicRegistry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,17 +41,32 @@ public sealed interface ListOperation {
         return registry;
     }
 
-    static @NotNull Codec<ListOperation> codec(int maxSize) {
-        return CODEC.transform(operation -> {
+    static @NotNull StructCodec<ListOperation> codec(int maxSize) {
+        return new StructCodec<>() {
+            @Override
+            public <D> Result<ListOperation> decodeFromMap(Transcoder<D> coder, Transcoder.MapLike<D> map) {
+                var result = ListOperation.CODEC.decodeFromMap(coder, map);
 
-            if (operation instanceof ReplaceSection replaceSection
-                    && replaceSection.size() != null
-                    && replaceSection.size() > maxSize) {
-                throw new IllegalArgumentException("Size value too large: " + replaceSection.size());
+                if (!(result instanceof Result.Ok(ListOperation operation))) {
+                    return result.cast();
+                }
+
+                if (operation instanceof ReplaceSection replaceSection
+                        && replaceSection.size() != null
+                        && replaceSection.size() > maxSize) {
+                    return new Result.Error<>("Size value too large: " + replaceSection.size());
+                }
+
+                return new Result.Ok<>(operation);
             }
 
-            return operation;
-        }, operation -> operation);
+            @Override
+            public <D> Result<D> encodeToMap(Transcoder<D> coder,
+                                             ListOperation value,
+                                             Transcoder.MapBuilder<D> map) {
+                return ListOperation.CODEC.encodeToMap(coder, value, map);
+            }
+        };
     }
 
     default <T> @NotNull List<T> apply(@NotNull List<T> values, @NotNull List<T> input) {

@@ -96,6 +96,29 @@ class LootFunctionTest {
     }
 
     @Test
+    void customModelDataColorsAcceptVanillaRgbVectors() throws Exception {
+        MinecraftServer.init();
+
+        var input = MinestomAdventure.tagStringIO().asTag("""
+                {
+                  colors: {
+                    mode: "replace_all",
+                    values: [[1.0F, 0.5F, 0.0F]]
+                  }
+                }
+                """);
+        var transcoder = new RegistryTranscoder<>(Transcoder.NBT, MinecraftServer.process());
+        var function = LootFunction.SetCustomModelData.CODEC.decode(transcoder, input).orElseThrow();
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of());
+        var result = function.apply(ItemStack.of(Material.STONE), context);
+        var color = result.get(DataComponents.CUSTOM_MODEL_DATA).colors().getFirst();
+
+        assertEquals(255, color.red());
+        assertEquals(127, color.green());
+        assertEquals(0, color.blue());
+    }
+
+    @Test
     void randomFunctionsWriteTheirComponents() {
         MinecraftServer.init();
 
