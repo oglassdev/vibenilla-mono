@@ -582,22 +582,24 @@ public interface LootFunction {
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
-            var reg = MinecraftServer.getEnchantmentRegistry();
+            var enchantmentRegistry = MinecraftServer.getEnchantmentRegistry();
 
-            List<RegistryKey<Enchantment>> values = new ArrayList<>();
-            (options == null ? reg.keys() : options).forEach(values::add);
+            var values = new ArrayList<RegistryKey<Enchantment>>();
+            (this.options == null ? enchantmentRegistry.keys() : this.options).forEach(values::add);
 
-            if (onlyCompatible && !input.material().equals(Material.BOOK)) {
-                values.removeIf(ench -> !reg.get(ench).supportedItems().contains(input.material()));
+            if (this.onlyCompatible && !input.material().equals(Material.BOOK)) {
+                values.removeIf(enchantment -> !enchantmentRegistry.get(enchantment).supportedItems().contains(input.material()));
             }
 
-            if (values.isEmpty()) return input;
+            if (values.isEmpty()) {
+                return input;
+            }
 
             var random = context.require(LootContext.RANDOM);
 
             var chosen = values.get(random.nextInt(values.size()));
 
-            var level = random.nextInt(reg.get(chosen).maxLevel()) + 1;
+            var level = random.nextInt(enchantmentRegistry.get(chosen).maxLevel()) + 1;
             var result = EnchantmentUtils.modifyItem(input, map -> map.put(chosen, level));
 
             if (this.includeAdditionalCostComponent && context.has(LootContext.ADDITIONAL_COST_COMPONENT_ALLOWED)) {
@@ -631,7 +633,9 @@ public interface LootFunction {
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
-            if (!LootPredicate.all(predicates, context)) return input;
+            if (!LootPredicate.all(this.predicates, context)) {
+                return input;
+            }
 
             var enchantmentCost = this.levels.getInt(context);
             var result = context.vanilla().enchant(context.require(LootContext.RANDOM), input, enchantmentCost, this.options);
@@ -1017,6 +1021,7 @@ public interface LootFunction {
     record SetBookCover(@NotNull List<LootPredicate> predicates, @Nullable FilteredText<String> title,
                         @Nullable String author, @Nullable Integer generation) implements LootFunction {
         public SetBookCover {
+
             if (generation != null && (generation < 0 || generation > 3)) {
                 throw new IllegalArgumentException("Book generation must be between 0 and 3");
             }
@@ -1333,9 +1338,11 @@ public interface LootFunction {
 
     record SetFireworks(@NotNull List<LootPredicate> predicates, @Nullable Integer flightDuration, @Nullable ListOperation.WithValues<FireworkExplosion> explosions) implements LootFunction {
         private static final @NotNull Codec<Integer> UNSIGNED_BYTE_CODEC = Codec.INT.transform(value -> {
+
             if (value < 0 || value > 255) {
                 throw new IllegalArgumentException("Flight duration must be an unsigned byte");
             }
+
             return value;
         }, value -> value);
 
@@ -1687,20 +1694,24 @@ public interface LootFunction {
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
-            if (!LootPredicate.all(predicates, context)) return input;
+            if (!LootPredicate.all(this.predicates, context)) {
+                return input;
+            }
 
-            if (!Material.SUSPICIOUS_STEW.equals(input.material()) || effects.isEmpty()) return input;
+            if (!Material.SUSPICIOUS_STEW.equals(input.material()) || this.effects.isEmpty()) {
+                return input;
+            }
 
-            AddedEffect effect = effects.get(context.require(LootContext.RANDOM).nextInt(effects.size()));
+            var effect = this.effects.get(context.require(LootContext.RANDOM).nextInt(this.effects.size()));
 
-            long duration = effect.duration().getInt(context);
+            var duration = effect.duration().getInt(context);
             if (!effect.effect().instantaneous()) {
                 duration *= ServerFlag.SERVER_TICKS_PER_SECOND;
             }
 
-            SuspiciousStewEffects.Effect added = new SuspiciousStewEffects.Effect(effect.effect(), (int) duration);
+            var added = new SuspiciousStewEffects.Effect(effect.effect(), duration);
 
-            SuspiciousStewEffects current = input.get(DataComponents.SUSPICIOUS_STEW_EFFECTS, SuspiciousStewEffects.EMPTY);
+            var current = input.get(DataComponents.SUSPICIOUS_STEW_EFFECTS, SuspiciousStewEffects.EMPTY);
             return input.with(DataComponents.SUSPICIOUS_STEW_EFFECTS, current.with(added));
         }
 
