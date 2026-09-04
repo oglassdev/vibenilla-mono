@@ -867,6 +867,15 @@ public interface EntityPredicate {
             var vehicle = entity == null ? null : entity.getVehicle();
             return vehicle != null && this.predicate.test(instance, vehicle.getPosition(), vehicle);
         }
+
+        @Override
+        public boolean test(@NotNull Instance instance,
+                            @Nullable Point position,
+                            @Nullable Entity entity,
+                            @NotNull VanillaInterface vanilla) {
+            var vehicle = entity == null ? null : entity.getVehicle();
+            return vehicle != null && this.predicate.test(instance, vehicle.getPosition(), vehicle, vanilla);
+        }
     }
 
     record EntityPassenger(@NotNull EntityPredicate predicate) implements EntityPredicate {
@@ -875,6 +884,15 @@ public interface EntityPredicate {
             return entity != null && entity.getPassengers().stream()
                     .anyMatch(passenger -> this.predicate.test(instance, passenger.getPosition(), passenger));
         }
+
+        @Override
+        public boolean test(@NotNull Instance instance,
+                            @Nullable Point position,
+                            @Nullable Entity entity,
+                            @NotNull VanillaInterface vanilla) {
+            return entity != null && entity.getPassengers().stream()
+                    .anyMatch(passenger -> this.predicate.test(instance, passenger.getPosition(), passenger, vanilla));
+        }
     }
 
     record EntityTargeted(@NotNull EntityPredicate predicate) implements EntityPredicate {
@@ -882,6 +900,15 @@ public interface EntityPredicate {
         public boolean test(@NotNull Instance instance, @Nullable Point position, @Nullable Entity entity) {
             var targetedEntity = entity instanceof EntityCreature creature ? creature.getTarget() : null;
             return targetedEntity != null && this.predicate.test(instance, targetedEntity.getPosition(), targetedEntity);
+        }
+
+        @Override
+        public boolean test(@NotNull Instance instance,
+                            @Nullable Point position,
+                            @Nullable Entity entity,
+                            @NotNull VanillaInterface vanilla) {
+            var targetedEntity = entity instanceof EntityCreature creature ? creature.getTarget() : null;
+            return targetedEntity != null && this.predicate.test(instance, targetedEntity.getPosition(), targetedEntity, vanilla);
         }
     }
 }

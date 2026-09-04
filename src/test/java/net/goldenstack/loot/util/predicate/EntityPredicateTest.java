@@ -7,6 +7,10 @@ import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.Player;
 import net.minestom.server.network.player.GameProfile;
+import net.goldenstack.loot.util.VanillaInterface;
+import net.minestom.server.coordinate.Point;
+import net.minestom.server.coordinate.Pos;
+import net.minestom.server.instance.Instance;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
@@ -81,5 +85,30 @@ class EntityPredicateTest {
         var entity = new Entity(EntityType.ITEM);
 
         assertTrue(predicate.test(null, null, entity));
+    }
+
+    @Test
+    void nestedEntityPredicatesPreserveVanillaInterface() {
+        var vanilla = VanillaInterface.defaults();
+        var nestedPredicate = new EntityPredicate() {
+            @Override
+            public boolean test(Instance instance, Point position, Entity entity) {
+                return false;
+            }
+
+            @Override
+            public boolean test(Instance instance, Point position, Entity entity, VanillaInterface activeVanilla) {
+                return activeVanilla == vanilla;
+            }
+        };
+        MinecraftServer.init();
+
+        var instance = MinecraftServer.getInstanceManager().createInstanceContainer();
+        var vehicle = new Entity(EntityType.ITEM);
+        var passenger = new Entity(EntityType.ITEM);
+        vehicle.setInstance(instance, new Pos(0.0, 0.0, 0.0)).join();
+        vehicle.addPassenger(passenger);
+
+        assertTrue(new EntityPredicate.EntityVehicle(nestedPredicate).test(instance, null, passenger, vanilla));
     }
 }
