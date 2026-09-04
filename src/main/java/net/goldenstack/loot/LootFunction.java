@@ -547,11 +547,19 @@ public interface LootFunction {
         }
     }
 
-    record EnchantRandomly(@NotNull List<LootPredicate> predicates, @Nullable RegistryTag<Enchantment> options, boolean onlyCompatible) implements LootFunction {
+    record EnchantRandomly(@NotNull List<LootPredicate> predicates, @Nullable RegistryTag<Enchantment> options,
+                           boolean onlyCompatible, boolean includeAdditionalCostComponent) implements LootFunction {
+        public EnchantRandomly(@NotNull List<LootPredicate> predicates,
+                               @Nullable RegistryTag<Enchantment> options,
+                               boolean onlyCompatible) {
+            this(predicates, options, onlyCompatible, false);
+        }
+
         public static final @NotNull StructCodec<EnchantRandomly> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), EnchantRandomly::predicates,
                 "options", RegistryTag.codec(Registries::enchantment).optional(), EnchantRandomly::options,
                 "only_compatible", Codec.BOOLEAN.optional(true), EnchantRandomly::onlyCompatible,
+                "include_additional_cost_component", Codec.BOOLEAN.optional(false), EnchantRandomly::includeAdditionalCostComponent,
                 EnchantRandomly::new
         );
 
@@ -568,13 +576,18 @@ public interface LootFunction {
 
             if (values.isEmpty()) return input;
 
-            Random rng = context.require(LootContext.RANDOM);
+            var random = context.require(LootContext.RANDOM);
 
-            RegistryKey<Enchantment> chosen = values.get(rng.nextInt(values.size()));
+            var chosen = values.get(random.nextInt(values.size()));
 
-            int level = rng.nextInt(reg.get(chosen).maxLevel() + 1);
+            var level = random.nextInt(reg.get(chosen).maxLevel()) + 1;
+            var result = EnchantmentUtils.modifyItem(input, map -> map.put(chosen, level));
 
-            return EnchantmentUtils.modifyItem(input, map -> map.put(chosen, level));
+            if (this.includeAdditionalCostComponent && context.has(LootContext.ADDITIONAL_COST_COMPONENT_ALLOWED)) {
+                return result.with(DataComponents.ADDITIONAL_TRADE_COST, 2 + random.nextInt(5 + level * 10) + 3 * level);
+            }
+
+            return result;
         }
 
         @Override
@@ -583,11 +596,19 @@ public interface LootFunction {
         }
     }
 
-    record EnchantWithLevels(@NotNull List<LootPredicate> predicates, @NotNull LootNumber levels, @Nullable RegistryTag<Enchantment> options) implements LootFunction {
+    record EnchantWithLevels(@NotNull List<LootPredicate> predicates, @NotNull LootNumber levels,
+                             @Nullable RegistryTag<Enchantment> options, boolean includeAdditionalCostComponent) implements LootFunction {
+        public EnchantWithLevels(@NotNull List<LootPredicate> predicates,
+                                 @NotNull LootNumber levels,
+                                 @Nullable RegistryTag<Enchantment> options) {
+            this(predicates, levels, options, false);
+        }
+
         public static final @NotNull StructCodec<EnchantWithLevels> CODEC = StructCodec.struct(
                 "conditions", LootPredicate.CODEC.list().optional(List.of()), EnchantWithLevels::predicates,
                 "levels", LootNumber.CODEC, EnchantWithLevels::levels,
                 "options", RegistryTag.codec(Registries::enchantment).optional(), EnchantWithLevels::options,
+                "include_additional_cost_component", Codec.BOOLEAN.optional(false), EnchantWithLevels::includeAdditionalCostComponent,
                 EnchantWithLevels::new
         );
 
@@ -595,7 +616,17 @@ public interface LootFunction {
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
             if (!LootPredicate.all(predicates, context)) return input;
 
-            return context.vanilla().enchant(context.require(LootContext.RANDOM), input, levels.getInt(context), options);
+            var enchantmentCost = this.levels.getInt(context);
+            var result = context.vanilla().enchant(context.require(LootContext.RANDOM), input, enchantmentCost, this.options);
+
+            if (this.includeAdditionalCostComponent
+                    && context.has(LootContext.ADDITIONAL_COST_COMPONENT_ALLOWED)
+                    && !result.isAir()
+                    && enchantmentCost > 0) {
+                return result.with(DataComponents.ADDITIONAL_TRADE_COST, enchantmentCost);
+            }
+
+            return result;
         }
 
         @Override

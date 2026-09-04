@@ -28,6 +28,7 @@ public sealed interface LootContext permits LootContextImpl {
     @NotNull LootContext.Key<Instance> WORLD = LootContext.key("minecraft:world");
     @NotNull LootContext.Key<ItemStack> TOOL = LootContext.key("minecraft:tool");
     @NotNull LootContext.Key<Boolean> ENCHANTMENT_ACTIVE = LootContext.key("minecraft:enchantment_active");
+    @NotNull LootContext.Key<Boolean> ADDITIONAL_COST_COMPONENT_ALLOWED = LootContext.key("minecraft:additional_cost_component_allowed");
     @NotNull LootContext.Key<Block> BLOCK_STATE = LootContext.key("minecraft:block_state");
     @NotNull LootContext.Key<List<ItemStack>> CONTAINER = LootContext.key("minecraft:container");
     @NotNull LootContext.Key<DamageType> DAMAGE_SOURCE = LootContext.key("minecraft:damage_source");
