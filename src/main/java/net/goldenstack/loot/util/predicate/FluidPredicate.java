@@ -20,6 +20,10 @@ public record FluidPredicate(@Nullable RegistryTag<Fluid> fluids,
     );
 
     public boolean matches(@NotNull Instance instance, @NotNull Point point) {
+        if (!instance.isChunkLoaded(point)) {
+            return false;
+        }
+
         if (!instance.getBlock(point).fluid()) {
             return false;
         }
