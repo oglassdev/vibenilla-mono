@@ -1,7 +1,10 @@
 package net.goldenstack.loot.util.predicate;
 
 import net.goldenstack.loot.util.VanillaInterface;
+import net.kyori.adventure.key.Key;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.adventure.MinestomAdventure;
+import net.minestom.server.codec.Transcoder;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.registry.RegistryKey;
 import net.minestom.server.registry.RegistryTag;
@@ -55,5 +58,15 @@ class LocationPredicateTest {
 
         assertTrue(predicate.test(instance, new Pos(0.0, 0.0, 0.0), vanilla));
         assertTrue(observedPredicate.get() == fluid);
+    }
+
+    @Test
+    void decodesSingleVanillaStructureSelectors() throws Exception {
+        MinecraftServer.init();
+
+        var input = MinestomAdventure.tagStringIO().asTag("{structures: \"minecraft:village\"}");
+        var predicate = LocationPredicate.Properties.CODEC.decode(Transcoder.NBT, input).orElseThrow();
+
+        assertTrue(predicate.structures().contains(Key.key("minecraft:village")));
     }
 }

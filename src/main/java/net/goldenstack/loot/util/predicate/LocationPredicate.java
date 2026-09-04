@@ -45,7 +45,7 @@ public interface LocationPredicate {
         public static final @NotNull StructCodec<Properties> CODEC = StructCodec.struct(
                 "position", Position.CODEC.optional(), Properties::position,
                 "biomes", RegistryTag.codec(Registries::biome).optional(), Properties::biomes,
-                "structures", Codec.KEY.list().optional(), Properties::structures,
+                "structures", Codec.KEY.listOrSingle().optional(), Properties::structures,
                 "dimension", Codec.KEY.optional(), Properties::dimension,
                 "smokey", Codec.BOOLEAN.optional(), Properties::smokey,
                 "light", LootNumberRange.CODEC.optional(), Properties::light,
