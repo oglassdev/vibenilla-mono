@@ -474,11 +474,15 @@ public interface LootFunction {
 
                     for (var ref : nbts) {
                         if (ref.get() instanceof CompoundBinaryTag compound) {
+                            var merged = compound;
+
                             for (var nbt2 : source) {
                                 if (nbt2 instanceof CompoundBinaryTag compound2) {
-                                    ref.set(NBTUtils.merge(compound, compound2));
+                                    merged = NBTUtils.merge(merged, compound2);
                                 }
                             }
+
+                            ref.set(merged);
                         }
                     }
                 }

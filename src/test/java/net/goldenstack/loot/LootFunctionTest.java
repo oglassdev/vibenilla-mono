@@ -4,11 +4,14 @@ import net.goldenstack.loot.util.LootNumberRange;
 import net.goldenstack.loot.util.VanillaInterface;
 import net.goldenstack.loot.util.ListOperation;
 import net.goldenstack.loot.util.RelevantTarget;
+import net.goldenstack.loot.util.nbt.NBTPath;
+import net.goldenstack.loot.util.nbt.NBTReference;
 import net.goldenstack.loot.util.predicate.ItemPredicate;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.BinaryTag;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.nbt.IntBinaryTag;
+import net.kyori.adventure.nbt.ListBinaryTag;
 import net.kyori.adventure.nbt.StringBinaryTag;
 import net.kyori.adventure.text.Component;
 import net.minestom.server.MinecraftServer;
@@ -367,6 +370,28 @@ class LootFunctionTest {
         assertEquals(current.get("keep"), result.get("keep"));
         assertEquals(IntBinaryTag.intBinaryTag(2), ((CompoundBinaryTag) result.get("nested")).get("old"));
         assertEquals(IntBinaryTag.intBinaryTag(3), ((CompoundBinaryTag) result.get("nested")).get("new"));
+    }
+
+    @Test
+    void copyCustomDataMergeAccumulatesAllSourceCompounds() {
+        MinecraftServer.init();
+
+        var source = ListBinaryTag.builder()
+                .add(CompoundBinaryTag.builder().put("first", IntBinaryTag.intBinaryTag(1)).build())
+                .add(CompoundBinaryTag.builder().put("second", IntBinaryTag.intBinaryTag(2)).build())
+                .build();
+        var operation = new LootFunction.CopyCustomData.Operation(
+                new NBTPath(List.of(new NBTPath.Selector.EntireList())),
+                new NBTPath(List.of(new NBTPath.Selector.RootKey("merged"))),
+                LootFunction.CopyCustomData.Operator.MERGE
+        );
+        var target = NBTReference.of(CompoundBinaryTag.empty());
+
+        operation.execute(target, source);
+
+        var merged = (CompoundBinaryTag) ((CompoundBinaryTag) target.get()).get("merged");
+        assertEquals(IntBinaryTag.intBinaryTag(1), merged.get("first"));
+        assertEquals(IntBinaryTag.intBinaryTag(2), merged.get("second"));
     }
 
     @Test
