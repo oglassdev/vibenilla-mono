@@ -65,4 +65,11 @@ class EntityPredicateTest {
 
         assertFalse(predicate.test(player));
     }
+
+    @Test
+    void fishingHookWithoutOpenWaterRequirementMatchesUnconditionally() {
+        var predicate = new EntityPredicate.FishingHookPredicate(null);
+
+        assertTrue(predicate.test(null, null, null));
+    }
 }

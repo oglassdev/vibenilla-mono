@@ -616,7 +616,7 @@ public interface EntityPredicate {
 
         @Override
         public boolean test(@NotNull Instance instance, @Nullable Point position, @Nullable Entity entity) {
-            return entity != null && entity.getEntityType() == EntityType.FISHING_BOBBER && this.inOpenWater == null;
+            return this.inOpenWater == null || entity != null && entity.getEntityType() == EntityType.FISHING_BOBBER;
         }
 
         @Override
