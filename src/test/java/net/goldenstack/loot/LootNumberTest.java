@@ -42,4 +42,18 @@ class LootNumberTest {
         assertEquals(16_777_216, sum.getInt(context));
         assertEquals(16_777_216.0, sum.getDouble(context));
     }
+
+    @Test
+    void uniformReturnsMinimumWhenBoundsAreReversed() {
+        MinecraftServer.init();
+
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of());
+        var uniform = new LootNumber.Uniform(
+                new LootNumber.Constant(4.0),
+                new LootNumber.Constant(2.0)
+        );
+
+        assertEquals(4, uniform.getInt(context));
+        assertEquals(4.0, uniform.getDouble(context));
+    }
 }

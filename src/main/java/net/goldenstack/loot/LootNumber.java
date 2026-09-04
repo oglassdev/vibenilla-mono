@@ -267,14 +267,26 @@ public interface LootNumber {
 
         @Override
         public int getInt(@NotNull LootContext context) {
-            return context.require(LootContext.RANDOM).nextInt(this.min.getInt(context), this.max.getInt(context) + 1);
+            var minimum = this.min.getInt(context);
+            var maximum = this.max.getInt(context);
+
+            if (minimum >= maximum) {
+                return minimum;
+            }
+
+            return context.require(LootContext.RANDOM).nextInt(maximum - minimum + 1) + minimum;
         }
 
         @Override
         public double getDouble(@NotNull LootContext context) {
-            var random = context.require(LootContext.RANDOM);
             var minimum = (float) this.min.getDouble(context);
             var maximum = (float) this.max.getDouble(context);
+
+            if (minimum >= maximum) {
+                return minimum;
+            }
+
+            var random = context.require(LootContext.RANDOM);
             return minimum + random.nextFloat() * (maximum - minimum);
         }
 
