@@ -6,6 +6,7 @@ import net.minestom.server.MinecraftServer;
 import net.minestom.server.adventure.MinestomAdventure;
 import net.minestom.server.codec.Transcoder;
 import net.minestom.server.coordinate.Pos;
+import net.minestom.server.instance.block.Block;
 import net.minestom.server.registry.RegistryKey;
 import net.minestom.server.registry.RegistryTag;
 import org.junit.jupiter.api.Test;
@@ -69,5 +70,17 @@ class LocationPredicateTest {
         var predicate = LocationPredicate.Properties.CODEC.decode(Transcoder.NBT, input).orElseThrow();
 
         assertTrue(predicate.structures().contains(Key.key("minecraft:village")));
+    }
+
+    @Test
+    void smokeyFallbackRecognizesLitCampfires() {
+        MinecraftServer.init();
+
+        var instance = MinecraftServer.getInstanceManager().createInstanceContainer();
+        instance.loadChunk(0, 0).join();
+        instance.setBlock(0, -1, 0, Block.fromKey(Key.key("minecraft:campfire")).withProperty("lit", "true"));
+        var predicate = new LocationPredicate.Properties(null, null, null, null, true, null, null, null, null);
+
+        assertTrue(predicate.test(instance, new Pos(0.0, 0.0, 0.0)));
     }
 }

@@ -6,8 +6,11 @@ import net.goldenstack.loot.util.VanillaInterface;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
+import net.minestom.server.collision.BoundingBox;
 import net.minestom.server.coordinate.Point;
+import net.minestom.server.coordinate.Vec;
 import net.minestom.server.instance.Instance;
+import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.predicate.BlockPredicate;
 import net.minestom.server.registry.Registries;
 import net.minestom.server.registry.RegistryTag;
@@ -20,6 +23,8 @@ import java.util.Map;
 
 @SuppressWarnings("UnstableApiUsage")
 public interface LocationPredicate {
+
+    @NotNull BoundingBox SMOKE_POST = new BoundingBox(0.5, 1.0, 0.5, new Vec(0.25, 0.0, 0.25));
 
     @NotNull Codec<LocationPredicate> CODEC = Codec.ForwardRef(
             () -> Properties.CODEC.transform(value -> value, value -> (Properties) value)
@@ -154,15 +159,24 @@ public interface LocationPredicate {
         private static boolean isSmokey(@NotNull Instance instance, @NotNull Point point) {
             for (var offset = 1; offset <= 5; offset++) {
                 var block = instance.getBlock(point.blockX(), point.blockY() - offset, point.blockZ());
-                var key = block.key().asString();
-                if ((key.equals("minecraft:campfire") || key.equals("minecraft:soul_campfire"))
-                        && Boolean.parseBoolean(block.getProperty("lit"))) {
+                if (isLitCampfire(block)) {
 
                     return true;
+                }
+
+                if (block.collisionShape().intersectBox(Vec.ZERO, SMOKE_POST)) {
+                    var belowBlock = instance.getBlock(point.blockX(), point.blockY() - offset - 1, point.blockZ());
+                    return isLitCampfire(belowBlock);
                 }
             }
 
             return false;
+        }
+
+        private static boolean isLitCampfire(@NotNull Block block) {
+            var key = block.key().asString();
+            return (key.equals("minecraft:campfire") || key.equals("minecraft:soul_campfire"))
+                    && Boolean.parseBoolean(block.getProperty("lit"));
         }
     }
 
