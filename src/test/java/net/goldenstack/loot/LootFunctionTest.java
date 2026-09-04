@@ -7,6 +7,7 @@ import net.goldenstack.loot.util.predicate.ItemPredicate;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.BinaryTag;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
+import net.kyori.adventure.nbt.IntBinaryTag;
 import net.kyori.adventure.nbt.StringBinaryTag;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.adventure.MinestomAdventure;
@@ -21,6 +22,7 @@ import net.minestom.server.instance.block.predicate.DataComponentPredicates;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.item.component.EnchantmentList;
+import net.minestom.server.item.component.CustomData;
 import net.minestom.server.item.component.PotionContents;
 import net.minestom.server.item.enchant.Enchantment;
 import net.minestom.server.potion.PotionType;
@@ -286,5 +288,26 @@ class LootFunctionTest {
 
         assertEquals(6, multiplied.amount());
         assertEquals(2, single.amount());
+    }
+
+    @Test
+    void setCustomDataMergesNestedCompounds() {
+        MinecraftServer.init();
+
+        var current = CompoundBinaryTag.builder()
+                .put("keep", IntBinaryTag.intBinaryTag(1))
+                .put("nested", CompoundBinaryTag.builder().put("old", IntBinaryTag.intBinaryTag(2)).build())
+                .build();
+        var changes = CompoundBinaryTag.builder()
+                .put("nested", CompoundBinaryTag.builder().put("new", IntBinaryTag.intBinaryTag(3)).build())
+                .build();
+        var input = ItemStack.of(Material.STONE).with(DataComponents.CUSTOM_DATA, new CustomData(current));
+        var function = new LootFunction.SetCustomData(List.of(), changes);
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of());
+        var result = function.apply(input, context).get(DataComponents.CUSTOM_DATA).nbt();
+
+        assertEquals(current.get("keep"), result.get("keep"));
+        assertEquals(IntBinaryTag.intBinaryTag(2), ((CompoundBinaryTag) result.get("nested")).get("old"));
+        assertEquals(IntBinaryTag.intBinaryTag(3), ((CompoundBinaryTag) result.get("nested")).get("new"));
     }
 }

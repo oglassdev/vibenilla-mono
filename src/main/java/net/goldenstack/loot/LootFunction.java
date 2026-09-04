@@ -1176,9 +1176,12 @@ public interface LootFunction {
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
-            if (!LootPredicate.all(predicates, context)) return input;
+            if (!LootPredicate.all(this.predicates, context)) {
+                return input;
+            }
 
-            return input.with(DataComponents.CUSTOM_DATA, new CustomData(tag));
+            var current = input.get(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+            return input.with(DataComponents.CUSTOM_DATA, new CustomData(NBTUtils.merge(current.nbt(), this.tag)));
         }
 
         @Override
