@@ -56,7 +56,11 @@ public record NBTPath(@NotNull List<Selector> selectors) {
             }
 
             @Override
-            public void prepare(@NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {}
+            public void prepare(@NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {
+                if (!source.has(key)) {
+                    source.get(key).set(nextElement.get());
+                }
+            }
 
             @Override
             public @NotNull BinaryTag preparedNBT() {
@@ -104,9 +108,37 @@ public record NBTPath(@NotNull List<Selector> selectors) {
             }
 
             @Override
+            public void prepare(@NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {}
+
+            @Override
+            public @NotNull BinaryTag preparedNBT() {
+                return CompoundBinaryTag.empty();
+            }
+
+            @Override
+            public String toString() {
+                try {
+                    return TagStringIO.tagStringIO().asString(filter);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        record ObjectFilter(@NotNull String key, @NotNull CompoundBinaryTag filter) implements Selector {
+            @Override
+            public void get(@NotNull NBTReference source, @NotNull Consumer<NBTReference> consumer) {
+                var reference = source.get(key);
+
+                if (NBTUtils.compareNBT(filter, reference.get(), false)) {
+                    consumer.accept(reference);
+                }
+            }
+
+            @Override
             public void prepare(@NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {
-                if (!NBTUtils.compareNBT(filter, source.get(), false)) {
-                    source.set(filter);
+                if (!source.has(key)) {
+                    source.get(key).set(filter);
                 }
             }
 
@@ -118,7 +150,7 @@ public record NBTPath(@NotNull List<Selector> selectors) {
             @Override
             public String toString() {
                 try {
-                    return TagStringIO.tagStringIO().asString(filter);
+                    return key + TagStringIO.tagStringIO().asString(filter);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -300,7 +332,7 @@ class Parser {
 
     static final @NotNull IntSet VALID_SELECTOR_STARTERS = IntSet.of('.', '{', '[');
     static final @NotNull IntSet VALID_INTEGER_CHARACTERS = IntSet.of('-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
-    static final @NotNull IntSet INVALID_UNQUOTED_CHARACTERS = IntSet.of(-1, '.', '\'', '\"', '{', '}', '[', ']');
+    static final @NotNull IntSet INVALID_UNQUOTED_CHARACTERS = IntSet.of(-1, ' ', '.', '\'', '\"', '{', '}', '[', ']');
 
     static final Codec<NBTPath> CODEC = Codec.STRING.transform(s -> {
         try {
@@ -316,7 +348,13 @@ class Parser {
         if (!VALID_SELECTOR_STARTERS.contains(peek(reader))) {
             var key = readString(reader);
             if (key != null) {
-                selectors.add(new NBTPath.Selector.RootKey(key));
+                var selector = readObjectSelector(reader, key, true);
+
+                if (selector == null) {
+                    throw new IllegalArgumentException("Invalid NBT path selector");
+                }
+
+                selectors.add(selector);
             }
         }
 
@@ -327,7 +365,16 @@ class Parser {
                 if (selectors.isEmpty()) {
                     throw new IllegalArgumentException("NBT paths must contain at least one selector");
                 }
+
+                if (peek(reader) != -1 && peek(reader) != ' ') {
+                    throw new IllegalArgumentException("Invalid NBT path selector");
+                }
+
                 return new NBTPath(List.copyOf(selectors));
+            }
+
+            if (peek(reader) == '{' && !selectors.isEmpty()) {
+                throw new IllegalArgumentException("Invalid NBT path selector");
             }
 
             var selector = readPathSelector(reader);
@@ -348,7 +395,8 @@ class Parser {
                 reader.skip(1); // Skip period
 
                 var string = readString(reader);
-                yield string != null ? new NBTPath.Selector.Key(string) : null;
+
+                yield string != null ? readObjectSelector(reader, string, false) : null;
             }
             case '{' -> {
                 var compound = readCompound(reader);
@@ -373,11 +421,28 @@ class Parser {
                     }
                 };
 
-                reader.skip(1); // Skip closing square brackets
+                var closingCharacter = reader.read();
+
+                if (closingCharacter != ']') {
+                    yield null;
+                }
+
                 yield selector;
             }
             default -> null;
         };
+    }
+
+    private static @Nullable NBTPath.Selector readObjectSelector(@NotNull StringReader reader,
+                                                                  @NotNull String key,
+                                                                  boolean root) throws IOException {
+        if (peek(reader) == '{') {
+            var compound = readCompound(reader);
+
+            return compound != null ? new NBTPath.Selector.ObjectFilter(key, compound) : null;
+        }
+
+        return root ? new NBTPath.Selector.RootKey(key) : new NBTPath.Selector.Key(key);
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
