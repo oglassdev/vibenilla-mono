@@ -15,6 +15,7 @@ public final class RegistryTags {
     public static final @Nullable RegistryTag<Block> FENCE_GATES = block("minecraft:fence_gates");
     public static final @Nullable RegistryTag<Block> LEAVES = block("minecraft:leaves");
     public static final @Nullable RegistryTag<Block> TRAPDOORS = block("minecraft:trapdoors");
+    public static final @Nullable RegistryTag<Block> BLOCKS_MOTION = block("minecraft:blocks_motion");
 
     public static final @Nullable RegistryTag<Material> SWORDS = material("minecraft:swords");
     public static final @Nullable RegistryTag<Material> EGGS = material("minecraft:eggs");

@@ -2,6 +2,7 @@ package io.github.togar2.pvp.feature.food;
 
 import io.github.togar2.pvp.utils.BlockUtil;
 import io.github.togar2.pvp.utils.ChunkBlockGetter;
+import io.github.togar2.pvp.utils.RegistryTags;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.LivingEntity;
@@ -40,7 +41,7 @@ public final class ChorusFruitUtilTest {
 
             teleports++;
             assertFalse(BlockUtil.hasCollision(blockGetter, position, entity.getBoundingBox()));
-            assertTrue(blockGetter.getBlock(position.blockX(), position.blockY() - 1, position.blockZ()).blocksMotion());
+            assertTrue(RegistryTags.contains(RegistryTags.BLOCKS_MOTION, blockGetter.getBlock(position.blockX(), position.blockY() - 1, position.blockZ()).registryKey()));
         }
 
         assertTrue(teleports > 0);

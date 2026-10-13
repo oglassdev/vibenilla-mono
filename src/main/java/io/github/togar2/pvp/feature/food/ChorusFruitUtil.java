@@ -2,6 +2,7 @@ package io.github.togar2.pvp.feature.food;
 
 import io.github.togar2.pvp.utils.BlockUtil;
 import io.github.togar2.pvp.utils.ChunkBlockGetter;
+import io.github.togar2.pvp.utils.RegistryTags;
 import io.github.togar2.pvp.utils.ViewUtil;
 import net.kyori.adventure.sound.Sound;
 import net.minestom.server.MinecraftServer;
@@ -28,7 +29,7 @@ public class ChorusFruitUtil {
         var blockY = to.blockY();
         var landed = false;
         while (!landed && blockY > minY) {
-            if (blockGetter.getBlock(to.blockX(), blockY - 1, to.blockZ()).blocksMotion()) {
+            if (RegistryTags.contains(RegistryTags.BLOCKS_MOTION, blockGetter.getBlock(to.blockX(), blockY - 1, to.blockZ()).registryKey())) {
                 landed = true;
             } else {
                 y--;

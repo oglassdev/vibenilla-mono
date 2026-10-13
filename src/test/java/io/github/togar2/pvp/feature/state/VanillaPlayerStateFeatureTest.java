@@ -65,7 +65,7 @@ public final class VanillaPlayerStateFeatureTest {
     }
 
     private void confirmTeleport(Player player) {
-        player.addPacketToQueue(new ClientTeleportConfirmPacket(player.getLastSentTeleportId()));
+        player.addPacketToQueue(new ClientTeleportConfirmPacket(player.getLastSentTeleportId(), player.getPosition()));
         player.interpretPacketQueue();
     }
 

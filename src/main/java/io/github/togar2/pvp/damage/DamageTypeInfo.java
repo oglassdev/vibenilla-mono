@@ -36,7 +36,7 @@ public record DamageTypeInfo(boolean damagesHelmet, boolean bypassesArmor, boole
             this.put(DamageType.ON_FIRE, new DamageTypeInfo().bypassesArmor(true).fire(true));
             this.put(DamageType.LAVA, new DamageTypeInfo().fire(true));
             this.put(DamageType.HOT_FLOOR, new DamageTypeInfo().fire(true));
-            this.put(RegistryKey.unsafeOf("minecraft:sulfur_cube_hot"), new DamageTypeInfo().fire(true));
+            this.put(RegistryKey.of("minecraft:sulfur_cube_hot"), new DamageTypeInfo().fire(true));
             this.put(DamageType.IN_WALL, new DamageTypeInfo().bypassesArmor(true));
             this.put(DamageType.CRAMMING, new DamageTypeInfo().bypassesArmor(true));
             this.put(DamageType.DROWN, new DamageTypeInfo().bypassesArmor(true));

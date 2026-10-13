@@ -249,7 +249,7 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
     }
 
     private boolean isSuffocating(Block block) {
-        if (block.air() || !block.blocksMotion()) return false;
+        if (block.air() || !RegistryTags.contains(RegistryTags.BLOCKS_MOTION, block.registryKey())) return false;
 
         var shape = block.collisionShape();
         for (var face : BlockFace.values()) {

@@ -35,6 +35,6 @@ public final class DamageTypeInfoTest {
         var playerAttack = DamageTypeInfo.of(DamageType.PLAYER_ATTACK);
         assertFalse(playerAttack.shouldScaleWithDifficulty(new Damage(DamageType.PLAYER_ATTACK, player, player, null, 1.0F)));
 
-        assertTrue(DamageTypeInfo.of(RegistryKey.unsafeOf("minecraft:sulfur_cube_hot")).fire());
+        assertTrue(DamageTypeInfo.of(RegistryKey.of("minecraft:sulfur_cube_hot")).fire());
     }
 }

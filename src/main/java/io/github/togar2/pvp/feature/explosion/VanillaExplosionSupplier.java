@@ -283,7 +283,8 @@ public final class VanillaExplosionSupplier implements ExplosionSupplier {
                                     knockbackVec,
                                     explosionParticle,
                                     SoundEvent.ENTITY_GENERIC_EXPLODE,
-                                    VanillaExplosionSupplier.this.PARTICLES
+                                    VanillaExplosionSupplier.this.PARTICLES,
+                                    true
                             )
                     );
                 }

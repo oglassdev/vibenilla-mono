@@ -218,7 +218,7 @@ public class VanillaFoodFeature implements FoodFeature, RegistrableFeature {
                     .filter(potionEffects::contains)
                     .forEach(entity::removeEffect);
             case ClearAllEffects ignored -> entity.clearEffects();
-            case TeleportRandomly(float diameter) -> ChorusFruitUtil.tryChorusTeleport(entity, diameter);
+            case TeleportRandomly(float diameter, boolean _) -> ChorusFruitUtil.tryChorusTeleport(entity, diameter);
             case PlaySound(SoundEvent sound) -> ViewUtil.viewersAndSelf(entity).playSound(Sound.sound(
                     sound, Sound.Source.PLAYER,
                     1.0F, 1.0F
