@@ -13,7 +13,7 @@ repositories {
 }
 
 dependencies {
-    implementation("rocks.minestom:placement:2026.09.04-26.2")
+    implementation("rocks.minestom:placement:2026.10.13-26.3")
 }
 ```
 
@@ -31,7 +31,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'rocks.minestom:placement:2026.09.04-26.2'
+    implementation 'rocks.minestom:placement:2026.10.13-26.3'
 }
 ```
 
@@ -52,7 +52,7 @@ dependencies {
 <dependency>
     <groupId>rocks.minestom</groupId>
     <artifactId>placement</artifactId>
-    <version>2026.09.04-26.2</version>
+    <version>2026.10.13-26.3</version>
 </dependency>
 ```
 
