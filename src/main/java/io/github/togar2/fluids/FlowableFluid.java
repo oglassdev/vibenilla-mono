@@ -10,8 +10,10 @@ import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.BlockHandler;
+import net.minestom.server.instance.block.BlockTags;
 import net.minestom.server.item.Material;
 import net.minestom.server.registry.Registry;
+import net.minestom.server.registry.RegistryTag;
 import net.minestom.server.utils.Direction;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,6 +21,8 @@ import java.util.EnumMap;
 import java.util.Map;
 
 public abstract class FlowableFluid extends Fluid {
+	private static final RegistryTag<Block> BLOCKS_MOTION = Block.staticRegistry().getOrCreateTag(BlockTags.BLOCKS_MOTION);
+
 	public FlowableFluid(Block defaultBlock, Material bucket) {
 		super(defaultBlock, bucket);
 	}
@@ -223,7 +227,7 @@ public abstract class FlowableFluid extends Fluid {
 	 */
 	private boolean canHoldFluid(Block block) {
 		if (MinestomFluids.getWaterlog(block) != null) return true;
-		if (block.blocksMotion()) return false;
+		if (BLOCKS_MOTION.contains(block.registryKey())) return false;
 
 		Registry<Block> registry = MinecraftServer.process().blocks();
 
