@@ -895,7 +895,7 @@ public final class WorldGenerator implements Generator {
                 for (var quartY = startQuartY; quartY <= endQuartY; quartY++) {
                     var sampleQuartY = Math.min(Math.max(quartY, minSampleQuartY), maxSampleQuartY);
                     var biome = biomes.biome(quartX, sampleQuartY, quartZ);
-                    var biomeKey = RegistryKey.<Biome>unsafeOf(biome);
+                    var biomeKey = RegistryKey.<Biome>of(biome);
 
                     // Fill all 4x4x4 positions in the biome palette for this quart
                     // This matches Minecraft's fillBiomesFromNoise behavior
@@ -937,7 +937,7 @@ public final class WorldGenerator implements Generator {
                 for (var quartY = startQuartY; quartY <= endQuartY; quartY++) {
                     var centerY = (quartY << 2) + 2;
                     var biome = zoomer.biome(centerX, centerY, centerZ);
-                    var biomeKey = RegistryKey.<Biome>unsafeOf(biome);
+                    var biomeKey = RegistryKey.<Biome>of(biome);
                     unit.modifier().setBiome(centerX, centerY, centerZ, biomeKey);
                 }
             }
