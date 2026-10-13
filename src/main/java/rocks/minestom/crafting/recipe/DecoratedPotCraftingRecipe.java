@@ -37,10 +37,10 @@ public final class DecoratedPotCraftingRecipe implements CraftingRecipe {
         }
 
         var decorations = new PotDecorations(
-                backShardSlot.item().material(),
-                leftShardSlot.item().material(),
-                rightShardSlot.item().material(),
-                frontShardSlot.item().material());
+                backShardSlot.item(),
+                leftShardSlot.item(),
+                rightShardSlot.item(),
+                frontShardSlot.item());
 
         var usage = new Int2IntOpenHashMap();
         usage.defaultReturnValue(0);
