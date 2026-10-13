@@ -479,7 +479,7 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
     record TimeCheck(@NotNull RegistryKey<WorldClock> clock, @Nullable Long period,
                      @NotNull LootNumberRange value) implements LootPredicate {
         public TimeCheck(@Nullable Long period, @NotNull LootNumberRange value) {
-            this(RegistryKey.unsafeOf("overworld"), period, value);
+            this(RegistryKey.of("overworld"), period, value);
         }
 
         public static final @NotNull StructCodec<TimeCheck> CODEC = StructCodec.struct(

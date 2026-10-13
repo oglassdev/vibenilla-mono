@@ -53,7 +53,7 @@ class LocationPredicateTest {
                 }
         );
         var fluid = new FluidPredicate(
-                RegistryTag.direct(RegistryKey.unsafeOf("minecraft:water")),
+                RegistryTag.direct(RegistryKey.of("minecraft:water")),
                 null
         );
         var predicate = new LocationPredicate.Properties(null, null, null, null, null, null, null, fluid, true);

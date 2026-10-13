@@ -126,7 +126,7 @@ class LootPoolTest {
                 List.of(new LootFunction.SetCount(List.of(), new LootNumber.Constant(4.0), false)),
                 1L,
                 0L,
-                RegistryTag.direct(RegistryKey.unsafeOf("minecraft:stone")),
+                RegistryTag.direct(RegistryKey.of("minecraft:stone")),
                 true
         );
 

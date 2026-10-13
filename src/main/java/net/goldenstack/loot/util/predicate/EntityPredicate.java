@@ -139,13 +139,13 @@ public interface EntityPredicate {
 
         public EntityTypePredicate(@NotNull List<EntityType> types) {
             this(RegistryTag.<EntityType>direct(types.stream()
-                    .map(entityType -> RegistryKey.<EntityType>unsafeOf(entityType.key().asString()))
+                    .map(entityType -> RegistryKey.<EntityType>of(entityType.key().asString()))
                     .toList()));
         }
 
         @Override
         public boolean test(@NotNull Instance instance, @Nullable Point position, @Nullable Entity entity) {
-            return entity != null && this.types.contains(RegistryKey.<EntityType>unsafeOf(entity.getEntityType().key().asString()));
+            return entity != null && this.types.contains(RegistryKey.<EntityType>of(entity.getEntityType().key().asString()));
         }
     }
 

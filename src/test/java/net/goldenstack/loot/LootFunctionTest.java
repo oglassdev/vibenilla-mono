@@ -102,7 +102,7 @@ class LootFunctionTest {
 
         var context = LootContext.from(VanillaInterface.defaults(), Map.of());
         var item = ItemStack.of(Material.STONE);
-        var enchantment = RegistryKey.<Enchantment>unsafeOf(Key.key("minecraft:fortune"));
+        var enchantment = RegistryKey.<Enchantment>of(Key.key("minecraft:fortune"));
         var formula = new LootFunction.ApplyBonus.Formula.Wrapper(new LootFunction.ApplyBonus.Formula.OreDrops());
         var function = new LootFunction.ApplyBonus(List.of(new LootPredicate.AnyOf(List.of())), enchantment, formula);
 
@@ -243,7 +243,7 @@ class LootFunctionTest {
         MinecraftServer.init();
 
         var context = LootContext.from(VanillaInterface.defaults(), Map.of());
-        var enchantment = RegistryKey.<Enchantment>unsafeOf(Key.key("minecraft:sharpness"));
+        var enchantment = RegistryKey.<Enchantment>of(Key.key("minecraft:sharpness"));
         var function = new LootFunction.SetEnchantments(
                 List.of(), Map.of(enchantment, new LootNumber.Constant(300.0)), false
         );
