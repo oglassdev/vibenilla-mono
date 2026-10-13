@@ -29,6 +29,6 @@ public final class FarmlandPlacementRule extends BlockPlacementRule {
     }
 
     private static boolean canSurvive(Block above) {
-        return !above.isSolid() || Utility.hasTag(above, MAINTAINS_FARMLAND_TAG);
+        return !above.solid() || Utility.hasTag(above, MAINTAINS_FARMLAND_TAG);
     }
 }

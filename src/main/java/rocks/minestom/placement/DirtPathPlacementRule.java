@@ -29,6 +29,6 @@ public final class DirtPathPlacementRule extends BlockPlacementRule {
     }
 
     private static boolean canSurvive(Block above) {
-        return !above.isSolid() || Utility.hasTag(above, FENCE_GATES_TAG);
+        return !above.solid() || Utility.hasTag(above, FENCE_GATES_TAG);
     }
 }

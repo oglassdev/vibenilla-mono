@@ -42,6 +42,7 @@ public final class Registrations {
         registerByTag(block -> new FaceAttachedPlacementRule(block, ButtonBlockHandler.INSTANCE), "minecraft:buttons");
         registerByTag(RailPlacementRule::new, "minecraft:rails");
         registerByTag(BedPlacementRule::new, "minecraft:beds");
+        Utility.registerPlacementRules(BedPlacementRule::new, Block.STRAW_BED);
         registerByTag(BannerPlacementRule::new, "minecraft:banners");
         registerByTag(StandingSignPlacementRule::new, "minecraft:standing_signs");
         registerByTag(block -> new WallMountedPlacementRule(block, SignBlockHandler.INSTANCE), "minecraft:wall_signs");
@@ -224,6 +225,7 @@ public final class Registrations {
                 Block.POTTED_CHERRY_SAPLING,
                 Block.POTTED_DARK_OAK_SAPLING,
                 Block.POTTED_PALE_OAK_SAPLING,
+                Block.POTTED_POPLAR_SAPLING,
                 Block.POTTED_MANGROVE_PROPAGULE,
                 Block.POTTED_FERN,
                 Block.POTTED_DANDELION,
@@ -287,7 +289,8 @@ public final class Registrations {
         Utility.registerPlacementRules(PlantPlacementRule::new,
                 Block.BUSH,
                 Block.FERN,
-                Block.FIREFLY_BUSH);
+                Block.FIREFLY_BUSH,
+                Block.RED_SHRUB);
         Utility.registerPlacementRules(
                 block -> new PlantPlacementRule(block, Key.key("minecraft:supports_crimson_fungus")),
                 Block.CRIMSON_FUNGUS);
@@ -468,6 +471,9 @@ public final class Registrations {
         Utility.registerPlacementRules(
                 block -> new WallMountedPlacementRule(block, true, false, null),
                 Block.LADDER);
+        Utility.registerPlacementRules(
+                block -> new WallMountedPlacementRule(block, false, false, null),
+                Block.SHELF_MUSHROOM);
         Utility.registerPlacementRules(TallSeagrassPlacementRule::new, Block.TALL_SEAGRASS);
         Utility.registerPlacementRules(TallPlantPlacementRule::new,
                 Block.TALL_GRASS,
@@ -483,6 +489,7 @@ public final class Registrations {
                 Block.MANGROVE_SHELF,
                 Block.OAK_SHELF,
                 Block.PALE_OAK_SHELF,
+                Block.POPLAR_SHELF,
                 Block.SPRUCE_SHELF,
                 Block.WARPED_SHELF);
     }

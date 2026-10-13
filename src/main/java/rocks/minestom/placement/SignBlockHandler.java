@@ -9,6 +9,7 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.BlockHandler;
+import net.minestom.server.instance.block.SignTextSlot;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.network.packet.server.play.OpenSignEditorPacket;
@@ -55,7 +56,7 @@ public final class SignBlockHandler implements BlockHandler {
             return true;
         }
 
-        player.sendPacket(new OpenSignEditorPacket(position, isFrontText));
+        player.sendPacket(new OpenSignEditorPacket(position, isFrontText ? SignTextSlot.FRONT : SignTextSlot.BACK));
         return false;
     }
 

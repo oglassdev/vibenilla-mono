@@ -49,7 +49,7 @@ public final class PotentSulfurPlacementRule extends BlockPlacementRule {
     }
 
     private static boolean isSourceIfFluid(Block block) {
-        return !block.isFluid() || "0".equals(block.getProperty("level"));
+        return !block.fluid() || "0".equals(block.getProperty("level"));
     }
 
     private static boolean isSourceWater(Block block) {

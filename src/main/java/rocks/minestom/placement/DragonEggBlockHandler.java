@@ -40,8 +40,8 @@ public final class DragonEggBlockHandler implements BlockHandler {
 
             if (candidate.blockY() < dimension.minY() || candidate.blockY() >= dimension.maxY()
                     || !instance.getWorldBorder().inBounds(candidate)
-                    || !instance.getBlock(candidate).isAir()
-                    || instance.getBlock(candidate.relative(BlockFace.BOTTOM)).isAir()) {
+                    || !instance.getBlock(candidate).air()
+                    || instance.getBlock(candidate.relative(BlockFace.BOTTOM)).air()) {
                 continue;
             }
 

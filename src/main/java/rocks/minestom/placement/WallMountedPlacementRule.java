@@ -99,7 +99,7 @@ public final class WallMountedPlacementRule extends BlockPlacementRule {
 
     private boolean canAttach(Block supportBlock, BlockFace supportFace) {
         return this.solidSupport
-                ? supportBlock.isSolid()
+                ? supportBlock.solid()
                 : supportBlock.registry().collisionShape().isFaceFull(supportFace);
     }
 

@@ -9,8 +9,8 @@ plugins {
 description = "A library for Minestom placement"
 group = "rocks.minestom"
 
-val minestomVersion = "2026.08.28-26.2"
-val mcVersion = minestomVersion.substringAfter("-")
+val minestomVersion = "26_3-20261007.224755-10"
+val mcVersion = "26.3"
 val date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
 version = "$date-$mcVersion"
 
@@ -70,6 +70,13 @@ publishing {
 
 repositories {
     mavenCentral()
+
+    maven("https://central.sonatype.com/repository/maven-snapshots/") {
+        content {
+            includeModule("net.minestom", "minestom")
+            includeModule("net.minestom", "testing")
+        }
+    }
 }
 
 dependencies {
