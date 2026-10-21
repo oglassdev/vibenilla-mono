@@ -61,7 +61,7 @@ dependencies {
 </details>
 
 ## What does this have over MinestomPvP?
-- 26.2 support
+- 26.3 support
 - Maces
 - Spears
 - Accurate crystal PVP
