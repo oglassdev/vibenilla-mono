@@ -1,5 +1,8 @@
 package dev.oglass.vibenilla.server;
 
+import dev.oglass.vibenilla.ticking.RandomTicks;
+import dev.oglass.vibenilla.ticking.VanillaRandomTicks;
+import dev.oglass.vibenilla.ticking.WorldgenTrees;
 import io.github.togar2.fluids.MinestomFluids;
 import io.github.togar2.pvp.MinestomPvP;
 import io.github.togar2.pvp.feature.CombatFeatures;
@@ -40,10 +43,13 @@ public final class Server {
         var spawn = findSurface(overworld, 0, 0);
 
         var crafting = new CraftingManager(vanillaData);
+        var randomTicks = new RandomTicks();
+        VanillaRandomTicks.register(randomTicks, new WorldgenTrees(dataPath));
 
         events.addChild(combat.createNode())
                 .addChild(MinestomFluids.events())
                 .addChild(MinestomFluids.bucketEvents())
+                .addChild(randomTicks.events())
                 .addChild(Items.events())
                 .addChild(crafting.events())
                 .addChild(new BlockDrops(vanillaData.resolve("loot_table")).events())

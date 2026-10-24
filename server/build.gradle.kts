@@ -14,6 +14,7 @@ dependencies {
     implementation(project(":crafting"))
     implementation(project(":fluids"))
     implementation(project(":loot"))
+    implementation(project(":ticking"))
 
     runtimeOnly(libs.bundles.tinylog)
 }
