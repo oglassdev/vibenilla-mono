@@ -289,7 +289,8 @@ public final class WorldGenerator implements Generator {
             }
 
             for (var position : StructureWrites.drainPostProcess(this.terrainAccess, pendingKey)) {
-                WaterSpread.postProcessMarked(adapter, position);
+                WaterSpread.postProcessMarked(
+                        adapter, position, this.featureLoader.blockSupports());
             }
         }
     }

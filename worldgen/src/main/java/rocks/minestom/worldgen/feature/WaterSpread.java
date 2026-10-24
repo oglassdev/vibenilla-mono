@@ -49,16 +49,6 @@ public final class WaterSpread {
     }
 
     /**
-     * Superseded by {@link #postProcessMarked(GenerationUnitAdapter, BlockVec, BlockSupports)},
-     * which takes the block supports of the loader that generated the chunk.
-     */
-    @Deprecated
-    public static void postProcessMarked(GenerationUnitAdapter level, BlockVec position) {
-        throw new UnsupportedOperationException(
-                "Pass the feature loader's BlockSupports to postProcessMarked");
-    }
-
-    /**
      * Vanilla {@code LevelChunk.postProcessGeneration} for a marked position above a placed
      * magma_block / soul_sand: the water there gets its fluid tick, then {@code LiquidBlock.tick}
      * runs {@code BubbleColumnBlock.updateColumn}, converting the whole source water column above

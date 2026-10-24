@@ -8,9 +8,6 @@ import net.goldenstack.loot.LootTable;
 import net.goldenstack.loot.Trove;
 import net.goldenstack.loot.util.VanillaInterface;
 import net.kyori.adventure.key.Key;
-import net.minestom.server.entity.GameMode;
-import net.minestom.server.event.Event;
-import net.minestom.server.event.EventNode;
 import net.minestom.server.event.player.PlayerBlockBreakEvent;
 
 /** Drops a broken block's vanilla loot table in survival. */
@@ -21,16 +18,8 @@ final class BlockDrops {
         this.tables = Trove.readTables(lootTableDirectory);
     }
 
-    EventNode<Event> events() {
-        return EventNode.all("block-drops").addListener(PlayerBlockBreakEvent.class, this::onBreak);
-    }
-
-    private void onBreak(PlayerBlockBreakEvent event) {
+    void drop(PlayerBlockBreakEvent event) {
         var player = event.getPlayer();
-        if (player.getGameMode() != GameMode.SURVIVAL) {
-            return;
-        }
-
         var block = event.getBlock();
         var table =
                 this.tables.get(Key.key(block.key().namespace(), "blocks/" + block.key().value()));
