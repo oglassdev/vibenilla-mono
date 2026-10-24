@@ -6,6 +6,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.nio.file.Path;
 import java.util.stream.Stream;
+import net.minestom.server.MinecraftServer;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
@@ -18,7 +19,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 final class CraftingManagerTest {
     private static final Path DATA_PATH = Path.of("data", "minecraft");
-    private static final CraftingManager CRAFTING_MANAGER = new CraftingManager(DATA_PATH);
+    private static final CraftingManager CRAFTING_MANAGER;
+
+    static {
+        MinecraftServer.init();
+        CRAFTING_MANAGER = new CraftingManager(DATA_PATH);
+    }
 
     @ParameterizedTest(name = "{1}")
     @MethodSource("craftingData")
@@ -52,10 +58,10 @@ final class CraftingManagerTest {
 
         PotDecorations decorations = recipeMatch.result().get(DataComponents.POT_DECORATIONS);
         assertNotNull(decorations);
-        assertEquals(Material.ANGLER_POTTERY_SHERD, decorations.back());
-        assertEquals(Material.BLADE_POTTERY_SHERD, decorations.left());
-        assertEquals(Material.ARMS_UP_POTTERY_SHERD, decorations.right());
-        assertEquals(Material.MOURNER_POTTERY_SHERD, decorations.front());
+        assertEquals(Material.ANGLER_POTTERY_SHERD, decorations.back().material());
+        assertEquals(Material.BLADE_POTTERY_SHERD, decorations.left().material());
+        assertEquals(Material.ARMS_UP_POTTERY_SHERD, decorations.right().material());
+        assertEquals(Material.MOURNER_POTTERY_SHERD, decorations.front().material());
     }
 
     private static Stream<Arguments> craftingData() {

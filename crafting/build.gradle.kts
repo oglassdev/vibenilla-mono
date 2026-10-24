@@ -12,7 +12,13 @@ dependencies {
     testImplementation(libs.fastutil)
 }
 
-// Tests read vanilla recipe data from data/minecraft, which isn't checked in.
+val vanillaData =
+    tasks.register<VanillaDataTask>("vanillaData") {
+        minecraftVersion = libs.versions.minecraft.asProvider()
+        outputDirectory = layout.buildDirectory.dir("vanilla")
+    }
+
 tasks.test {
-    enabled = false
+    dependsOn(vanillaData)
+    workingDir = vanillaData.flatMap { it.outputDirectory }.get().asFile
 }
