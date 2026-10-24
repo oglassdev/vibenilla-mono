@@ -8,8 +8,9 @@ import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.BlockCodec;
 import rocks.minestom.worldgen.NoiseParameters;
 import rocks.minestom.worldgen.noise.NormalNoise;
+import rocks.minestom.worldgen.random.LegacyRandomSource;
 import rocks.minestom.worldgen.random.RandomSource;
-import rocks.minestom.worldgen.random.XoroshiroRandomSource;
+import rocks.minestom.worldgen.random.WorldgenRandom;
 
 public class NoiseProvider implements BlockStateProvider {
     public static final Codec<NoiseProvider> CODEC =
@@ -42,7 +43,7 @@ public class NoiseProvider implements BlockStateProvider {
         this.states = List.copyOf(states);
         this.noise =
                 NormalNoise.create(
-                        new XoroshiroRandomSource(seed),
+                        new WorldgenRandom(new LegacyRandomSource(seed)),
                         new NormalNoise.NoiseParameters(
                                 noiseParameters.firstOctave(),
                                 noiseParameters.amplitudes().stream()
@@ -72,12 +73,15 @@ public class NoiseProvider implements BlockStateProvider {
     }
 
     protected Block getRandomState(List<Block> choices, BlockVec position, float scaleValue) {
-        var noiseValue = this.getNoiseValue(position, scaleValue);
+        return this.getRandomState(choices, this.getNoiseValue(position, scaleValue));
+    }
+
+    protected Block getRandomState(List<Block> choices, double noiseValue) {
         var clamped = Math.max(0.0D, Math.min(0.9999D, (1.0D + noiseValue) / 2.0D));
         return choices.get((int) (clamped * (double) choices.size()));
     }
 
-    protected double getNoiseValue(BlockVec position, float scaleValue) {
+    protected double getNoiseValue(BlockVec position, double scaleValue) {
         return this.noise.getValue(
                 position.blockX() * scaleValue,
                 position.blockY() * scaleValue,

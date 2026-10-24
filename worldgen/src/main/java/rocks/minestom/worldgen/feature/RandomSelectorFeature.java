@@ -1,6 +1,7 @@
 package rocks.minestom.worldgen.feature;
 
 import java.util.List;
+import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.placement.PlacementContext;
 
@@ -69,20 +70,21 @@ public class RandomSelectorFeature implements Feature<FeatureConfiguration> {
      */
     static <T extends Block.Getter & Block.Setter> boolean placePlacedFeature(
             FeaturePlaceContext<?, T> context, FeatureLoader loader, PlacedFeature placedFeature) {
+        return placePlacedFeature(context, loader, placedFeature, context.origin());
+    }
+
+    static <T extends Block.Getter & Block.Setter> boolean placePlacedFeature(
+            FeaturePlaceContext<?, T> context,
+            FeatureLoader loader,
+            PlacedFeature placedFeature,
+            BlockVec origin) {
         if (placedFeature == null) {
             return false;
         }
 
-        // A registry reference must resolve to the REGISTERED placed feature,
-        // including its placement modifiers (e.g. the would_survive sapling
-        // filter every *_leaf_litter tree carries)
-        if (placedFeature.inlineFeature() == null
-                && placedFeature.feature() != null
-                && loader != null) {
-            var registered = loader.getPlacedFeature(placedFeature.feature());
-            if (registered != null) {
-                placedFeature = registered;
-            }
+        placedFeature = placedFeature.resolve(loader);
+        if (placedFeature == null) {
+            return false;
         }
 
         var configuredFeature = placedFeature.configuredFeature(loader);
@@ -101,7 +103,7 @@ public class RandomSelectorFeature implements Feature<FeatureConfiguration> {
                         null,
                         context.minY(),
                         context.maxY(),
-                        0,
+                        context.seaLevel(),
                         null,
                         null,
                         loader);
@@ -110,7 +112,7 @@ public class RandomSelectorFeature implements Feature<FeatureConfiguration> {
         placedFeature.place(
                 placementContext,
                 context.random(),
-                context.origin(),
+                origin,
                 (position, featureRandom) -> {
                     var newContext =
                             new FeaturePlaceContext<>(

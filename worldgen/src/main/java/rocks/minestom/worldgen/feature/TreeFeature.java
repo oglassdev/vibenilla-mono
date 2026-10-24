@@ -117,7 +117,8 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
                             random,
                             toBlockVecs(logs),
                             toBlockVecs(leaves),
-                            List.of());
+                            List.of(),
+                            TreeDecorator.FeaturePlacer.in(context));
             for (var decorator : config.decorators()) {
                 decorator.place(decoratorContext);
             }

@@ -8,16 +8,16 @@ import rocks.minestom.worldgen.feature.valueproviders.IntProvider;
 import rocks.minestom.worldgen.random.RandomSource;
 
 public record RandomizedIntStateProvider(
-        String property, BlockStateProvider source, IntProvider values)
+        BlockStateProvider source, String property, IntProvider values)
         implements BlockStateProvider {
     public static final Codec<RandomizedIntStateProvider> CODEC =
             StructCodec.struct(
-                    "property",
-                    Codec.STRING,
-                    RandomizedIntStateProvider::property,
                     "source",
                     BlockStateProviders.CODEC,
                     RandomizedIntStateProvider::source,
+                    "property",
+                    Codec.STRING,
+                    RandomizedIntStateProvider::property,
                     "values",
                     IntProvider.CODEC,
                     RandomizedIntStateProvider::values,
@@ -25,15 +25,23 @@ public record RandomizedIntStateProvider(
 
     @Override
     public Block getState(RandomSource random, BlockVec position) {
-        var base = this.source.getState(random, position);
-        // Vanilla only samples the values provider when the resolved state
-        // actually has the target property; if the property is absent it
-        // returns the unmodified state without consuming a random draw.
+        return this.randomize(this.source.getState(random, position), random);
+    }
+
+    @Override
+    public Block getState(Block.Getter accessor, RandomSource random, BlockVec position) {
+        return this.randomize(this.source.getState(accessor, random, position), random);
+    }
+
+    /**
+     * Only samples the values provider when the state has the property; otherwise the state is
+     * returned unmodified without consuming a random draw.
+     */
+    private Block randomize(Block base, RandomSource random) {
         if (base.getProperty(this.property) == null) {
             return base;
         }
 
-        var sampled = this.values.sample(random);
-        return base.withProperty(this.property, Integer.toString(sampled));
+        return base.withProperty(this.property, Integer.toString(this.values.sample(random)));
     }
 }

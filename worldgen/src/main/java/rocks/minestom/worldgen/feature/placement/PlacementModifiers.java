@@ -13,12 +13,15 @@ import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import rocks.minestom.worldgen.BlockCodec;
+import rocks.minestom.worldgen.feature.BlockSupports;
+import rocks.minestom.worldgen.feature.Features;
+import rocks.minestom.worldgen.feature.UnknownTypes;
+import rocks.minestom.worldgen.feature.configurations.BlockSets;
 import rocks.minestom.worldgen.feature.valueproviders.IntProvider;
 import rocks.minestom.worldgen.noise.SimplexNoise;
 import rocks.minestom.worldgen.random.LegacyRandomSource;
 import rocks.minestom.worldgen.random.RandomSource;
 import rocks.minestom.worldgen.structure.context.BlockTagManager;
-import rocks.minestom.worldgen.surface.VerticalAnchor;
 
 public final class PlacementModifiers {
     // Vanilla Biome.BIOME_INFO_NOISE: PerlinSimplexNoise over a legacy random;
@@ -32,6 +35,9 @@ public final class PlacementModifiers {
      * provider rules) can resolve block tags without threading the manager through every codec.
      */
     private static final ThreadLocal<BlockTagManager> CURRENT_BLOCK_TAGS = new ThreadLocal<>();
+
+    private static final PlacementModifier NEVER_MODIFIER =
+            (context, random, position) -> List.of();
 
     private PlacementModifiers() {}
 
@@ -63,13 +69,10 @@ public final class PlacementModifiers {
         var modifiers = new ArrayList<PlacementModifier>();
         for (var placementElement : placementArray) {
             if (!placementElement.isJsonObject()) {
-                continue;
+                throw new IllegalArgumentException("Placement modifier must be an object");
             }
 
-            var modifier = parseModifier(placementElement.getAsJsonObject());
-            if (modifier != null) {
-                modifiers.add(modifier);
-            }
+            modifiers.add(parseModifier(placementElement.getAsJsonObject()));
         }
 
         return List.copyOf(modifiers);
@@ -101,11 +104,8 @@ public final class PlacementModifiers {
         var type = Key.key(object.get("type").getAsString()).asString();
         return switch (type) {
             case "minecraft:count" -> new CountModifier(IntProvider.fromJson(object.get("count")));
-            case "minecraft:heightmap" -> {
-                var typeValue = object.get("heightmap").getAsString();
-                var heightmapType = PlacementContext.HeightmapType.fromString(typeValue);
-                yield heightmapType == null ? null : new HeightmapModifier(heightmapType);
-            }
+            case "minecraft:heightmap" ->
+                    new HeightmapModifier(parseHeightmap(object.get("heightmap").getAsString()));
             case "minecraft:in_square" -> new InSquareModifier();
             case "minecraft:biome" -> new BiomeModifier();
             case "minecraft:rarity_filter" ->
@@ -114,10 +114,23 @@ public final class PlacementModifiers {
                 var provider = HeightProvider.parse(object.getAsJsonObject("height"));
                 yield new HeightRangeModifier(provider);
             }
-            case "minecraft:random_offset" ->
-                    new RandomOffsetModifier(
-                            IntProvider.fromJson(object.get("xz_spread")),
-                            IntProvider.fromJson(object.get("y_spread")));
+            case "minecraft:offset" ->
+                    new OffsetModifier(
+                            IntProvider.fromJson(object.get("x")),
+                            IntProvider.fromJson(object.get("y")),
+                            IntProvider.fromJson(object.get("z")));
+            case "minecraft:random_chance" ->
+                    new RandomChanceModifier(object.get("chance").getAsFloat());
+            case "minecraft:randomly_selected" ->
+                    new RandomlySelectedModifier(parse(object.getAsJsonArray("placements")));
+            case "minecraft:cuboid" ->
+                    new CuboidModifier(
+                            IntProvider.fromJson(object.get("xz_size")),
+                            IntProvider.fromJson(object.get("y_size")),
+                            !object.has("include_edges")
+                                    || object.get("include_edges").getAsBoolean(),
+                            !object.has("include_interior")
+                                    || object.get("include_interior").getAsBoolean());
             case "minecraft:fixed_placement" -> {
                 var positions = new ArrayList<BlockVec>();
                 for (var positionElement : object.getAsJsonArray("positions")) {
@@ -151,15 +164,10 @@ public final class PlacementModifiers {
                             object.has("allowed_search_condition")
                                     ? parseBlockPredicate(
                                             object.getAsJsonObject("allowed_search_condition"))
-                                    : new AlwaysTrueBlockPredicate(),
+                                    : BlockPredicate.ALWAYS_TRUE,
                             object.get("max_steps").getAsInt());
             case "minecraft:surface_relative_threshold_filter" -> {
-                var typeValue = object.get("heightmap").getAsString();
-                var heightmapType = PlacementContext.HeightmapType.fromString(typeValue);
-                if (heightmapType == null) {
-                    yield null;
-                }
-
+                var heightmapType = parseHeightmap(object.get("heightmap").getAsString());
                 var minInclusive =
                         object.has("min_inclusive")
                                 ? object.get("min_inclusive").getAsInt()
@@ -176,8 +184,20 @@ public final class PlacementModifiers {
             case "minecraft:block_predicate_filter" ->
                     new BlockPredicateFilterModifier(
                             parseBlockPredicate(object.getAsJsonObject("predicate")));
-            default -> null;
+            default -> {
+                UnknownTypes.report("placement modifier", type);
+                yield NEVER_MODIFIER;
+            }
         };
+    }
+
+    private static PlacementContext.HeightmapType parseHeightmap(String name) {
+        var heightmapType = PlacementContext.HeightmapType.fromString(name);
+        if (heightmapType == null) {
+            throw new IllegalArgumentException("Unknown heightmap type " + name);
+        }
+
+        return heightmapType;
     }
 
     public static BlockPredicate parseBlockPredicate(JsonObject object) {
@@ -187,72 +207,72 @@ public final class PlacementModifiers {
     public static BlockPredicate parseBlockPredicate(JsonObject object, BlockTagManager blockTags) {
         var type = Key.key(object.get("type").getAsString()).asString();
         return switch (type) {
-            case "minecraft:true" -> new AlwaysTrueBlockPredicate();
+            case "minecraft:true" -> BlockPredicate.ALWAYS_TRUE;
             case "minecraft:matching_blocks" ->
                     new MatchingBlocksPredicate(
-                            parseBlocks(object.get("blocks")), parseOffset(object));
+                            BlockSets.parse(object.get("blocks"), blockTags), parseOffset(object));
             case "minecraft:matching_block_tag" -> {
-                if (blockTags == null) {
-                    // No tag manager available in this parse context; keep the
-                    // historical always-true fallback rather than a never-matching set.
-                    yield new AlwaysTrueBlockPredicate();
-                }
-
                 var tag = Key.key(object.get("tag").getAsString());
-                yield new MatchingBlocksPredicate(resolveTag(tag, blockTags), parseOffset(object));
+                yield new MatchingBlocksPredicate(
+                        BlockSets.resolveTag(tag, blockTags), parseOffset(object));
             }
             case "minecraft:matching_fluids" ->
                     new MatchingFluidsPredicate(
                             parseFluids(object.get("fluids")), parseOffset(object));
             case "minecraft:would_survive" ->
                     new WouldSurvivePredicate(
-                            object.has("state") ? object.getAsJsonObject("state") : null,
-                            parseOffset(object));
-            case "minecraft:all_of" -> {
-                var predicates = new ArrayList<BlockPredicate>();
-                for (var predicate : object.getAsJsonArray("predicates")) {
-                    predicates.add(parseBlockPredicate(predicate.getAsJsonObject(), blockTags));
-                }
-                yield new AllOfPredicate(predicates);
-            }
-            case "minecraft:any_of" -> {
-                var predicates = new ArrayList<BlockPredicate>();
-                for (var predicate : object.getAsJsonArray("predicates")) {
-                    predicates.add(parseBlockPredicate(predicate.getAsJsonObject(), blockTags));
-                }
-                yield new AnyOfPredicate(predicates);
-            }
+                            BlockCodec.CODEC
+                                    .decode(Transcoder.JSON, object.get("state"))
+                                    .orElseThrow(),
+                            parseOffset(object),
+                            Features.currentBlockSupports());
+            case "minecraft:all_of" ->
+                    new AllOfPredicate(
+                            parsePredicates(object.getAsJsonArray("predicates"), blockTags));
+            case "minecraft:any_of" ->
+                    new AnyOfPredicate(
+                            parsePredicates(object.getAsJsonArray("predicates"), blockTags));
             case "minecraft:not" ->
                     new NotPredicate(
                             parseBlockPredicate(object.getAsJsonObject("predicate"), blockTags));
             case "minecraft:inside_world_bounds" ->
                     new InsideWorldBoundsPredicate(parseOffset(object));
             case "minecraft:solid" -> new SolidPredicate(parseOffset(object));
+            case "minecraft:replaceable" -> new ReplaceablePredicate(parseOffset(object));
             case "minecraft:has_sturdy_face" ->
                     new HasSturdyFacePredicate(
                             Direction.fromString(object.get("direction").getAsString()),
                             parseOffset(object));
-            default -> new AlwaysTrueBlockPredicate();
+            case "minecraft:height_range" ->
+                    new HeightRangePredicate(
+                            parseAnchor(object.get("min_inclusive")),
+                            parseAnchor(object.get("max_inclusive")));
+            case "minecraft:volume_match" ->
+                    new VolumeMatchPredicate(
+                            parseVector(object.getAsJsonArray("min")),
+                            parseVector(object.getAsJsonArray("max")),
+                            parseBlockPredicate(object.getAsJsonObject("match"), blockTags));
+            // No entities exist while a chunk generates, so nothing can obstruct the block
+            case "minecraft:unobstructed" -> BlockPredicate.ALWAYS_TRUE;
+            default -> {
+                UnknownTypes.report("block predicate", type);
+                yield BlockPredicate.NEVER;
+            }
         };
     }
 
-    private static Set<Key> resolveTag(Key tag, BlockTagManager blockTags) {
-        synchronized (blockTags) {
-            return blockTags.blocks(tag);
+    private static List<BlockPredicate> parsePredicates(
+            JsonArray array, BlockTagManager blockTags) {
+        var predicates = new ArrayList<BlockPredicate>();
+        for (var predicate : array) {
+            predicates.add(parseBlockPredicate(predicate.getAsJsonObject(), blockTags));
         }
+
+        return List.copyOf(predicates);
     }
 
-    private static Set<Key> parseBlocks(JsonElement value) {
-        var blocks = new HashSet<Key>();
-        if (value.isJsonArray()) {
-            for (var blockValue : value.getAsJsonArray()) {
-                blocks.add(Key.key(blockValue.getAsString()));
-            }
-            return blocks;
-        }
-
-        blocks.add(Key.key(value.getAsString()));
-        return blocks;
+    private static HeightAnchor parseAnchor(JsonElement json) {
+        return HeightAnchor.fromJson(json);
     }
 
     private static Set<Key> parseFluids(JsonElement value) {
@@ -269,13 +289,12 @@ public final class PlacementModifiers {
     }
 
     private static BlockVec parseOffset(JsonObject object) {
-        if (!object.has("offset")) {
-            return BlockVec.ZERO;
-        }
+        return object.has("offset") ? parseVector(object.getAsJsonArray("offset")) : BlockVec.ZERO;
+    }
 
-        var offset = object.getAsJsonArray("offset");
+    private static BlockVec parseVector(JsonArray vector) {
         return new BlockVec(
-                offset.get(0).getAsInt(), offset.get(1).getAsInt(), offset.get(2).getAsInt());
+                vector.get(0).getAsInt(), vector.get(1).getAsInt(), vector.get(2).getAsInt());
     }
 
     private record CountModifier(IntProvider count) implements PlacementModifier {
@@ -377,16 +396,81 @@ public final class PlacementModifiers {
         }
     }
 
-    private record RandomOffsetModifier(IntProvider xzSpread, IntProvider ySpread)
+    private record OffsetModifier(IntProvider x, IntProvider y, IntProvider z)
             implements PlacementModifier {
 
         @Override
         public List<BlockVec> apply(
                 PlacementContext context, RandomSource random, BlockVec position) {
-            var x = position.blockX() + this.xzSpread.sample(random);
-            var y = position.blockY() + this.ySpread.sample(random);
-            var z = position.blockZ() + this.xzSpread.sample(random);
-            return List.of(new BlockVec(x, y, z));
+            var offsetX = this.x.sample(random);
+            var offsetY = this.y.sample(random);
+            var offsetZ = this.z.sample(random);
+            return List.of(position.add(offsetX, offsetY, offsetZ));
+        }
+    }
+
+    private record RandomChanceModifier(float chance) implements PlacementModifier {
+
+        @Override
+        public List<BlockVec> apply(
+                PlacementContext context, RandomSource random, BlockVec position) {
+            return random.nextFloat() < this.chance ? List.of(position) : List.of();
+        }
+    }
+
+    private record RandomlySelectedModifier(List<PlacementModifier> placements)
+            implements PlacementModifier {
+        private RandomlySelectedModifier {
+            if (placements.isEmpty()) {
+                throw new IllegalArgumentException("randomly_selected needs placements");
+            }
+        }
+
+        @Override
+        public List<BlockVec> apply(
+                PlacementContext context, RandomSource random, BlockVec position) {
+            return this.placements
+                    .get(random.nextInt(this.placements.size()))
+                    .apply(context, random, position);
+        }
+    }
+
+    private record CuboidModifier(
+            IntProvider xzSize, IntProvider ySize, boolean includeEdges, boolean includeInterior)
+            implements PlacementModifier {
+
+        @Override
+        public List<BlockVec> apply(
+                PlacementContext context, RandomSource random, BlockVec position) {
+            var height = this.ySize.sample(random);
+            var width = this.xzSize.sample(random);
+            var length = this.xzSize.sample(random);
+            var results = new ArrayList<BlockVec>();
+
+            for (var x = 0; x <= width; x++) {
+                for (var y = 0; y <= height; y++) {
+                    for (var z = 0; z <= length; z++) {
+                        if ((this.includeEdges || x != 0 && x != width || y != 0 && y != height)
+                                && (this.includeEdges
+                                        || z != 0 && z != length
+                                        || y != 0 && y != height)
+                                && (this.includeEdges
+                                        || x != 0 && x != width
+                                        || z != 0 && z != length)
+                                && (this.includeInterior
+                                        || x == 0
+                                        || x == width
+                                        || y == 0
+                                        || y == height
+                                        || z == 0
+                                        || z == length)) {
+                            results.add(position.add(x, y, z));
+                        }
+                    }
+                }
+            }
+
+            return results;
         }
     }
 
@@ -671,14 +755,10 @@ public final class PlacementModifiers {
     }
 
     public interface BlockPredicate {
-        boolean test(PlacementContext context, BlockVec position);
-    }
+        BlockPredicate ALWAYS_TRUE = (context, position) -> true;
+        BlockPredicate NEVER = (context, position) -> false;
 
-    private static final class AlwaysTrueBlockPredicate implements BlockPredicate {
-        @Override
-        public boolean test(PlacementContext context, BlockVec position) {
-            return true;
-        }
+        boolean test(PlacementContext context, BlockVec position);
     }
 
     private record MatchingBlocksPredicate(Set<Key> blocks, BlockVec offset)
@@ -721,25 +801,8 @@ public final class PlacementModifiers {
         }
     }
 
-    private record WouldSurvivePredicate(Block state, BlockVec offset) implements BlockPredicate {
-
-        /**
-         * Vanilla's 26.2 {@code #minecraft:supports_vegetation} block tag (what saplings and other
-         * {@code VegetationBlock}s survive on).
-         */
-        private static final java.util.Set<String> SUPPORTS_VEGETATION =
-                java.util.Set.of(
-                        "minecraft:dirt",
-                        "minecraft:coarse_dirt",
-                        "minecraft:rooted_dirt",
-                        "minecraft:mud",
-                        "minecraft:muddy_mangrove_roots",
-                        "minecraft:moss_block",
-                        "minecraft:pale_moss_block",
-                        "minecraft:grass_block",
-                        "minecraft:podzol",
-                        "minecraft:mycelium",
-                        "minecraft:farmland");
+    private record WouldSurvivePredicate(Block state, BlockVec offset, BlockSupports supports)
+            implements BlockPredicate {
 
         private static boolean isVegetationFamily(String key) {
             return switch (key) {
@@ -770,14 +833,6 @@ public final class PlacementModifiers {
             };
         }
 
-        private WouldSurvivePredicate(JsonObject state, BlockVec offset) {
-            this(
-                    state == null
-                            ? Block.AIR
-                            : BlockCodec.CODEC.decode(Transcoder.JSON, state).orElse(Block.AIR),
-                    offset);
-        }
-
         @Override
         public boolean test(PlacementContext context, BlockVec position) {
             // Vanilla evaluates state.canSurvive(level, pos): survival only
@@ -788,7 +843,7 @@ public final class PlacementModifiers {
 
             // 26.x moved most plant survival rules to per-block
             // supports_<name> block tags; prefer those when present
-            var supported = rocks.minestom.worldgen.feature.BlockSupports.supportsOf(this.state);
+            var supported = this.supports.supportsOf(this.state);
             if (supported != null) {
                 return supported.contains(below.key());
             }
@@ -804,7 +859,7 @@ public final class PlacementModifiers {
             // not-yet-generated chunk reads bright (15 everywhere)
             if (this.state.compare(Block.RED_MUSHROOM)
                     || this.state.compare(Block.BROWN_MUSHROOM)) {
-                if (rocks.minestom.worldgen.feature.BlockSupports.isInTag(
+                if (this.supports.isInTag(
                         "minecraft:overrides_mushroom_light_requirement", below)) {
                     return true;
                 }
@@ -819,18 +874,19 @@ public final class PlacementModifiers {
             }
 
             if (this.state.compare(Block.MANGROVE_PROPAGULE)) {
-                return SUPPORTS_VEGETATION.contains(below.name()) || below.compare(Block.CLAY);
+                return this.supports.isInTag("minecraft:supports_vegetation", below)
+                        || below.compare(Block.CLAY);
             }
 
             if (this.state.name().endsWith("_sapling") || this.state.compare(Block.BAMBOO)) {
-                return SUPPORTS_VEGETATION.contains(below.name());
+                return this.supports.isInTag("minecraft:supports_vegetation", below);
             }
 
             // VegetationBlock family (grasses, flowers, firefly bush):
             // vanilla mayPlaceOn is the supports_vegetation tag, so a
             // firefly bush anchor over a sandy river bank must fail here
             if (isVegetationFamily(this.state.name())) {
-                return SUPPORTS_VEGETATION.contains(below.name());
+                return this.supports.isInTag("minecraft:supports_vegetation", below);
             }
 
             // DryVegetationBlock family: supports_dry_vegetation (sand,
@@ -839,8 +895,7 @@ public final class PlacementModifiers {
             if (stateKey.equals("minecraft:dead_bush")
                     || stateKey.equals("minecraft:short_dry_grass")
                     || stateKey.equals("minecraft:tall_dry_grass")) {
-                return rocks.minestom.worldgen.feature.BlockSupports.isInTag(
-                        "minecraft:supports_dry_vegetation", below);
+                return this.supports.isInTag("minecraft:supports_dry_vegetation", below);
             }
 
             return below.solid();
@@ -911,6 +966,56 @@ public final class PlacementModifiers {
         }
     }
 
+    private record ReplaceablePredicate(BlockVec offset) implements BlockPredicate {
+
+        @Override
+        public boolean test(PlacementContext context, BlockVec position) {
+            return context.accessor()
+                    .getBlock(
+                            position.add(
+                                    this.offset.blockX(),
+                                    this.offset.blockY(),
+                                    this.offset.blockZ()))
+                    .replaceable();
+        }
+    }
+
+    private record HeightRangePredicate(HeightAnchor minInclusive, HeightAnchor maxInclusive)
+            implements BlockPredicate {
+
+        @Override
+        public boolean test(PlacementContext context, BlockVec position) {
+            return position.blockY() >= this.minInclusive.resolveY(context)
+                    && position.blockY() <= this.maxInclusive.resolveY(context);
+        }
+    }
+
+    private record VolumeMatchPredicate(BlockVec min, BlockVec max, BlockPredicate match)
+            implements BlockPredicate {
+        private VolumeMatchPredicate {
+            if (min.blockX() > max.blockX()
+                    || min.blockY() > max.blockY()
+                    || min.blockZ() > max.blockZ()) {
+                throw new IllegalArgumentException("min bound cannot be larger than max bound");
+            }
+        }
+
+        @Override
+        public boolean test(PlacementContext context, BlockVec position) {
+            for (var x = this.min.blockX(); x <= this.max.blockX(); x++) {
+                for (var z = this.min.blockZ(); z <= this.max.blockZ(); z++) {
+                    for (var y = this.min.blockY(); y <= this.max.blockY(); y++) {
+                        if (!this.match.test(context, position.add(x, y, z))) {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+    }
+
     private record HasSturdyFacePredicate(Direction direction, BlockVec offset)
             implements BlockPredicate {
 
@@ -965,96 +1070,92 @@ public final class PlacementModifiers {
         static HeightProvider parse(JsonObject object) {
             if (!object.has("type")) {
                 // Bare vertical anchor, e.g. {"absolute": 62}
-                return new ConstantAnchorHeightProvider(
-                        VerticalAnchor.CODEC
-                                .decode(net.minestom.server.codec.Transcoder.JSON, object)
-                                .orElseThrow());
+                return new ConstantAnchorHeightProvider(HeightAnchor.fromJson(object));
             }
 
             var type = Key.key(object.get("type").getAsString()).asString();
             return switch (type) {
                 case "minecraft:constant" ->
                         new ConstantAnchorHeightProvider(
-                                VerticalAnchor.CODEC
-                                        .decode(
-                                                net.minestom.server.codec.Transcoder.JSON,
-                                                object.get("value"))
-                                        .orElseThrow());
+                                HeightAnchor.fromJson(object.get("value")));
                 case "minecraft:uniform" ->
                         new UniformHeightProvider(
-                                VerticalAnchor.CODEC
-                                        .decode(
-                                                net.minestom.server.codec.Transcoder.JSON,
-                                                object.get("min_inclusive"))
-                                        .orElseThrow(),
-                                VerticalAnchor.CODEC
-                                        .decode(
-                                                net.minestom.server.codec.Transcoder.JSON,
-                                                object.get("max_inclusive"))
-                                        .orElseThrow());
+                                HeightAnchor.fromJson(object.get("min_inclusive")),
+                                HeightAnchor.fromJson(object.get("max_inclusive")));
                 case "minecraft:trapezoid" ->
                         new TrapezoidHeightProvider(
-                                VerticalAnchor.CODEC
-                                        .decode(
-                                                net.minestom.server.codec.Transcoder.JSON,
-                                                object.get("min_inclusive"))
-                                        .orElseThrow(),
-                                VerticalAnchor.CODEC
-                                        .decode(
-                                                net.minestom.server.codec.Transcoder.JSON,
-                                                object.get("max_inclusive"))
-                                        .orElseThrow(),
+                                HeightAnchor.fromJson(object.get("min_inclusive")),
+                                HeightAnchor.fromJson(object.get("max_inclusive")),
                                 object.has("plateau") ? object.get("plateau").getAsInt() : 0);
                 case "minecraft:biased_to_bottom" ->
                         new BiasedToBottomHeightProvider(
-                                VerticalAnchor.CODEC
-                                        .decode(
-                                                net.minestom.server.codec.Transcoder.JSON,
-                                                object.get("min_inclusive"))
-                                        .orElseThrow(),
-                                VerticalAnchor.CODEC
-                                        .decode(
-                                                net.minestom.server.codec.Transcoder.JSON,
-                                                object.get("max_inclusive"))
-                                        .orElseThrow(),
+                                HeightAnchor.fromJson(object.get("min_inclusive")),
+                                HeightAnchor.fromJson(object.get("max_inclusive")),
                                 object.has("inner") ? object.get("inner").getAsInt() : 1);
                 case "minecraft:very_biased_to_bottom" ->
                         new VeryBiasedToBottomHeightProvider(
-                                VerticalAnchor.CODEC
-                                        .decode(
-                                                net.minestom.server.codec.Transcoder.JSON,
-                                                object.get("min_inclusive"))
-                                        .orElseThrow(),
-                                VerticalAnchor.CODEC
-                                        .decode(
-                                                net.minestom.server.codec.Transcoder.JSON,
-                                                object.get("max_inclusive"))
-                                        .orElseThrow(),
+                                HeightAnchor.fromJson(object.get("min_inclusive")),
+                                HeightAnchor.fromJson(object.get("max_inclusive")),
                                 object.has("inner") ? object.get("inner").getAsInt() : 1);
-                default ->
-                        new ConstantAnchorHeightProvider(
-                                VerticalAnchor.CODEC
-                                        .decode(net.minestom.server.codec.Transcoder.JSON, object)
-                                        .orElseThrow());
+                case "minecraft:weighted_list" -> {
+                    var entries = new ArrayList<WeightedListHeightProvider.Entry>();
+                    for (var element : object.getAsJsonArray("distribution")) {
+                        var entry = element.getAsJsonObject();
+                        entries.add(
+                                new WeightedListHeightProvider.Entry(
+                                        parse(entry.getAsJsonObject("data")),
+                                        entry.get("weight").getAsInt()));
+                    }
+                    yield new WeightedListHeightProvider(List.copyOf(entries));
+                }
+                default -> throw new IllegalArgumentException("Unknown height provider " + type);
             };
         }
     }
 
-    private record ConstantAnchorHeightProvider(VerticalAnchor anchor) implements HeightProvider {
+    private record WeightedListHeightProvider(List<Entry> distribution) implements HeightProvider {
+        private WeightedListHeightProvider {
+            if (distribution.isEmpty()) {
+                throw new IllegalArgumentException("weighted_list needs a distribution");
+            }
+        }
+
+        @Override
+        public int sample(RandomSource random, PlacementContext context) {
+            var total = 0;
+            for (var entry : this.distribution) {
+                total += entry.weight();
+            }
+
+            var remaining = random.nextInt(total);
+            for (var entry : this.distribution) {
+                remaining -= entry.weight();
+                if (remaining < 0) {
+                    return entry.provider().sample(random, context);
+                }
+            }
+
+            throw new IllegalStateException("Weighted height distribution exhausted");
+        }
+
+        private record Entry(HeightProvider provider, int weight) {}
+    }
+
+    private record ConstantAnchorHeightProvider(HeightAnchor anchor) implements HeightProvider {
         @Override
         public int sample(
                 rocks.minestom.worldgen.random.RandomSource random, PlacementContext context) {
-            return this.anchor.resolveY(context.minY(), context.maxY());
+            return this.anchor.resolveY(context);
         }
     }
 
-    private record UniformHeightProvider(VerticalAnchor minInclusive, VerticalAnchor maxInclusive)
+    private record UniformHeightProvider(HeightAnchor minInclusive, HeightAnchor maxInclusive)
             implements HeightProvider {
         @Override
         public int sample(
                 rocks.minestom.worldgen.random.RandomSource random, PlacementContext context) {
-            var minY = this.minInclusive.resolveY(context.minY(), context.maxY());
-            var maxY = this.maxInclusive.resolveY(context.minY(), context.maxY());
+            var minY = this.minInclusive.resolveY(context);
+            var maxY = this.maxInclusive.resolveY(context);
             if (minY > maxY) {
                 return minY;
             }
@@ -1063,13 +1164,13 @@ public final class PlacementModifiers {
     }
 
     private record TrapezoidHeightProvider(
-            VerticalAnchor minInclusive, VerticalAnchor maxInclusive, int plateau)
+            HeightAnchor minInclusive, HeightAnchor maxInclusive, int plateau)
             implements HeightProvider {
         @Override
         public int sample(
                 rocks.minestom.worldgen.random.RandomSource random, PlacementContext context) {
-            var minY = this.minInclusive.resolveY(context.minY(), context.maxY());
-            var maxY = this.maxInclusive.resolveY(context.minY(), context.maxY());
+            var minY = this.minInclusive.resolveY(context);
+            var maxY = this.maxInclusive.resolveY(context);
             if (minY > maxY) {
                 return minY;
             }
@@ -1086,13 +1187,13 @@ public final class PlacementModifiers {
     }
 
     private record BiasedToBottomHeightProvider(
-            VerticalAnchor minInclusive, VerticalAnchor maxInclusive, int inner)
+            HeightAnchor minInclusive, HeightAnchor maxInclusive, int inner)
             implements HeightProvider {
         @Override
         public int sample(
                 rocks.minestom.worldgen.random.RandomSource random, PlacementContext context) {
-            var minY = this.minInclusive.resolveY(context.minY(), context.maxY());
-            var maxY = this.maxInclusive.resolveY(context.minY(), context.maxY());
+            var minY = this.minInclusive.resolveY(context);
+            var maxY = this.maxInclusive.resolveY(context);
             if (maxY - minY - this.inner + 1 <= 0) {
                 return minY;
             }
@@ -1103,13 +1204,13 @@ public final class PlacementModifiers {
     }
 
     private record VeryBiasedToBottomHeightProvider(
-            VerticalAnchor minInclusive, VerticalAnchor maxInclusive, int inner)
+            HeightAnchor minInclusive, HeightAnchor maxInclusive, int inner)
             implements HeightProvider {
         @Override
         public int sample(
                 rocks.minestom.worldgen.random.RandomSource random, PlacementContext context) {
-            var minY = this.minInclusive.resolveY(context.minY(), context.maxY());
-            var maxY = this.maxInclusive.resolveY(context.minY(), context.maxY());
+            var minY = this.minInclusive.resolveY(context);
+            var maxY = this.maxInclusive.resolveY(context);
             if (maxY - minY - this.inner + 1 <= 0) {
                 return minY;
             }

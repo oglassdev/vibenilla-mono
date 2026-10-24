@@ -9,12 +9,29 @@ import rocks.minestom.worldgen.feature.placement.PlacementModifier;
 import rocks.minestom.worldgen.feature.placement.PlacementModifiers;
 import rocks.minestom.worldgen.random.RandomSource;
 
+/**
+ * A feature with its placement modifiers, or a reference to a registered placed feature.
+ *
+ * @param reference the id of a registered placed feature when this is a reference, else null
+ * @param feature the id of the configured feature to place when it is not inline
+ * @param loader the loader that parsed this, used to resolve ids when the caller supplies none
+ */
 public record PlacedFeature(
-        Key feature, ConfiguredFeature<?> inlineFeature, List<PlacementModifier> placement) {
+        Key reference,
+        Key feature,
+        ConfiguredFeature<?> inlineFeature,
+        List<PlacementModifier> placement,
+        FeatureLoader loader) {
 
+    /** Parses a placed feature given inline, or as a registry reference by id. */
     public static PlacedFeature fromJson(JsonElement json) {
+        var loader = Features.currentLoader();
+        if (json.isJsonPrimitive()) {
+            return new PlacedFeature(Key.key(json.getAsString()), null, null, List.of(), loader);
+        }
+
         if (!json.isJsonObject()) {
-            throw new IllegalArgumentException("PlacedFeature must be a JSON object");
+            throw new IllegalArgumentException("PlacedFeature must be a JSON object or an id");
         }
 
         var object = json.getAsJsonObject();
@@ -24,17 +41,26 @@ public record PlacedFeature(
 
         if (featureElement.isJsonPrimitive()) {
             featureKey = Key.key(featureElement.getAsString());
-        } else if (featureElement.isJsonObject()) {
-            inlineConfiguredFeature =
-                    Features.parseConfiguredFeature(featureElement.getAsJsonObject());
+        } else {
+            inlineConfiguredFeature = Features.parseConfiguredFeature(featureElement);
         }
 
-        var placementModifiers = List.<PlacementModifier>of();
-        if (object.has("placement") && object.get("placement").isJsonArray()) {
-            placementModifiers = PlacementModifiers.parse(object.getAsJsonArray("placement"));
+        var placementModifiers = PlacementModifiers.parse(object.getAsJsonArray("placement"));
+        return new PlacedFeature(
+                null, featureKey, inlineConfiguredFeature, placementModifiers, loader);
+    }
+
+    /**
+     * The placed feature to run: this one, or the registered one a reference points to (null when
+     * it cannot be loaded).
+     */
+    public PlacedFeature resolve(FeatureLoader loader) {
+        if (this.reference == null) {
+            return this;
         }
 
-        return new PlacedFeature(featureKey, inlineConfiguredFeature, placementModifiers);
+        var source = loader != null ? loader : this.loader;
+        return source != null ? source.getPlacedFeature(this.reference) : null;
     }
 
     public ConfiguredFeature<?> configuredFeature(FeatureLoader loader) {
@@ -42,15 +68,12 @@ public record PlacedFeature(
             return this.inlineFeature;
         }
 
-        if (this.feature == null) {
+        var source = loader != null ? loader : this.loader;
+        if (this.feature == null || source == null) {
             return null;
         }
 
-        if (loader == null) {
-            return null;
-        }
-
-        return loader.getConfiguredFeature(this.feature);
+        return source.getConfiguredFeature(this.feature);
     }
 
     public List<BlockVec> getPositions(

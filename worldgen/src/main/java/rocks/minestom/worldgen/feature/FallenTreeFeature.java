@@ -18,13 +18,21 @@ public final class FallenTreeFeature implements Feature<FallenTreeConfiguration>
     public <T extends Block.Getter & Block.Setter> boolean place(
             FeaturePlaceContext<FallenTreeConfiguration, T> context) {
         this.placeFallenTree(
-                context.config(), context.origin(), context.accessor(), context.random());
+                context.config(),
+                context.origin(),
+                context.accessor(),
+                context.random(),
+                TreeDecorator.FeaturePlacer.in(context));
         return true;
     }
 
     private <T extends Block.Getter & Block.Setter> void placeFallenTree(
-            FallenTreeConfiguration config, BlockVec origin, T level, RandomSource random) {
-        this.placeStump(config, level, random, origin);
+            FallenTreeConfiguration config,
+            BlockVec origin,
+            T level,
+            RandomSource random,
+            TreeDecorator.FeaturePlacer featurePlacer) {
+        this.placeStump(config, level, random, origin, featurePlacer);
 
         var direction = Direction.HORIZONTAL.get(random.nextInt(Direction.HORIZONTAL.size()));
         var logLength = config.logLength().sample(random) - 2;
@@ -32,7 +40,8 @@ public final class FallenTreeFeature implements Feature<FallenTreeConfiguration>
         logStartPos = this.setGroundHeightForFallenLogStartPos(level, logStartPos);
 
         if (this.canPlaceEntireFallenLog(level, logLength, logStartPos, direction)) {
-            this.placeFallenLog(config, level, random, logLength, logStartPos, direction);
+            this.placeFallenLog(
+                    config, level, random, logLength, logStartPos, direction, featurePlacer);
         }
     }
 
@@ -48,9 +57,18 @@ public final class FallenTreeFeature implements Feature<FallenTreeConfiguration>
     }
 
     private <T extends Block.Getter & Block.Setter> void placeStump(
-            FallenTreeConfiguration config, T level, RandomSource random, BlockVec stumpPos) {
+            FallenTreeConfiguration config,
+            T level,
+            RandomSource random,
+            BlockVec stumpPos,
+            TreeDecorator.FeaturePlacer featurePlacer) {
         this.placeLogBlock(config, level, random, stumpPos, null);
-        this.decorateLogs(level, random, Set.of(VanillaPos.of(stumpPos)), config.stumpDecorators());
+        this.decorateLogs(
+                level,
+                random,
+                Set.of(VanillaPos.of(stumpPos)),
+                config.stumpDecorators(),
+                featurePlacer);
     }
 
     private boolean canPlaceEntireFallenLog(
@@ -83,7 +101,8 @@ public final class FallenTreeFeature implements Feature<FallenTreeConfiguration>
             RandomSource random,
             int logLength,
             BlockVec logStartPos,
-            Direction direction) {
+            Direction direction,
+            TreeDecorator.FeaturePlacer featurePlacer) {
         var fallenLog = new HashSet<VanillaPos>();
         var cursor = logStartPos;
 
@@ -93,7 +112,7 @@ public final class FallenTreeFeature implements Feature<FallenTreeConfiguration>
             cursor = direction.relative(cursor);
         }
 
-        this.decorateLogs(level, random, fallenLog, config.logDecorators());
+        this.decorateLogs(level, random, fallenLog, config.logDecorators(), featurePlacer);
     }
 
     private boolean mayPlaceOn(Block.Getter level, BlockVec position) {
@@ -122,7 +141,11 @@ public final class FallenTreeFeature implements Feature<FallenTreeConfiguration>
     }
 
     private <T extends Block.Getter & Block.Setter> void decorateLogs(
-            T level, RandomSource random, Set<VanillaPos> logs, List<TreeDecorator> decorators) {
+            T level,
+            RandomSource random,
+            Set<VanillaPos> logs,
+            List<TreeDecorator> decorators,
+            TreeDecorator.FeaturePlacer featurePlacer) {
         if (decorators.isEmpty()) {
             return;
         }
@@ -130,7 +153,13 @@ public final class FallenTreeFeature implements Feature<FallenTreeConfiguration>
         var logList = logs.stream().map(VanillaPos::toBlockVec).toList();
         var decoratorContext =
                 new TreeDecorator.Context(
-                        level, level::setBlock, random, logList, List.of(), List.of());
+                        level,
+                        level::setBlock,
+                        random,
+                        logList,
+                        List.of(),
+                        List.of(),
+                        featurePlacer);
         for (var decorator : decorators) {
             decorator.place(decoratorContext);
         }

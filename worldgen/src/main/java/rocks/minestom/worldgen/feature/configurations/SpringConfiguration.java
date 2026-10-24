@@ -35,8 +35,8 @@ public record SpringConfiguration(
      */
     private static Block parseFluidState(JsonElement json) {
         var obj = json.getAsJsonObject();
-        var name = obj.get("Name").getAsString();
-        var properties = obj.has("Properties") ? obj.getAsJsonObject("Properties") : null;
+        var name = obj.get("id").getAsString();
+        var properties = obj.has("properties") ? obj.getAsJsonObject("properties") : null;
         var falling =
                 properties != null
                         && properties.has("falling")

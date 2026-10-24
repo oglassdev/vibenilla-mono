@@ -63,6 +63,14 @@ public enum Direction {
         return position.add(this.stepX, this.stepY, this.stepZ);
     }
 
+    public String axisName() {
+        return switch (this) {
+            case DOWN, UP -> "y";
+            case NORTH, SOUTH -> "z";
+            case WEST, EAST -> "x";
+        };
+    }
+
     public String serializedName() {
         return this.name().toLowerCase();
     }

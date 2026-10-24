@@ -2,6 +2,7 @@ package rocks.minestom.worldgen.feature.trunkplacers;
 
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.function.UnaryOperator;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.Feature;
@@ -29,6 +30,21 @@ public interface TrunkPlacer {
             TreeConfiguration config) {
         if (this.isValidTreePosition(getter, pos)) {
             logSetter.accept(pos, config.trunkProvider().getState(getter, random, pos));
+            return true;
+        }
+        return false;
+    }
+
+    default boolean placeLog(
+            Block.Getter getter,
+            BiConsumer<BlockVec, Block> logSetter,
+            RandomSource random,
+            BlockVec pos,
+            TreeConfiguration config,
+            UnaryOperator<Block> stateModifier) {
+        if (this.isValidTreePosition(getter, pos)) {
+            logSetter.accept(
+                    pos, stateModifier.apply(config.trunkProvider().getState(getter, random, pos)));
             return true;
         }
         return false;

@@ -6,50 +6,46 @@ import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.structure.context.BlockTagManager;
 
 /**
- * Runtime access to the 26.x per-block {@code #minecraft:supports_<name>} block tags that carry
- * most plant survival rules. The tag manager is installed by {@link FeatureLoader} when the data
- * pack loads.
+ * Access to the per-block {@code #minecraft:supports_<name>} block tags that carry most plant
+ * survival rules, backed by one data pack's block tags.
  */
 public final class BlockSupports {
-    private static volatile BlockTagManager blockTags;
+    /** Support lookups for a context without a data pack: no tags exist. */
+    public static final BlockSupports NONE = new BlockSupports(null);
 
-    private BlockSupports() {}
+    private final BlockTagManager blockTags;
 
-    public static void install(BlockTagManager manager) {
-        blockTags = manager;
+    public BlockSupports(BlockTagManager blockTags) {
+        this.blockTags = blockTags;
+    }
+
+    /** The backing block tag manager, or null when there is none. */
+    public BlockTagManager manager() {
+        return this.blockTags;
+    }
+
+    /** Whether the block is in the given block tag (resolved recursively). */
+    public boolean isInTag(String tagName, Block block) {
+        var members = this.members(Key.key(tagName));
+        return members != null && members.contains(block.key());
     }
 
     /**
      * The support set for the given block state, or null when no {@code supports_<name>} tag exists
      * for it.
      */
-    /** The installed block tag manager, or null before the data pack loads. */
-    public static BlockTagManager manager() {
-        return blockTags;
+    public Set<Key> supportsOf(Block block) {
+        var supported = this.members(Key.key("minecraft:supports_" + block.key().value()));
+        return supported == null || supported.isEmpty() ? null : supported;
     }
 
-    /** Whether the block is in the given block tag (resolved recursively). */
-    public static boolean isInTag(String tagName, Block block) {
-        var manager = blockTags;
-        if (manager == null) {
-            return false;
-        }
-        Set<Key> members;
-        synchronized (manager) {
-            members = manager.blocks(Key.key(tagName));
-        }
-        return members != null && members.contains(block.key());
-    }
-
-    public static Set<Key> supportsOf(Block block) {
-        var manager = blockTags;
-        if (manager == null) {
+    private Set<Key> members(Key tag) {
+        if (this.blockTags == null) {
             return null;
         }
-        Set<Key> supported;
-        synchronized (manager) {
-            supported = manager.blocks(Key.key("minecraft:supports_" + block.key().value()));
+
+        synchronized (this.blockTags) {
+            return this.blockTags.blocks(tag);
         }
-        return supported == null || supported.isEmpty() ? null : supported;
     }
 }

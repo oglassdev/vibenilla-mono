@@ -10,7 +10,7 @@ import rocks.minestom.worldgen.random.RandomSource;
 public abstract class AbstractHugeMushroomFeature
         implements Feature<HugeMushroomFeatureConfiguration> {
 
-    /** Vanilla's 26.2 {@code #minecraft:replaceable_by_mushrooms} block tag. */
+    /** Vanilla's {@code #minecraft:replaceable_by_mushrooms} block tag (26.3 contents). */
     private static final Set<String> REPLACEABLE_BY_MUSHROOMS;
 
     static {
@@ -19,6 +19,8 @@ public abstract class AbstractHugeMushroomFeature
         replaceable.add("minecraft:red_mushroom");
         replaceable.add("minecraft:brown_mushroom_block");
         replaceable.add("minecraft:red_mushroom_block");
+        replaceable.add("minecraft:red_shrub");
+        replaceable.remove("minecraft:shelf_mushroom");
         REPLACEABLE_BY_MUSHROOMS = Set.copyOf(replaceable);
     }
 
@@ -31,8 +33,7 @@ public abstract class AbstractHugeMushroomFeature
         var config = context.config();
 
         var treeHeight = this.getTreeHeight(random);
-        if (!this.isValidPosition(
-                level, origin, treeHeight, config, context.minY(), context.maxY())) {
+        if (!this.isValidPosition(context, treeHeight)) {
             return false;
         }
 
@@ -71,18 +72,18 @@ public abstract class AbstractHugeMushroomFeature
     }
 
     protected boolean isValidPosition(
-            Block.Getter level,
-            BlockVec origin,
-            int treeHeight,
-            HugeMushroomFeatureConfiguration config,
-            int minY,
-            int maxY) {
+            FeaturePlaceContext<HugeMushroomFeatureConfiguration, ?> context, int treeHeight) {
+        var level = context.accessor();
+        var origin = context.origin();
+        var config = context.config();
+        var minY = context.minY();
+        var maxY = context.maxY();
         var y = origin.blockY();
         if (y < minY + 1 || y + treeHeight + 1 > maxY + 1) {
             return false;
         }
 
-        var predicateContext = Feature.predicateContext(level, minY, maxY);
+        var predicateContext = Feature.predicateContext(context);
         if (!config.canPlaceOn().test(predicateContext, origin.add(0, -1, 0))) {
             return false;
         }
