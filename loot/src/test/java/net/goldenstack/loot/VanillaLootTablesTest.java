@@ -68,13 +68,41 @@ class VanillaLootTablesTest {
         assertEquals(List.of(ItemStack.of(Material.STONE)), items);
     }
 
+    @Test
+    void wheatOnlyDropsWheatWhenFullyGrown() {
+        var tool = ItemStack.of(Material.IRON_PICKAXE);
+
+        var grown = generate("blocks/wheat", Block.WHEAT.withProperty("age", "7"), tool);
+        var young = generate("blocks/wheat", Block.WHEAT.withProperty("age", "3"), tool);
+
+        assertEquals(true, grown.stream().anyMatch(item -> item.material() == Material.WHEAT));
+        assertEquals(List.of(ItemStack.of(Material.WHEAT_SEEDS)), young);
+    }
+
+    @Test
+    void creeperDropsOnlyGunpowderWithoutASkeletonKiller() {
+        for (var seed = 0L; seed < 20L; seed++) {
+            var items = generate("entities/creeper", Block.AIR, ItemStack.AIR, new Random(seed));
+
+            assertEquals(
+                    true, items.stream().allMatch(item -> item.material() == Material.GUNPOWDER));
+        }
+    }
+
     private static List<ItemStack> generate(String table, Block block, ItemStack tool) {
+        return generate(table, block, tool, new Random(1L));
+    }
+
+    private static List<ItemStack> generate(
+            String table, Block block, ItemStack tool, Random random) {
         var context =
                 LootContext.from(
                         VanillaInterface.defaults(),
                         Map.of(
                                 LootContext.RANDOM,
-                                new Random(1L),
+                                random,
+                                LootContext.WORLD,
+                                MinecraftServer.getInstanceManager().createInstanceContainer(),
                                 LootContext.BLOCK_STATE,
                                 block,
                                 LootContext.TOOL,
