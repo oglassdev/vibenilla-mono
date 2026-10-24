@@ -515,11 +515,233 @@ final class SupportPlacementTest {
 
         assertEquals("false", rule.blockUpdate(update).getProperty("up"));
         assertEquals(
-                "true",
+                "false",
                 rule.blockUpdate(
                                 new BlockPlacementRule.UpdateState(
                                         blocksAt(Map.of()), position, current, BlockFace.TOP))
                         .getProperty("up"));
+    }
+
+    @Test
+    void hugeMushroomFaceIsHiddenByAdjacentMushroomBlock() {
+        var rule = new HugeMushroomPlacementRule(Block.BROWN_MUSHROOM_BLOCK);
+        var position = new BlockVec(0, 0, 0);
+        var current = Block.BROWN_MUSHROOM_BLOCK.withProperty("up", "true");
+        var getter = blocksAt(Map.of(new BlockVec(0, 1, 0), Block.BROWN_MUSHROOM_BLOCK));
+
+        assertEquals(
+                "false",
+                rule.blockUpdate(
+                                new BlockPlacementRule.UpdateState(
+                                        getter, position, current, BlockFace.TOP))
+                        .getProperty("up"));
+    }
+
+    @Test
+    void leafLitterUsesSegmentAmountAndSturdySupport() {
+        var rule = new SegmentedPlacementRule(Block.LEAF_LITTER, "segment_amount", true);
+        var position = new BlockVec(0, 1, 0);
+        var below = new BlockVec(0, 0, 0);
+
+        assertNull(
+                rule.blockPlace(
+                        placementState(
+                                rule.getBlock(), blocksAt(Map.of()), position, BlockFace.TOP)));
+
+        var placed =
+                rule.blockPlace(
+                        placementState(
+                                rule.getBlock(),
+                                blocksAt(Map.of(below, Block.STONE)),
+                                position,
+                                BlockFace.TOP));
+
+        assertEquals("1", placed.getProperty("segment_amount"));
+
+        var stacked =
+                rule.blockPlace(
+                        placementState(
+                                rule.getBlock(),
+                                blocksAt(Map.of(below, Block.STONE, position, placed)),
+                                position,
+                                BlockFace.TOP));
+
+        assertEquals("2", stacked.getProperty("segment_amount"));
+    }
+
+    @Test
+    void vinesNeverUseDownFaceOrWaterlogging() {
+        var rule = MultifacePlacementRule.vine(Block.VINE);
+        var position = new BlockVec(0, 0, 0);
+        var getter = blocksAt(Map.of(position.relative(BlockFace.NORTH), Block.STONE));
+        var placed =
+                rule.blockPlace(placementState(rule.getBlock(), getter, position, BlockFace.SOUTH));
+
+        assertEquals("true", placed.getProperty("north"));
+        assertNull(placed.getProperty("waterlogged"));
+        assertNull(
+                rule.blockPlace(
+                        placementState(
+                                rule.getBlock(), blocksAt(Map.of()), position, BlockFace.TOP)));
+        assertNull(
+                rule.blockPlace(
+                        placementState(
+                                rule.getBlock(),
+                                blocksAt(Map.of(position.relative(BlockFace.BOTTOM), Block.STONE)),
+                                position,
+                                BlockFace.TOP)));
+    }
+
+    @Test
+    void vinesHangFromVinesAbove() {
+        var rule = MultifacePlacementRule.vine(Block.VINE);
+        var position = new BlockVec(0, 0, 0);
+        var current = Block.VINE.withProperty("north", "true");
+        var above = Block.VINE.withProperty("north", "true");
+        var supported =
+                new BlockPlacementRule.UpdateState(
+                        blocksAt(Map.of(position.relative(BlockFace.TOP), above)),
+                        position,
+                        current,
+                        BlockFace.TOP);
+        var unsupported =
+                new BlockPlacementRule.UpdateState(
+                        blocksAt(Map.of(position.relative(BlockFace.TOP), Block.VINE)),
+                        position,
+                        current,
+                        BlockFace.TOP);
+
+        assertEquals("true", rule.blockUpdate(supported).getProperty("north"));
+        assertEquals(Block.AIR, rule.blockUpdate(unsupported));
+    }
+
+    @Test
+    void redstoneWireConnectsToSignalSourcesAndOrientedRepeaters() {
+        var rule = new RedstoneWirePlacementRule(Block.REDSTONE_WIRE);
+        var position = new BlockVec(0, 0, 0);
+        var east = position.relative(BlockFace.EAST);
+        var dot =
+                rule.blockPlace(
+                        placementState(
+                                rule.getBlock(),
+                                blocksAt(Map.of(position.relative(BlockFace.BOTTOM), Block.STONE)),
+                                position,
+                                BlockFace.TOP));
+
+        assertTrue(RedstoneWirePlacementRule.isDot(dot));
+
+        for (var neighbor :
+                new Block[] {
+                    Block.REDSTONE_BLOCK,
+                    Block.LEVER,
+                    Block.COMPARATOR,
+                    Block.REPEATER.withProperty("facing", "east"),
+                    Block.REPEATER.withProperty("facing", "west")
+                }) {
+            var update =
+                    new BlockPlacementRule.UpdateState(
+                            blocksAt(
+                                    Map.of(
+                                            position.relative(BlockFace.BOTTOM),
+                                            Block.STONE,
+                                            east,
+                                            neighbor)),
+                            position,
+                            dot,
+                            BlockFace.EAST);
+
+            assertEquals("side", rule.blockUpdate(update).getProperty("east"), neighbor.name());
+        }
+
+        var sideways = Block.REPEATER.withProperty("facing", "north");
+        var update =
+                new BlockPlacementRule.UpdateState(
+                        blocksAt(
+                                Map.of(
+                                        position.relative(BlockFace.BOTTOM),
+                                        Block.STONE,
+                                        east,
+                                        sideways)),
+                        position,
+                        dot,
+                        BlockFace.EAST);
+
+        assertEquals("none", rule.blockUpdate(update).getProperty("east"));
+    }
+
+    @Test
+    void floorAndCeilingLeversPowerTheirSupportingBlock() {
+        var position = new BlockVec(0, 0, 0);
+        var stone = position.relative(BlockFace.EAST);
+        var floorLever = Block.LEVER.withProperty("face", "floor").withProperty("powered", "true");
+        var ceilingLever =
+                Block.LEVER.withProperty("face", "ceiling").withProperty("powered", "true");
+
+        assertTrue(
+                VanillaPlacementUtils.hasNeighborSignal(
+                        blocksAt(
+                                Map.of(
+                                        stone,
+                                        Block.STONE,
+                                        stone.relative(BlockFace.TOP),
+                                        floorLever)),
+                        position));
+        assertTrue(
+                VanillaPlacementUtils.hasNeighborSignal(
+                        blocksAt(
+                                Map.of(
+                                        stone,
+                                        Block.STONE,
+                                        stone.relative(BlockFace.BOTTOM),
+                                        ceilingLever)),
+                        position));
+    }
+
+    @Test
+    void rodsAndTurtleEggsDoNotRequireSupport() {
+        var position = new BlockVec(0, 0, 0);
+        var empty = blocksAt(Map.of());
+
+        assertNotNull(
+                new EndRodPlacementRule(Block.END_ROD)
+                        .blockPlace(placementState(Block.END_ROD, empty, position, BlockFace.TOP)));
+        assertNotNull(
+                new LightningRodPlacementRule(Block.LIGHTNING_ROD)
+                        .blockPlace(
+                                placementState(
+                                        Block.LIGHTNING_ROD, empty, position, BlockFace.TOP)));
+        assertNotNull(
+                new TurtleEggPlacementRule(Block.TURTLE_EGG)
+                        .blockPlace(
+                                placementState(Block.TURTLE_EGG, empty, position, BlockFace.TOP)));
+    }
+
+    @Test
+    void concretePowderOnlyHardensNextToWater() {
+        var rule =
+                new ConcretePowderPlacementRule(Block.WHITE_CONCRETE_POWDER, Block.WHITE_CONCRETE);
+        var position = new BlockVec(0, 0, 0);
+        var waterBelow = blocksAt(Map.of(position.relative(BlockFace.BOTTOM), Block.WATER));
+        var waterSide = blocksAt(Map.of(position.relative(BlockFace.EAST), Block.WATER));
+
+        assertEquals(
+                Block.WHITE_CONCRETE_POWDER,
+                rule.blockPlace(
+                        placementState(rule.getBlock(), waterBelow, position, BlockFace.TOP)));
+        assertEquals(
+                Block.WHITE_CONCRETE,
+                rule.blockPlace(
+                        placementState(rule.getBlock(), waterSide, position, BlockFace.TOP)));
+        assertEquals(
+                Block.WHITE_CONCRETE,
+                rule.blockUpdate(
+                        new BlockPlacementRule.UpdateState(
+                                waterSide, position, rule.getBlock(), BlockFace.EAST)));
+        assertEquals(
+                Block.WHITE_CONCRETE_POWDER,
+                rule.blockUpdate(
+                        new BlockPlacementRule.UpdateState(
+                                waterBelow, position, rule.getBlock(), BlockFace.BOTTOM)));
     }
 
     @Test

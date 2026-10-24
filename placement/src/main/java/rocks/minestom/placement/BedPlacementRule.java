@@ -28,13 +28,6 @@ public final class BedPlacementRule extends BlockPlacementRule {
             return null;
         }
 
-        var footSupport = instance.getBlock(placePosition.relative(BlockFace.BOTTOM));
-        var headSupport = instance.getBlock(headPosition.relative(BlockFace.BOTTOM));
-
-        if (!footSupport.registry().isSolid() || !headSupport.registry().isSolid()) {
-            return null;
-        }
-
         var facingName = facing.name().toLowerCase();
         var headBlock =
                 placementState
@@ -44,14 +37,20 @@ public final class BedPlacementRule extends BlockPlacementRule {
                         .withProperty("part", "head")
                         .withProperty("occupied", "false");
 
-        instance.setBlock(headPosition, headBlock, false);
+        var footBlock =
+                placementState
+                        .block()
+                        .withHandler(BedBlockHandler.INSTANCE)
+                        .withProperty("facing", facingName)
+                        .withProperty("part", "foot")
+                        .withProperty("occupied", "false");
 
-        return placementState
-                .block()
-                .withHandler(BedBlockHandler.INSTANCE)
-                .withProperty("facing", facingName)
-                .withProperty("part", "foot")
-                .withProperty("occupied", "false");
+        if (Utility.intersectsPlacementBlockingEntity(instance, placePosition, footBlock)) {
+            return null;
+        }
+
+        instance.setBlock(headPosition, headBlock, false);
+        return footBlock;
     }
 
     @Override

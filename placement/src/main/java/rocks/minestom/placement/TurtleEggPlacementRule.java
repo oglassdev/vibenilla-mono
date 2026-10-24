@@ -1,9 +1,6 @@
 package rocks.minestom.placement;
 
-import net.kyori.adventure.key.Key;
-import net.minestom.server.MinecraftServer;
 import net.minestom.server.instance.block.Block;
-import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
 
 public final class TurtleEggPlacementRule extends BlockPlacementRule {
@@ -26,26 +23,7 @@ public final class TurtleEggPlacementRule extends BlockPlacementRule {
             }
         }
 
-        var belowBlock = instance.getBlock(placePosition.relative(BlockFace.BOTTOM));
-
-        if (!isSand(belowBlock)) {
-            return null;
-        }
-
         return placementState.block().withProperty("eggs", "1");
-    }
-
-    @Override
-    public Block blockUpdate(UpdateState updateState) {
-        if (updateState.fromFace() != BlockFace.BOTTOM) {
-            return updateState.currentBlock();
-        }
-
-        var below =
-                updateState
-                        .instance()
-                        .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
-        return isSand(below) ? updateState.currentBlock() : Block.AIR;
     }
 
     @Override
@@ -61,10 +39,5 @@ public final class TurtleEggPlacementRule extends BlockPlacementRule {
         var eggsProperty = replacement.block().getProperty("eggs");
         var eggs = eggsProperty == null ? 1 : Integer.parseInt(eggsProperty);
         return eggs < 4;
-    }
-
-    private static boolean isSand(Block block) {
-        var sandTag = MinecraftServer.process().blocks().getTag(Key.key("minecraft:sand"));
-        return sandTag != null && sandTag.contains(block);
     }
 }

@@ -4,11 +4,13 @@ import java.util.function.Function;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.collision.BoundingBox;
+import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.BlockHandler;
+import net.minestom.server.instance.block.BlockManager;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
 import net.minestom.server.world.attribute.EnvironmentAttribute;
 import net.minestom.server.world.attribute.EnvironmentAttributeMap;
@@ -21,7 +23,7 @@ public final class Utility {
      * nothing if the tag is missing from the loaded registry data.
      */
     public static void registerPlacementRules(
-            Function<Block, BlockPlacementRule> function, Key key) {
+            BlockManager blockManager, Function<Block, BlockPlacementRule> function, Key key) {
         var registry = MinecraftServer.process().blocks();
         var tag = registry.getTag(key);
 
@@ -29,18 +31,42 @@ public final class Utility {
             return;
         }
 
-        var blockManager = MinecraftServer.getBlockManager();
-
         for (var entry : tag) {
             blockManager.registerBlockPlacementRule(function.apply(Block.fromKey(entry.key())));
         }
     }
 
     public static void registerPlacementRules(
-            Function<Block, BlockPlacementRule> function, Block... blocks) {
+            BlockManager blockManager,
+            Function<Block, BlockPlacementRule> function,
+            Block... blocks) {
         for (var block : blocks) {
-            MinecraftServer.getBlockManager().registerBlockPlacementRule(function.apply(block));
+            blockManager.registerBlockPlacementRule(function.apply(block));
         }
+    }
+
+    /**
+     * Returns whether an entity that prevents block placement overlaps the collision shape of the
+     * block when it is placed at the given position.
+     */
+    public static boolean intersectsPlacementBlockingEntity(
+            Instance instance, Point blockPosition, Block block) {
+        var collisionShape = block.registry().collisionShape();
+
+        for (var entity : instance.getNearbyEntities(blockPosition, 3.0D)) {
+            if (!entity.preventBlockPlacement()) {
+                continue;
+            }
+
+            var entityPosition = entity.getPosition();
+
+            if (collisionShape.intersectBox(
+                    entityPosition.sub(blockPosition), entity.getBoundingBox())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

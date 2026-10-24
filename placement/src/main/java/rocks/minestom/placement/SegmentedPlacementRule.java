@@ -9,8 +9,18 @@ import net.minestom.server.instance.block.rule.BlockPlacementRule;
 public final class SegmentedPlacementRule extends BlockPlacementRule {
     private static final Key SUPPORTS_VEGETATION_TAG = Key.key("minecraft:supports_vegetation");
 
+    private final String amountProperty;
+    private final boolean requiresSturdySupport;
+
     public SegmentedPlacementRule(Block block) {
+        this(block, "flower_amount", false);
+    }
+
+    public SegmentedPlacementRule(
+            Block block, String amountProperty, boolean requiresSturdySupport) {
         super(block);
+        this.amountProperty = amountProperty;
+        this.requiresSturdySupport = requiresSturdySupport;
     }
 
     @Override
@@ -26,9 +36,9 @@ public final class SegmentedPlacementRule extends BlockPlacementRule {
         var existingBlock = instance.getBlock(placePosition);
 
         if (existingBlock.compare(placementState.block())) {
-            var amount = parseAmount(existingBlock.getProperty("flower_amount"));
+            var amount = parseAmount(existingBlock.getProperty(this.amountProperty));
             var increased = Math.min(4, amount + 1);
-            return existingBlock.withProperty("flower_amount", Integer.toString(increased));
+            return existingBlock.withProperty(this.amountProperty, Integer.toString(increased));
         }
 
         var playerPosition = placementState.playerPosition();
@@ -37,7 +47,7 @@ public final class SegmentedPlacementRule extends BlockPlacementRule {
 
         return placementState
                 .block()
-                .withProperty("flower_amount", "1")
+                .withProperty(this.amountProperty, "1")
                 .withProperty("facing", facing.name().toLowerCase());
     }
 
@@ -59,7 +69,11 @@ public final class SegmentedPlacementRule extends BlockPlacementRule {
         return updateState.currentBlock();
     }
 
-    private static boolean supportsVegetation(Block block) {
+    private boolean supportsVegetation(Block block) {
+        if (this.requiresSturdySupport) {
+            return Utility.canSupportRigidBlock(block, BlockFace.TOP);
+        }
+
         var tag = MinecraftServer.process().blocks().getTag(SUPPORTS_VEGETATION_TAG);
         return tag != null && tag.contains(block);
     }
@@ -74,7 +88,7 @@ public final class SegmentedPlacementRule extends BlockPlacementRule {
             return false;
         }
 
-        var amount = parseAmount(replacement.block().getProperty("flower_amount"));
+        var amount = parseAmount(replacement.block().getProperty(this.amountProperty));
         return amount < 4;
     }
 
