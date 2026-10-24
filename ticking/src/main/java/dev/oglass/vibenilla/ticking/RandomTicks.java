@@ -94,15 +94,23 @@ public final class RandomTicks {
         var random = ThreadLocalRandom.current();
         var picks = new int[this.speed];
         for (long index : near) {
-            var chunk = instance.getChunk((int) (index >> 32), (int) index);
-            if (chunk != null && chunk.isLoaded()) {
-                tickChunk(instance, chunk, picks, random);
+            var chunkX = (int) (index >> 32);
+            var chunkZ = (int) index;
+            if (hasLoadedNeighborhood(instance, chunkX, chunkZ)) {
+                tickChunk(instance, instance.getChunk(chunkX, chunkZ), picks, random);
             }
         }
     }
 
-    /** Whether a player is close enough to the chunk for its blocks to be simulated. */
+    /**
+     * Whether a player is close enough to the chunk for its blocks to be simulated. Like vanilla,
+     * the chunk and its eight neighbors must be loaded so block updates never reach an unloaded
+     * chunk.
+     */
     boolean isSimulated(Instance instance, int chunkX, int chunkZ) {
+        if (!hasLoadedNeighborhood(instance, chunkX, chunkZ)) {
+            return false;
+        }
         for (var player : simulators(instance)) {
             var position = player.getPosition();
             if (Math.abs(position.chunkX() - chunkX) <= this.simulationDistance
@@ -111,6 +119,18 @@ public final class RandomTicks {
             }
         }
         return false;
+    }
+
+    private static boolean hasLoadedNeighborhood(Instance instance, int chunkX, int chunkZ) {
+        for (var x = -1; x <= 1; x++) {
+            for (var z = -1; z <= 1; z++) {
+                var chunk = instance.getChunk(chunkX + x, chunkZ + z);
+                if (chunk == null || !chunk.isLoaded()) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private static List<Player> simulators(Instance instance) {
