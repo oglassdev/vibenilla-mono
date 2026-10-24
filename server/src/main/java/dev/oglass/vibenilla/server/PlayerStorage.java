@@ -5,6 +5,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -22,6 +23,7 @@ import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.nbt.DoubleBinaryTag;
 import net.kyori.adventure.nbt.FloatBinaryTag;
 import net.kyori.adventure.nbt.ListBinaryTag;
+import net.kyori.adventure.text.Component;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.GameMode;
@@ -80,22 +82,35 @@ final class PlayerStorage {
     }
 
     /**
-     * Starts the player's session and returns their saved data, or null when they have never
-     * joined. Waits for a previous disconnected session of the same UUID to finish writing.
+     * Starts the player's session. Returns false after kicking the player when another session of
+     * the same UUID is still online. Waits for a previous disconnected session of the same UUID to
+     * finish writing.
      */
-    @Nullable CompoundBinaryTag join(Player player) {
+    boolean join(Player player) {
         var uuid = player.getUuid();
-        var previous =
-                sessions.values().stream()
-                        .filter(s -> s.player().getUuid().equals(uuid) && !s.player().isOnline())
-                        .toList();
-        sessions.put(player, new Session(player));
+        List<Session> previous;
+        synchronized (sessions) {
+            previous =
+                    sessions.values().stream()
+                            .filter(s -> s.player().getUuid().equals(uuid))
+                            .toList();
+            if (previous.stream().anyMatch(s -> s.player().isOnline())) {
+                player.kick(Component.translatable("multiplayer.disconnect.duplicate_login"));
+                return false;
+            }
+            sessions.put(player, new Session(player));
+        }
         previous.forEach(s -> await(s, SESSION_WAIT_SECONDS));
+        return true;
+    }
+
+    /** The joined player's saved data, or null when they have never joined or went offline. */
+    @Nullable CompoundBinaryTag load(Player player) {
         if (!player.isOnline()) {
             finish(player);
             return null;
         }
-        return read(uuid);
+        return read(player.getUuid());
     }
 
     private @Nullable CompoundBinaryTag read(UUID uuid) {

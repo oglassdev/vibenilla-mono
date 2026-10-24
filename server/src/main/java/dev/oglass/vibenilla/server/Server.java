@@ -54,13 +54,19 @@ public final class Server {
                         event -> {
                             var player = event.getPlayer();
                             event.setSpawningInstance(overworld);
-                            var data = players.join(player);
+                            if (!players.join(player)) {
+                                return;
+                            }
+                            var data = players.load(player);
                             var position =
                                     data == null || PlayerStorage.dead(data)
                                             ? null
                                             : PlayerStorage.position(data);
                             if (data != null) {
                                 saved.put(player, data);
+                                if (!player.isOnline()) {
+                                    saved.remove(player);
+                                }
                             }
                             player.setRespawnPoint(position == null ? spawn : position);
                         })
