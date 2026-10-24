@@ -4,11 +4,13 @@ import java.util.function.Function;
 import net.goldenstack.loot.LootTable;
 import net.goldenstack.loot.Trove;
 import net.kyori.adventure.key.Key;
+import net.minestom.server.entity.GameMode;
 import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.instance.InstanceChunkUnloadEvent;
 import net.minestom.server.event.instance.InstanceUnregisterEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
+import net.minestom.server.event.player.PlayerGameModeChangeEvent;
 import net.minestom.server.instance.block.BlockManager;
 
 /** Vanilla chests, trapped chests and barrels. */
@@ -32,8 +34,8 @@ public final class Containers {
      *
      * @param lootTables resolves the {@code LootTable} of containers that have not been opened yet
      * @return the events that must be added to a running event handler, so viewers of a container
-     *     are released when they disconnect and containers in unloaded chunks or instances are
-     *     closed
+     *     are released when they disconnect or become spectators and containers in unloaded chunks
+     *     or instances are closed
      */
     public static EventNode<Event> register(
             BlockManager blockManager, Function<Key, LootTable> lootTables) {
@@ -52,6 +54,13 @@ public final class Containers {
         return EventNode.all("containers")
                 .addListener(
                         PlayerDisconnectEvent.class, event -> sessions.release(event.getPlayer()))
+                .addListener(
+                        PlayerGameModeChangeEvent.class,
+                        event -> {
+                            if (event.getNewGameMode() == GameMode.SPECTATOR) {
+                                sessions.closeView(event.getPlayer());
+                            }
+                        })
                 .addListener(
                         InstanceChunkUnloadEvent.class,
                         event ->

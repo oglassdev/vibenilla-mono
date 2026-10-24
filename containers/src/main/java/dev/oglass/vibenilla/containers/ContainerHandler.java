@@ -3,6 +3,7 @@ package dev.oglass.vibenilla.containers;
 import java.util.Objects;
 import net.goldenstack.loot.Trove;
 import net.kyori.adventure.key.Key;
+import net.minestom.server.entity.GameMode;
 import net.minestom.server.instance.block.BlockHandler;
 
 final class ContainerHandler implements BlockHandler {
@@ -28,20 +29,31 @@ final class ContainerHandler implements BlockHandler {
             return true;
         }
 
-        sessions.open(
-                player,
-                interaction.getInstance(),
-                interaction.getBlockPosition().asBlockVec(),
-                kind);
+        if (player.getGameMode() != GameMode.SPECTATOR) {
+            sessions.open(
+                    player,
+                    interaction.getInstance(),
+                    interaction.getBlockPosition().asBlockVec(),
+                    kind);
+        }
         return false;
     }
 
     @Override
+    public void onPlace(Placement placement) {
+        if (kind == ContainerKind.BARREL
+                && "true".equals(placement.getBlock().getProperty("open"))) {
+            sessions.reconcileBarrel(
+                    placement.getInstance(), placement.getBlockPosition().asBlockVec());
+        }
+    }
+
+    @Override
     public void onDestroy(Destroy destroy) {
-        var block = destroy.getBlock();
-        var next = destroy.getNewBlock();
         var instance = destroy.getInstance();
         var position = destroy.getBlockPosition().asBlockVec();
+        var block = sessions.current(instance, position, destroy.getBlock());
+        var next = destroy.getNewBlock();
 
         if (next.compare(block)) {
             if (!Objects.equals(block.getProperty("type"), next.getProperty("type"))

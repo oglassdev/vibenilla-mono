@@ -74,6 +74,7 @@ final class ContainersTest {
         interact(player, POSITION);
         var inventory = player.getOpenInventory();
         inventory.setItemStack(3, ItemStack.of(Material.DIAMOND, 5));
+        env.tick();
 
         var items = instance.getBlock(POSITION).nbt().getList("Items", BinaryTagTypes.COMPOUND);
         var entry = (CompoundBinaryTag) items.getCompound(0);
@@ -103,6 +104,7 @@ final class ContainersTest {
 
         first.getOpenInventory().setItemStack(0, ItemStack.of(Material.STONE));
         first.getOpenInventory().setItemStack(30, ItemStack.of(Material.DIRT));
+        env.tick();
 
         assertEquals(
                 "minecraft:stone",
@@ -191,6 +193,7 @@ final class ContainersTest {
         interact(player, POSITION);
         var inventory = player.getOpenInventory();
         inventory.setItemStack(0, ItemStack.of(Material.DIAMOND));
+        env.tick();
         assertTrue(instance.getBlock(POSITION).nbt().get("Items") != null);
 
         instance.unloadChunk(instance.getChunkAt(POSITION));
@@ -214,6 +217,34 @@ final class ContainersTest {
         assertEquals("true", instance.getBlock(POSITION).getProperty("open"));
 
         player.openInventory(new Inventory(InventoryType.CHEST_1_ROW, "other"));
+
+        assertEquals("false", instance.getBlock(POSITION).getProperty("open"));
+    }
+
+    @Test
+    void doubleChestWithUnloadedPartnerDoesNotOpen(Env env) {
+        var instance = instanceWith(env);
+        var left = new BlockVec(15, 40, 8);
+        var right = new BlockVec(16, 40, 8);
+        instance.setBlock(left, chest(env, "left"));
+        instance.setBlock(right, chest(env, "right"));
+        var player = env.createPlayer(instance, new Pos(15, 41, 10));
+        instance.unloadChunk(instance.getChunkAt(right));
+
+        interact(player, left);
+
+        assertNull(player.getOpenInventory());
+    }
+
+    @Test
+    void barrelSavedOpenIsResetWithoutViewers(Env env) {
+        var instance = instanceWith(env);
+        instance.setBlock(
+                POSITION,
+                Block.BARREL
+                        .withProperties(Map.of("facing", "up", "open", "true"))
+                        .withHandler(env.process().block().getHandlerOrDummy("minecraft:barrel")));
+        env.tick();
 
         assertEquals("false", instance.getBlock(POSITION).getProperty("open"));
     }

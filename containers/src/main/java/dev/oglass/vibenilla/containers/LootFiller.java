@@ -26,10 +26,6 @@ final class LootFiller {
 
     private LootFiller() {}
 
-    static boolean hasLootTable(Block block) {
-        return !block.nbtOrEmpty().getString(LOOT_TABLE, "").isEmpty();
-    }
-
     /**
      * Returns the block with its loot table replaced by generated contents, or the block itself if
      * it has no loot table.

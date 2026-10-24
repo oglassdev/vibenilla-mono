@@ -13,7 +13,7 @@ final class ContainerLayout {
     /**
      * Returns the positions that make up the container at {@code position}: one for a single block,
      * or the right half followed by the left half for a double chest. The right half owns the top
-     * 27 slots.
+     * 27 slots. The list is empty for a double chest whose partner is in an unloaded chunk.
      */
     static List<BlockVec> halves(Instance instance, BlockVec position, Block block) {
         var type = block.getProperty("type");
@@ -27,7 +27,7 @@ final class ContainerLayout {
         var partner = position.relative(left ? clockwise(facing) : counterClockwise(facing));
 
         if (!instance.isChunkLoaded(partner)) {
-            return List.of(position);
+            return List.of();
         }
 
         var partnerBlock = instance.getBlock(partner);
