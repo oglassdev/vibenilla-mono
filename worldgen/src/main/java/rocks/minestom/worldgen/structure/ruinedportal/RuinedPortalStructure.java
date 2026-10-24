@@ -6,11 +6,10 @@ import rocks.minestom.worldgen.structure.context.StructurePlaceContext;
 
 /**
  * The ruined portal structure ({@code minecraft:ruined_portal} and its six biome variants, all type
- * {@code minecraft:ruined_portal}). Unlike the generic {@link
- * rocks.minestom.worldgen.structure.SimpleStructure} template path, it picks a weighted {@link
- * Setup} (vertical placement, air pocket, mossiness, vines, overgrowth, blackstone), rolls a
- * giant/normal template plus a mirror, resolves a suitable buried/surface Y, applies weathering
- * processors and then spreads netherrack, so placement is handled by {@link RuinedPortalPlacer}.
+ * {@code minecraft:ruined_portal}). It picks a weighted {@link Setup} (vertical placement, air
+ * pocket, mossiness, vines, overgrowth, blackstone), rolls a giant/normal template plus a mirror,
+ * resolves a suitable buried/surface Y, applies weathering processors and then spreads netherrack,
+ * so placement is handled by {@link RuinedPortalPlacer}.
  */
 public record RuinedPortalStructure(StructureBiomes biomes, List<Setup> setups)
         implements Structure {

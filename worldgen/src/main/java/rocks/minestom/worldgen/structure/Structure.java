@@ -12,13 +12,8 @@ import rocks.minestom.worldgen.structure.placement.StructurePlacer;
  * <p>Structures are large, pre-designed features like villages, temples, or shipwrecks. Each
  * structure defines which biomes it can spawn in and how to place itself.
  *
- * <p>There are two main types of structures:
- *
- * <ul>
- *   <li>{@link JigsawStructure} - Complex structures assembled from multiple pieces using jigsaw
- *       blocks
- *   <li>{@link SimpleStructure} - Single-template structures placed directly from NBT files
- * </ul>
+ * <p>{@link JigsawStructure} covers structures assembled from multiple pieces using jigsaw blocks;
+ * every other structure type has its own record and placer.
  *
  * @see StructureSet for grouping structures with placement rules
  * @see StructurePlacer for the placement algorithm

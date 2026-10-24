@@ -64,10 +64,13 @@ public enum FrequencyReduction {
 
     public static FrequencyReduction fromName(String name) {
         return switch (name) {
+            case "default" -> DEFAULT;
             case "legacy_type_1" -> LEGACY_TYPE_1;
             case "legacy_type_2" -> LEGACY_TYPE_2;
             case "legacy_type_3" -> LEGACY_TYPE_3;
-            default -> DEFAULT;
+            default ->
+                    throw new IllegalArgumentException(
+                            "Unknown frequency reduction method: " + name);
         };
     }
 }

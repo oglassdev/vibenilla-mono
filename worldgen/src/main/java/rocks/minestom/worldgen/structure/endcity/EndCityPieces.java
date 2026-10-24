@@ -574,7 +574,7 @@ public final class EndCityPieces {
             this.rotation = rotation;
             this.overwrite = overwrite;
             this.boundingBox =
-                    loader.getTemplate(this.templateKey).getBoundingBox(position, rotation);
+                    loader.requireTemplate(this.templateKey).getBoundingBox(position, rotation);
         }
     }
 }

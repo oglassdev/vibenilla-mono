@@ -2,6 +2,8 @@ package rocks.minestom.worldgen.structure.loader;
 
 import com.google.gson.JsonElement;
 import java.util.List;
+import java.util.function.Function;
+import net.kyori.adventure.key.Key;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.codec.Transcoder;
@@ -21,13 +23,15 @@ public final class StructureSets {
 
     private StructureSets() {}
 
-    public static StructureSet parseStructureSet(JsonElement json) {
+    /**
+     * Parses a structure set, failing on unknown placement types. {@code structureSets} resolves
+     * the sets referenced by placement exclusion zones.
+     */
+    public static StructureSet parseStructureSet(
+            JsonElement json, Function<Key, StructureSet> structureSets) {
         var decoded = STRUCTURE_SET_CODEC.decode(Transcoder.JSON, json).orElseThrow();
         var placementJson = decoded.placement().convertTo(Transcoder.JSON).orElseThrow();
-        var placement = StructurePlacements.parsePlacement(placementJson);
-        if (placement == null) {
-            return null;
-        }
+        var placement = StructurePlacements.parsePlacement(placementJson, structureSets);
         return new StructureSet(decoded.structures(), placement);
     }
 

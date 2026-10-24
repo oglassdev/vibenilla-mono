@@ -5,10 +5,9 @@ import rocks.minestom.worldgen.structure.context.StructurePlaceContext;
 
 /**
  * The ocean ruin structure ({@code minecraft:ocean_ruin_cold} and {@code
- * minecraft:ocean_ruin_warm}, type {@code minecraft:ocean_ruin}). Unlike the generic {@link
- * rocks.minestom.worldgen.structure.SimpleStructure} template path, ocean ruins draw a
- * large/cluster roll and compute each piece's height individually from the surrounding floor, so
- * placement is handled by {@link OceanRuinPlacer} instead.
+ * minecraft:ocean_ruin_warm}, type {@code minecraft:ocean_ruin}). Ocean ruins draw a large/cluster
+ * roll and compute each piece's height individually from the surrounding floor, so placement is
+ * handled by {@link OceanRuinPlacer}.
  */
 public record OceanRuinStructure(
         StructureBiomes biomes,

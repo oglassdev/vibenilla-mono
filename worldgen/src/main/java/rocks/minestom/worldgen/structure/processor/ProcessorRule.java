@@ -23,9 +23,10 @@ public record ProcessorRule(
             BlockVec referencePos,
             RandomSource random,
             BlockTagManager blockTags) {
-        return this.inputPredicate.test(inputState, random, blockTags)
+        return this.inputPredicate.test(inputState, worldPos, random, blockTags)
                 && this.locationPredicate.test(
                         level.getBlock(worldPos.blockX(), worldPos.blockY(), worldPos.blockZ()),
+                        worldPos,
                         random,
                         blockTags)
                 && this.positionPredicate.test(inTemplatePos, worldPos, referencePos, random);

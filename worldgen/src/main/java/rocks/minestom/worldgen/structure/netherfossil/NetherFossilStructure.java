@@ -10,9 +10,7 @@ import rocks.minestom.worldgen.surface.VerticalAnchor;
 /**
  * Vanilla {@code NetherFossilStructure}: a single template placed at a position found by sampling a
  * height provider and scanning the raw noise terrain column downward for the first floor (air
- * directly above a solid or soul sand block), unlike {@link
- * rocks.minestom.worldgen.structure.SimpleStructure} which places at the chunk-center raw terrain
- * surface.
+ * directly above a solid or soul sand block).
  *
  * @see NetherFossilPlacer for the placement algorithm
  */

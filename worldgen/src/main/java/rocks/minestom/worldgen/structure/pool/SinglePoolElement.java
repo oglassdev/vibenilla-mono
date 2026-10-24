@@ -37,7 +37,7 @@ public record SinglePoolElement(
     @Override
     public List<JigsawBlockInfo> getShuffledJigsawBlocks(
             StructureLoader loader, BlockVec position, Rotation rotation, RandomSource random) {
-        var template = loader.getTemplate(this.location);
+        var template = template(loader);
         var jigsaws = template.getJigsaws(position, rotation);
         StructureRng.shuffle(jigsaws, random);
         jigsaws.sort(HIGHEST_SELECTION_PRIORITY_FIRST);
@@ -47,6 +47,11 @@ public record SinglePoolElement(
     @Override
     public BoundingBox getBoundingBox(
             StructureLoader loader, BlockVec position, Rotation rotation) {
-        return loader.getTemplate(this.location).getBoundingBox(position, rotation);
+        return template(loader).getBoundingBox(position, rotation);
+    }
+
+    private StructureTemplate template(StructureLoader loader) {
+        var template = loader.getTemplate(this.location);
+        return template != null ? template : StructureTemplate.EMPTY;
     }
 }

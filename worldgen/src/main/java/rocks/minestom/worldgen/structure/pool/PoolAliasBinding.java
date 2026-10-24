@@ -1,6 +1,7 @@
 package rocks.minestom.worldgen.structure.pool;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -71,26 +72,18 @@ public sealed interface PoolAliasBinding {
     }
 
     static List<PoolAliasBinding> parseList(JsonElement json) {
-        if (json == null || !json.isJsonArray()) {
+        if (json == null) {
             return List.of();
         }
 
         var bindings = new ArrayList<PoolAliasBinding>();
         for (var entry : json.getAsJsonArray()) {
-            var binding = parse(entry);
-            if (binding != null) {
-                bindings.add(binding);
-            }
+            bindings.add(parse(entry.getAsJsonObject()));
         }
         return List.copyOf(bindings);
     }
 
-    private static PoolAliasBinding parse(JsonElement json) {
-        if (!json.isJsonObject()) {
-            return null;
-        }
-
-        var obj = json.getAsJsonObject();
+    private static PoolAliasBinding parse(JsonObject obj) {
         var type = obj.get("type").getAsString();
         return switch (type) {
             case "minecraft:direct" ->
@@ -119,7 +112,7 @@ public sealed interface PoolAliasBinding {
                 }
                 yield new RandomGroup(List.copyOf(groups));
             }
-            default -> null;
+            default -> throw new IllegalArgumentException("Unsupported pool alias type: " + type);
         };
     }
 }

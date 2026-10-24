@@ -41,11 +41,15 @@ public final class StructureTemplate {
     private static final String TAG_POS = "pos";
     private static final String TAG_STATE = "state";
     private static final String TAG_NBT = "nbt";
-    private static final String TAG_NAME = "Name";
-    private static final String TAG_PROPERTIES = "Properties";
+    private static final String TAG_NAME = "id";
+    private static final String TAG_PROPERTIES = "properties";
 
     private final BlockVec size;
     private final List<Palette> palettes;
+
+    /** Stand-in for a template that is missing or unreadable: no blocks, no jigsaws, zero size. */
+    public static final StructureTemplate EMPTY =
+            new StructureTemplate(BlockVec.ZERO, List.of(new Palette(List.of(), List.of())));
 
     private StructureTemplate(BlockVec size, List<Palette> palettes) {
         this.size = size;
@@ -714,6 +718,9 @@ public final class StructureTemplate {
 
     private static StructureTemplate read(CompoundBinaryTag root) {
         var sizeTag = getList(root, TAG_SIZE);
+        if (sizeTag.size() != 3) {
+            throw new IllegalStateException("Structure template has no valid size: " + sizeTag);
+        }
         var size = new BlockVec(getInt(sizeTag, 0), getInt(sizeTag, 1), getInt(sizeTag, 2));
 
         var paletteStates = readPalettes(root);
@@ -722,7 +729,7 @@ public final class StructureTemplate {
         var rawBlocks = new ArrayList<RawBlock>(blocksTag.size());
         for (var entry : blocksTag) {
             if (!(entry instanceof CompoundBinaryTag blockTag)) {
-                continue;
+                throw new IllegalStateException("Malformed structure block entry: " + entry);
             }
 
             var posTag = getList(blockTag, TAG_POS);
@@ -766,13 +773,9 @@ public final class StructureTemplate {
     private static List<Block> parsePalette(ListBinaryTag paletteTag) {
         var palette = new ArrayList<Block>(paletteTag.size());
         for (var entry : paletteTag) {
-            if (!(entry instanceof CompoundBinaryTag stateTag)) {
-                continue;
-            }
-
-            var nameTag = stateTag.get(TAG_NAME);
-            if (!(nameTag instanceof StringBinaryTag name)) {
-                continue;
+            if (!(entry instanceof CompoundBinaryTag stateTag)
+                    || !(stateTag.get(TAG_NAME) instanceof StringBinaryTag name)) {
+                throw new IllegalStateException("Malformed structure palette entry: " + entry);
             }
 
             var block = Block.fromKey(name.value());
@@ -785,10 +788,14 @@ public final class StructureTemplate {
             if (properties instanceof CompoundBinaryTag propertyTag && !propertyTag.isEmpty()) {
                 var propertyMap = new HashMap<String, String>();
                 for (var propertyEntry : propertyTag) {
-                    var valueTag = propertyEntry.getValue();
-                    if (valueTag instanceof StringBinaryTag stringValue) {
-                        propertyMap.put(propertyEntry.getKey(), stringValue.value());
+                    if (!(propertyEntry.getValue() instanceof StringBinaryTag stringValue)) {
+                        throw new IllegalStateException(
+                                "Malformed property '"
+                                        + propertyEntry.getKey()
+                                        + "' on "
+                                        + name.value());
                     }
+                    propertyMap.put(propertyEntry.getKey(), stringValue.value());
                 }
                 if (!propertyMap.isEmpty()) {
                     block = block.withProperties(Map.copyOf(propertyMap));
