@@ -1,0 +1,548 @@
+package net.goldenstack.loot;
+
+import net.goldenstack.loot.util.EnchantmentUtils;
+import net.goldenstack.loot.util.LootNumberRange;
+import net.goldenstack.loot.util.RelevantEntity;
+import net.goldenstack.loot.util.predicate.DamageSourcePredicate;
+import net.goldenstack.loot.util.predicate.EntityPredicate;
+import net.goldenstack.loot.util.predicate.ItemPredicate;
+import net.goldenstack.loot.util.predicate.LocationPredicate;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.nbt.BinaryTag;
+import net.minestom.server.codec.Codec;
+import net.minestom.server.codec.StructCodec;
+import net.minestom.server.coordinate.Point;
+import net.minestom.server.entity.Entity;
+import net.minestom.server.entity.damage.DamageType;
+import net.minestom.server.instance.Instance;
+import net.minestom.server.instance.Weather;
+import net.minestom.server.instance.block.Block;
+import net.minestom.server.instance.block.predicate.BlockPredicate;
+import net.minestom.server.item.ItemStack;
+import net.minestom.server.item.enchant.Enchantment;
+import net.minestom.server.item.enchant.LevelBasedValue;
+import net.minestom.server.registry.DynamicRegistry;
+import net.minestom.server.registry.Registries;
+import net.minestom.server.registry.RegistryKey;
+import net.minestom.server.world.clock.WorldClock;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
+
+/**
+ * A predicate over a loot context, returning whether or not a given context passes some arbitrary predicate.
+ */
+@SuppressWarnings("UnstableApiUsage")
+public interface LootPredicate extends Predicate<@NotNull LootContext> {
+
+    @NotNull StructCodec<LootPredicate> CODEC = Codec.RegistryTaggedUnion(registries -> {
+        class Holder {
+            static final @NotNull DynamicRegistry<StructCodec<? extends LootPredicate>> CODEC = createDefaultRegistry();
+        }
+        return Holder.CODEC;
+    }, LootPredicate::codec, "condition");
+
+    static @NotNull DynamicRegistry<StructCodec<? extends LootPredicate>> createDefaultRegistry() {
+        final DynamicRegistry<StructCodec<? extends LootPredicate>> registry = DynamicRegistry.create(Key.key("loot_predicates"));
+        registry.register("all_of", AllOf.CODEC);
+        registry.register("any_of", AnyOf.CODEC);
+        registry.register("block_state_property", BlockStateProperty.CODEC);
+        registry.register("damage_source_properties", DamageSourceProperties.CODEC);
+        registry.register("enchantment_active_check", EnchantmentActiveCheck.CODEC);
+        registry.register("entity_properties", EntityProperties.CODEC);
+        registry.register("entity_scores", EntityScores.CODEC);
+        registry.register("environment_attribute_check", EnvironmentAttributeCheck.CODEC);
+        registry.register("inverted", Inverted.CODEC);
+        registry.register("killed_by_player", KilledByPlayer.CODEC);
+        registry.register("location_check", LocationCheck.CODEC);
+        registry.register("match_tool", MatchTool.CODEC);
+        registry.register("random_chance", RandomChance.CODEC);
+        registry.register("random_chance_with_enchanted_bonus", RandomChanceWithEnchantedBonus.CODEC);
+        registry.register("reference", Reference.CODEC);
+        registry.register("survives_explosion", SurvivesExplosion.CODEC);
+        registry.register("table_bonus", TableBonus.CODEC);
+        registry.register("time_check", TimeCheck.CODEC);
+        registry.register("value_check", ValueCheck.CODEC);
+        registry.register("weather_check", WeatherCheck.CODEC);
+        return registry;
+    }
+
+    /**
+     * Returns whether or not the provided loot context passes this predicate.
+     * @param context the context object, to use if required
+     * @return true if the provided loot context is valid according to this predicate
+     */
+    @Override
+    boolean test(@NotNull LootContext context);
+
+    /**
+     * @return the codec that can encode this predicate
+     */
+    @NotNull StructCodec<? extends LootPredicate> codec();
+
+    /**
+     * Returns whether or not every given predicate verifies the provided context.
+     */
+    static boolean all(@NotNull List<LootPredicate> predicates, @NotNull LootContext context) {
+        if (predicates.isEmpty()) {
+            return true;
+        }
+        for (var predicate : predicates) {
+            if (!predicate.test(context)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    record AllOf(@NotNull List<LootPredicate> terms) implements LootPredicate {
+        public static final @NotNull StructCodec<AllOf> CODEC = StructCodec.struct(
+                "terms", LootPredicate.CODEC.list(), AllOf::terms,
+                AllOf::new
+        );
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            return all(terms, context);
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record AnyOf(@NotNull List<LootPredicate> terms) implements LootPredicate {
+        public static final @NotNull StructCodec<AnyOf> CODEC = StructCodec.struct(
+                "terms", LootPredicate.CODEC.list(), AnyOf::terms,
+                AnyOf::new
+        );
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            if (terms.isEmpty()) {
+                return false;
+            }
+            for (var predicate : terms) {
+                if (predicate.test(context)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record BlockStateProperty(@NotNull Key block, @Nullable BlockPredicate properties) implements LootPredicate {
+        public static final @NotNull StructCodec<BlockStateProperty> CODEC = StructCodec.struct(
+                "block", Codec.KEY, BlockStateProperty::block,
+                "properties", BlockPredicate.CODEC.optional(), BlockStateProperty::properties,
+                BlockStateProperty::new
+        );
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            Block block = context.get(LootContext.BLOCK_STATE);
+
+            return block != null && this.block.equals(block.key()) && (properties == null || properties.test(block));
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record DamageSourceProperties(@Nullable DamageSourcePredicate predicate) implements LootPredicate {
+        public static final @NotNull StructCodec<DamageSourceProperties> CODEC = StructCodec.struct(
+                "predicate", DamageSourcePredicate.CODEC.optional(), DamageSourceProperties::predicate,
+                DamageSourceProperties::new
+        );
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            var origin = context.get(LootContext.ORIGIN);
+            var damage = context.get(LootContext.DAMAGE_SOURCE);
+
+            if (origin == null || damage == null) {
+                return false;
+            }
+
+            if (this.predicate == null) {
+                return true;
+            }
+
+            return this.predicate.test(
+                    context.require(LootContext.WORLD),
+                    origin,
+                    damage,
+                    context.get(LootContext.DIRECT_ATTACKING_ENTITY),
+                    context.get(LootContext.ATTACKING_ENTITY),
+                    context.vanilla()
+            );
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record EnchantmentActiveCheck(boolean active) implements LootPredicate {
+        public static final @NotNull StructCodec<EnchantmentActiveCheck> CODEC = StructCodec.struct(
+                "active", Codec.BOOLEAN, EnchantmentActiveCheck::active,
+                EnchantmentActiveCheck::new
+        );
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            return context.require(LootContext.ENCHANTMENT_ACTIVE) == active;
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record EnvironmentAttributeCheck(@NotNull Key attribute, @NotNull BinaryTag value) implements LootPredicate {
+        public static final @NotNull StructCodec<EnvironmentAttributeCheck> CODEC = StructCodec.struct(
+                "attribute", Codec.KEY, EnvironmentAttributeCheck::attribute,
+                "value", Codec.NBT, EnvironmentAttributeCheck::value,
+                EnvironmentAttributeCheck::new
+        );
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            var actualValue = context.vanilla().environmentAttribute(this.attribute, context);
+            return this.value.equals(actualValue);
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record EntityProperties(@Nullable EntityPredicate predicate, @NotNull RelevantEntity entity) implements LootPredicate {
+        public static final @NotNull StructCodec<EntityProperties> CODEC = StructCodec.struct(
+                "predicate", EntityPredicate.CODEC.optional(), EntityProperties::predicate,
+                "entity", RelevantEntity.CODEC, EntityProperties::entity,
+                EntityProperties::new
+        );
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            Entity entity = context.get(this.entity.key());
+            Point origin = context.get(LootContext.ORIGIN);
+
+            if (this.predicate == null) {
+                return true;
+            }
+
+            return this.predicate.test(context.require(LootContext.WORLD), origin, entity, context.vanilla());
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record EntityScores(@NotNull Map<String, LootNumberRange> scores, @NotNull RelevantEntity entity) implements LootPredicate {
+        public static final @NotNull StructCodec<EntityScores> CODEC = StructCodec.struct(
+                "scores", Codec.STRING.mapValue(LootNumberRange.CODEC), EntityScores::scores,
+                "entity", RelevantEntity.CODEC, EntityScores::entity,
+                EntityScores::new
+        );
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            Entity entity = context.get(this.entity.key());
+            if (entity == null) return false;
+
+            for (var entry : scores.entrySet()) {
+                Integer score = context.vanilla().score(entity, entry.getKey());
+                if (score == null || !entry.getValue().check(context, score)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record Inverted(@NotNull LootPredicate term) implements LootPredicate {
+        public static final @NotNull StructCodec<Inverted> CODEC = StructCodec.struct(
+                "term", LootPredicate.CODEC, Inverted::term,
+                Inverted::new
+        );
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            return !term.test(context);
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record KilledByPlayer() implements LootPredicate {
+        public static final @NotNull StructCodec<KilledByPlayer> CODEC = StructCodec.struct(KilledByPlayer::new);
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            return context.has(LootContext.LAST_DAMAGE_PLAYER);
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record LocationCheck(@Nullable LocationPredicate predicate, int offsetX, int offsetY, int offsetZ) implements LootPredicate {
+        public static final @NotNull StructCodec<LocationCheck> CODEC = StructCodec.struct(
+                "predicate", LocationPredicate.CODEC.optional(), LocationCheck::predicate,
+                "offsetX", Codec.INT.optional(0), LocationCheck::offsetX,
+                "offsetY", Codec.INT.optional(0), LocationCheck::offsetY,
+                "offsetZ", Codec.INT.optional(0), LocationCheck::offsetZ,
+                LocationCheck::new
+        );
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            Point origin = context.get(LootContext.ORIGIN);
+
+            if (origin == null) return false;
+            if (predicate == null) return true;
+
+            return predicate.test(context.require(LootContext.WORLD), origin.add(offsetX, offsetY, offsetZ), context.vanilla());
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record MatchTool(@Nullable ItemPredicate predicate) implements LootPredicate {
+        public static final @NotNull StructCodec<MatchTool> CODEC = StructCodec.struct(
+                "predicate", ItemPredicate.CODEC.optional(), MatchTool::predicate,
+                MatchTool::new
+        );
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            ItemStack tool = context.get(LootContext.TOOL);
+
+            if (tool == null) return false;
+            if (predicate == null) return true;
+
+            return predicate.test(tool, context);
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record RandomChance(@NotNull LootNumber chance) implements LootPredicate {
+        public static final @NotNull StructCodec<RandomChance> CODEC = StructCodec.struct(
+                "chance", LootNumber.CODEC, RandomChance::chance,
+                RandomChance::new
+        );
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            return context.require(LootContext.RANDOM).nextFloat() < (float) this.chance.getDouble(context);
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record RandomChanceWithEnchantedBonus(@NotNull RegistryKey<Enchantment> enchantment, float unenchantedChance, @NotNull LevelBasedValue enchantedChance) implements LootPredicate {
+        private static final @NotNull Codec<Float> CHANCE_CODEC = Codec.FLOAT.transform(value -> {
+
+            if (value < 0.0F || value > 1.0F) {
+                throw new IllegalArgumentException("Chance must be between 0.0F and 1.0F");
+            }
+
+            return value;
+        }, value -> value);
+
+        public static final @NotNull StructCodec<RandomChanceWithEnchantedBonus> CODEC = StructCodec.struct(
+                "enchantment", RegistryKey.codec(Registries::enchantment), RandomChanceWithEnchantedBonus::enchantment,
+                "unenchanted_chance", CHANCE_CODEC, RandomChanceWithEnchantedBonus::unenchantedChance,
+                "enchanted_chance", LevelBasedValue.CODEC, RandomChanceWithEnchantedBonus::enchantedChance,
+                RandomChanceWithEnchantedBonus::new
+        );
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            Entity attacker = context.get(LootContext.ATTACKING_ENTITY);
+
+            int level = EnchantmentUtils.level(attacker, enchantment);
+
+            float chance = level > 0 ? enchantedChance.calc(level) : unenchantedChance;
+            return context.require(LootContext.RANDOM).nextFloat() < chance;
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record Reference(@NotNull Key name) implements LootPredicate {
+        public static final @NotNull StructCodec<Reference> CODEC = StructCodec.struct(
+                "name", Codec.KEY, Reference::name,
+                Reference::new
+        );
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            LootPredicate predicate = context.vanilla().predicateRegistry(name);
+
+            return predicate != null && predicate.test(context);
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record SurvivesExplosion() implements LootPredicate {
+        public static final @NotNull StructCodec<SurvivesExplosion> CODEC = StructCodec.struct(SurvivesExplosion::new);
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            Float radius = context.get(LootContext.EXPLOSION_RADIUS);
+            return radius == null || context.require(LootContext.RANDOM).nextFloat() <= (1 / radius);
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record TableBonus(@NotNull RegistryKey<Enchantment> enchantment, @NotNull List<Float> chances) implements LootPredicate {
+        public TableBonus {
+            if (chances.isEmpty()) {
+                throw new IllegalArgumentException("Table bonus chances must not be empty");
+            }
+        }
+
+        public static final @NotNull StructCodec<TableBonus> CODEC = StructCodec.struct(
+                "enchantment", RegistryKey.codec(Registries::enchantment), TableBonus::enchantment,
+                "chances", Codec.FLOAT.list(), TableBonus::chances,
+                TableBonus::new
+        );
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            ItemStack tool = context.get(LootContext.TOOL);
+
+            int level = EnchantmentUtils.level(tool, enchantment);
+
+            float chance = chances.get(Math.min(this.chances.size() - 1, level));
+
+            return context.require(LootContext.RANDOM).nextFloat() < chance;
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record TimeCheck(@NotNull RegistryKey<WorldClock> clock, @Nullable Long period,
+                     @NotNull LootNumberRange value) implements LootPredicate {
+        public TimeCheck(@Nullable Long period, @NotNull LootNumberRange value) {
+            this(RegistryKey.of("overworld"), period, value);
+        }
+
+        public static final @NotNull StructCodec<TimeCheck> CODEC = StructCodec.struct(
+                "clock", WorldClock.CODEC, TimeCheck::clock,
+                "period", Codec.LONG.optional(), TimeCheck::period,
+                "value", LootNumberRange.CODEC, TimeCheck::value,
+                TimeCheck::new
+        );
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            long time = context.require(LootContext.WORLD).getTime(this.clock);
+
+            if (period != null) {
+                time %= period;
+            }
+
+            return this.value.check(context, (int) time);
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record ValueCheck(@NotNull LootNumber value, @NotNull LootNumberRange range) implements LootPredicate {
+        public static final @NotNull StructCodec<ValueCheck> CODEC = StructCodec.struct(
+                "value", LootNumber.CODEC, ValueCheck::value,
+                "range", LootNumberRange.CODEC, ValueCheck::range,
+                ValueCheck::new
+        );
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            return range.check(context, value.getInt(context));
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record WeatherCheck(@Nullable Boolean raining, @Nullable Boolean thundering) implements LootPredicate {
+        public static final @NotNull StructCodec<WeatherCheck> CODEC = StructCodec.struct(
+                "raining", Codec.BOOLEAN.optional(), WeatherCheck::raining,
+                "thundering", Codec.BOOLEAN.optional(), WeatherCheck::thundering,
+                WeatherCheck::new
+        );
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            Weather weather = context.require(LootContext.WORLD).getWeather();
+
+            return (raining == null || raining == weather.isRaining()) &&
+                    (thundering == null || thundering == weather.thunderLevel() > 0);
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+}
