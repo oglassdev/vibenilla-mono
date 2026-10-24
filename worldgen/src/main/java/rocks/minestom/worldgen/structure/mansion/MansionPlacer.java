@@ -132,9 +132,9 @@ public final class MansionPlacer {
             StructureShapeUpdater.update(
                     adapter, this.structureLoader.blockTags(), connectionShapeUpdates);
             if (!leaves.isEmpty()) {
-                if (surfaceHeights != null) {
+                if (surfaceHeights != null && adapter.terrainLookup() != null) {
                     StructureWrites.queueLeavesUpdate(
-                            surfaceHeights, this.structureLoader.blockTags(), leaves);
+                            adapter.terrainLookup(), this.structureLoader.blockTags(), leaves);
                 } else {
                     StructureShapeUpdater.updateLeavesDistance(
                             adapter, this.structureLoader.blockTags(), leaves);
