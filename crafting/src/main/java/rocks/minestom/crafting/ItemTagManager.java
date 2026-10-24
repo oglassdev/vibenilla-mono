@@ -17,7 +17,7 @@ public final class ItemTagManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(ItemTagManager.class);
 
     private final Map<Key, TagDefinition> definitions = new LinkedHashMap<>();
-    private final Map<Key, Set<Material>> resolved = new IdentityHashMap<>();
+    private final Map<Key, Set<Material>> resolved = new HashMap<>();
 
     public ItemTagManager(Path tagDirectory) {
         this.loadDefinitions(tagDirectory);
@@ -45,9 +45,8 @@ public final class ItemTagManager {
             return;
         }
 
-        try {
-            Files.walk(tagDirectory)
-                    .filter(Files::isRegularFile)
+        try (var tagPaths = Files.walk(tagDirectory)) {
+            tagPaths.filter(Files::isRegularFile)
                     .filter(filePath -> filePath.toString().endsWith(".json"))
                     .sorted()
                     .forEach(this::readDefinition);
@@ -92,13 +91,26 @@ public final class ItemTagManager {
     }
 
     public Set<Material> materials(Key tagKey) {
-        return this.resolved.computeIfAbsent(tagKey, this::resolve);
+        var cached = this.resolved.get(tagKey);
+
+        if (cached != null) {
+            return cached;
+        }
+
+        var materials = this.resolve(tagKey, new HashSet<>());
+        this.resolved.put(tagKey, materials);
+        return materials;
     }
 
-    private Set<Material> resolve(Key tagKey) {
+    private Set<Material> resolve(Key tagKey, Set<Key> resolving) {
         var tagDefinition = this.definitions.get(tagKey);
 
         if (tagDefinition == null) {
+            return Collections.emptySet();
+        }
+
+        if (!resolving.add(tagKey)) {
+            LOGGER.warn("Item tag {} references itself, ignoring the cyclic reference", tagKey);
             return Collections.emptySet();
         }
 
@@ -107,7 +119,7 @@ public final class ItemTagManager {
         for (var entry : tagDefinition.values()) {
             if (entry.startsWith("#")) {
                 var childKey = Key.key(entry.substring(1));
-                resolvedMaterials.addAll(this.resolve(childKey));
+                resolvedMaterials.addAll(this.resolve(childKey, resolving));
             } else {
                 var material = Material.fromKey(entry);
 
@@ -120,6 +132,7 @@ public final class ItemTagManager {
             }
         }
 
+        resolving.remove(tagKey);
         return Collections.unmodifiableSet(resolvedMaterials);
     }
 
