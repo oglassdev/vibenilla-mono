@@ -87,7 +87,7 @@ public final class CarverLoader {
 
     private Optional<ConfiguredCarver<?>> loadConfiguredCarver(Key id) {
         try {
-            var json = this.dataPack.readConfiguredCarver(id).getAsJsonObject();
+            var json = this.dataPack.readCarver(id).getAsJsonObject();
             var type = Key.key(json.get("type").getAsString()).asString();
             var config = json.getAsJsonObject("config");
             var base = this.parseBase(config);

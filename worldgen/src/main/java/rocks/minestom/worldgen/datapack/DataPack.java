@@ -47,12 +47,24 @@ public final class DataPack {
         return this.readJson(this.resolve("worldgen/multi_noise_biome_source_parameter_list", id));
     }
 
-    public JsonElement readConfiguredFeature(Key id) {
-        return this.readJson(this.resolve("worldgen/configured_feature", id));
+    public JsonElement readFeature(Key id) {
+        return this.readJson(this.resolve("worldgen/feature", id));
     }
 
-    public JsonElement readConfiguredCarver(Key id) {
-        return this.readJson(this.resolve("worldgen/configured_carver", id));
+    public JsonElement readCarver(Key id) {
+        return this.readJson(this.resolve("worldgen/carver", id));
+    }
+
+    public JsonElement readMaterialRule(Key id) {
+        return this.readJson(this.resolve("worldgen/material_rule", id));
+    }
+
+    public JsonElement readMaterialCondition(Key id) {
+        return this.readJson(this.resolve("worldgen/material_condition", id));
+    }
+
+    public JsonElement readBlockStateProvider(Key id) {
+        return this.readJson(this.resolve("worldgen/block_state_provider", id));
     }
 
     public JsonElement readPlacedFeature(Key id) {

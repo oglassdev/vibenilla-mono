@@ -87,7 +87,7 @@ public final class FeatureLoader {
 
     private ConfiguredFeature<?> loadConfiguredFeature(Key id) {
         try {
-            var json = this.dataPack.readConfiguredFeature(id);
+            var json = this.dataPack.readFeature(id);
             var previousLoader = Features.currentLoader();
             Features.currentLoader(this);
             try {
