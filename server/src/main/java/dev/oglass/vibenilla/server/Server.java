@@ -31,7 +31,7 @@ public final class Server {
         var server = MinecraftServer.init(new Auth.Online());
         var events = MinecraftServer.getGlobalEventHandler();
 
-        // Placement rules first: fluids overrides the rules for water and lava.
+        // Placement rules first: fluids wraps whatever rule is already registered.
         Registrations.registerAllVanilla(MinecraftServer.getBlockManager());
         MinestomFluids.init();
         MinestomPvP.init();
@@ -45,7 +45,7 @@ public final class Server {
 
         events.addChild(combat.createNode())
                 .addChild(MinestomFluids.events())
-                .addChild(Buckets.events())
+                .addChild(MinestomFluids.bucketEvents())
                 .addChild(Items.events())
                 .addChild(crafting.events())
                 .addChild(
