@@ -2,6 +2,7 @@ package net.goldenstack.loot;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import net.goldenstack.loot.util.VanillaInterface;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.MinecraftServer;
@@ -54,13 +55,26 @@ public interface LootEntry {
     }
 
     /**
+     * Passes any number of possible choices to choose from when generating loot to the output.
+     * Choices that were already passed to the output stay there even if this entry later fails.
+     *
+     * @param context the context object, to use if required
+     * @param output receives each generated choice
+     * @return true if this entry's conditions passed, even if it generated no choices
+     */
+    boolean expand(@NotNull LootContext context, @NotNull Consumer<Choice> output);
+
+    /**
      * Generates any number of possible choices to choose from when generating loot.
      *
      * @param context the context object, to use if required
      * @return a list, with undetermined mutability, containing the options that were generated
      */
-    @NotNull
-    List<Choice> requestChoices(@NotNull LootContext context);
+    default @NotNull List<Choice> requestChoices(@NotNull LootContext context) {
+        var choices = new ArrayList<Choice>();
+        expand(context, choices::add);
+        return choices;
+    }
 
     /**
      * @return the codec that can encode this entry
@@ -136,11 +150,14 @@ public interface LootEntry {
             List<LootPredicate> predicates();
 
             /**
-             * Requests choices, returning none if {@link #predicates()} are all true. {@inheritDoc}
+             * Passes this choice to the output if {@link #predicates()} are all true. {@inheritDoc}
              */
             @Override
-            default @NotNull List<Choice> requestChoices(@NotNull LootContext context) {
-                return LootPredicate.all(predicates(), context) ? List.of(this) : List.of();
+            default boolean expand(@NotNull LootContext context, @NotNull Consumer<Choice> output) {
+                if (!LootPredicate.all(predicates(), context)) return false;
+
+                output.accept(this);
+                return true;
             }
         }
     }
@@ -158,16 +175,15 @@ public interface LootEntry {
                         Alternatives::new);
 
         @Override
-        public @NotNull List<Choice> requestChoices(@NotNull LootContext context) {
-            if (!LootPredicate.all(predicates, context)) return List.of();
+        public boolean expand(@NotNull LootContext context, @NotNull Consumer<Choice> output) {
+            if (!LootPredicate.all(predicates, context)) return false;
 
             for (var entry : this.children()) {
-                var options = entry.requestChoices(context);
-                if (!options.isEmpty()) {
-                    return options;
+                if (entry.expand(context, output)) {
+                    return true;
                 }
             }
-            return List.of();
+            return false;
         }
 
         @Override
@@ -285,14 +301,13 @@ public interface LootEntry {
                         Group::new);
 
         @Override
-        public @NotNull List<Choice> requestChoices(@NotNull LootContext context) {
-            if (!LootPredicate.all(predicates, context)) return List.of();
+        public boolean expand(@NotNull LootContext context, @NotNull Consumer<Choice> output) {
+            if (!LootPredicate.all(predicates, context)) return false;
 
-            List<Choice> choices = new ArrayList<>();
             for (var entry : this.children()) {
-                choices.addAll(entry.requestChoices(context));
+                entry.expand(context, output);
             }
-            return choices;
+            return true;
         }
 
         @Override
@@ -400,18 +415,15 @@ public interface LootEntry {
                         Sequence::new);
 
         @Override
-        public @NotNull List<Choice> requestChoices(@NotNull LootContext context) {
-            if (!LootPredicate.all(predicates, context)) return List.of();
+        public boolean expand(@NotNull LootContext context, @NotNull Consumer<Choice> output) {
+            if (!LootPredicate.all(predicates, context)) return false;
 
-            List<Choice> options = new ArrayList<>();
             for (var entry : this.children()) {
-                var choices = entry.requestChoices(context);
-                if (choices.isEmpty()) {
-                    break;
+                if (!entry.expand(context, output)) {
+                    return false;
                 }
-                options.addAll(choices);
             }
-            return options;
+            return true;
         }
 
         @Override
@@ -451,20 +463,19 @@ public interface LootEntry {
                         Tag::new);
 
         @Override
-        public @NotNull List<Choice> requestChoices(@NotNull LootContext context) {
+        public boolean expand(@NotNull LootContext context, @NotNull Consumer<Choice> output) {
             if (!LootPredicate.all(predicates, context)) {
-                return List.of();
+                return false;
             } else if (!expand) {
-                return List.of(this);
+                output.accept(this);
+                return true;
             }
-
-            List<Choice> choices = new ArrayList<>();
 
             for (RegistryKey<Material> key : name) {
                 Material material = MinecraftServer.process().material().get(key);
                 if (material == null) continue;
 
-                choices.add(
+                output.accept(
                         new Choice() {
                             @Override
                             public @Range(from = 1L, to = Long.MAX_VALUE) long getWeight(
@@ -479,7 +490,7 @@ public interface LootEntry {
                         });
             }
 
-            return choices;
+            return true;
         }
 
         @Override
