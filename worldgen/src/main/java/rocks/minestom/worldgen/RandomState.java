@@ -1,0 +1,110 @@
+package rocks.minestom.worldgen;
+
+import net.kyori.adventure.key.Key;
+import net.minestom.server.codec.Transcoder;
+import rocks.minestom.worldgen.datapack.DataPack;
+import rocks.minestom.worldgen.noise.NormalNoise;
+import rocks.minestom.worldgen.random.LegacyRandomSource;
+import rocks.minestom.worldgen.random.PositionalRandomFactory;
+import rocks.minestom.worldgen.random.RandomSource;
+import rocks.minestom.worldgen.random.XoroshiroRandomSource;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Represents the per-world random and noise state derived from the seed.
+ * This provides shared, deterministic noise and positional randomness so every system
+ * samples the same values for the same coordinates without re-creating generators.
+ */
+public final class RandomState {
+    private final DataPack dataPack;
+    private final long seed;
+    private final boolean legacyRandomSource;
+    private final PositionalRandomFactory positionalRandomFactory;
+    private final Map<Key, NormalNoise.NoiseParameters> parametersCache;
+    private final Map<Key, NormalNoise> noiseCache;
+    private final Map<Key, PositionalRandomFactory> randomFactoryCache;
+
+    public RandomState(DataPack dataPack, long seed, boolean legacyRandomSource) {
+        this.dataPack = dataPack;
+        this.seed = seed;
+        this.legacyRandomSource = legacyRandomSource;
+        this.positionalRandomFactory = legacyRandomSource ? new LegacyRandomSource(seed).forkPositional() : new XoroshiroRandomSource(seed).forkPositional();
+        this.parametersCache = new ConcurrentHashMap<>();
+        this.noiseCache = new ConcurrentHashMap<>();
+        this.randomFactoryCache = new ConcurrentHashMap<>();
+    }
+
+    public boolean legacyRandomSource() {
+        return this.legacyRandomSource;
+    }
+
+    public long seed() {
+        return this.seed;
+    }
+
+    public NormalNoise getOrCreateNoise(Key id) {
+        return this.noiseCache.computeIfAbsent(id, this::createNoise);
+    }
+
+    public PositionalRandomFactory getOrCreateRandomFactory(Key id) {
+        return this.randomFactoryCache.computeIfAbsent(id, key -> this.positionalRandomFactory.fromHashOf(key.asString()).forkPositional());
+    }
+
+    /**
+     * Root positional random of the world seed; vanilla hands this directly to
+     * the surface system.
+     */
+    public PositionalRandomFactory random() {
+        return this.positionalRandomFactory;
+    }
+
+    /**
+     * Positional random used for aquifer cell placement, forked from
+     * {@code minecraft:aquifer} like vanilla {@code RandomState.aquiferRandom}.
+     */
+    public PositionalRandomFactory aquiferRandom() {
+        return this.getOrCreateRandomFactory(Key.key("minecraft:aquifer"));
+    }
+
+    /**
+     * Positional random used for ore vein placement, forked from
+     * {@code minecraft:ore} like vanilla {@code RandomState.oreRandom}.
+     */
+    public PositionalRandomFactory oreRandom() {
+        return this.getOrCreateRandomFactory(Key.key("minecraft:ore"));
+    }
+
+    public RandomSource terrainRandom() {
+        if (this.legacyRandomSource) {
+            return new LegacyRandomSource(this.seed);
+        }
+        return this.positionalRandomFactory.fromHashOf(Key.key("minecraft:terrain").asString());
+    }
+
+    private NormalNoise createNoise(Key id) {
+        var parameters = this.parametersCache.computeIfAbsent(id, this::readNoiseParameters);
+
+        if (id.asString().equals("minecraft:nether/temperature")) {
+            return NormalNoise.createLegacyNetherBiome(new LegacyRandomSource(this.seed), parameters);
+        }
+        if (id.asString().equals("minecraft:nether/vegetation")) {
+            return NormalNoise.createLegacyNetherBiome(new LegacyRandomSource(this.seed + 1L), parameters);
+        }
+
+        return NormalNoise.create(this.positionalRandomFactory.fromHashOf(id.asString()), parameters);
+    }
+
+    private NormalNoise.NoiseParameters readNoiseParameters(Key id) {
+        var json = this.dataPack.readNoiseParameters(id);
+        var parametersJson = NoiseParameters.CODEC.decode(Transcoder.JSON, json).orElseThrow();
+        var amplitudes = new double[parametersJson.amplitudes().size()];
+
+        for (var index = 0; index < parametersJson.amplitudes().size(); index++) {
+            amplitudes[index] = parametersJson.amplitudes().get(index);
+        }
+
+        return new NormalNoise.NoiseParameters(parametersJson.firstOctave(), amplitudes);
+    }
+}
