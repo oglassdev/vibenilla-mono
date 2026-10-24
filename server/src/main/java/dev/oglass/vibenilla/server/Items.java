@@ -90,7 +90,7 @@ final class Items {
     private static void keepLater(ItemEntity from, ItemEntity to, Tag<Long> tag) {
         var other = from.getTag(tag);
         var current = to.getTag(tag);
-        if (other != null && current != null && other > current) {
+        if (other != null && (current == null || other > current)) {
             to.setTag(tag, other);
         }
     }
