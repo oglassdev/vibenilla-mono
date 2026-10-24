@@ -11,6 +11,10 @@ public enum LiquidSettings {
     APPLY_WATERLOGGING;
 
     public static LiquidSettings fromName(String name) {
-        return "ignore_waterlogging".equals(name) ? IGNORE_WATERLOGGING : APPLY_WATERLOGGING;
+        return switch (name) {
+            case "ignore_waterlogging" -> IGNORE_WATERLOGGING;
+            case "apply_waterlogging" -> APPLY_WATERLOGGING;
+            default -> throw new IllegalArgumentException("Unknown liquid settings: " + name);
+        };
     }
 }

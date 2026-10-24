@@ -938,11 +938,6 @@ public final class StructurePlacer {
             return this.buildJigsawStructureStart(jigsaw, chunkX, chunkZ, settings);
         }
 
-        if (structure instanceof SimpleStructure simple) {
-            var start = new BlockVec(centerX, surfaceY, centerZ);
-            return this.buildSimpleStructureStart(simple, start, settings);
-        }
-
         return null;
     }
 
@@ -982,35 +977,6 @@ public final class StructurePlacer {
 
         var start = new BlockVec((chunkX << 4) + 8, bounds.minY(), (chunkZ << 4) + 8);
         return new StructureStart(start, pieces, bounds, jigsaw.terrainAdaptation());
-    }
-
-    private StructureStart buildSimpleStructureStart(
-            SimpleStructure simple, BlockVec start, NoiseGeneratorSettingsRuntime settings) {
-        if (simple.templates().isEmpty()) {
-            return null;
-        }
-
-        var randomFactory =
-                settings.randomState().getOrCreateRandomFactory(Key.key("minecraft:structure"));
-        var random = randomFactory.fromHashOf(start.blockX() + ":" + start.blockZ());
-        var templateKey = simple.templates().get(random.nextInt(simple.templates().size()));
-        var template = this.structureLoader.getTemplate(templateKey);
-        if (template == null) {
-            return null;
-        }
-
-        var rotation = Rotation.values()[random.nextInt(Rotation.values().length)];
-        var bounds = template.getBoundingBox(start, rotation);
-
-        var element =
-                new SinglePoolElement(
-                        templateKey, StructureProcessorList.EMPTY, Projection.RIGID, null, false);
-        var piece =
-                new JigsawAssembler.PlacedPiece(
-                        element, start, rotation, bounds, 1, LiquidSettings.APPLY_WATERLOGGING);
-
-        return new StructureStart(
-                start, List.of(piece), copyBounds(bounds), simple.terrainAdaptation());
     }
 
     /**

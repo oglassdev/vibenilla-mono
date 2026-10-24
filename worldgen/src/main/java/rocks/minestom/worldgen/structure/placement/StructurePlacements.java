@@ -1,10 +1,14 @@
 package rocks.minestom.worldgen.structure.placement;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import java.util.function.Function;
+import net.kyori.adventure.key.Key;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.codec.Transcoder;
 import rocks.minestom.worldgen.structure.StructurePlacement;
+import rocks.minestom.worldgen.structure.StructureSet;
 
 public final class StructurePlacements {
     private static final Codec<RandomSpreadPlacementData> RANDOM_SPREAD_CODEC =
@@ -31,7 +35,12 @@ public final class StructurePlacements {
 
     private StructurePlacements() {}
 
-    public static StructurePlacement parsePlacement(JsonElement json) {
+    /**
+     * Parses a structure placement, failing on unknown placement types. Exclusion zones reference
+     * other sets through {@code structureSets}, resolved lazily.
+     */
+    public static StructurePlacement parsePlacement(
+            JsonElement json, Function<Key, StructureSet> structureSets) {
         if (!json.isJsonObject()) {
             throw new IllegalArgumentException("Structure placement must be a JSON object");
         }
@@ -50,13 +59,14 @@ public final class StructurePlacements {
                     decoded.salt(),
                     spreadType,
                     decoded.frequency(),
-                    frequencyReduction);
+                    frequencyReduction,
+                    parseExclusionZone(obj, structureSets));
         }
 
         if (type.equals("minecraft:concentric_rings")) {
             var preferredBiomes = obj.get("preferred_biomes").getAsString();
             var tagKey =
-                    net.kyori.adventure.key.Key.key(
+                    Key.key(
                             preferredBiomes.startsWith("#")
                                     ? preferredBiomes.substring(1)
                                     : preferredBiomes);
@@ -67,17 +77,29 @@ public final class StructurePlacements {
                     tagKey);
         }
 
-        return null;
+        throw new IllegalArgumentException("Unsupported structure placement type: " + type);
+    }
+
+    private static RandomSpreadPlacement.ExclusionZone parseExclusionZone(
+            JsonObject placement, Function<Key, StructureSet> structureSets) {
+        if (!placement.has("exclusion_zone")) {
+            return null;
+        }
+        var zone = placement.getAsJsonObject("exclusion_zone");
+        var otherSet = Key.key(zone.get("other_set").getAsString());
+        return new RandomSpreadPlacement.ExclusionZone(
+                () -> {
+                    var set = structureSets.apply(otherSet);
+                    return set == null ? null : set.placement();
+                },
+                zone.get("chunk_count").getAsInt());
     }
 
     private static RandomSpreadType parseSpreadType(String value) {
-        if (value == null) {
-            return RandomSpreadType.LINEAR;
-        }
-
         return switch (value) {
+            case "linear" -> RandomSpreadType.LINEAR;
             case "triangular" -> RandomSpreadType.TRIANGULAR;
-            default -> RandomSpreadType.LINEAR;
+            default -> throw new IllegalArgumentException("Unknown spread type: " + value);
         };
     }
 

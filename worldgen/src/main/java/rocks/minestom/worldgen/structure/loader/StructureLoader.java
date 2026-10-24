@@ -1,9 +1,18 @@
 package rocks.minestom.worldgen.structure.loader;
 
+import com.google.gson.JsonElement;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import net.kyori.adventure.key.Key;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rocks.minestom.worldgen.datapack.DataPack;
 import rocks.minestom.worldgen.structure.Structure;
 import rocks.minestom.worldgen.structure.StructureSet;
@@ -16,14 +25,33 @@ import rocks.minestom.worldgen.structure.processor.StructureProcessors;
 import rocks.minestom.worldgen.structure.template.StructureTemplate;
 
 public final class StructureLoader {
+    private static final Logger LOGGER = LoggerFactory.getLogger(StructureLoader.class);
+
+    private static final List<String> DECORATION_STEPS =
+            List.of(
+                    "raw_generation",
+                    "lakes",
+                    "local_modifications",
+                    "underground_structures",
+                    "surface_structures",
+                    "strongholds",
+                    "underground_ores",
+                    "underground_decoration",
+                    "fluid_springs",
+                    "vegetal_decoration",
+                    "top_layer_modification");
+    private static final int DEFAULT_STEP = DECORATION_STEPS.indexOf("surface_structures");
+
     private final DataPack dataPack;
     private final BlockTagManager blockTags;
     private final BiomeTagManager biomeTags;
-    private final Map<Key, Structure> structureCache;
-    private final Map<Key, StructureSet> structureSetCache;
-    private final Map<Key, TemplatePool> templatePoolCache;
-    private final Map<Key, StructureTemplate> templateCache;
-    private final Map<Key, StructureProcessorList> processorListCache;
+    private final Map<Key, Optional<Structure>> structureCache;
+    private final Map<Key, Optional<StructureSet>> structureSetCache;
+    private final Map<Key, Optional<TemplatePool>> templatePoolCache;
+    private final Map<Key, Optional<StructureTemplate>> templateCache;
+    private final Map<Key, Optional<StructureProcessorList>> processorListCache;
+    private final Map<Key, Integer> structureStepCache;
+    private final Map<String, List<Key>> stepStructuresCache;
 
     public StructureLoader(DataPack dataPack) {
         this.dataPack = dataPack;
@@ -34,6 +62,8 @@ public final class StructureLoader {
         this.templatePoolCache = new ConcurrentHashMap<>();
         this.templateCache = new ConcurrentHashMap<>();
         this.processorListCache = new ConcurrentHashMap<>();
+        this.structureStepCache = new ConcurrentHashMap<>();
+        this.stepStructuresCache = new ConcurrentHashMap<>();
     }
 
     public BlockTagManager blockTags() {
@@ -44,55 +74,115 @@ public final class StructureLoader {
         return this.biomeTags;
     }
 
+    /** The structure, or null if it failed to load (a warning is logged once per id). */
     public Structure getStructure(Key id) {
-        return this.structureCache.computeIfAbsent(id, this::loadStructure);
+        return cached(this.structureCache, "structure", id, this::loadStructure);
     }
 
+    /** The structure set, or null if it failed to load (a warning is logged once per id). */
     public StructureSet getStructureSet(Key id) {
-        return this.structureSetCache.computeIfAbsent(id, this::loadStructureSet);
+        return cached(this.structureSetCache, "structure set", id, this::loadStructureSet);
     }
 
+    /** The template pool, or null if it failed to load (a warning is logged once per id). */
     public TemplatePool getTemplatePool(Key id) {
-        return this.templatePoolCache.computeIfAbsent(id, this::loadTemplatePool);
+        return cached(this.templatePoolCache, "template pool", id, this::loadTemplatePool);
     }
 
+    /** The structure template, or null if it failed to load (a warning is logged once per id). */
     public StructureTemplate getTemplate(Key id) {
-        return this.templateCache.computeIfAbsent(id, this::loadTemplate);
+        return cached(this.templateCache, "structure template", id, this::loadTemplate);
     }
 
+    /** Like {@link #getTemplate} for callers that cannot continue without the template. */
+    public StructureTemplate requireTemplate(Key id) {
+        var template = this.getTemplate(id);
+        if (template == null) {
+            throw new IllegalStateException("Structure template " + id + " is unavailable");
+        }
+        return template;
+    }
+
+    /** The processor list, or null if it failed to load (a warning is logged once per id). */
     public StructureProcessorList getProcessorList(Key id) {
-        return this.processorListCache.computeIfAbsent(id, this::loadProcessorList);
+        return cached(this.processorListCache, "processor list", id, this::loadProcessorList);
     }
 
-    public StructureProcessorList resolveProcessors(com.google.gson.JsonElement json) {
+    /**
+     * Resolves a processor list given either as a processor list id or inline; fails if a
+     * referenced list is unavailable.
+     */
+    public StructureProcessorList resolveProcessors(JsonElement json) {
         if (json == null) {
             return StructureProcessorList.EMPTY;
         }
 
         if (json.isJsonPrimitive()) {
             var processorKey = Key.key(json.getAsString());
-            return this.getProcessorList(processorKey);
+            var list = this.getProcessorList(processorKey);
+            if (list == null) {
+                throw new IllegalStateException(
+                        "Processor list " + processorKey + " is unavailable");
+            }
+            return list;
         }
 
-        if (json.isJsonObject()) {
-            return StructureProcessors.parseProcessorList(json);
-        }
+        return StructureProcessors.parseProcessorList(json);
+    }
 
-        return StructureProcessorList.EMPTY;
+    private static <T> T cached(
+            Map<Key, Optional<T>> cache, String kind, Key id, Function<Key, T> loader) {
+        return cache.computeIfAbsent(
+                        id,
+                        key -> {
+                            try {
+                                return Optional.of(loader.apply(key));
+                            } catch (RuntimeException exception) {
+                                LOGGER.warn(
+                                        "Failed to load {} {}: {}",
+                                        kind,
+                                        key,
+                                        exception.toString());
+                                return Optional.empty();
+                            }
+                        })
+                .orElse(null);
     }
 
     private Structure loadStructure(Key id) {
-        try {
-            var json = this.dataPack.readStructure(id);
-            return Structures.parseStructure(json);
-        } catch (Exception exception) {
-            return null;
-        }
+        return Structures.parseStructure(this.dataPack.readStructure(id));
+    }
+
+    private StructureSet loadStructureSet(Key id) {
+        return StructureSets.parseStructureSet(
+                this.dataPack.readStructureSet(id), this::getStructureSet);
+    }
+
+    private TemplatePool loadTemplatePool(Key id) {
+        return TemplatePools.parseTemplatePool(this.dataPack.readTemplatePool(id), this);
+    }
+
+    private StructureTemplate loadTemplate(Key id) {
+        return StructureTemplate.load(this.resolveTemplatePath(id));
+    }
+
+    private StructureProcessorList loadProcessorList(Key id) {
+        return StructureProcessors.parseProcessorList(this.dataPack.readProcessorList(id));
+    }
+
+    private Path resolveTemplatePath(Key id) {
+        return this.dataPack
+                .rootPath()
+                .resolve("data")
+                .resolve(id.namespace())
+                .resolve("structure")
+                .resolve(id.value() + ".nbt");
     }
 
     /**
      * The decoration step ordinal of the structure (its {@code step} field), matching vanilla
-     * {@code GenerationStep.Decoration}; defaults to surface_structures when unreadable.
+     * {@code GenerationStep.Decoration}. A structure that fails to load is skipped by the placers,
+     * so its step falls back to surface_structures after the load failure is logged.
      */
     public int structureStep(Key id) {
         return this.structureStepCache.computeIfAbsent(
@@ -100,29 +190,16 @@ public final class StructureLoader {
                 key -> {
                     try {
                         var json = this.dataPack.readStructure(key);
-                        var step = json.getAsJsonObject().get("step").getAsString();
-                        return switch (step.replace("minecraft:", "")) {
-                            case "raw_generation" -> 0;
-                            case "lakes" -> 1;
-                            case "local_modifications" -> 2;
-                            case "underground_structures" -> 3;
-                            case "surface_structures" -> 4;
-                            case "strongholds" -> 5;
-                            case "underground_ores" -> 6;
-                            case "underground_decoration" -> 7;
-                            case "fluid_springs" -> 8;
-                            case "vegetal_decoration" -> 9;
-                            case "top_layer_modification" -> 10;
-                            default -> 4;
-                        };
-                    } catch (Exception exception) {
-                        return 4;
+                        return stepOrdinal(json.getAsJsonObject().get("step").getAsString());
+                    } catch (RuntimeException exception) {
+                        LOGGER.warn(
+                                "Failed to read the step of structure {}: {}",
+                                key,
+                                exception.toString());
+                        return DEFAULT_STEP;
                     }
                 });
     }
-
-    private final Map<Key, Integer> structureStepCache = new ConcurrentHashMap<>();
-    private final Map<String, java.util.List<Key>> stepStructuresCache = new ConcurrentHashMap<>();
 
     /**
      * The structures of the given decoration step in the order vanilla's {@code
@@ -132,21 +209,21 @@ public final class StructureLoader {
      * an instrumented server: the runtime order is alphabetical by structure path, NOT
      * structure-set flattening order).
      */
-    public java.util.List<Key> structuresAtStep(String step) {
+    public List<Key> structuresAtStep(String step) {
         return this.stepStructuresCache.computeIfAbsent(
                 step,
                 stepName -> {
-                    var keys = new java.util.ArrayList<Key>();
+                    var stepOrdinal = stepOrdinal(stepName);
+                    var keys = new ArrayList<Key>();
                     var dataRoot = this.dataPack.rootPath().resolve("data");
-                    try (var namespaces = java.nio.file.Files.list(dataRoot)) {
-                        for (var namespaceDir :
-                                namespaces.filter(java.nio.file.Files::isDirectory).toList()) {
+                    try (var namespaces = Files.list(dataRoot)) {
+                        for (var namespaceDir : namespaces.filter(Files::isDirectory).toList()) {
                             var structureDir =
                                     namespaceDir.resolve("worldgen").resolve("structure");
-                            if (!java.nio.file.Files.isDirectory(structureDir)) {
+                            if (!Files.isDirectory(structureDir)) {
                                 continue;
                             }
-                            try (var files = java.nio.file.Files.list(structureDir)) {
+                            try (var files = Files.list(structureDir)) {
                                 for (var file :
                                         files.filter(
                                                         path ->
@@ -163,84 +240,26 @@ public final class StructureLoader {
                                 }
                             }
                         }
-                    } catch (Exception exception) {
-                        return java.util.List.of();
+                    } catch (java.io.IOException exception) {
+                        LOGGER.warn(
+                                "Failed to list structures under {}: {}",
+                                dataRoot,
+                                exception.toString());
+                        return List.of();
                     }
 
-                    keys.sort(
-                            (left, right) -> {
-                                var byNamespace = left.namespace().compareTo(right.namespace());
-                                return byNamespace != 0
-                                        ? byNamespace
-                                        : left.value().compareTo(right.value());
-                            });
-
-                    var stepOrdinal = stepOrdinal(stepName);
-                    var result = new java.util.ArrayList<Key>();
-                    for (var key : keys) {
-                        if (this.structureStep(key) == stepOrdinal) {
-                            result.add(key);
-                        }
-                    }
-                    return java.util.List.copyOf(result);
+                    keys.sort(Comparator.comparing(Key::namespace).thenComparing(Key::value));
+                    return keys.stream()
+                            .filter(key -> this.structureStep(key) == stepOrdinal)
+                            .toList();
                 });
     }
 
     private static int stepOrdinal(String step) {
-        return switch (step.replace("minecraft:", "")) {
-            case "raw_generation" -> 0;
-            case "lakes" -> 1;
-            case "local_modifications" -> 2;
-            case "underground_structures" -> 3;
-            case "surface_structures" -> 4;
-            case "strongholds" -> 5;
-            case "underground_ores" -> 6;
-            case "underground_decoration" -> 7;
-            case "fluid_springs" -> 8;
-            case "vegetal_decoration" -> 9;
-            case "top_layer_modification" -> 10;
-            default -> 4;
-        };
-    }
-
-    private StructureSet loadStructureSet(Key id) {
-        try {
-            var json = this.dataPack.readStructureSet(id);
-            return StructureSets.parseStructureSet(json);
-        } catch (Exception exception) {
-            return null;
+        var ordinal = DECORATION_STEPS.indexOf(step.replace("minecraft:", ""));
+        if (ordinal < 0) {
+            throw new IllegalArgumentException("Unknown decoration step: " + step);
         }
-    }
-
-    private TemplatePool loadTemplatePool(Key id) {
-        try {
-            var json = this.dataPack.readTemplatePool(id);
-            return TemplatePools.parseTemplatePool(json, this);
-        } catch (Exception exception) {
-            return null;
-        }
-    }
-
-    private StructureTemplate loadTemplate(Key id) {
-        var path = this.resolveTemplatePath(id);
-        return StructureTemplate.load(path);
-    }
-
-    private StructureProcessorList loadProcessorList(Key id) {
-        try {
-            var json = this.dataPack.readProcessorList(id);
-            return StructureProcessors.parseProcessorList(json);
-        } catch (Exception exception) {
-            return StructureProcessorList.EMPTY;
-        }
-    }
-
-    private Path resolveTemplatePath(Key id) {
-        return this.dataPack
-                .rootPath()
-                .resolve("data")
-                .resolve(id.namespace())
-                .resolve("structure")
-                .resolve(id.value() + ".nbt");
+        return ordinal;
     }
 }
