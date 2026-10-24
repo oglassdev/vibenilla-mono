@@ -155,7 +155,9 @@ public class VanillaBlockFeature implements BlockFeature {
         var damageBlockEvent = new DamageBlockEvent(entity, amount, resultingDamage, false);
         EventDispatcher.call(damageBlockEvent);
         if (damageBlockEvent.isCancelled()) return false;
-        damage.setAmount(damageBlockEvent.getResultingDamage());
+        resultingDamage = damageBlockEvent.getResultingDamage();
+        blockedDamage = Math.max(0.0F, amount - resultingDamage);
+        damage.setAmount(resultingDamage);
 
         var shieldDamage = this.computeShieldItemDamage(blocksAttacks, blockedDamage);
         if (shieldDamage > 0) {
@@ -191,9 +193,11 @@ public class VanillaBlockFeature implements BlockFeature {
     }
 
     private double getBlockingAngle(LivingEntity entity, Damage damage) {
-        if (damage.getSource() == null) return Math.PI;
+        var attackerPos = damage.getSourcePosition();
+        if (attackerPos == null && damage.getSource() != null)
+            attackerPos = damage.getSource().getPosition();
+        if (attackerPos == null) return Math.PI;
 
-        var attackerPos = damage.getSource().getPosition();
         var entityPos = entity.getPosition();
         var yaw = Math.toRadians(entityPos.yaw());
         var entityRotation = new Vec(-Math.sin(yaw), 0.0, Math.cos(yaw));
