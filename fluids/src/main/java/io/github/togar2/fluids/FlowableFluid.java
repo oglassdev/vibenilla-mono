@@ -37,8 +37,8 @@ public abstract class FlowableFluid extends Fluid {
                 instance.setBlock(point, Block.AIR);
             } else if (!updated.equals(state)) {
                 state = updated;
+                MinestomFluids.scheduleTick(instance, point, updated.fluid(), tickDelay);
                 instance.setBlock(point, updated.block());
-                MinestomFluids.scheduleTick(instance, point, tickDelay);
             }
         }
         trySpread(instance, point, state);

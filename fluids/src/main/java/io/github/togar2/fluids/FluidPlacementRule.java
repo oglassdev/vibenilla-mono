@@ -1,45 +1,78 @@
 package io.github.togar2.fluids;
 
-import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+/**
+ * Schedules fluid ticks for blocks holding a fluid and waterlogs waterloggable blocks placed into a
+ * water source. All placement behavior of the block is delegated to the rule that was registered
+ * for it beforehand, if any.
+ */
 public class FluidPlacementRule extends BlockPlacementRule {
+    private final @Nullable BlockPlacementRule delegate;
+
     public FluidPlacementRule(@NotNull Block block) {
+        this(block, null);
+    }
+
+    public FluidPlacementRule(@NotNull Block block, @Nullable BlockPlacementRule delegate) {
         super(block);
+        this.delegate = delegate;
     }
 
     @Override
     public @NotNull Block blockUpdate(@NotNull UpdateState updateState) {
-        String waterlogged = updateState.currentBlock().properties().get("waterlogged");
-        if (waterlogged == null || waterlogged.equals("true")) {
-            Instance instance = (Instance) updateState.instance();
-            BlockVec blockVec = updateState.blockPosition().asBlockVec();
+        var updated =
+                delegate == null
+                        ? super.blockUpdate(updateState)
+                        : delegate.blockUpdate(updateState);
+        if (holdsFluid(updated)) {
             MinestomFluids.scheduleTick(
-                    instance, blockVec, FluidState.of(updateState.currentBlock()));
+                    (Instance) updateState.instance(),
+                    updateState.blockPosition().asBlockVec(),
+                    FluidState.of(updated));
         }
-        return super.blockUpdate(updateState);
+        return updated;
     }
 
     @Override
-    public @NotNull Block blockPlace(@NotNull PlacementState placementState) {
-        BlockVec blockVec = placementState.placePosition().asBlockVec();
-        Block block = placementState.block();
+    public @Nullable Block blockPlace(@NotNull PlacementState placementState) {
+        var block = delegate == null ? placementState.block() : delegate.blockPlace(placementState);
+        if (block == null) return null;
 
-        if (FluidState.canBeWaterlogged(block) && !FluidState.isWaterlogged(block)) {
-            FluidState replaced = FluidState.of(placementState.instance().getBlock(blockVec));
-            if (replaced.isWater() && replaced.isSource())
-                block = FluidState.setWaterlogged(block, true);
+        var instance = (Instance) placementState.instance();
+        var position = placementState.placePosition().asBlockVec();
+
+        if (FluidState.canBeWaterlogged(block)) {
+            var replaced = instance.getBlock(position);
+            if (replaced.liquid() && FluidState.of(replaced).isWater()) {
+                block = FluidState.setWaterlogged(block, FluidState.isSource(replaced));
+            }
         }
 
-        String waterlogged = block.properties().get("waterlogged");
-        if (waterlogged == null || waterlogged.equals("true")) {
-            Instance instance = (Instance) placementState.instance();
-            MinestomFluids.scheduleTick(instance, blockVec, FluidState.of(block));
+        if (holdsFluid(block)) {
+            MinestomFluids.scheduleTick(instance, position, FluidState.of(block));
         }
-
         return block;
+    }
+
+    @Override
+    public boolean isSelfReplaceable(@NotNull Replacement replacement) {
+        return delegate == null
+                ? super.isSelfReplaceable(replacement)
+                : delegate.isSelfReplaceable(replacement);
+    }
+
+    @Override
+    public int maxUpdateDistance() {
+        return delegate == null ? super.maxUpdateDistance() : delegate.maxUpdateDistance();
+    }
+
+    private static boolean holdsFluid(Block block) {
+        var waterlogged = block.getProperty("waterlogged");
+        return waterlogged == null || waterlogged.equals("true");
     }
 }
