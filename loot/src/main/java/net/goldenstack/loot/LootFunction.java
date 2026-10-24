@@ -877,7 +877,7 @@ public interface LootFunction {
             var result = EnchantmentUtils.modifyItem(input, map -> map.put(chosen, level));
 
             if (this.includeAdditionalCostComponent
-                    && context.has(LootContext.ADDITIONAL_COST_COMPONENT_ALLOWED)) {
+                    && context.get(LootContext.ADDITIONAL_COST_COMPONENT_ALLOWED, false)) {
                 return result.with(
                         DataComponents.ADDITIONAL_TRADE_COST,
                         2 + random.nextInt(5 + level * 10) + 3 * level);
@@ -937,7 +937,7 @@ public interface LootFunction {
                                     this.options);
 
             if (this.includeAdditionalCostComponent
-                    && context.has(LootContext.ADDITIONAL_COST_COMPONENT_ALLOWED)
+                    && context.get(LootContext.ADDITIONAL_COST_COMPONENT_ALLOWED, false)
                     && !result.isAir()
                     && enchantmentCost > 0) {
                 return result.with(DataComponents.ADDITIONAL_TRADE_COST, enchantmentCost);

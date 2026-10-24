@@ -97,6 +97,34 @@ class LootFunctionTest {
     }
 
     @Test
+    void enchantRandomlyChecksTheAdditionalCostFlagValue() {
+        MinecraftServer.init();
+
+        var function = new LootFunction.EnchantRandomly(List.of(), null, false, true);
+        var item = ItemStack.of(Material.BOOK);
+
+        var allowed =
+                LootContext.from(
+                        VanillaInterface.defaults(),
+                        Map.of(
+                                LootContext.RANDOM,
+                                new Random(1L),
+                                LootContext.ADDITIONAL_COST_COMPONENT_ALLOWED,
+                                true));
+        var denied =
+                LootContext.from(
+                        VanillaInterface.defaults(),
+                        Map.of(
+                                LootContext.RANDOM,
+                                new Random(1L),
+                                LootContext.ADDITIONAL_COST_COMPONENT_ALLOWED,
+                                false));
+
+        assertNotNull(function.apply(item, allowed).get(DataComponents.ADDITIONAL_TRADE_COST));
+        assertNull(function.apply(item, denied).get(DataComponents.ADDITIONAL_TRADE_COST));
+    }
+
+    @Test
     void applyBonusSkipsFailedConditions() {
         MinecraftServer.init();
 
