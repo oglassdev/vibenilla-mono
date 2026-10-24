@@ -5,12 +5,12 @@ import io.github.togar2.pvp.MinestomPvP;
 import io.github.togar2.pvp.feature.CombatFeatures;
 import io.github.togar2.pvp.feature.FeatureType;
 import java.nio.file.Path;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.minestom.server.Auth;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.GameMode;
+import net.minestom.server.entity.Player;
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerSpawnEvent;
@@ -39,7 +39,7 @@ public final class Server {
         overworld.setExplosionSupplier(combat.get(FeatureType.EXPLOSION).getExplosionSupplier());
         var spawn = world.spawn();
         var players = new PlayerStorage(worldPath.resolve("playerdata"));
-        var saved = new ConcurrentHashMap<UUID, CompoundBinaryTag>();
+        var saved = new ConcurrentHashMap<Player, CompoundBinaryTag>();
 
         var crafting = new CraftingManager(vanillaData);
 
@@ -54,13 +54,13 @@ public final class Server {
                         event -> {
                             var player = event.getPlayer();
                             event.setSpawningInstance(overworld);
-                            var data = players.read(player.getUuid());
+                            var data = players.join(player);
                             var position =
                                     data == null || PlayerStorage.dead(data)
                                             ? null
                                             : PlayerStorage.position(data);
                             if (data != null) {
-                                saved.put(player.getUuid(), data);
+                                saved.put(player, data);
                             }
                             player.setRespawnPoint(position == null ? spawn : position);
                         })
@@ -71,7 +71,7 @@ public final class Server {
                                 return;
                             }
                             var player = event.getPlayer();
-                            var data = saved.remove(player.getUuid());
+                            var data = saved.remove(player);
                             if (data == null) {
                                 player.setGameMode(GameMode.SURVIVAL);
                                 return;
@@ -83,27 +83,23 @@ public final class Server {
                 .addListener(
                         PlayerDisconnectEvent.class,
                         event -> {
-                            saved.remove(event.getPlayer().getUuid());
-                            players.save(event.getPlayer());
+                            saved.remove(event.getPlayer());
+                            players.finish(event.getPlayer());
                         });
 
-        Runnable savePlayers =
-                () ->
-                        MinecraftServer.getConnectionManager()
-                                .getOnlinePlayers()
-                                .forEach(players::save);
         var scheduler = MinecraftServer.getSchedulerManager();
         scheduler
                 .buildTask(
                         () -> {
-                            savePlayers.run();
+                            MinecraftServer.getConnectionManager()
+                                    .getOnlinePlayers()
+                                    .forEach(players::save);
                             world.save();
                         })
                 .repeat(TaskSchedule.minutes(5))
                 .schedule();
         scheduler.buildShutdownTask(
                 () -> {
-                    savePlayers.run();
                     players.close();
                     world.saveAndWait();
                     MinecraftServer.LOGGER.info("World saved");

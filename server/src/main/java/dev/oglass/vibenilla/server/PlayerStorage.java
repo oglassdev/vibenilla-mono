@@ -7,11 +7,15 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.kyori.adventure.nbt.BinaryTagIO;
 import net.kyori.adventure.nbt.BinaryTagTypes;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
@@ -33,6 +37,10 @@ import org.jspecify.annotations.Nullable;
  * Per-player NBT files in {@code playerdata/<uuid>.dat}, using vanilla field names and slots.
  * Snapshots are taken under the player's tick lock; every file access runs on one IO thread so
  * writes and reads of the same file never interleave.
+ *
+ * <p>A player's session spans {@link #join} until its final write completes. A new session of the
+ * same UUID reads only after the previous one has been written, and {@link #close} saves every
+ * session still unsaved, including players whose disconnect has not been processed yet.
  */
 final class PlayerStorage {
     private static final float FULL_HEALTH = 20f;
@@ -48,7 +56,16 @@ final class PlayerStorage {
     };
     private static final int[] TABLE_GRID = {1, 2, 3, 4, 5, 6, 7, 8, 9};
 
+    private static final int SESSION_WAIT_SECONDS = 5;
+
+    private record Session(Player player, AtomicBoolean claimed, CompletableFuture<Void> written) {
+        Session(Player player) {
+            this(player, new AtomicBoolean(), new CompletableFuture<>());
+        }
+    }
+
     private final Path directory;
+    private final ConcurrentHashMap<Player, Session> sessions = new ConcurrentHashMap<>();
     private final ExecutorService io =
             Executors.newSingleThreadExecutor(
                     task -> Thread.ofPlatform().daemon().name("player-data-io").unstarted(task));
@@ -62,8 +79,26 @@ final class PlayerStorage {
         }
     }
 
-    /** The saved data for a player, or null when they have never joined. */
-    @Nullable CompoundBinaryTag read(UUID uuid) {
+    /**
+     * Starts the player's session and returns their saved data, or null when they have never
+     * joined. Waits for a previous disconnected session of the same UUID to finish writing.
+     */
+    @Nullable CompoundBinaryTag join(Player player) {
+        var uuid = player.getUuid();
+        var previous =
+                sessions.values().stream()
+                        .filter(s -> s.player().getUuid().equals(uuid) && !s.player().isOnline())
+                        .toList();
+        sessions.put(player, new Session(player));
+        previous.forEach(s -> await(s, SESSION_WAIT_SECONDS));
+        if (!player.isOnline()) {
+            finish(player);
+            return null;
+        }
+        return read(uuid);
+    }
+
+    private @Nullable CompoundBinaryTag read(UUID uuid) {
         try {
             return io.submit(() -> readFile(uuid)).get();
         } catch (InterruptedException e) {
@@ -156,29 +191,73 @@ final class PlayerStorage {
         return ItemStack.fromItemNBT(tag, MinecraftServer.process());
     }
 
-    /**
-     * Snapshots a player who is in a world and queues the write; players still configuring keep
-     * their old data.
-     */
+    /** Queues a write for a player who is in a world. Failures are logged, never thrown. */
     void save(Player player) {
-        player.acquirable()
-                .sync(
+        try {
+            snapshotAndQueue(player);
+        } catch (RuntimeException e) {
+            MinecraftServer.LOGGER.error("Failed to save {}", player.getUsername(), e);
+        }
+    }
+
+    /** Queues the final write of the player's session; a session is saved at most once. */
+    void finish(Player player) {
+        var session = sessions.get(player);
+        if (session == null || !session.claimed().compareAndSet(false, true)) {
+            return;
+        }
+        var queued = CompletableFuture.<Void>completedFuture(null);
+        try {
+            var write = snapshotAndQueue(player);
+            if (write != null) {
+                queued = write;
+            }
+        } catch (RuntimeException e) {
+            MinecraftServer.LOGGER.error("Failed to save {}", player.getUsername(), e);
+        }
+        queued.whenComplete(
+                (result, error) -> {
+                    sessions.remove(player, session);
+                    session.written().complete(null);
+                });
+    }
+
+    /**
+     * Players not yet assigned to a tick thread cannot be acquired from another thread, and players
+     * without an instance keep their old data. The write is queued under the lock so writes of one
+     * player stay in snapshot order.
+     */
+    private @Nullable CompletableFuture<Void> snapshotAndQueue(Player player) {
+        if (player.acquirable().assignedThread() == null) {
+            return null;
+        }
+        return player.acquirable()
+                .applySync(
                         locked -> {
                             if (locked.getInstance() == null) {
-                                return;
+                                return null;
                             }
                             var uuid = locked.getUuid();
                             var tag = serialize(locked);
-                            try {
-                                io.execute(() -> write(uuid, tag));
-                            } catch (RejectedExecutionException e) {
-                                // Closed during shutdown, after every player was already saved.
-                            }
+                            return CompletableFuture.runAsync(() -> write(uuid, tag), io);
                         });
     }
 
-    /** Waits for queued writes and stops accepting new ones. */
+    private static void await(Session session, int seconds) {
+        try {
+            session.written().get(seconds, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException | TimeoutException e) {
+            MinecraftServer.LOGGER.error("Timed out saving {}", session.player().getUsername(), e);
+        }
+    }
+
+    /** Saves every unsaved session, waits for all writes and stops accepting new ones. */
     void close() {
+        var open = sessions.values().stream().toList();
+        open.forEach(s -> finish(s.player()));
+        open.forEach(s -> await(s, 30));
         io.shutdown();
         try {
             if (!io.awaitTermination(30, TimeUnit.SECONDS)) {
