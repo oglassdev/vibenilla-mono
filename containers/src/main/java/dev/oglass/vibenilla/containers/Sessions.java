@@ -12,30 +12,68 @@ import net.kyori.adventure.text.Component;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.Transcoder;
 import net.minestom.server.coordinate.BlockVec;
+import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
-import net.minestom.server.event.inventory.InventoryCloseEvent;
+import net.minestom.server.entity.metadata.animal.tameable.CatMeta;
 import net.minestom.server.event.inventory.InventoryItemChangeEvent;
+import net.minestom.server.event.inventory.InventoryPreClickEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.inventory.Inventory;
 import net.minestom.server.inventory.InventoryType;
 import net.minestom.server.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Tracks the inventories that are currently open. All halves of a double chest share one session,
  * keyed by the position of the half that owns the top slots.
+ *
+ * <p>Sessions hold no locks, so they can't deadlock with instance mutations. Like the rest of the
+ * server's block and inventory handling they assume one dispatcher thread, which is Minestom's
+ * default ({@code minestom.dispatcher-threads}).
  */
 final class Sessions {
     private record SessionKey(Instance instance, BlockVec position) {}
 
-    private record Session(
-            SessionKey key, List<BlockVec> halves, ContainerKind kind, Inventory inventory) {
+    private final class Session {
+        final SessionKey key;
+        final List<BlockVec> halves;
+        final ContainerKind kind;
+        final Inventory inventory;
+        boolean open;
+
+        Session(SessionKey key, List<BlockVec> halves, ContainerKind kind, Component title) {
+            this.key = key;
+            this.halves = halves;
+            this.kind = kind;
+            this.inventory =
+                    new Inventory(
+                            halves.size() == 2
+                                    ? InventoryType.CHEST_6_ROW
+                                    : InventoryType.CHEST_3_ROW,
+                            title) {
+                        @Override
+                        public boolean removeViewer(Player player) {
+                            var removed = super.removeViewer(player);
+
+                            if (removed) {
+                                release(Session.this, player);
+                            }
+                            return removed;
+                        }
+                    };
+        }
+
         Instance instance() {
             return key.instance();
         }
 
-        int viewersExcluding(Player player) {
-            return (int) inventory.getViewers().stream().filter(v -> v != player).count();
+        /** Counts the viewers that animate the container, which excludes spectators. */
+        int openers(@Nullable Player excluded) {
+            return (int)
+                    inventory.getViewers().stream()
+                            .filter(v -> v != excluded && v.getGameMode() != GameMode.SPECTATOR)
+                            .count();
         }
     }
 
@@ -53,40 +91,49 @@ final class Sessions {
     void open(Player player, Instance instance, BlockVec position, ContainerKind kind) {
         var block = instance.getBlock(position);
         var halves = ContainerLayout.halves(instance, position, block);
+        var spectator = player.getGameMode() == GameMode.SPECTATOR;
 
         if (kind.isChest() && halves.stream().anyMatch(half -> isBlocked(instance, half))) {
             return;
         }
 
         var key = new SessionKey(instance, halves.getFirst());
-        var session = sessions.computeIfAbsent(key, k -> create(k, halves, kind, player));
+        var session = sessions.get(key);
 
-        if (player.getOpenInventory() == session.inventory()) {
+        if (session == null) {
+            if (spectator
+                    && halves.stream()
+                            .anyMatch(half -> LootFiller.hasLootTable(instance.getBlock(half)))) {
+                return;
+            }
+            session = sessions.computeIfAbsent(key, k -> create(k, halves, kind, player));
+        }
+
+        if (player.getOpenInventory() == session.inventory) {
             return;
         }
 
-        synchronized (session) {
-            if (!player.openInventory(session.inventory())) {
-                if (session.inventory().getViewers().isEmpty()) {
-                    sessions.remove(key, session);
-                }
-                return;
+        if (!player.openInventory(session.inventory)) {
+            if (session.inventory.getViewers().isEmpty()) {
+                sessions.remove(key, session);
             }
+            return;
+        }
 
-            var viewers = session.inventory().getViewers().size();
-
-            if (viewers == 1) {
+        if (!spectator) {
+            if (!session.open) {
+                session.open = true;
                 play(session, true);
                 setBarrelOpen(session, true);
             }
-            sendLid(session, viewers);
+            sendLid(session, session.openers(null));
         }
     }
 
     /** Releases every inventory the player is viewing, as if it was closed. */
     void release(Player player) {
         for (var session : List.copyOf(sessions.values())) {
-            if (session.inventory().getViewers().contains(player)) {
+            if (session.inventory.getViewers().contains(player)) {
                 release(session, player);
             }
         }
@@ -95,12 +142,52 @@ final class Sessions {
     /** Closes the views of every container that includes the position. */
     void closeAt(Instance instance, BlockVec position) {
         for (var session : List.copyOf(sessions.values())) {
-            if (session.instance() == instance && session.halves().contains(position)) {
-                sessions.remove(session.key(), session);
+            if (session.instance() == instance && session.halves.contains(position)) {
+                close(session, false);
+            }
+        }
+    }
 
-                for (var viewer : List.copyOf(session.inventory().getViewers())) {
-                    viewer.closeInventory();
-                }
+    void closeChunk(Instance instance, int chunkX, int chunkZ) {
+        for (var session : List.copyOf(sessions.values())) {
+            if (session.instance() == instance
+                    && session.halves.stream()
+                            .anyMatch(half -> half.chunkX() == chunkX && half.chunkZ() == chunkZ)) {
+                close(session, true);
+            }
+        }
+    }
+
+    void closeInstance(Instance instance) {
+        for (var session : List.copyOf(sessions.values())) {
+            if (session.instance() == instance) {
+                close(session, true);
+            }
+        }
+    }
+
+    /**
+     * Invalidates the session before closing its views, so nothing is written back afterwards. The
+     * barrel is only reset when its block is not about to change.
+     */
+    private void close(Session session, boolean resetBarrel) {
+        if (!sessions.remove(session.key, session)) {
+            return;
+        }
+
+        var wasOpen = session.open;
+        session.open = false;
+
+        for (var viewer : List.copyOf(session.inventory.getViewers())) {
+            viewer.closeInventory();
+        }
+
+        if (wasOpen) {
+            play(session, false);
+            sendLid(session, 0);
+
+            if (resetBarrel) {
+                setBarrelOpen(session, false);
             }
         }
     }
@@ -108,10 +195,7 @@ final class Sessions {
     private Session create(
             SessionKey key, List<BlockVec> halves, ContainerKind kind, Player player) {
         var instance = key.instance();
-        var inventory =
-                new Inventory(
-                        halves.size() == 2 ? InventoryType.CHEST_6_ROW : InventoryType.CHEST_3_ROW,
-                        title(instance, halves, kind));
+        var session = new Session(key, halves, kind, title(instance, halves, kind));
         var blocks = new ArrayList<Block>();
 
         for (var half : halves) {
@@ -128,26 +212,31 @@ final class Sessions {
             var items = ContainerItems.read(blocks.get(i), ContainerKind.SLOTS_PER_BLOCK);
 
             for (var slot = 0; slot < items.length; slot++) {
-                inventory.setItemStack(i * ContainerKind.SLOTS_PER_BLOCK + slot, items[slot]);
+                session.inventory.setItemStack(
+                        i * ContainerKind.SLOTS_PER_BLOCK + slot, items[slot]);
             }
         }
 
-        var session = new Session(key, halves, kind, inventory);
-        inventory
+        session.inventory
                 .eventNode()
                 .addListener(InventoryItemChangeEvent.class, event -> writeBack(session, event))
                 .addListener(
-                        InventoryCloseEvent.class, event -> release(session, event.getPlayer()));
+                        InventoryPreClickEvent.class,
+                        event -> {
+                            if (event.getPlayer().getGameMode() == GameMode.SPECTATOR) {
+                                event.setCancelled(true);
+                            }
+                        });
         return session;
     }
 
     private void writeBack(Session session, InventoryItemChangeEvent event) {
-        if (sessions.get(session.key()) != session) {
+        if (sessions.get(session.key) != session) {
             return;
         }
 
         var index = event.getSlot() / ContainerKind.SLOTS_PER_BLOCK;
-        var half = session.halves().get(index);
+        var half = session.halves.get(index);
         var instance = session.instance();
 
         if (!instance.isChunkLoaded(half)) {
@@ -155,36 +244,69 @@ final class Sessions {
         }
 
         var block = instance.getBlock(half);
+
+        if (!block.compare(session.kind.block())) {
+            return;
+        }
+
         var start = index * ContainerKind.SLOTS_PER_BLOCK;
         var items = new ArrayList<ItemStack>();
 
         for (var slot = 0; slot < ContainerKind.SLOTS_PER_BLOCK; slot++) {
-            items.add(session.inventory().getItemStack(start + slot));
+            items.add(session.inventory.getItemStack(start + slot));
         }
 
         instance.setBlock(half, ContainerItems.write(block, items), false);
     }
 
     private void release(Session session, Player player) {
-        synchronized (session) {
-            if (sessions.get(session.key()) != session) {
-                return;
-            }
-
-            var remaining = session.viewersExcluding(player);
-
-            if (remaining == 0) {
-                sessions.remove(session.key(), session);
-                play(session, false);
-                setBarrelOpen(session, false);
-            }
-            sendLid(session, remaining);
+        if (sessions.get(session.key) != session) {
+            return;
         }
+
+        var viewers = session.inventory.getViewers().stream().filter(v -> v != player).count();
+        var openers = session.openers(player);
+
+        if (viewers == 0) {
+            sessions.remove(session.key, session);
+        }
+
+        if (!session.open) {
+            return;
+        }
+
+        if (openers == 0) {
+            session.open = false;
+            play(session, false);
+            setBarrelOpen(session, false);
+        }
+        sendLid(session, openers);
     }
 
     private static boolean isBlocked(Instance instance, BlockVec half) {
         var above = half.add(0, 1, 0);
-        return instance.isChunkLoaded(above) && instance.getBlock(above).redstoneConductor();
+        return instance.isChunkLoaded(above)
+                && (instance.getBlock(above).redstoneConductor() || hasSittingCat(instance, above));
+    }
+
+    private static boolean hasSittingCat(Instance instance, BlockVec cell) {
+        for (var entity : instance.getNearbyEntities(cell.add(0.5, 0.5, 0.5), 2)) {
+            if (entity.getEntityMeta() instanceof CatMeta cat && cat.isSitting()) {
+                var box = entity.getBoundingBox();
+                var position = entity.getPosition();
+
+                if (position.x() + box.minX() < cell.x() + 1
+                        && position.x() + box.maxX() > cell.x()
+                        && position.y() + box.minY() < cell.y() + 1
+                        && position.y() + box.maxY() > cell.y()
+                        && position.z() + box.minZ() < cell.z() + 1
+                        && position.z() + box.maxZ() > cell.z()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private static Component title(Instance instance, List<BlockVec> halves, ContainerKind kind) {
@@ -204,37 +326,41 @@ final class Sessions {
     }
 
     private static void play(Session session, boolean open) {
-        var halves = session.halves();
+        var halves = session.halves;
         var x = 0.5 + halves.stream().mapToInt(BlockVec::blockX).average().orElse(0);
         var y = 0.5 + halves.getFirst().blockY();
         var z = 0.5 + halves.stream().mapToInt(BlockVec::blockZ).average().orElse(0);
         var pitch = ThreadLocalRandom.current().nextFloat() * 0.1F + 0.9F;
-        var sound = open ? session.kind().openSound(pitch) : session.kind().closeSound(pitch);
+        var sound = open ? session.kind.openSound(pitch) : session.kind.closeSound(pitch);
         session.instance().playSound(sound, x, y, z);
     }
 
     private static void sendLid(Session session, int viewers) {
-        if (!session.kind().isChest()) {
-            return;
-        }
-
-        for (var half : session.halves()) {
-            session.instance().sendBlockAction(half, (byte) 1, (byte) viewers);
-        }
-    }
-
-    private static void setBarrelOpen(Session session, boolean open) {
-        if (session.kind().isChest()) {
+        if (!session.kind.isChest()) {
             return;
         }
 
         var instance = session.instance();
-        var position = session.halves().getFirst();
+
+        for (var half : session.halves) {
+            if (instance.isChunkLoaded(half)) {
+                instance.sendBlockAction(half, (byte) 1, (byte) viewers);
+            }
+        }
+    }
+
+    private static void setBarrelOpen(Session session, boolean open) {
+        if (session.kind.isChest()) {
+            return;
+        }
+
+        var instance = session.instance();
+        var position = session.halves.getFirst();
 
         if (instance.isChunkLoaded(position)) {
             var block = instance.getBlock(position);
 
-            if (block.compare(session.kind().block())) {
+            if (block.compare(session.kind.block())) {
                 instance.setBlock(position, block.withProperty("open", String.valueOf(open)));
             }
         }

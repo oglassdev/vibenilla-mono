@@ -13,6 +13,7 @@ import net.kyori.adventure.key.Key;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.entity.Player;
+import net.minestom.server.entity.attribute.Attribute;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.item.ItemStack;
@@ -24,6 +25,10 @@ final class LootFiller {
     private static final String LOOT_TABLE_SEED = "LootTableSeed";
 
     private LootFiller() {}
+
+    static boolean hasLootTable(Block block) {
+        return !block.nbtOrEmpty().getString(LOOT_TABLE, "").isEmpty();
+    }
 
     /**
      * Returns the block with its loot table replaced by generated contents, or the block itself if
@@ -59,6 +64,7 @@ final class LootFiller {
 
         if (player != null) {
             data.put(LootContext.THIS_ENTITY, player);
+            data.put(LootContext.LUCK, player.getAttributeValue(Attribute.LUCK));
         }
 
         var generated = table.generate(LootContext.from(VanillaInterface.defaults(), data));

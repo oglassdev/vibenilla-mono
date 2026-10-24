@@ -24,6 +24,8 @@ import net.minestom.server.entity.PlayerHand;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
+import net.minestom.server.inventory.Inventory;
+import net.minestom.server.inventory.InventoryType;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.testing.Env;
@@ -57,7 +59,9 @@ final class ContainersTest {
     }
 
     private static Instance instanceWith(Env env) {
-        Containers.register(env.process().block(), key -> null);
+        env.process()
+                .eventHandler()
+                .addChild(Containers.register(env.process().block(), key -> null));
         return env.createFlatInstance();
     }
 
@@ -176,5 +180,64 @@ final class ContainersTest {
         assertEquals(3, emeralds);
         assertNull(instance.getBlock(POSITION).nbt().get("LootTable"));
         assertTrue(instance.getBlock(POSITION).nbt().get("Items") != null);
+    }
+
+    @Test
+    void unloadingTheChunkClosesTheView(Env env) {
+        var instance = instanceWith(env);
+        instance.setBlock(POSITION, chest(env, "single"));
+        var player = env.createPlayer(instance, new Pos(8, 41, 10));
+
+        interact(player, POSITION);
+        var inventory = player.getOpenInventory();
+        inventory.setItemStack(0, ItemStack.of(Material.DIAMOND));
+        assertTrue(instance.getBlock(POSITION).nbt().get("Items") != null);
+
+        instance.unloadChunk(instance.getChunkAt(POSITION));
+
+        assertFalse(player.getOpenInventory() == inventory);
+        assertTrue(inventory.getViewers().isEmpty());
+        inventory.setItemStack(1, ItemStack.of(Material.DIRT));
+    }
+
+    @Test
+    void replacingTheOpenInventoryReleasesTheContainer(Env env) {
+        var instance = instanceWith(env);
+        instance.setBlock(
+                POSITION,
+                Block.BARREL
+                        .withProperty("facing", "up")
+                        .withHandler(env.process().block().getHandlerOrDummy("minecraft:barrel")));
+        var player = env.createPlayer(instance, new Pos(8, 41, 10));
+
+        interact(player, POSITION);
+        assertEquals("true", instance.getBlock(POSITION).getProperty("open"));
+
+        player.openInventory(new Inventory(InventoryType.CHEST_1_ROW, "other"));
+
+        assertEquals("false", instance.getBlock(POSITION).getProperty("open"));
+    }
+
+    @Test
+    void breakingOneHalfKeepsTheOtherHalfsContents(Env env) {
+        var instance = instanceWith(env);
+        instance.setBlock(POSITION, chest(env, "left"));
+        instance.setBlock(EAST, chest(env, "right"));
+        var player = env.createPlayer(instance, new Pos(8, 41, 10));
+
+        interact(player, POSITION);
+        var inventory = player.getOpenInventory();
+        inventory.setItemStack(0, ItemStack.of(Material.STONE));
+        inventory.setItemStack(30, ItemStack.of(Material.DIRT));
+        instance.setBlock(EAST, Block.AIR);
+        env.tick();
+
+        var drops = instance.getEntities().stream().filter(ItemEntity.class::isInstance).toList();
+        assertEquals(1, drops.size());
+        assertEquals(Material.STONE, ((ItemEntity) drops.getFirst()).getItemStack().material());
+        assertFalse(player.getOpenInventory() == inventory);
+        assertEquals(
+                "minecraft:dirt",
+                instance.getBlock(POSITION).nbt().getList("Items").getCompound(0).getString("id"));
     }
 }
