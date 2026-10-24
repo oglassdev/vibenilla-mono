@@ -1,0 +1,69 @@
+package io.github.togar2.pvp.feature.spectate;
+
+import io.github.togar2.pvp.events.PlayerSpectateEvent;
+import io.github.togar2.pvp.feature.FeatureType;
+import io.github.togar2.pvp.feature.RegistrableFeature;
+import io.github.togar2.pvp.feature.config.DefinedFeature;
+import net.minestom.server.entity.Entity;
+import net.minestom.server.entity.GameMode;
+import net.minestom.server.entity.LivingEntity;
+import net.minestom.server.entity.Player;
+import net.minestom.server.event.EventDispatcher;
+import net.minestom.server.event.EventNode;
+import net.minestom.server.event.entity.EntityAttackEvent;
+import net.minestom.server.event.player.PlayerTickEvent;
+import net.minestom.server.event.trait.EntityInstanceEvent;
+import net.minestom.server.tag.Tag;
+
+/**
+ * Vanilla implementation of {@link SpectateFeature}
+ */
+public class VanillaSpectateFeature implements SpectateFeature, RegistrableFeature {
+    public static final DefinedFeature<VanillaSpectateFeature> DEFINED = new DefinedFeature<>(
+            FeatureType.SPECTATE, configuration -> new VanillaSpectateFeature()
+    );
+
+    public static final Tag<Entity> SPECTATING = Tag.Transient("spectating");
+
+    @Override
+    public int getPriority() {
+        return -1;
+    }
+
+    @Override
+    public void init(EventNode<EntityInstanceEvent> node) {
+        node.addListener(EntityAttackEvent.class, event -> {
+            if (event.getEntity() instanceof Player player && player.getGameMode() == GameMode.SPECTATOR)
+                this.makeSpectate(player, event.getTarget());
+        });
+
+        node.addListener(PlayerTickEvent.class, event -> this.spectateTick(event.getPlayer()));
+    }
+
+    protected void spectateTick(Player player) {
+        var spectating = player.getTag(SPECTATING);
+        if (spectating == null || spectating == player) return;
+
+        player.refreshPosition(spectating.getPosition());
+
+        if (player.getEntityMeta().isSneaking() || spectating.isRemoved()
+                || (spectating instanceof LivingEntity livingSpectating && livingSpectating.isDead())) {
+            this.stopSpectating(player);
+        }
+    }
+
+    @Override
+    public void makeSpectate(Player player, Entity target) {
+        var playerSpectateEvent = new PlayerSpectateEvent(player, target);
+        EventDispatcher.callCancellable(playerSpectateEvent, () -> {
+            player.spectate(target);
+            player.setTag(SPECTATING, target);
+        });
+    }
+
+    @Override
+    public void stopSpectating(Player player) {
+        player.stopSpectating();
+        player.removeTag(SPECTATING);
+    }
+}
