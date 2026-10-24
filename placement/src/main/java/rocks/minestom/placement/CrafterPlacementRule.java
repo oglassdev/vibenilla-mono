@@ -1,0 +1,91 @@
+package rocks.minestom.placement;
+
+import net.minestom.server.instance.block.Block;
+import net.minestom.server.instance.block.BlockFace;
+import net.minestom.server.instance.block.rule.BlockPlacementRule;
+
+public final class CrafterPlacementRule extends BlockPlacementRule {
+    public CrafterPlacementRule(Block block) {
+        super(block);
+    }
+
+    @Override
+    public Block blockPlace(PlacementState placementState) {
+        var playerPosition = placementState.playerPosition();
+        var nearestLooking = playerPosition == null
+                ? BlockFace.NORTH
+                : nearestLookingDirection(playerPosition.yaw(), playerPosition.pitch()).getOppositeFace();
+        var horizontal = playerPosition == null ? BlockFace.NORTH : BlockFace.fromYaw(playerPosition.yaw());
+        var verticalDirection = switch (nearestLooking) {
+            case BOTTOM -> horizontal.getOppositeFace();
+            case TOP -> horizontal;
+            default -> BlockFace.TOP;
+        };
+
+        var triggered = VanillaPlacementUtils.hasNeighborSignal(
+                placementState.instance(), placementState.placePosition());
+
+        return placementState.block()
+                .withHandler(ConsumeInteractionBlockHandler.INSTANCE)
+                .withProperty("orientation", orientationName(nearestLooking) + "_" + orientationName(verticalDirection))
+                .withProperty("triggered", String.valueOf(triggered));
+    }
+
+    @Override
+    public Block blockUpdate(UpdateState updateState) {
+        var triggered = VanillaPlacementUtils.hasNeighborSignal(
+                updateState.instance(), updateState.blockPosition());
+        var updated = updateState.currentBlock().withProperty("triggered", String.valueOf(triggered));
+        return triggered ? updated : updated.withProperty("crafting", "false");
+    }
+
+    private static String orientationName(BlockFace face) {
+        return switch (face) {
+            case TOP -> "up";
+            case BOTTOM -> "down";
+            default -> face.name().toLowerCase();
+        };
+    }
+
+    private static BlockFace nearestLookingDirection(float yawDegrees, float pitchDegrees) {
+        var pitchRadians = pitchDegrees * (float) (Math.PI / 180.0D);
+        var yawRadians = -yawDegrees * (float) (Math.PI / 180.0D);
+        var pitchSin = (float) Math.sin(pitchRadians);
+        var pitchCos = (float) Math.cos(pitchRadians);
+        var yawSin = (float) Math.sin(yawRadians);
+        var yawCos = (float) Math.cos(yawRadians);
+        var xPositive = yawSin > 0.0F;
+        var yPositive = pitchSin < 0.0F;
+        var zPositive = yawCos > 0.0F;
+        var xYaw = xPositive ? yawSin : -yawSin;
+        var yMagnitude = yPositive ? -pitchSin : pitchSin;
+        var zYaw = zPositive ? yawCos : -yawCos;
+        var xMagnitude = xYaw * pitchCos;
+        var zMagnitude = zYaw * pitchCos;
+        var axisX = xPositive ? BlockFace.EAST : BlockFace.WEST;
+        var axisY = yPositive ? BlockFace.TOP : BlockFace.BOTTOM;
+        var axisZ = zPositive ? BlockFace.SOUTH : BlockFace.NORTH;
+
+        if (xYaw > zYaw) {
+            if (yMagnitude > xMagnitude) {
+                return axisY;
+            }
+
+            if (zMagnitude > yMagnitude) {
+                return axisX;
+            }
+
+            return axisX;
+        }
+
+        if (yMagnitude > zMagnitude) {
+            return axisY;
+        }
+
+        if (xMagnitude > yMagnitude) {
+            return axisZ;
+        }
+
+        return axisZ;
+    }
+}

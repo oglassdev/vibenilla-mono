@@ -1,0 +1,87 @@
+package rocks.minestom.placement;
+
+import net.kyori.adventure.key.Key;
+import net.minestom.server.MinecraftServer;
+import net.minestom.server.instance.block.Block;
+import net.minestom.server.instance.block.BlockFace;
+import net.minestom.server.instance.block.rule.BlockPlacementRule;
+
+public final class SnowLayerPlacementRule extends BlockPlacementRule {
+    public SnowLayerPlacementRule(Block block) {
+        super(block);
+    }
+
+    @Override
+    public Block blockPlace(PlacementState placementState) {
+        var instance = placementState.instance();
+        var placePosition = placementState.placePosition();
+        var existingBlock = instance.getBlock(placePosition);
+
+        if (existingBlock.compare(placementState.block())) {
+            var layersProperty = existingBlock.getProperty("layers");
+            var layers = layersProperty == null ? 1 : Integer.parseInt(layersProperty);
+
+            if (layers < 8) {
+                return existingBlock.withProperty("layers", Integer.toString(Math.min(8, layers + 1)));
+            }
+        }
+
+        var belowBlock = instance.getBlock(placePosition.relative(BlockFace.BOTTOM));
+        var registry = MinecraftServer.process().blocks();
+        var cannotSupport = registry.getTag(Key.key("minecraft:cannot_support_snow_layer"));
+
+        if (cannotSupport != null && cannotSupport.contains(belowBlock)) {
+            return null;
+        }
+
+        var supportOverride = registry.getTag(Key.key("minecraft:support_override_snow_layer"));
+        var hasOverride = supportOverride != null && supportOverride.contains(belowBlock);
+        var faceFull = belowBlock.registry().collisionShape().isFaceFull(BlockFace.TOP);
+        var isFullSnow = belowBlock.compare(placementState.block()) && "8".equals(belowBlock.getProperty("layers"));
+
+        if (!hasOverride && !faceFull && !isFullSnow) {
+            return null;
+        }
+
+        return placementState.block().withProperty("layers", "1");
+    }
+
+    @Override
+    public Block blockUpdate(UpdateState updateState) {
+        if (updateState.fromFace() != BlockFace.BOTTOM) {
+            return updateState.currentBlock();
+        }
+
+        var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+        return supports(below, updateState.currentBlock()) ? updateState.currentBlock() : Block.AIR;
+    }
+
+    private static boolean supports(Block below, Block currentBlock) {
+        var registry = MinecraftServer.process().blocks();
+        var cannotSupport = registry.getTag(Key.key("minecraft:cannot_support_snow_layer"));
+
+        if (cannotSupport != null && cannotSupport.contains(below)) {
+            return false;
+        }
+
+        var supportOverride = registry.getTag(Key.key("minecraft:support_override_snow_layer"));
+        return (supportOverride != null && supportOverride.contains(below))
+                || below.registry().collisionShape().isFaceFull(BlockFace.TOP)
+                || (below.compare(currentBlock) && "8".equals(below.getProperty("layers")));
+    }
+
+    @Override
+    public boolean isSelfReplaceable(Replacement replacement) {
+        if (!replacement.block().compare(this.block)) {
+            return false;
+        }
+
+        if (replacement.material() != this.block.registry().material()) {
+            return false;
+        }
+
+        var layersProperty = replacement.block().getProperty("layers");
+        var layers = layersProperty == null ? 1 : Integer.parseInt(layersProperty);
+        return layers < 8;
+    }
+}
