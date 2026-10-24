@@ -21,7 +21,7 @@ public final class LakeFeature implements Feature<LakeConfiguration> {
         }
 
         origin = origin.add(-8, -4, -8);
-        var predicateContext = Feature.predicateContext(level, context.minY(), context.maxY());
+        var predicateContext = Feature.predicateContext(context);
         var grid = new boolean[2048];
         var spots = random.nextInt(4) + 4;
 

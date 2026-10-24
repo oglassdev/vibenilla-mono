@@ -49,12 +49,23 @@ public final class WaterSpread {
     }
 
     /**
+     * Superseded by {@link #postProcessMarked(GenerationUnitAdapter, BlockVec, BlockSupports)},
+     * which takes the block supports of the loader that generated the chunk.
+     */
+    @Deprecated
+    public static void postProcessMarked(GenerationUnitAdapter level, BlockVec position) {
+        throw new UnsupportedOperationException(
+                "Pass the feature loader's BlockSupports to postProcessMarked");
+    }
+
+    /**
      * Vanilla {@code LevelChunk.postProcessGeneration} for a marked position above a placed
      * magma_block / soul_sand: the water there gets its fluid tick, then {@code LiquidBlock.tick}
      * runs {@code BubbleColumnBlock.updateColumn}, converting the whole source water column above
      * the column-enabling block in one synchronous pass.
      */
-    public static void postProcessMarked(GenerationUnitAdapter level, BlockVec position) {
+    public static void postProcessMarked(
+            GenerationUnitAdapter level, BlockVec position, BlockSupports supports) {
         var state = blockAt(level, position);
         if (!isPlainWaterSource(state)) {
             // Vanilla postProcessGeneration for a non-liquid marked block:
@@ -69,17 +80,17 @@ public final class WaterSpread {
                 tick(level, position);
             }
             var updated = blockAt(level, position);
-            if (isFloorPlant(updated) && !plantSurvives(level, position, updated)) {
+            if (isFloorPlant(updated) && !plantSurvives(level, position, updated, supports)) {
                 level.setBlock(position, Block.AIR);
                 return;
             }
             var updatedKey = updated.key().value();
             if ((updatedKey.endsWith("_fence") || updatedKey.equals("iron_bars"))
-                    && BlockSupports.manager() != null) {
+                    && supports.manager() != null) {
                 // A fence or iron-bars block marked by StructurePiece.placeBlock
                 // recomputes its connections against the finished neighborhood
                 rocks.minestom.worldgen.structure.template.StructureShapeUpdater.update(
-                        level, BlockSupports.manager(), java.util.List.of(position));
+                        level, supports.manager(), java.util.List.of(position));
                 return;
             }
             stripUnsupportedFaces(level, position, updated);
@@ -108,7 +119,7 @@ public final class WaterSpread {
             // destroyed (updateOrDestroy -> destroyBlock), leaving its
             // inherent WATER source - which lets a later marked position
             // above the plant's own magma reform a second column through it.
-            destroyUnsupportedSeagrassNeighbors(level, current);
+            destroyUnsupportedSeagrassNeighbors(level, current, supports);
             current = current.add(0, 1, 0);
         }
     }
@@ -153,7 +164,7 @@ public final class WaterSpread {
      * sky-exposed top.
      */
     private static boolean plantSurvives(
-            GenerationUnitAdapter level, BlockVec position, Block state) {
+            GenerationUnitAdapter level, BlockVec position, Block state, BlockSupports supports) {
         var key = state.key().value();
         var below = blockAt(level, position.add(0, -1, 0));
         if ("upper".equals(state.getProperty("half"))) {
@@ -175,30 +186,29 @@ public final class WaterSpread {
             case "big_dripleaf" ->
                     below.key().value().equals("big_dripleaf_stem")
                             || below.key().value().equals("big_dripleaf")
-                            || BlockSupports.isInTag("minecraft:supports_big_dripleaf", below);
-            case "small_dripleaf" ->
-                    BlockSupports.isInTag("minecraft:supports_small_dripleaf", below);
+                            || supports.isInTag("minecraft:supports_big_dripleaf", below);
+            case "small_dripleaf" -> supports.isInTag("minecraft:supports_small_dripleaf", below);
             case "dead_bush", "short_dry_grass", "tall_dry_grass" ->
-                    BlockSupports.isInTag("minecraft:supports_dry_vegetation", below);
+                    supports.isInTag("minecraft:supports_dry_vegetation", below);
             case "red_mushroom", "brown_mushroom" ->
                     !level.hasSkylight()
-                            || BlockSupports.isInTag(
+                            || supports.isInTag(
                                     "minecraft:overrides_mushroom_light_requirement", below)
                             || level.heightmap(
                                             GenerationUnitAdapter.HeightmapType.WORLD_SURFACE,
                                             position.blockX(),
                                             position.blockZ())
                                     > position.blockY() + 1;
-            default -> BlockSupports.isInTag("minecraft:supports_vegetation", below);
+            default -> supports.isInTag("minecraft:supports_vegetation", below);
         };
     }
 
     private static void destroyUnsupportedSeagrassNeighbors(
-            GenerationUnitAdapter level, BlockVec position) {
+            GenerationUnitAdapter level, BlockVec position, BlockSupports supports) {
         for (var direction : Direction.HORIZONTAL) {
             var neighborPos = position.add(direction.stepX(), direction.stepY(), direction.stepZ());
             var neighbor = blockAt(level, neighborPos);
-            if (!isSeagrass(neighbor) || plantSurvives(level, neighborPos, neighbor)) {
+            if (!isSeagrass(neighbor) || plantSurvives(level, neighborPos, neighbor, supports)) {
                 continue;
             }
             level.setBlock(neighborPos, Block.WATER);

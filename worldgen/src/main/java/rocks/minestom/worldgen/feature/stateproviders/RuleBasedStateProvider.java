@@ -48,11 +48,16 @@ public record RuleBasedStateProvider(BlockStateProvider fallback, List<Rule> rul
                         null);
         for (var rule : this.rules) {
             if (rule.ifTrue().test(context, position)) {
-                return rule.then().getState(accessor, random, position);
+                var state = rule.then().getOptionalState(accessor, random, position);
+                if (state != null) {
+                    return state;
+                }
             }
         }
 
-        return this.fallback != null ? this.fallback.getState(accessor, random, position) : null;
+        return this.fallback != null
+                ? this.fallback.getOptionalState(accessor, random, position)
+                : null;
     }
 
     public static RuleBasedStateProvider fromJson(JsonObject object) {

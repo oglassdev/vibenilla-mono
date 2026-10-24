@@ -21,7 +21,7 @@ public final class SpikeFeature implements Feature<SpikeConfiguration> {
         }
 
         var config = context.config();
-        var predicateContext = Feature.predicateContext(level, context.minY(), context.maxY());
+        var predicateContext = Feature.predicateContext(context);
         if (!config.canPlaceOn().test(predicateContext, origin)) {
             return false;
         }

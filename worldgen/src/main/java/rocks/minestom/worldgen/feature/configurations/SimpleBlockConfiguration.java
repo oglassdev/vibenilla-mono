@@ -2,11 +2,14 @@ package rocks.minestom.worldgen.feature.configurations;
 
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
+import rocks.minestom.worldgen.feature.BlockSupports;
 import rocks.minestom.worldgen.feature.FeatureConfiguration;
+import rocks.minestom.worldgen.feature.Features;
 import rocks.minestom.worldgen.feature.stateproviders.BlockStateProvider;
 import rocks.minestom.worldgen.feature.stateproviders.BlockStateProviders;
 
-public record SimpleBlockConfiguration(BlockStateProvider toPlace, boolean scheduleTick)
+public record SimpleBlockConfiguration(
+        BlockStateProvider toPlace, boolean scheduleTick, BlockSupports blockSupports)
         implements FeatureConfiguration {
     public static final Codec<SimpleBlockConfiguration> CODEC =
             StructCodec.struct(
@@ -16,5 +19,7 @@ public record SimpleBlockConfiguration(BlockStateProvider toPlace, boolean sched
                     "schedule_tick",
                     Codec.BOOLEAN.optional(false),
                     SimpleBlockConfiguration::scheduleTick,
-                    SimpleBlockConfiguration::new);
+                    (toPlace, scheduleTick) ->
+                            new SimpleBlockConfiguration(
+                                    toPlace, scheduleTick, Features.currentBlockSupports()));
 }

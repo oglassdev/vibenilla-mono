@@ -196,7 +196,7 @@ public final class OreFeature implements Feature<OreConfiguration> {
             OreConfiguration config,
             OreConfiguration.TargetBlockState targetState,
             BlockVec orePos) {
-        if (!targetState.target().test(blockState, random)) {
+        if (!targetState.target().test(blockState, orePos, random)) {
             return false;
         }
 

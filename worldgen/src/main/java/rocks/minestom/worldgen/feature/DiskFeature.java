@@ -24,21 +24,7 @@ public final class DiskFeature implements Feature<DiskConfiguration> {
         var bottom = originY - config.halfHeight() - 1;
         var radius = config.radius().sample(random);
 
-        var predicateContext =
-                new PlacementContext(
-                        level,
-                        0,
-                        0,
-                        0,
-                        0,
-                        null,
-                        null,
-                        context.minY(),
-                        context.maxY(),
-                        0,
-                        null,
-                        null,
-                        null);
+        var predicateContext = Feature.predicateContext(context);
 
         // Vanilla BlockPos.betweenClosed iterates x fastest, then z
         for (var z = origin.blockZ() - radius; z <= origin.blockZ() + radius; z++) {

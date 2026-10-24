@@ -12,7 +12,7 @@ public final class BlockBlobFeature implements Feature<BlockBlobConfiguration> {
         var level = context.accessor();
         var random = context.random();
         var config = context.config();
-        var predicateContext = Feature.predicateContext(level, context.minY(), context.maxY());
+        var predicateContext = Feature.predicateContext(context);
 
         while (origin.blockY() > context.minY() + 3
                 && !config.canPlaceOn().test(predicateContext, origin.sub(0, 1, 0))) {

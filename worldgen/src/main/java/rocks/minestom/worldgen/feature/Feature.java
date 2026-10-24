@@ -13,12 +13,24 @@ public interface Feature<C extends FeatureConfiguration> {
      * feature configurations. Heightmap and biome lookups are unavailable through it; the
      * predicates used by feature configs only need block access and world bounds.
      */
-    static PlacementContext predicateContext(Block.Getter accessor, int minY, int maxY) {
+    static PlacementContext predicateContext(FeaturePlaceContext<?, ?> context) {
         return new PlacementContext(
-                accessor, 0, 0, 0, 0, null, null, minY, maxY, 0, null, null, null);
+                context.accessor(),
+                0,
+                0,
+                0,
+                0,
+                null,
+                null,
+                context.minY(),
+                context.maxY(),
+                context.seaLevel(),
+                null,
+                null,
+                null);
     }
 
-    /** Vanilla's {@code #minecraft:leaves} block tag (26.2 contents). */
+    /** Vanilla's {@code #minecraft:leaves} block tag (26.3 contents). */
     Set<String> LEAVES =
             Set.of(
                     "minecraft:jungle_leaves",
@@ -31,11 +43,14 @@ public interface Feature<C extends FeatureConfiguration> {
                     "minecraft:azalea_leaves",
                     "minecraft:flowering_azalea_leaves",
                     "minecraft:mangrove_leaves",
-                    "minecraft:cherry_leaves");
+                    "minecraft:cherry_leaves",
+                    "minecraft:red_poplar_leaves",
+                    "minecraft:orange_poplar_leaves",
+                    "minecraft:yellow_poplar_leaves");
 
     /**
      * Vanilla {@code TreeFeature.validTreePos}: air or anything in the {@code
-     * #minecraft:replaceable_by_trees} block tag (26.2 contents).
+     * #minecraft:replaceable_by_trees} block tag (26.3 contents).
      */
     Set<String> REPLACEABLE_BY_TREES =
             Set.of(
@@ -51,6 +66,9 @@ public interface Feature<C extends FeatureConfiguration> {
                     "minecraft:flowering_azalea_leaves",
                     "minecraft:mangrove_leaves",
                     "minecraft:cherry_leaves",
+                    "minecraft:red_poplar_leaves",
+                    "minecraft:orange_poplar_leaves",
+                    "minecraft:yellow_poplar_leaves",
                     // #minecraft:small_flowers
                     "minecraft:dandelion",
                     "minecraft:open_eyeblossom",
@@ -94,7 +112,8 @@ public interface Feature<C extends FeatureConfiguration> {
                     "minecraft:crimson_roots",
                     "minecraft:leaf_litter",
                     "minecraft:short_dry_grass",
-                    "minecraft:tall_dry_grass");
+                    "minecraft:tall_dry_grass",
+                    "minecraft:shelf_mushroom");
 
     static boolean isValidTreePosition(Block.Getter getter, BlockVec position) {
         var block = getter.getBlock(position);
