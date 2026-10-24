@@ -1,0 +1,27 @@
+[versions]
+minecraft = "26.3"
+minestom = "26_3-20261007.224755-10"
+fastutil = "8.5.19"
+slf4j = "2.0.20"
+tinylog = "2.8.1"
+junit = "6.1.3"
+spotless = "8.10.4"
+google-java-format = "1.36.1"
+
+[libraries]
+minestom = { module = "net.minestom:minestom", version.ref = "minestom" }
+minestom-testing = { module = "net.minestom:testing", version.ref = "minestom" }
+fastutil = { module = "it.unimi.dsi:fastutil", version.ref = "fastutil" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+tinylog-api = { module = "org.tinylog:tinylog-api", version.ref = "tinylog" }
+tinylog-impl = { module = "org.tinylog:tinylog-impl", version.ref = "tinylog" }
+tinylog-slf4j = { module = "org.tinylog:slf4j-tinylog", version.ref = "tinylog" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+
+plugin-spotless = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "spotless" }
+
+[bundles]
+tinylog = ["tinylog-api", "tinylog-impl", "tinylog-slf4j"]

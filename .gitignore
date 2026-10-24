@@ -1,5 +1,13 @@
 .gradle/
 build/
+.kotlin/
 .idea/
 *.iml
-.kotlin/
+out/
+.vscode/
+.DS_Store
+
+# Demo server output
+/*/config.json
+/*/logs/
+/*/data/

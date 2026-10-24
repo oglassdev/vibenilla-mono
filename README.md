@@ -1,30 +1,31 @@
 # vibenilla-mono
 
-The [vibenilla](https://github.com/vibenilla) libraries in a single Gradle build, with each repository's full git history preserved.
+Vanilla Minecraft features for [Minestom](https://minestom.net), as a single Gradle build.
 
-| Module | Upstream | License |
-|---|---|---|
-| [`pvp`](pvp) | [vibenilla/pvp](https://github.com/vibenilla/pvp) | Apache-2.0 |
-| [`worldgen`](worldgen) | [vibenilla/worldgen](https://github.com/vibenilla/worldgen) | Apache-2.0 |
-| [`placement`](placement) | [vibenilla/placement](https://github.com/vibenilla/placement) | Apache-2.0 |
-| [`crafting`](crafting) | [vibenilla/crafting](https://github.com/vibenilla/crafting) | Apache-2.0 |
-| [`fluids`](fluids) | [vibenilla/fluids](https://github.com/vibenilla/fluids) | MIT |
-| [`loot`](loot) | [vibenilla/loot](https://github.com/vibenilla/loot) | MIT |
+This is a fork of the [vibenilla](https://github.com/vibenilla) repositories, combined into one repository with their full git history preserved. Files have been modified from upstream; all credit for the original work goes to its authors.
 
-Each module is licensed under the `LICENSE` file in its own directory. All credit goes to the upstream authors.
+| Module | Description | Upstream | License |
+|---|---|---|---|
+| [`pvp`](pvp) | Combat | [vibenilla/pvp](https://github.com/vibenilla/pvp) | Apache-2.0 |
+| [`worldgen`](worldgen) | World generation | [vibenilla/worldgen](https://github.com/vibenilla/worldgen) | Apache-2.0 |
+| [`placement`](placement) | Block placement | [vibenilla/placement](https://github.com/vibenilla/placement) | Apache-2.0 |
+| [`crafting`](crafting) | Crafting | [vibenilla/crafting](https://github.com/vibenilla/crafting) | Apache-2.0 |
+| [`fluids`](fluids) | Water and lava physics | [vibenilla/fluids](https://github.com/vibenilla/fluids) | MIT |
+| [`loot`](loot) | Loot tables | [vibenilla/loot](https://github.com/vibenilla/loot) | MIT |
 
-## Building
+Each module is licensed under the `LICENSE` file in its own directory.
 
-```sh
-./gradlew build              # everything
-./gradlew :pvp:build         # one module
-```
+## Development
 
-## Syncing upstream
-
-Module directories are imported as git subtrees and kept identical to upstream, so syncing doesn't conflict:
+Tool versions are pinned in `mise.toml` (`mise install`), and tasks run through `just`:
 
 ```sh
-scripts/sync.sh              # all modules
-scripts/sync.sh pvp loot     # specific modules
+just build              # build everything
+just test pvp loot      # test specific modules
+just format             # apply formatting
+just ready              # formatting check + full build
 ```
+
+## Usage
+
+Modules are published as `dev.oglass.vibenilla:<module>`. To use them locally, run `./gradlew publishToMavenLocal` and add `mavenLocal()` to your repositories.
