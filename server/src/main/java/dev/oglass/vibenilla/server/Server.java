@@ -94,6 +94,9 @@ public final class Server {
                             PlayerStorage.restore(player, data);
                             var respawn = PlayerStorage.respawnPoint(data);
                             player.setRespawnPoint(respawn == null ? spawn : respawn);
+                            if (PlayerStorage.dead(data)) {
+                                player.teleport(Respawns.resolve(player));
+                            }
                         })
                 .addListener(
                         PlayerDisconnectEvent.class,
