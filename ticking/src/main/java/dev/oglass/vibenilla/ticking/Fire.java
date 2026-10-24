@@ -1,5 +1,11 @@
 package dev.oglass.vibenilla.ticking;
 
+import com.google.gson.JsonParser;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -7,6 +13,7 @@ import java.util.random.RandomGenerator;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.coordinate.Point;
+import net.minestom.server.event.EventDispatcher;
 import net.minestom.server.event.player.PlayerBlockPlaceEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
@@ -18,38 +25,73 @@ import net.minestom.server.timer.TaskSchedule;
 /**
  * Vanilla {@code FireBlock}. Fire runs on scheduled ticks rather than random ticks: every fire
  * started here, placed by a player, or found by a random tick schedules itself every 30 to 39 ticks
- * for as long as it burns.
+ * for as long as it burns and a player is near enough to simulate it. Fire left alone is picked up
+ * again by the random tick that finds it once a player returns.
  */
 final class Fire {
     private static final int MAX_AGE = 15;
     private static final int BASE_DELAY = 30;
     private static final int DELAY_VARIATION = 10;
     private static final int DIFFICULTY_BONUS = 2 * 7;
-    private static final Set<String> HUMID_BIOMES =
-            Set.of("jungle", "bamboo_jungle", "sparse_jungle", "swamp", "mangrove_swamp");
+    private static final String INCREASED_BURNOUT = "minecraft:gameplay/increased_fire_burnout";
     private static final Tag<Set<BlockVec>> SCHEDULED = Tag.Transient("random-ticks-fire");
 
-    private Fire() {}
+    private final RandomTicks ticks;
+    private final Set<String> humidBiomes;
 
-    static void register(RandomTicks ticks) {
+    private Fire(RandomTicks ticks, Set<String> humidBiomes) {
+        this.ticks = ticks;
+        this.humidBiomes = humidBiomes;
+    }
+
+    /**
+     * @param humidBiomes the biomes whose environment sets {@code increased_fire_burnout}
+     */
+    static Fire register(RandomTicks ticks, Set<String> humidBiomes) {
+        var fire = new Fire(ticks, humidBiomes);
         ticks.register(
                 Block.FIRE,
-                (instance, position, block, random) -> schedule(instance, position, random));
+                (instance, position, block, random) -> fire.schedule(instance, position, random));
         ticks.events()
                 .addListener(
                         PlayerBlockPlaceEvent.class,
                         event -> {
                             if (event.getBlock().compare(Block.FIRE)) {
-                                schedule(
+                                fire.schedule(
                                         event.getInstance(),
                                         event.getBlockPosition(),
                                         ThreadLocalRandom.current());
                             }
                         });
+        return fire;
+    }
+
+    /** The biomes of the vanilla data that set {@code increased_fire_burnout}. */
+    static Set<String> humidBiomes(Path dataRoot) {
+        var biomes = new HashSet<String>();
+        var directory = dataRoot.resolve("data/minecraft/worldgen/biome");
+        try (var files = Files.list(directory)) {
+            for (var file : files.filter(path -> path.toString().endsWith(".json")).toList()) {
+                try (var reader = Files.newBufferedReader(file)) {
+                    var attribute =
+                            JsonParser.parseReader(reader)
+                                    .getAsJsonObject()
+                                    .getAsJsonObject("attributes")
+                                    .get(INCREASED_BURNOUT);
+                    if (attribute != null && attribute.getAsBoolean()) {
+                        var name = file.getFileName().toString();
+                        biomes.add(name.substring(0, name.length() - ".json".length()));
+                    }
+                }
+            }
+        } catch (IOException exception) {
+            throw new UncheckedIOException(exception);
+        }
+        return Set.copyOf(biomes);
     }
 
     /** Starts a fire if the position can hold one. */
-    static void ignite(Instance instance, BlockVec position, RandomGenerator random) {
+    void ignite(Instance instance, BlockVec position, RandomGenerator random) {
         var fire = stateAt(instance, position, 0);
         if (fire.air()) {
             return;
@@ -58,7 +100,7 @@ final class Fire {
         schedule(instance, position, random);
     }
 
-    private static void schedule(Instance instance, BlockVec position, RandomGenerator random) {
+    private void schedule(Instance instance, BlockVec position, RandomGenerator random) {
         var scheduled =
                 instance.updateAndGetTag(
                         SCHEDULED, set -> set != null ? set : ConcurrentHashMap.newKeySet());
@@ -76,20 +118,40 @@ final class Fire {
                 .schedule();
     }
 
-    static void tick(Instance instance, BlockVec position, RandomGenerator random) {
-        if (!Level.isLoaded(instance, position)) {
+    /**
+     * Burns once and schedules the next tick if the fire is still there and a player is near
+     * enough. A failing tick is not scheduled again.
+     */
+    void tick(Instance instance, BlockVec position, RandomGenerator random) {
+        if (!isSimulated(instance, position)) {
             return;
         }
         var fire = Level.block(instance, position);
-        if (!fire.compare(Block.FIRE)) {
-            return;
+        if (fire.compare(Block.FIRE) && burn(instance, position, fire, random)) {
+            schedule(instance, position, random);
         }
-        schedule(instance, position, random);
+    }
 
+    private boolean isSimulated(Instance instance, BlockVec position) {
+        return hasLoadedNeighbors(instance, position)
+                && this.ticks.isSimulated(instance, position.blockX() >> 4, position.blockZ() >> 4);
+    }
+
+    private static boolean hasLoadedNeighbors(Instance instance, BlockVec position) {
+        for (var face : BlockFace.values()) {
+            if (!Level.isLoaded(instance, position.relative(face))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Returns whether the fire is still burning. */
+    private boolean burn(Instance instance, BlockVec position, Block fire, RandomGenerator random) {
         var age = Level.property(fire, "age");
         if (stateAt(instance, position, age).air()) {
             Level.setAndUpdate(instance, position, Block.AIR);
-            return;
+            return false;
         }
 
         var below = Level.block(instance, position.add(0, -1, 0));
@@ -98,7 +160,7 @@ final class Fire {
                 && isNearRain(instance, position)
                 && random.nextFloat() < 0.2F + age * 0.03F) {
             Level.setAndUpdate(instance, position, Block.AIR);
-            return;
+            return false;
         }
 
         var newAge = Math.min(MAX_AGE, age + random.nextInt(3) / 2);
@@ -110,12 +172,13 @@ final class Fire {
             if (!hasFlammableNeighbor(instance, position)) {
                 if (!isSturdyTop(below) || age > 3) {
                     Level.setAndUpdate(instance, position, Block.AIR);
+                    return false;
                 }
-                return;
+                return true;
             }
             if (age == MAX_AGE && random.nextInt(4) == 0 && !Flammability.canBurn(below)) {
                 Level.setAndUpdate(instance, position, Block.AIR);
-                return;
+                return false;
             }
         }
 
@@ -157,9 +220,10 @@ final class Fire {
                 }
             }
         }
+        return true;
     }
 
-    private static void checkBurnOut(
+    private void checkBurnOut(
             Instance instance, BlockVec position, int chance, RandomGenerator random, int age) {
         var block = Level.block(instance, position);
         if (random.nextInt(chance) >= Flammability.burnOdds(block)) {
@@ -172,17 +236,28 @@ final class Fire {
             if (!fire.air()) {
                 Level.setAndUpdate(instance, position, fire);
                 schedule(instance, position, random);
+                prime(instance, position, block);
                 return;
             }
         }
         Level.setAndUpdate(instance, position, Block.AIR);
+        prime(instance, position, block);
+    }
+
+    private static void prime(Instance instance, BlockVec position, Block burnt) {
+        if (burnt.compare(Block.TNT)) {
+            EventDispatcher.call(new TntIgniteEvent(instance, position));
+        }
     }
 
     /**
      * The fire block at the position as the fire placement rule shapes it, or air if it cannot
-     * stand.
+     * stand or its neighbors are not loaded.
      */
     private static Block stateAt(Instance instance, BlockVec position, int age) {
+        if (!hasLoadedNeighbors(instance, position)) {
+            return Block.AIR;
+        }
         var fire = Level.withProperty(Block.FIRE, "age", age);
         var rule = MinecraftServer.getBlockManager().getBlockPlacementRule(Block.FIRE);
         if (rule == null) {
@@ -234,8 +309,8 @@ final class Fire {
         return Level.hasTag(below, tag.startsWith("#") ? tag.substring(1) : tag);
     }
 
-    private static boolean isHumid(Instance instance, BlockVec position) {
+    private boolean isHumid(Instance instance, BlockVec position) {
         var biome = instance.getBiome(position.blockX(), position.blockY(), position.blockZ());
-        return HUMID_BIOMES.contains(biome.key().value());
+        return this.humidBiomes.contains(biome.key().value());
     }
 }

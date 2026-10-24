@@ -105,8 +105,11 @@ public final class WorldgenTrees {
         var source = new LegacyRandomSource(random.nextLong());
         var accessor = new Accessor(instance);
         var mega = grower.pickMega(random);
-        if (mega != null && growMega(accessor, position, sapling, mega, source)) {
-            return true;
+        if (mega != null) {
+            var corner = twoByTwo(instance, position, sapling);
+            if (corner != null) {
+                return growMega(accessor, corner, sapling, mega, source);
+            }
         }
 
         var tree = grower.pickTree(random, hasFlowers(instance, position));
@@ -125,34 +128,39 @@ public final class WorldgenTrees {
 
     private boolean growMega(
             Accessor accessor,
-            BlockVec position,
+            BlockVec corner,
             Block sapling,
             String feature,
             RandomSource random) {
         var instance = accessor.instance();
-        for (var x = 0; x >= -1; x--) {
-            for (var z = 0; z >= -1; z--) {
-                var corner = position.add(x, 0, z);
-                if (!isTwoByTwo(instance, corner, sapling)) {
-                    continue;
-                }
-
-                for (var dx = 0; dx <= 1; dx++) {
-                    for (var dz = 0; dz <= 1; dz++) {
-                        Level.set(instance, corner.add(dx, 0, dz), Block.AIR);
-                    }
-                }
-                if (place(feature, accessor, corner, random)) {
-                    return true;
-                }
-                for (var dx = 0; dx <= 1; dx++) {
-                    for (var dz = 0; dz <= 1; dz++) {
-                        Level.set(instance, corner.add(dx, 0, dz), sapling);
-                    }
-                }
+        for (var dx = 0; dx <= 1; dx++) {
+            for (var dz = 0; dz <= 1; dz++) {
+                Level.set(instance, corner.add(dx, 0, dz), Block.AIR);
+            }
+        }
+        if (place(feature, accessor, corner, random)) {
+            return true;
+        }
+        for (var dx = 0; dx <= 1; dx++) {
+            for (var dz = 0; dz <= 1; dz++) {
+                Level.set(instance, corner.add(dx, 0, dz), sapling);
             }
         }
         return false;
+    }
+
+    /** The lowest corner of a 2x2 of saplings that includes the position, if there is one. */
+    @Nullable
+    private static BlockVec twoByTwo(Instance instance, BlockVec position, Block sapling) {
+        for (var x = 0; x >= -1; x--) {
+            for (var z = 0; z >= -1; z--) {
+                var corner = position.add(x, 0, z);
+                if (isTwoByTwo(instance, corner, sapling)) {
+                    return corner;
+                }
+            }
+        }
+        return null;
     }
 
     private static boolean isTwoByTwo(Instance instance, BlockVec corner, Block sapling) {

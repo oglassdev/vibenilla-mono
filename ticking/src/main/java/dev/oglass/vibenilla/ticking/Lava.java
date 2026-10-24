@@ -8,14 +8,17 @@ import net.minestom.server.instance.block.BlockFace;
 
 /** Vanilla {@code LavaFluid.randomTick}: lava sets nearby flammable blocks on fire. */
 final class Lava {
-    private Lava() {}
+    private final Fire fire;
 
-    static void register(RandomTicks ticks) {
-        ticks.register(Block.LAVA, Lava::tick);
+    private Lava(Fire fire) {
+        this.fire = fire;
     }
 
-    private static void tick(
-            Instance instance, BlockVec position, Block block, RandomGenerator random) {
+    static void register(RandomTicks ticks, Fire fire) {
+        ticks.register(Block.LAVA, new Lava(fire)::tick);
+    }
+
+    private void tick(Instance instance, BlockVec position, Block block, RandomGenerator random) {
         var steps = random.nextInt(3);
         if (steps > 0) {
             var target = position;
@@ -28,7 +31,7 @@ final class Lava {
                 var current = Level.block(instance, target);
                 if (current.air()) {
                     if (hasFlammableNeighbor(instance, target)) {
-                        Fire.ignite(instance, target, random);
+                        this.fire.ignite(instance, target, random);
                         return;
                     }
                 } else if (current.solid()) {
@@ -47,7 +50,7 @@ final class Lava {
             var above = target.add(0, 1, 0);
             if (Level.block(instance, above).air()
                     && Flammability.canBurn(Level.block(instance, target))) {
-                Fire.ignite(instance, above, random);
+                this.fire.ignite(instance, above, random);
             }
         }
     }

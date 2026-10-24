@@ -4,6 +4,7 @@ import java.util.random.RandomGenerator;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
+import net.minestom.server.instance.block.BlockFace;
 
 /**
  * Vanilla {@code SpreadingSnowyDirtBlock}: grass and mycelium spread to dirt and die in the dark.
@@ -51,7 +52,9 @@ final class SpreadingGrass {
         if (above.compare(Block.SNOW) && Level.property(above, "layers") == 1) {
             return true;
         }
-        return !Level.isFullFluid(above) && above.lightBlocked() < 15;
+        return !Level.isFullFluid(above)
+                && above.lightBlocked() < 15
+                && !(above.occludes() && above.occlusionShape().isFaceFull(BlockFace.BOTTOM));
     }
 
     private static boolean canPropagate(Instance instance, BlockVec position) {

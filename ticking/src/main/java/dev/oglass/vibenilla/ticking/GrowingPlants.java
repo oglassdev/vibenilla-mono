@@ -1,15 +1,23 @@
 package dev.oglass.vibenilla.ticking;
 
+import java.util.List;
 import java.util.random.RandomGenerator;
 import net.minestom.server.coordinate.BlockVec;
+import net.minestom.server.entity.ItemEntity;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
+import net.minestom.server.instance.block.BlockFace;
+import net.minestom.server.item.ItemStack;
+import net.minestom.server.item.Material;
 
 /** Vanilla {@code SugarCaneBlock} and {@code CactusBlock} growth. */
 final class GrowingPlants {
     private static final int MAX_AGE = 15;
     private static final int MAX_HEIGHT = 3;
     private static final int FLOWER_AGE = 8;
+
+    private static final List<BlockFace> HORIZONTAL =
+            List.of(BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST);
 
     private GrowingPlants() {}
 
@@ -35,8 +43,7 @@ final class GrowingPlants {
         }
     }
 
-    private static void cactus(
-            Instance instance, BlockVec position, Block block, RandomGenerator random) {
+    static void cactus(Instance instance, BlockVec position, Block block, RandomGenerator random) {
         var above = position.add(0, 1, 0);
         if (!Level.block(instance, above).air()) {
             return;
@@ -48,13 +55,16 @@ final class GrowingPlants {
             return;
         }
 
-        if (age == FLOWER_AGE && canSurviveAt(instance, above)) {
+        if (age == FLOWER_AGE && canSurvive(instance, above)) {
             if (random.nextDouble() <= (height >= MAX_HEIGHT ? 0.25 : 0.1)) {
                 Level.setAndUpdate(instance, above, Block.CACTUS_FLOWER);
             }
         } else if (age == MAX_AGE && height < MAX_HEIGHT) {
             Level.setAndUpdate(instance, above, Block.CACTUS);
             Level.set(instance, position, Level.withProperty(block, "age", 0));
+            if (!canSurvive(instance, above)) {
+                breakCactus(instance, above);
+            }
             return;
         }
 
@@ -63,12 +73,24 @@ final class GrowingPlants {
         }
     }
 
-    /** Cacti cannot stand next to solid blocks. */
-    private static boolean canSurviveAt(Instance instance, BlockVec position) {
-        return !Level.block(instance, position.add(1, 0, 0)).solid()
-                && !Level.block(instance, position.add(-1, 0, 0)).solid()
-                && !Level.block(instance, position.add(0, 0, 1)).solid()
-                && !Level.block(instance, position.add(0, 0, -1)).solid();
+    /** Cacti stand on sand or cacti, and cannot touch solid blocks, lava or liquid above. */
+    private static boolean canSurvive(Instance instance, BlockVec position) {
+        for (var face : HORIZONTAL) {
+            var neighbor = Level.block(instance, position.relative(face));
+            if (neighbor.solid() || neighbor.compare(Block.LAVA)) {
+                return false;
+            }
+        }
+
+        var below = Level.block(instance, position.add(0, -1, 0));
+        return (below.compare(Block.CACTUS) || Level.hasTag(below, "minecraft:supports_cactus"))
+                && !Level.block(instance, position.add(0, 1, 0)).liquid();
+    }
+
+    private static void breakCactus(Instance instance, BlockVec position) {
+        Level.setAndUpdate(instance, position, Block.AIR);
+        var drop = new ItemEntity(ItemStack.of(Material.CACTUS));
+        drop.setInstance(instance, position.add(0.5, 0.5, 0.5));
     }
 
     private static int height(Instance instance, BlockVec position, Block plant) {

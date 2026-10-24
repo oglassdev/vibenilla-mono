@@ -131,6 +131,7 @@ final class Flammability {
         add(15, 100, "vine", "glow_lichen");
         add(15, 60, "cave_vines", "cave_vines_plant");
         add(15, 20, "target");
+        add(15, 100, "tnt");
         add(5, 100, "pale_moss_block", "pale_moss_carpet", "pale_hanging_moss");
     }
 
@@ -142,8 +143,14 @@ final class Flammability {
         }
     }
 
-    /** How strongly the block encourages nearby fire to spread into the air next to it. */
+    /**
+     * How strongly the block encourages nearby fire to spread into the air next to it. Waterlogged
+     * blocks never do.
+     */
     static int igniteOdds(Block block) {
+        if ("true".equals(block.getProperty("waterlogged"))) {
+            return 0;
+        }
         var odds = ODDS.get(block.key().value());
         return odds == null ? 0 : odds.ignite;
     }

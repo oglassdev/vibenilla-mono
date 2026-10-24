@@ -7,6 +7,7 @@ vibenilla.license = License.MIT
 
 dependencies {
     compileOnly(libs.fastutil)
+    implementation(project(":fluids"))
     implementation(project(":worldgen"))
 
     testImplementation(libs.minestom.testing)

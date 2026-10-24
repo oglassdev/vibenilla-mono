@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Random;
+import java.util.Set;
 import net.minestom.server.coordinate.BlockVec;
+import net.minestom.server.coordinate.Pos;
 import net.minestom.server.event.EventListener;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
@@ -109,6 +111,11 @@ final class HandlersTest {
         assertTrue(instance.getBlock(GROUND).compare(Block.DIRT));
 
         instance.setBlock(GROUND, Block.GRASS_BLOCK);
+        instance.setBlock(ABOVE, Block.OAK_SLAB.withProperty("type", "bottom"));
+        SpreadingGrass.tick(instance, GROUND, Block.GRASS_BLOCK, new Random(1));
+        assertTrue(instance.getBlock(GROUND).compare(Block.DIRT));
+
+        instance.setBlock(GROUND, Block.GRASS_BLOCK);
         instance.setBlock(ABOVE, Block.AIR);
         instance.setBlock(GROUND.add(1, 0, 0), Block.DIRT);
         var random = new Random(1);
@@ -139,21 +146,51 @@ final class HandlersTest {
     }
 
     @Test
-    void fireEventuallyBurnsAdjacentPlanks(Env env) {
+    void fireOnlyBurnsWhileAPlayerIsNear(Env env) {
         var instance = lit(env);
+        var fire = Fire.register(new RandomTicks(), Set.of());
         var planks = ABOVE.add(1, 0, 0);
         instance.setBlock(ABOVE, Block.FIRE);
         instance.setBlock(planks, Block.OAK_PLANKS);
         var random = new Random(1);
 
+        for (var tick = 0; tick < 300; tick++) {
+            fire.tick(instance, ABOVE, random);
+        }
+        assertTrue(instance.getBlock(planks).compare(Block.OAK_PLANKS));
+
+        env.createPlayer(instance, new Pos(8, TestWorld.GROUND + 1, 8));
         for (var tick = 0;
                 tick < 300 && instance.getBlock(planks).compare(Block.OAK_PLANKS);
                 tick++) {
             if (!instance.getBlock(ABOVE).compare(Block.FIRE)) {
                 instance.setBlock(ABOVE, Block.FIRE);
             }
-            Fire.tick(instance, ABOVE, random);
+            fire.tick(instance, ABOVE, random);
         }
         assertFalse(instance.getBlock(planks).compare(Block.OAK_PLANKS));
+    }
+
+    @Test
+    void cactusGrownNextToASolidBlockBreaks(Env env) {
+        var instance = lit(env);
+        instance.setBlock(GROUND, Block.SAND);
+        instance.setBlock(ABOVE, Block.CACTUS.withProperty("age", "15"));
+        instance.setBlock(ABOVE.add(1, 1, 0), Block.STONE);
+
+        GrowingPlants.cactus(instance, ABOVE, instance.getBlock(ABOVE), new Random(1));
+        assertTrue(instance.getBlock(ABOVE.add(0, 1, 0)).air());
+
+        instance.setBlock(ABOVE.add(1, 1, 0), Block.AIR);
+        instance.setBlock(ABOVE, Block.CACTUS.withProperty("age", "15"));
+        GrowingPlants.cactus(instance, ABOVE, instance.getBlock(ABOVE), new Random(1));
+        assertTrue(instance.getBlock(ABOVE.add(0, 1, 0)).compare(Block.CACTUS));
+    }
+
+    @Test
+    void waterloggedBlocksDoNotCatchFire() {
+        assertTrue(Flammability.igniteOdds(Block.OAK_SLAB) > 0);
+        assertEquals(
+                0, Flammability.igniteOdds(Block.OAK_SLAB.withProperty("waterlogged", "true")));
     }
 }

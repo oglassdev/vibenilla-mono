@@ -1,5 +1,7 @@
 package dev.oglass.vibenilla.ticking;
 
+import io.github.togar2.fluids.FluidState;
+import io.github.togar2.fluids.MinestomFluids;
 import java.util.random.RandomGenerator;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.event.EventDispatcher;
@@ -33,7 +35,11 @@ final class Leaves {
             return;
         }
 
-        var waterlogged = "true".equals(block.getProperty("waterlogged"));
-        Level.setAndUpdate(instance, position, waterlogged ? Block.WATER : Block.AIR);
+        if ("true".equals(block.getProperty("waterlogged"))) {
+            Level.setAndUpdate(instance, position, Block.WATER);
+            MinestomFluids.scheduleTick(instance, position, FluidState.of(Block.WATER));
+        } else {
+            Level.setAndUpdate(instance, position, Block.AIR);
+        }
     }
 }

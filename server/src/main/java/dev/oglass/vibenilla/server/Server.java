@@ -1,12 +1,14 @@
 package dev.oglass.vibenilla.server;
 
+import dev.oglass.vibenilla.ticking.LeavesDecayEvent;
 import dev.oglass.vibenilla.ticking.RandomTicks;
+import dev.oglass.vibenilla.ticking.TntIgniteEvent;
 import dev.oglass.vibenilla.ticking.VanillaRandomTicks;
-import dev.oglass.vibenilla.ticking.WorldgenTrees;
 import io.github.togar2.fluids.MinestomFluids;
 import io.github.togar2.pvp.MinestomPvP;
 import io.github.togar2.pvp.feature.CombatFeatures;
 import io.github.togar2.pvp.feature.FeatureType;
+import io.github.togar2.pvp.feature.explosion.ExplosionFeature;
 import java.nio.file.Path;
 import java.util.concurrent.ConcurrentHashMap;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
@@ -22,6 +24,8 @@ import rocks.minestom.crafting.CraftingManager;
 import rocks.minestom.placement.Registrations;
 
 public final class Server {
+    private static final int TNT_FUSE_TICKS = 80;
+
     public static void main(String[] args) {
         var dataPath = Path.of(System.getProperty("vibenilla.data", "vanilla"));
         var vanillaData = dataPath.resolve("data").resolve("minecraft");
@@ -46,12 +50,11 @@ public final class Server {
 
         var crafting = new CraftingManager(vanillaData);
         var randomTicks = new RandomTicks();
-        VanillaRandomTicks.register(randomTicks, new WorldgenTrees(dataPath));
+        VanillaRandomTicks.register(randomTicks, dataPath);
 
-        var breaking =
-                new BlockBreaking(
-                        combat.get(FeatureType.ITEM_DAMAGE),
-                        new BlockDrops(vanillaData.resolve("loot_table")));
+        var drops = new BlockDrops(vanillaData.resolve("loot_table"));
+        var explosions = combat.get(FeatureType.EXPLOSION);
+        var breaking = new BlockBreaking(combat.get(FeatureType.ITEM_DAMAGE), drops);
 
         // Breaking runs before combat so a rejected break adds no exhaustion.
         events.addChild(breaking.events())
@@ -59,6 +62,19 @@ public final class Server {
                 .addChild(MinestomFluids.events())
                 .addChild(MinestomFluids.bucketEvents())
                 .addChild(randomTicks.events())
+                .addListener(
+                        LeavesDecayEvent.class,
+                        event ->
+                                drops.drop(
+                                        event.getInstance(), event.getPosition(), event.getBlock()))
+                .addListener(
+                        TntIgniteEvent.class,
+                        event ->
+                                explosions.primeExplosive(
+                                        event.getInstance(),
+                                        event.getPosition(),
+                                        new ExplosionFeature.IgnitionCause.Explosion(null),
+                                        TNT_FUSE_TICKS))
                 .addChild(Items.events())
                 .addChild(Deaths.events())
                 .addChild(Experience.events())

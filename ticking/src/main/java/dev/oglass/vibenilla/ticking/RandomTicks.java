@@ -8,6 +8,7 @@ import java.util.function.Predicate;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.entity.GameMode;
+import net.minestom.server.entity.Player;
 import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.instance.InstanceTickEvent;
@@ -81,10 +82,7 @@ public final class RandomTicks {
         }
 
         var near = new LongOpenHashSet();
-        for (var player : instance.getPlayers()) {
-            if (player.getGameMode() == GameMode.SPECTATOR) {
-                continue;
-            }
+        for (var player : simulators(instance)) {
             var position = player.getPosition();
             for (var x = -this.simulationDistance; x <= this.simulationDistance; x++) {
                 for (var z = -this.simulationDistance; z <= this.simulationDistance; z++) {
@@ -101,6 +99,24 @@ public final class RandomTicks {
                 tickChunk(instance, chunk, picks, random);
             }
         }
+    }
+
+    /** Whether a player is close enough to the chunk for its blocks to be simulated. */
+    boolean isSimulated(Instance instance, int chunkX, int chunkZ) {
+        for (var player : simulators(instance)) {
+            var position = player.getPosition();
+            if (Math.abs(position.chunkX() - chunkX) <= this.simulationDistance
+                    && Math.abs(position.chunkZ() - chunkZ) <= this.simulationDistance) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static List<Player> simulators(Instance instance) {
+        return instance.getPlayers().stream()
+                .filter(player -> player.getGameMode() != GameMode.SPECTATOR)
+                .toList();
     }
 
     private void tickChunk(Instance instance, Chunk chunk, int[] picks, ThreadLocalRandom random) {
