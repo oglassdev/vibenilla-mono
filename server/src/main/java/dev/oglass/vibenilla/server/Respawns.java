@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import net.minestom.server.MinecraftServer;
 import net.minestom.server.collision.BoundingBox;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
@@ -25,8 +26,10 @@ import org.jetbrains.annotations.Nullable;
 public final class Respawns {
     private static final int SPAWN_RADIUS = 10;
     private static final int SPAWN_ATTEMPTS = 16;
+    private static final int SEARCH_RADIUS = 32;
     private static final double EPSILON = 1.0E-4;
     private static final BoundingBox PLAYER_BOX = new BoundingBox(0.6, 1.8, 0.6);
+    private static final BoundingBox FOOTPRINT = new BoundingBox(0.6, 2 * EPSILON, 0.6);
     private static final Set<String> HAZARDS =
             Set.of(
                     "fire",
@@ -56,7 +59,8 @@ public final class Respawns {
 
     /**
      * Where the player should appear after dying: their bed or anchor if still valid (consuming an
-     * anchor charge), otherwise a safe spot near world spawn.
+     * anchor charge), otherwise a safe spot near world spawn. Call on the player's instance tick
+     * thread with the player already in an instance.
      */
     public static Pos resolve(Player player) {
         var instance = player.getInstance();
@@ -181,7 +185,7 @@ public final class Respawns {
                 instance.loadChunk(x >> 4, z >> 4).join();
                 for (var y = minY; y <= maxY; y++) {
                     var block = instance.getBlock(x, y, z);
-                    if (block.liquid() || isHazard(block)) {
+                    if (isUnsafe(block)) {
                         return false;
                     }
                     var shape = block.collisionShape();
@@ -193,11 +197,26 @@ public final class Respawns {
         }
 
         var floorY = (int) Math.floor(pos.y() - EPSILON);
-        var floor = instance.getBlock(pos.blockX(), floorY, pos.blockZ());
-        var floorHeight = height(floor);
-        return !isHazard(floor)
-                && floorHeight > EPSILON
-                && Math.abs(floorY + floorHeight - pos.y()) < 1.0E-3;
+        var supported = false;
+        for (var x = minX; x <= maxX; x++) {
+            for (var z = minZ; z <= maxZ; z++) {
+                var floor = instance.getBlock(x, floorY, z);
+                if (isHazard(floor)) {
+                    return false;
+                }
+                supported |=
+                        floor.collisionShape()
+                                .intersectBox(pos.sub(x, floorY + EPSILON, z), FOOTPRINT);
+            }
+        }
+        return supported;
+    }
+
+    private static boolean isUnsafe(Block block) {
+        return block.liquid()
+                || block.fluid()
+                || "true".equals(block.getProperty("waterlogged"))
+                || isHazard(block);
     }
 
     private static boolean isHazard(Block block) {
@@ -214,21 +233,29 @@ public final class Respawns {
                 return surface;
             }
         }
-        return safeAbove(instance, worldSpawn);
+        return searchSpawn(instance);
     }
 
-    private static Pos safeAbove(Instance instance, Pos origin) {
-        if (isSafeStandingSpot(instance, origin)) {
-            return origin;
-        }
-        var maxY = instance.getCachedDimensionType().maxY();
-        for (var y = origin.blockY(); y < maxY; y++) {
-            var spawn = standAt(instance, origin.blockX(), y, origin.blockZ());
-            if (spawn != null) {
-                return spawn;
+    private static Pos searchSpawn(Instance instance) {
+        for (var radius = 0; radius <= SEARCH_RADIUS; radius++) {
+            for (var dx = -radius; dx <= radius; dx++) {
+                for (var dz = -radius; dz <= radius; dz++) {
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) != radius) {
+                        continue;
+                    }
+                    var surface =
+                            surfaceAt(instance, worldSpawn.blockX() + dx, worldSpawn.blockZ() + dz);
+                    if (surface != null && isSafeStandingSpot(instance, surface)) {
+                        return surface;
+                    }
+                }
             }
         }
-        return origin;
+
+        MinecraftServer.LOGGER.warn(
+                "No safe respawn spot within {} blocks of world spawn", SEARCH_RADIUS);
+        var surface = surfaceAt(instance, worldSpawn.blockX(), worldSpawn.blockZ());
+        return surface != null ? surface : worldSpawn;
     }
 
     private static @Nullable Pos surfaceAt(Instance instance, int x, int z) {
