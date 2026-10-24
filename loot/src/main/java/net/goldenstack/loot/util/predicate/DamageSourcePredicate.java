@@ -9,7 +9,6 @@ import net.minestom.server.coordinate.Point;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.instance.Instance;
-import net.minestom.server.registry.Registries;
 import net.minestom.server.registry.TagKey;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -129,7 +128,7 @@ public interface DamageSourcePredicate {
         public static final @NotNull StructCodec<TagPredicate> CODEC =
                 StructCodec.struct(
                         "id",
-                        TagKey.codec(Registries::damageType),
+                        Codec.STRING.transform(TagKey::<DamageType>ofHash, TagKey::hashedKey),
                         TagPredicate::id,
                         "expected",
                         Codec.BOOLEAN,

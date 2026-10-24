@@ -9,6 +9,7 @@ import net.goldenstack.loot.LootFunction;
 import net.goldenstack.loot.LootPredicate;
 import net.goldenstack.loot.LootSlotSource;
 import net.goldenstack.loot.LootTable;
+import net.goldenstack.loot.Trove;
 import net.goldenstack.loot.util.predicate.FluidPredicate;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.BinaryTag;
@@ -65,12 +66,12 @@ public interface VanillaInterface {
 
             @Override
             public @Nullable LootTable tableRegistry(@NotNull Key key) {
-                return null;
+                return Trove.table(key);
             }
 
             @Override
             public @Nullable LootPredicate predicateRegistry(@NotNull Key key) {
-                return null;
+                return Trove.predicate(key);
             }
 
             @Override

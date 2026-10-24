@@ -149,8 +149,8 @@ public interface LootEntry {
             implements LootEntry {
         public static final @NotNull StructCodec<Alternatives> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         Alternatives::predicates,
                         "children",
                         LootEntry.CODEC.list().optional(List.of()),
@@ -185,11 +185,11 @@ public interface LootEntry {
             implements Choice.Single {
         public static final @NotNull StructCodec<Dynamic> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         Dynamic::predicates,
-                        "functions",
-                        LootFunction.CODEC.list().optional(List.of()),
+                        "modifier",
+                        LootFunction.CODEC.listOrSingle().optional(List.of()),
                         Dynamic::functions,
                         "weight",
                         Codec.LONG.optional(1L),
@@ -247,11 +247,11 @@ public interface LootEntry {
             implements Choice.Single {
         public static final @NotNull StructCodec<Empty> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         Empty::predicates,
-                        "functions",
-                        LootFunction.CODEC.list().optional(List.of()),
+                        "modifier",
+                        LootFunction.CODEC.listOrSingle().optional(List.of()),
                         Empty::functions,
                         "weight",
                         Codec.LONG.optional(1L),
@@ -276,8 +276,8 @@ public interface LootEntry {
             implements LootEntry {
         public static final @NotNull StructCodec<Group> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         Group::predicates,
                         "children",
                         LootEntry.CODEC.list().optional(List.of()),
@@ -310,11 +310,11 @@ public interface LootEntry {
             implements Choice.Single {
         public static final @NotNull StructCodec<Item> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         Item::predicates,
-                        "functions",
-                        LootFunction.CODEC.list().optional(List.of()),
+                        "modifier",
+                        LootFunction.CODEC.listOrSingle().optional(List.of()),
                         Item::functions,
                         "weight",
                         Codec.LONG.optional(1L),
@@ -347,11 +347,11 @@ public interface LootEntry {
             implements Choice.Single {
         public static final @NotNull StructCodec<LootTable> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         LootTable::predicates,
-                        "functions",
-                        LootFunction.CODEC.list().optional(List.of()),
+                        "modifier",
+                        LootFunction.CODEC.listOrSingle().optional(List.of()),
                         LootTable::functions,
                         "weight",
                         Codec.LONG.optional(1L),
@@ -366,15 +366,19 @@ public interface LootEntry {
 
         @Override
         public @NotNull List<ItemStack> generate(@NotNull LootContext context) {
-            var table =
-                    switch (value) {
-                        case Either.Left(Key key) -> context.vanilla().tableRegistry(key);
-                        case Either.Right(net.goldenstack.loot.LootTable right) -> right;
-                    };
+            var inner = context;
+            net.goldenstack.loot.LootTable table;
+            switch (value) {
+                case Either.Left(Key key) -> {
+                    table = context.vanilla().tableRegistry(key);
+                    inner = context.enter("table:" + key.asString());
+                }
+                case Either.Right(net.goldenstack.loot.LootTable right) -> table = right;
+            }
 
-            if (table == null) return List.of();
+            if (table == null || inner == null) return List.of();
 
-            return LootFunction.apply(functions, table.generate(context), context);
+            return LootFunction.apply(functions, table.generate(inner), context);
         }
 
         @Override
@@ -387,8 +391,8 @@ public interface LootEntry {
             implements LootEntry {
         public static final @NotNull StructCodec<Sequence> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         Sequence::predicates,
                         "children",
                         LootEntry.CODEC.list().optional(List.of()),
@@ -426,11 +430,11 @@ public interface LootEntry {
             implements Choice.Single {
         public static final @NotNull StructCodec<Tag> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         Tag::predicates,
-                        "functions",
-                        LootFunction.CODEC.list().optional(List.of()),
+                        "modifier",
+                        LootFunction.CODEC.listOrSingle().optional(List.of()),
                         Tag::functions,
                         "weight",
                         Codec.LONG.optional(1L),
@@ -438,7 +442,7 @@ public interface LootEntry {
                         "quality",
                         Codec.LONG.optional(0L),
                         Tag::quality,
-                        "name",
+                        "items",
                         RegistryTag.codec(Registries::material),
                         Tag::name,
                         "expand",
@@ -507,11 +511,11 @@ public interface LootEntry {
             implements Choice.Single {
         public static final @NotNull StructCodec<Slots> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         Slots::predicates,
-                        "functions",
-                        LootFunction.CODEC.list().optional(List.of()),
+                        "modifier",
+                        LootFunction.CODEC.listOrSingle().optional(List.of()),
                         Slots::functions,
                         "weight",
                         Codec.LONG.optional(1L),
