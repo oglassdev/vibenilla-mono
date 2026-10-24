@@ -5,25 +5,24 @@ import io.github.togar2.pvp.MinestomPvP;
 import io.github.togar2.pvp.feature.CombatFeatures;
 import io.github.togar2.pvp.feature.FeatureType;
 import java.nio.file.Path;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.minestom.server.Auth;
 import net.minestom.server.MinecraftServer;
-import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent;
+import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerSpawnEvent;
-import net.minestom.server.instance.Instance;
-import net.minestom.server.instance.LightingChunk;
-import net.minestom.server.world.DimensionType;
+import net.minestom.server.timer.TaskSchedule;
 import rocks.minestom.crafting.CraftingManager;
 import rocks.minestom.placement.Registrations;
-import rocks.minestom.worldgen.WorldGenerators;
 
 public final class Server {
     public static void main(String[] args) {
         var dataPath = Path.of(System.getProperty("vibenilla.data", "vanilla"));
         var vanillaData = dataPath.resolve("data").resolve("minecraft");
-        var seed = Long.getLong("vibenilla.seed", ThreadLocalRandom.current().nextLong());
+        var worldPath = Path.of(System.getProperty("vibenilla.world", "world"));
         var port = Integer.getInteger("vibenilla.port", 25565);
 
         var server = MinecraftServer.init(new Auth.Online());
@@ -35,9 +34,12 @@ public final class Server {
         MinestomPvP.init();
 
         var combat = CombatFeatures.modernVanilla();
-        var overworld = createOverworld(dataPath, seed);
+        var world = new WorldStorage(worldPath, dataPath, Long.getLong("vibenilla.seed"));
+        var overworld = world.instance();
         overworld.setExplosionSupplier(combat.get(FeatureType.EXPLOSION).getExplosionSupplier());
-        var spawn = findSurface(overworld, 0, 0);
+        var spawn = world.spawn();
+        var players = new PlayerStorage(worldPath.resolve("playerdata"));
+        var saved = new ConcurrentHashMap<UUID, CompoundBinaryTag>();
 
         var crafting = new CraftingManager(vanillaData);
 
@@ -50,41 +52,64 @@ public final class Server {
                 .addListener(
                         AsyncPlayerConfigurationEvent.class,
                         event -> {
+                            var player = event.getPlayer();
                             event.setSpawningInstance(overworld);
-                            event.getPlayer().setRespawnPoint(spawn);
+                            var data = players.read(player.getUuid());
+                            var position = data == null ? null : PlayerStorage.position(data);
+                            if (position == null) {
+                                player.setRespawnPoint(spawn);
+                            } else {
+                                saved.put(player.getUuid(), data);
+                                player.setRespawnPoint(position);
+                            }
                         })
                 .addListener(
                         PlayerSpawnEvent.class,
                         event -> {
-                            if (event.isFirstSpawn()) {
-                                event.getPlayer().setGameMode(GameMode.SURVIVAL);
+                            if (!event.isFirstSpawn()) {
+                                return;
                             }
+                            var player = event.getPlayer();
+                            var data = saved.remove(player.getUuid());
+                            if (data == null) {
+                                player.setGameMode(GameMode.SURVIVAL);
+                                return;
+                            }
+                            PlayerStorage.restore(player, data);
+                            var respawn = PlayerStorage.respawnPoint(data);
+                            player.setRespawnPoint(respawn == null ? spawn : respawn);
+                        })
+                .addListener(
+                        PlayerDisconnectEvent.class,
+                        event -> {
+                            saved.remove(event.getPlayer().getUuid());
+                            players.save(event.getPlayer());
                         });
+
+        Runnable savePlayers =
+                () ->
+                        MinecraftServer.getConnectionManager()
+                                .getOnlinePlayers()
+                                .forEach(players::save);
+        var scheduler = MinecraftServer.getSchedulerManager();
+        scheduler
+                .buildTask(
+                        () -> {
+                            savePlayers.run();
+                            world.save(false);
+                        })
+                .repeat(TaskSchedule.minutes(5))
+                .schedule();
+        scheduler.buildShutdownTask(
+                () -> {
+                    savePlayers.run();
+                    world.save(true);
+                    MinecraftServer.LOGGER.info("World saved");
+                });
 
         MinecraftServer.getCommandManager().register(new GameModeCommand());
 
         server.start("0.0.0.0", port);
-        MinecraftServer.LOGGER.info("Listening on port {} with seed {}", port, seed);
-    }
-
-    private static Instance createOverworld(Path dataPath, long seed) {
-        var generators = new WorldGenerators(dataPath, seed);
-        var instance =
-                MinecraftServer.getInstanceManager()
-                        .createInstanceContainer(DimensionType.OVERWORLD);
-        instance.setChunkSupplier(LightingChunk::new);
-        instance.setGenerator(generators.overworld());
-        return instance;
-    }
-
-    private static Pos findSurface(Instance instance, int x, int z) {
-        instance.loadChunk(x >> 4, z >> 4).join();
-        var dimension = instance.getCachedDimensionType();
-        for (var y = dimension.maxY() - 1; y > dimension.minY(); y--) {
-            if (!instance.getBlock(x, y, z).air()) {
-                return new Pos(x + 0.5, y + 1, z + 0.5);
-            }
-        }
-        return new Pos(x + 0.5, 64, z + 0.5);
+        MinecraftServer.LOGGER.info("Listening on port {} with seed {}", port, world.seed());
     }
 }
