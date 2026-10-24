@@ -45,6 +45,9 @@ public final class Server {
                 .addChild(MinestomFluids.events())
                 .addChild(MinestomFluids.bucketEvents())
                 .addChild(Items.events())
+                .addChild(Deaths.events())
+                .addChild(Experience.events())
+                .addChild(new Respawns(spawn).events())
                 .addChild(crafting.events())
                 .addChild(new BlockDrops(vanillaData.resolve("loot_table")).events())
                 .addListener(
