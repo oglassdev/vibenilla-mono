@@ -15,6 +15,7 @@ dependencies {
     implementation(project(":fluids"))
     implementation(project(":loot"))
     implementation(project(":containers"))
+    implementation(project(":ticking"))
 
     runtimeOnly(libs.bundles.tinylog)
 }
