@@ -16,12 +16,6 @@ import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.LightingChunk;
 import net.minestom.server.world.DimensionType;
 import rocks.minestom.crafting.CraftingManager;
-import rocks.minestom.crafting.listener.CraftingCloseListener;
-import rocks.minestom.crafting.listener.CraftingGridListener;
-import rocks.minestom.crafting.listener.CraftingPlayerDisconnectListener;
-import rocks.minestom.crafting.listener.CraftingPlayerSpawnListener;
-import rocks.minestom.crafting.listener.CraftingShiftClickListener;
-import rocks.minestom.crafting.listener.CraftingTableListener;
 import rocks.minestom.placement.Registrations;
 import rocks.minestom.worldgen.WorldGenerators;
 
@@ -53,15 +47,10 @@ public final class Server {
                 .addChild(MinestomFluids.events())
                 .addChild(Buckets.events())
                 .addChild(Items.events())
+                .addChild(crafting.events())
                 .addChild(
                         new BlockDrops(vanillaData.resolve("loot_table").resolve("blocks"))
                                 .events())
-                .addListener(new CraftingPlayerSpawnListener(crafting))
-                .addListener(new CraftingPlayerDisconnectListener(crafting))
-                .addListener(new CraftingTableListener(crafting))
-                .addListener(new CraftingGridListener(crafting))
-                .addListener(new CraftingShiftClickListener(crafting))
-                .addListener(new CraftingCloseListener(crafting))
                 .addListener(
                         AsyncPlayerConfigurationEvent.class,
                         event -> {
