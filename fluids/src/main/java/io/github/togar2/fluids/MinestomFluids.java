@@ -1,9 +1,7 @@
 package io.github.togar2.fluids;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.BlockVec;
@@ -12,6 +10,7 @@ import net.minestom.server.event.EventNode;
 import net.minestom.server.event.instance.InstanceTickEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
+import net.minestom.server.instance.block.BlockManager;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.world.attribute.EnvironmentAttribute;
 import net.minestom.server.world.attribute.EnvironmentAttributeMap;
@@ -32,8 +31,7 @@ public class MinestomFluids {
     private static final Map<Integer, WaterlogHandler> WATERLOG_HANDLERS =
             new ConcurrentHashMap<>();
 
-    private static final Tag<Map<Long, Set<BlockVec>>> TICK_UPDATES =
-            Tag.Transient("fluid-tick-updates");
+    private static final Tag<FluidTicks> TICKS = Tag.Transient("fluid-ticks");
 
     public static Fluid get(Block block) {
         if (block.compare(Block.LAVA)) {
@@ -47,21 +45,14 @@ public class MinestomFluids {
 
     public static void tick(InstanceTickEvent event) {
         Instance instance = event.getInstance();
-        long age = instance.getWorldAge();
+        var ticks = instance.getTag(TICKS);
+        if (ticks == null) return;
 
-        var updates = instance.getTag(TICK_UPDATES);
-        if (updates == null) return;
+        for (var tick : ticks.pollDue(instance.getWorldAge())) {
+            if (!instance.isChunkLoaded(tick.point())) continue;
 
-        for (var iterator = updates.entrySet().iterator(); iterator.hasNext(); ) {
-            var entry = iterator.next();
-            if (entry.getKey() > age) continue;
-
-            Set<BlockVec> currentUpdate = entry.getValue();
-            iterator.remove();
-
-            for (BlockVec point : currentUpdate) {
-                tick(instance, point);
-            }
+            FluidState state = FluidState.of(instance.getBlock(tick.point()));
+            if (state.fluid() == tick.fluid()) state.fluid().onTick(instance, tick.point(), state);
         }
     }
 
@@ -71,20 +62,24 @@ public class MinestomFluids {
     }
 
     public static void scheduleTick(Instance instance, BlockVec point, FluidState state) {
-        scheduleTick(instance, point, state.fluid().getNextTickDelay(instance, point));
+        scheduleTick(
+                instance, point, state.fluid(), state.fluid().getNextTickDelay(instance, point));
     }
 
+    /** Schedules a tick for the fluid currently at the position. */
     public static void scheduleTick(Instance instance, BlockVec point, int tickDelay) {
+        scheduleTick(instance, point, FluidState.of(instance.getBlock(point)).fluid(), tickDelay);
+    }
+
+    /**
+     * Schedules a tick for the fluid. It is dropped when the position no longer holds that fluid
+     * once it comes due, and ignored when the position already has a tick pending for the fluid.
+     */
+    public static void scheduleTick(Instance instance, BlockVec point, Fluid fluid, int tickDelay) {
         if (tickDelay == -1) return;
 
-        var updates = instance.getTag(TICK_UPDATES);
-        if (updates == null) {
-            updates = new ConcurrentHashMap<>();
-            instance.setTag(TICK_UPDATES, updates);
-        }
-
-        long newAge = instance.getWorldAge() + tickDelay;
-        updates.computeIfAbsent(newAge, l -> new HashSet<>()).add(point);
+        instance.updateAndGetTag(TICKS, ticks -> ticks != null ? ticks : new FluidTicks())
+                .schedule(point, fluid, instance.getWorldAge() + tickDelay);
     }
 
     public static void registerWaterlog(Block block, WaterlogHandler handler) {
@@ -112,22 +107,32 @@ public class MinestomFluids {
         return typedEntry.modifier().modify(value, typedEntry.argument());
     }
 
+    /** Registers fluid behavior in the global block manager, see {@link #init(BlockManager)}. */
     public static void init() {
-        MinecraftServer.getBlockManager()
-                .registerBlockPlacementRule(new FluidPlacementRule(Block.WATER));
-        MinecraftServer.getBlockManager()
-                .registerBlockPlacementRule(new LavaPlacementRule(Block.LAVA));
+        init(MinecraftServer.getBlockManager());
+    }
+
+    /**
+     * Registers fluid behavior. Waterloggable blocks keep the placement rule registered for them,
+     * so this must be called after the rules of other modules are registered, for example after
+     * {@code Registrations.registerAllVanilla(blockManager)}. A rule registered for such a block
+     * later replaces the fluid behavior of that block.
+     */
+    public static void init(BlockManager blockManager) {
+        blockManager.registerBlockPlacementRule(new FluidPlacementRule(Block.WATER));
+        blockManager.registerBlockPlacementRule(new LavaPlacementRule(Block.LAVA));
 
         for (Block block : WATER_PLANTS) {
             registerWaterlog(block, WaterlogHandler.REJECTING);
         }
 
         for (Block block : Block.values()) {
-            if (FluidState.canBeWaterlogged(block)) {
-                registerWaterlog(block, WaterlogHandler.DEFAULT);
-                MinecraftServer.getBlockManager()
-                        .registerBlockPlacementRule(new FluidPlacementRule(block));
-            }
+            if (!FluidState.canBeWaterlogged(block)) continue;
+
+            registerWaterlog(block, WaterlogHandler.DEFAULT);
+            var existing = blockManager.getBlockPlacementRule(block);
+            if (existing instanceof FluidPlacementRule) continue;
+            blockManager.registerBlockPlacementRule(new FluidPlacementRule(block, existing));
         }
     }
 
@@ -135,5 +140,13 @@ public class MinestomFluids {
         EventNode<Event> node = EventNode.all("fluid-events");
         node.addListener(InstanceTickEvent.class, MinestomFluids::tick);
         return node;
+    }
+
+    /**
+     * Bucket gameplay and waterlogged block handling for players, see {@link FluidBuckets}. This is
+     * not part of {@link #events()}.
+     */
+    public static EventNode<Event> bucketEvents() {
+        return FluidBuckets.events();
     }
 }

@@ -26,7 +26,7 @@ public class LavaPlacementRule extends FluidPlacementRule {
     }
 
     @Override
-    public @NotNull Block blockPlace(@NotNull PlacementState placementState) {
+    public @Nullable Block blockPlace(@NotNull PlacementState placementState) {
         Instance instance = (Instance) placementState.instance();
         BlockVec blockVec = placementState.placePosition().asBlockVec();
 
