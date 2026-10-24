@@ -12,6 +12,7 @@ import net.kyori.adventure.nbt.IntBinaryTag;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.adventure.MinestomAdventure;
 import net.minestom.server.codec.Transcoder;
+import net.minestom.server.registry.RegistryTranscoder;
 import org.junit.jupiter.api.Test;
 
 class LootNumberTest {
@@ -105,5 +106,28 @@ class LootNumberTest {
                         .min()
                         .getDouble(LootContext.from(VanillaInterface.defaults(), Map.of())));
         assertInstanceOf(IntBinaryTag.class, encoded);
+    }
+
+    @Test
+    void arithmeticProvidersDecodeAndEvaluate() throws Exception {
+        MinecraftServer.init();
+
+        var input =
+                MinestomAdventure.tagStringIO()
+                        .asTag(
+                                """
+                {
+                  type: "minecraft:mul",
+                  inputs: [
+                    2,
+                    {type: "minecraft:add", inputs: [1, 2]},
+                    {type: "minecraft:negate", input: {type: "minecraft:sub", left: 1, right: 2}}
+                  ]
+                }
+                """);
+        var transcoder = new RegistryTranscoder<>(Transcoder.NBT, MinecraftServer.process());
+        var number = LootNumber.CODEC.decode(transcoder, input).orElseThrow();
+
+        assertEquals(6, number.getInt(LootContext.from(VanillaInterface.defaults(), Map.of())));
     }
 }

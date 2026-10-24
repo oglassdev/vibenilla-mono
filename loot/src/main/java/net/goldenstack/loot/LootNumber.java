@@ -44,7 +44,14 @@ public interface LootNumber {
         registry.register("environment_attribute", EnvironmentAttribute.CODEC);
         registry.register("score", Score.CODEC);
         registry.register("storage", Storage.CODEC);
-        registry.register("sum", Sum.CODEC);
+        registry.register("add", Sum.CODEC);
+        registry.register("conditional", Conditional.CODEC);
+        registry.register("div", Quotient.CODEC);
+        registry.register("max", Maximum.CODEC);
+        registry.register("min", Minimum.CODEC);
+        registry.register("mul", Product.CODEC);
+        registry.register("negate", Negate.CODEC);
+        registry.register("sub", Difference.CODEC);
         registry.register("uniform", Uniform.CODEC);
         return registry;
     }
@@ -262,7 +269,7 @@ public interface LootNumber {
 
     record Sum(@NotNull List<LootNumber> summands) implements LootNumber {
         public static final @NotNull StructCodec<Sum> CODEC =
-                StructCodec.struct("summands", LootNumber.CODEC.list(), Sum::summands, Sum::new);
+                StructCodec.struct("inputs", LootNumber.CODEC.list(), Sum::summands, Sum::new);
 
         @Override
         public int getInt(@NotNull LootContext context) {
@@ -284,6 +291,206 @@ public interface LootNumber {
             }
 
             return value;
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootNumber> codec() {
+            return CODEC;
+        }
+    }
+
+    record Product(@NotNull List<LootNumber> factors) implements LootNumber {
+        public static final @NotNull StructCodec<Product> CODEC =
+                StructCodec.struct(
+                        "inputs", LootNumber.CODEC.list(), Product::factors, Product::new);
+
+        @Override
+        public int getInt(@NotNull LootContext context) {
+            var value = 1;
+            for (var factor : this.factors) {
+                value *= factor.getInt(context);
+            }
+            return value;
+        }
+
+        @Override
+        public double getDouble(@NotNull LootContext context) {
+            var value = 1.0F;
+            for (var factor : this.factors) {
+                value *= (float) factor.getDouble(context);
+            }
+            return value;
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootNumber> codec() {
+            return CODEC;
+        }
+    }
+
+    record Minimum(@NotNull List<LootNumber> inputs) implements LootNumber {
+        public static final @NotNull StructCodec<Minimum> CODEC =
+                StructCodec.struct(
+                        "inputs", LootNumber.CODEC.list(), Minimum::inputs, Minimum::new);
+
+        @Override
+        public int getInt(@NotNull LootContext context) {
+            var value = Integer.MAX_VALUE;
+            for (var input : this.inputs) {
+                value = Math.min(value, input.getInt(context));
+            }
+            return value;
+        }
+
+        @Override
+        public double getDouble(@NotNull LootContext context) {
+            var value = Float.POSITIVE_INFINITY;
+            for (var input : this.inputs) {
+                value = Math.min(value, (float) input.getDouble(context));
+            }
+            return value;
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootNumber> codec() {
+            return CODEC;
+        }
+    }
+
+    record Maximum(@NotNull List<LootNumber> inputs) implements LootNumber {
+        public static final @NotNull StructCodec<Maximum> CODEC =
+                StructCodec.struct(
+                        "inputs", LootNumber.CODEC.list(), Maximum::inputs, Maximum::new);
+
+        @Override
+        public int getInt(@NotNull LootContext context) {
+            var value = Integer.MIN_VALUE;
+            for (var input : this.inputs) {
+                value = Math.max(value, input.getInt(context));
+            }
+            return value;
+        }
+
+        @Override
+        public double getDouble(@NotNull LootContext context) {
+            var value = Float.NEGATIVE_INFINITY;
+            for (var input : this.inputs) {
+                value = Math.max(value, (float) input.getDouble(context));
+            }
+            return value;
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootNumber> codec() {
+            return CODEC;
+        }
+    }
+
+    record Difference(@NotNull LootNumber left, @NotNull LootNumber right) implements LootNumber {
+        public static final @NotNull StructCodec<Difference> CODEC =
+                StructCodec.struct(
+                        "left",
+                        LootNumber.CODEC,
+                        Difference::left,
+                        "right",
+                        LootNumber.CODEC,
+                        Difference::right,
+                        Difference::new);
+
+        @Override
+        public int getInt(@NotNull LootContext context) {
+            return this.left.getInt(context) - this.right.getInt(context);
+        }
+
+        @Override
+        public double getDouble(@NotNull LootContext context) {
+            return (float) this.left.getDouble(context) - (float) this.right.getDouble(context);
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootNumber> codec() {
+            return CODEC;
+        }
+    }
+
+    record Quotient(@NotNull LootNumber left, @NotNull LootNumber right) implements LootNumber {
+        public static final @NotNull StructCodec<Quotient> CODEC =
+                StructCodec.struct(
+                        "left",
+                        LootNumber.CODEC,
+                        Quotient::left,
+                        "right",
+                        LootNumber.CODEC,
+                        Quotient::right,
+                        Quotient::new);
+
+        @Override
+        public int getInt(@NotNull LootContext context) {
+            var divisor = this.right.getInt(context);
+            return divisor == 0 ? 0 : this.left.getInt(context) / divisor;
+        }
+
+        @Override
+        public double getDouble(@NotNull LootContext context) {
+            return (float) this.left.getDouble(context) / (float) this.right.getDouble(context);
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootNumber> codec() {
+            return CODEC;
+        }
+    }
+
+    record Negate(@NotNull LootNumber input) implements LootNumber {
+        public static final @NotNull StructCodec<Negate> CODEC =
+                StructCodec.struct("input", LootNumber.CODEC, Negate::input, Negate::new);
+
+        @Override
+        public int getInt(@NotNull LootContext context) {
+            return -this.input.getInt(context);
+        }
+
+        @Override
+        public double getDouble(@NotNull LootContext context) {
+            return -(float) this.input.getDouble(context);
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootNumber> codec() {
+            return CODEC;
+        }
+    }
+
+    record Conditional(
+            @NotNull LootPredicate condition,
+            @NotNull LootNumber onTrue,
+            @NotNull LootNumber onFalse)
+            implements LootNumber {
+        public static final @NotNull StructCodec<Conditional> CODEC =
+                StructCodec.struct(
+                        "condition",
+                        LootPredicate.CODEC,
+                        Conditional::condition,
+                        "on_true",
+                        LootNumber.CODEC,
+                        Conditional::onTrue,
+                        "on_false",
+                        LootNumber.CODEC,
+                        Conditional::onFalse,
+                        Conditional::new);
+
+        @Override
+        public int getInt(@NotNull LootContext context) {
+            return this.choose(context).getInt(context);
+        }
+
+        @Override
+        public double getDouble(@NotNull LootContext context) {
+            return this.choose(context).getDouble(context);
+        }
+
+        private @NotNull LootNumber choose(@NotNull LootContext context) {
+            return this.condition.test(context) ? this.onTrue : this.onFalse;
         }
 
         @Override
