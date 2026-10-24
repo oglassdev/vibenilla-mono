@@ -39,7 +39,7 @@ public final class JigsawAssembler {
     public JigsawAssembler(StructureLoader loader, NoiseGeneratorSettingsRuntime settings) {
         this.loader = loader;
         this.settings = settings;
-        this.densityContext = new ChunkContext(settings.cellWidth(), settings.cellHeight());
+        this.densityContext = new ChunkContext();
         this.firstFreeHeightCache = new HashMap<>();
     }
 

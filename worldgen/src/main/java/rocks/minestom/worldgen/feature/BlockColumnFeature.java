@@ -3,7 +3,6 @@ package rocks.minestom.worldgen.feature;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.BlockColumnConfiguration;
-import rocks.minestom.worldgen.feature.placement.PlacementContext;
 
 /**
  * Port of vanilla {@code BlockColumnFeature}: layered columns like cave vines, basalt pillars, and
@@ -29,21 +28,7 @@ public final class BlockColumnFeature implements Feature<BlockColumnConfiguratio
             return false;
         }
 
-        var predicateContext =
-                new PlacementContext(
-                        level,
-                        0,
-                        0,
-                        0,
-                        0,
-                        null,
-                        null,
-                        context.minY(),
-                        context.maxY(),
-                        0,
-                        null,
-                        null,
-                        null);
+        var predicateContext = Feature.predicateContext(context);
 
         var origin = context.origin();
         var nextX = origin.blockX();

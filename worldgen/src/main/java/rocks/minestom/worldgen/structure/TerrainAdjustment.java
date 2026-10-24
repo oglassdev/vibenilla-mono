@@ -20,11 +20,12 @@ public enum TerrainAdjustment {
     public static TerrainAdjustment fromName(String name) {
         var stripped = name.startsWith("minecraft:") ? name.substring("minecraft:".length()) : name;
         return switch (stripped) {
+            case "none" -> NONE;
             case "bury" -> BURY;
             case "beard_thin" -> BEARD_THIN;
             case "beard_box" -> BEARD_BOX;
             case "encapsulate" -> ENCAPSULATE;
-            default -> NONE;
+            default -> throw new IllegalArgumentException("Unknown terrain adaptation: " + name);
         };
     }
 }

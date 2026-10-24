@@ -3,12 +3,8 @@ package rocks.minestom.worldgen;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 
-/**
- * Specifies the vertical bounds and noise cell sizing that control terrain scale. These values
- * define the height range of the world and the resolution at which noise is sampled, shaping both
- * terrain detail and generation cost.
- */
-public record NoiseSettings(int minY, int height, int sizeHorizontal, int sizeVertical) {
+/** The vertical extent of a dimension's noise terrain. */
+public record NoiseSettings(int minY, int height) {
     public static final Codec<NoiseSettings> CODEC =
             StructCodec.struct(
                     "min_y",
@@ -17,11 +13,5 @@ public record NoiseSettings(int minY, int height, int sizeHorizontal, int sizeVe
                     "height",
                     Codec.INT,
                     NoiseSettings::height,
-                    "size_horizontal",
-                    Codec.INT,
-                    NoiseSettings::sizeHorizontal,
-                    "size_vertical",
-                    Codec.INT,
-                    NoiseSettings::sizeVertical,
                     NoiseSettings::new);
 }

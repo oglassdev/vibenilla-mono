@@ -651,12 +651,17 @@ public final class RuinedPortalPlacer {
                         if (Math.abs(y - box.minY()) <= 3
                                 && this.canBlockBeReplacedByNetherrackOrMagma(
                                         level, pos, placement)) {
-                            this.placeNetherrackOrMagma(random, level, pos, start.properties());
+                            this.placeNetherrackOrMagma(
+                                    random, level, pos, placement, start.properties());
                             if (start.properties().overgrown()) {
                                 this.maybeAddLeavesAbove(random, level, pos, start.properties());
                             }
                             this.addNetherrackDripColumn(
-                                    random, level, pos.add(0, -1, 0), start.properties());
+                                    random,
+                                    level,
+                                    pos.add(0, -1, 0),
+                                    placement,
+                                    start.properties());
                         }
                     }
                 }
@@ -673,21 +678,29 @@ public final class RuinedPortalPlacer {
                 if (level.getBlock(pos.blockX(), pos.blockY(), pos.blockZ())
                         .compare(Block.NETHERRACK)) {
                     this.addNetherrackDripColumn(
-                            random, level, pos.add(0, -1, 0), start.properties());
+                            random,
+                            level,
+                            pos.add(0, -1, 0),
+                            start.placement(),
+                            start.properties());
                 }
             }
         }
     }
 
     private void addNetherrackDripColumn(
-            RandomSource random, GenerationUnitAdapter level, BlockVec pos, Properties properties) {
+            RandomSource random,
+            GenerationUnitAdapter level,
+            BlockVec pos,
+            VerticalPlacement placement,
+            Properties properties) {
         var current = pos;
-        this.placeNetherrackOrMagma(random, level, current, properties);
+        this.placeNetherrackOrMagma(random, level, current, placement, properties);
         var remainingCap = 8;
         while (remainingCap > 0 && random.nextFloat() < 0.5F) {
             current = current.add(0, -1, 0);
             remainingCap--;
-            this.placeNetherrackOrMagma(random, level, current, properties);
+            this.placeNetherrackOrMagma(random, level, current, placement, properties);
         }
     }
 
@@ -704,7 +717,14 @@ public final class RuinedPortalPlacer {
     }
 
     private void placeNetherrackOrMagma(
-            RandomSource random, GenerationUnitAdapter level, BlockVec pos, Properties properties) {
+            RandomSource random,
+            GenerationUnitAdapter level,
+            BlockVec pos,
+            VerticalPlacement placement,
+            Properties properties) {
+        if (!this.canBlockBeReplacedByNetherrackOrMagma(level, pos, placement)) {
+            return;
+        }
         if (!properties.cold() && random.nextFloat() < 0.07F) {
             level.setBlock(pos.blockX(), pos.blockY(), pos.blockZ(), Block.MAGMA_BLOCK);
         } else {

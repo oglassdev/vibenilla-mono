@@ -562,7 +562,8 @@ public final class MineshaftPlacer {
                                 biomeSource,
                                 new DataPackBiomeResolver(dataPack),
                                 biomeZoomer,
-                                new CarverLoader(dataPack, this.featureLoader.blockTags()));
+                                new CarverLoader(dataPack),
+                                this.featureLoader.blockTags());
             }
             return this.carvers;
         }

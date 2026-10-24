@@ -1,55 +1,81 @@
 package rocks.minestom.worldgen.carver;
 
+import com.google.gson.JsonObject;
+import rocks.minestom.worldgen.feature.valueproviders.ConstantFloatProvider;
+import rocks.minestom.worldgen.feature.valueproviders.FloatProvider;
+import rocks.minestom.worldgen.feature.valueproviders.IntProvider;
 import rocks.minestom.worldgen.random.LegacyRandomSource;
 import rocks.minestom.worldgen.random.RandomSource;
 
 /**
  * Exact port of vanilla {@code CaveWorldCarver}. All random draws happen in the vanilla order;
  * tunnels get their own legacy-LCG random seeded from the carve random so their shapes are stable
- * regardless of the target chunk.
+ * regardless of the target chunk. The nether cave is this carver with wider, taller tunnels.
  */
-public class CaveWorldCarver extends WorldCarver<CaveCarverConfiguration> {
+public record CaveWorldCarver(
+        float probability,
+        CarverHeightProvider y,
+        IntProvider count,
+        FloatProvider thickness,
+        boolean weirdThicknessBias,
+        FloatProvider roomVerticalRadiusMultiplier,
+        FloatProvider horizontalRadiusMultiplier,
+        FloatProvider verticalRadiusMultiplier,
+        FloatProvider startVerticalRadiusMultiplier,
+        FloatProvider floorLevel)
+        implements WorldCarver {
+    private static final FloatProvider DEFAULT_START_VERTICAL_RADIUS_MULTIPLIER =
+            new ConstantFloatProvider(1.0F);
 
-    @Override
-    public boolean isStartChunk(CaveCarverConfiguration configuration, RandomSource random) {
-        return random.nextFloat() <= configuration.base().probability();
+    static CaveWorldCarver fromJson(JsonObject json) {
+        return new CaveWorldCarver(
+                json.get("probability").getAsFloat(),
+                CarverHeightProvider.fromJson(json.get("y")),
+                CarverLoader.parseCount(json.get("count")),
+                FloatProvider.fromJson(json.get("thickness")),
+                json.has("weird_thickness_bias") && json.get("weird_thickness_bias").getAsBoolean(),
+                FloatProvider.fromJson(json.get("room_vertical_radius_multiplier")),
+                FloatProvider.fromJson(json.get("horizontal_radius_multiplier")),
+                FloatProvider.fromJson(json.get("vertical_radius_multiplier")),
+                json.has("start_vertical_radius_multiplier")
+                        ? FloatProvider.fromJson(json.get("start_vertical_radius_multiplier"))
+                        : DEFAULT_START_VERTICAL_RADIUS_MULTIPLIER,
+                FloatProvider.fromJson(json.get("floor_level")));
     }
 
     @Override
-    protected CarverConfiguration baseConfig(CaveCarverConfiguration configuration) {
-        return configuration.base();
+    public boolean isStartChunk(RandomSource random) {
+        return random.nextFloat() <= this.probability;
     }
 
     @Override
     public boolean carve(
-            CarvingContext context,
-            CaveCarverConfiguration configuration,
+            GenerationRange range,
             RandomSource random,
+            int chunkX,
+            int chunkZ,
             int sourceChunkX,
-            int sourceChunkZ) {
+            int sourceChunkZ,
+            CarverOutput output) {
         var maxDistance = (this.getRange() * 2 - 1) * 16;
-        var caveCount = random.nextInt(random.nextInt(random.nextInt(this.getCaveBound()) + 1) + 1);
+        var caveCount = this.count.sample(random);
 
         for (var cave = 0; cave < caveCount; cave++) {
             double x = sourceChunkX * 16 + random.nextInt(16);
-            double y =
-                    configuration
-                            .base()
-                            .y()
-                            .sample(random, context.minGenY(), context.maxGenYInclusive());
+            double y = this.y.sample(random, range.minGenY(), range.maxGenYInclusive());
             double z = sourceChunkZ * 16 + random.nextInt(16);
-            double horizontalRadiusMultiplier =
-                    configuration.horizontalRadiusMultiplier().sample(random);
-            double verticalRadiusMultiplier =
-                    configuration.verticalRadiusMultiplier().sample(random);
-            double floorLevel = configuration.floorLevel().sample(random);
-            CarveSkipChecker skipChecker =
-                    (skipContext, xd, yd, zd, blockY) -> shouldSkip(xd, yd, zd, floorLevel);
+            double horizontalRadiusMultiplier = this.horizontalRadiusMultiplier.sample(random);
+            double verticalRadiusMultiplier = this.verticalRadiusMultiplier.sample(random);
+            double startVerticalRadiusMultiplier =
+                    this.startVerticalRadiusMultiplier.sample(random);
+            double floorLevel = this.floorLevel.sample(random);
+            WorldCarver.CarveSkipChecker skipChecker =
+                    (xd, yd, zd, blockY) -> shouldSkip(xd, yd, zd, floorLevel);
             var tunnels = 1;
             if (random.nextInt(4) == 0) {
-                double yScale = configuration.base().yScale().sample(random);
+                double yScale = this.roomVerticalRadiusMultiplier.sample(random);
                 var thickness = 1.0F + random.nextFloat() * 6.0F;
-                this.createRoom(context, configuration, x, y, z, thickness, yScale, skipChecker);
+                this.createRoom(chunkX, chunkZ, x, y, z, thickness, yScale, output, skipChecker);
                 tunnels += random.nextInt(4);
             }
 
@@ -59,8 +85,8 @@ public class CaveWorldCarver extends WorldCarver<CaveCarverConfiguration> {
                 var thickness = this.getThickness(random);
                 var distance = maxDistance - random.nextInt(maxDistance / 4);
                 this.createTunnel(
-                        context,
-                        configuration,
+                        chunkX,
+                        chunkZ,
                         random.nextLong(),
                         x,
                         y,
@@ -72,7 +98,8 @@ public class CaveWorldCarver extends WorldCarver<CaveCarverConfiguration> {
                         verticalRotation,
                         0,
                         distance,
-                        this.getYScale(),
+                        startVerticalRadiusMultiplier,
+                        output,
                         skipChecker);
             }
         }
@@ -80,48 +107,42 @@ public class CaveWorldCarver extends WorldCarver<CaveCarverConfiguration> {
         return true;
     }
 
-    protected int getCaveBound() {
-        return 15;
-    }
-
-    protected float getThickness(RandomSource random) {
-        var thickness = random.nextFloat() * 2.0F + random.nextFloat();
-        if (random.nextInt(10) == 0) {
+    private float getThickness(RandomSource random) {
+        var thickness = this.thickness.sample(random);
+        if (this.weirdThicknessBias && random.nextInt(10) == 0) {
             thickness *= random.nextFloat() * random.nextFloat() * 3.0F + 1.0F;
         }
 
         return thickness;
     }
 
-    protected double getYScale() {
-        return 1.0;
-    }
-
-    protected void createRoom(
-            CarvingContext context,
-            CaveCarverConfiguration configuration,
+    private void createRoom(
+            int chunkX,
+            int chunkZ,
             double x,
             double y,
             double z,
             float thickness,
             double yScale,
-            CarveSkipChecker skipChecker) {
-        var horizontalRadius = 1.5 + sin((float) (Math.PI / 2)) * thickness;
+            CarverOutput output,
+            WorldCarver.CarveSkipChecker skipChecker) {
+        var horizontalRadius = 1.5 + CarverMath.sin((float) (Math.PI / 2)) * thickness;
         var verticalRadius = horizontalRadius * yScale;
-        this.carveEllipsoid(
-                context,
-                configuration,
+        WorldCarver.carveEllipsoid(
+                chunkX,
+                chunkZ,
                 x + 1.0,
                 y,
                 z,
                 horizontalRadius,
                 verticalRadius,
+                output,
                 skipChecker);
     }
 
-    protected void createTunnel(
-            CarvingContext context,
-            CaveCarverConfiguration configuration,
+    private void createTunnel(
+            int chunkX,
+            int chunkZ,
             long tunnelSeed,
             double x,
             double y,
@@ -134,7 +155,8 @@ public class CaveWorldCarver extends WorldCarver<CaveCarverConfiguration> {
             int step,
             int dist,
             double yScale,
-            CarveSkipChecker skipChecker) {
+            CarverOutput output,
+            WorldCarver.CarveSkipChecker skipChecker) {
         var random = new LegacyRandomSource(tunnelSeed);
         var splitPoint = random.nextInt(dist / 2) + dist / 4;
         var steep = random.nextInt(6) == 0;
@@ -142,12 +164,13 @@ public class CaveWorldCarver extends WorldCarver<CaveCarverConfiguration> {
         var xRota = 0.0F;
 
         for (var currentStep = step; currentStep < dist; currentStep++) {
-            var horizontalRadius = 1.5 + sin((float) Math.PI * currentStep / dist) * thickness;
+            var horizontalRadius =
+                    1.5 + CarverMath.sin((float) Math.PI * currentStep / dist) * thickness;
             var verticalRadius = horizontalRadius * yScale;
-            var cosX = cos(verticalRotation);
-            x += cos(horizontalRotation) * cosX;
-            y += sin(verticalRotation);
-            z += sin(horizontalRotation) * cosX;
+            var cosX = CarverMath.cos(verticalRotation);
+            x += CarverMath.cos(horizontalRotation) * cosX;
+            y += CarverMath.sin(verticalRotation);
+            z += CarverMath.sin(horizontalRotation) * cosX;
             verticalRotation *= steep ? 0.92F : 0.7F;
             verticalRotation += xRota * 0.1F;
             horizontalRotation += yRota * 0.1F;
@@ -157,8 +180,8 @@ public class CaveWorldCarver extends WorldCarver<CaveCarverConfiguration> {
             yRota += (random.nextFloat() - random.nextFloat()) * random.nextFloat() * 4.0F;
             if (currentStep == splitPoint && thickness > 1.0F) {
                 this.createTunnel(
-                        context,
-                        configuration,
+                        chunkX,
+                        chunkZ,
                         random.nextLong(),
                         x,
                         y,
@@ -171,10 +194,11 @@ public class CaveWorldCarver extends WorldCarver<CaveCarverConfiguration> {
                         currentStep,
                         dist,
                         1.0,
+                        output,
                         skipChecker);
                 this.createTunnel(
-                        context,
-                        configuration,
+                        chunkX,
+                        chunkZ,
                         random.nextLong(),
                         x,
                         y,
@@ -187,24 +211,25 @@ public class CaveWorldCarver extends WorldCarver<CaveCarverConfiguration> {
                         currentStep,
                         dist,
                         1.0,
+                        output,
                         skipChecker);
                 return;
             }
 
             if (random.nextInt(4) != 0) {
-                if (!canReach(
-                        context.chunkX(), context.chunkZ(), x, z, currentStep, dist, thickness)) {
+                if (!WorldCarver.canReach(chunkX, chunkZ, x, z, currentStep, dist, thickness)) {
                     return;
                 }
 
-                this.carveEllipsoid(
-                        context,
-                        configuration,
+                WorldCarver.carveEllipsoid(
+                        chunkX,
+                        chunkZ,
                         x,
                         y,
                         z,
                         horizontalRadius * horizontalRadiusMultiplier,
                         verticalRadius * verticalRadiusMultiplier,
+                        output,
                         skipChecker);
             }
         }

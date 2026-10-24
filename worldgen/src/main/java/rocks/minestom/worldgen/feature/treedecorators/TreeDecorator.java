@@ -7,6 +7,10 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
+import rocks.minestom.worldgen.feature.ConfiguredFeature;
+import rocks.minestom.worldgen.feature.Feature;
+import rocks.minestom.worldgen.feature.FeatureConfiguration;
+import rocks.minestom.worldgen.feature.FeaturePlaceContext;
 import rocks.minestom.worldgen.random.RandomSource;
 
 public interface TreeDecorator {
@@ -22,6 +26,37 @@ public interface TreeDecorator {
         }
     }
 
+    /** Places a configured feature at a position, sharing the tree's level and random. */
+    @FunctionalInterface
+    interface FeaturePlacer {
+        boolean place(ConfiguredFeature<?> feature, BlockVec origin);
+
+        static <T extends Block.Getter & Block.Setter> FeaturePlacer in(
+                FeaturePlaceContext<?, T> context) {
+            return new FeaturePlacer() {
+                @Override
+                public boolean place(ConfiguredFeature<?> feature, BlockVec origin) {
+                    return placeConfigured(feature, origin);
+                }
+
+                private <C extends FeatureConfiguration> boolean placeConfigured(
+                        ConfiguredFeature<C> feature, BlockVec origin) {
+                    Feature<C> implementation = feature.feature();
+                    return implementation.place(
+                            new FeaturePlaceContext<>(
+                                    context.accessor(),
+                                    context.random(),
+                                    origin,
+                                    feature.config(),
+                                    context.worldSeed(),
+                                    context.minY(),
+                                    context.maxY(),
+                                    context.seaLevel()));
+                }
+            };
+        }
+    }
+
     final class Context {
         private final Block.Getter level;
         private final BiConsumer<BlockVec, Block> decorationSetter;
@@ -29,6 +64,7 @@ public interface TreeDecorator {
         private final List<BlockVec> logs;
         private final List<BlockVec> leaves;
         private final List<BlockVec> roots;
+        private final FeaturePlacer featurePlacer;
 
         /**
          * Log/leaf/root collections must iterate in vanilla's hash order (see {@code VanillaPos});
@@ -40,8 +76,10 @@ public interface TreeDecorator {
                 RandomSource random,
                 List<BlockVec> logs,
                 List<BlockVec> leaves,
-                List<BlockVec> roots) {
+                List<BlockVec> roots,
+                FeaturePlacer featurePlacer) {
             this.level = level;
+            this.featurePlacer = featurePlacer;
             this.decorationSetter = decorationSetter;
             this.random = random;
             this.logs = new ArrayList<>(logs);
@@ -66,6 +104,26 @@ public interface TreeDecorator {
 
         public boolean checkBlock(BlockVec position, Predicate<Block> predicate) {
             return predicate.test(this.level.getBlock(position));
+        }
+
+        public boolean isReplaceable(BlockVec position) {
+            return this.level.getBlock(position).replaceable();
+        }
+
+        public boolean isWaterOrWaterNearby(BlockVec position) {
+            for (var offset : new int[][] {{0, 0}, {1, 0}, {-1, 0}, {0, -1}, {0, 1}}) {
+                if (this.level
+                        .getBlock(position.add(offset[0], 0, offset[1]))
+                        .compare(Block.WATER)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public boolean placeFeature(ConfiguredFeature<?> feature, BlockVec origin) {
+            return this.featurePlacer.place(feature, origin);
         }
 
         public Block.Getter level() {

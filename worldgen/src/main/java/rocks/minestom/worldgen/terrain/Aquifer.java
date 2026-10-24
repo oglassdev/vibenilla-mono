@@ -1,10 +1,12 @@
 package rocks.minestom.worldgen.terrain;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import net.minestom.server.instance.block.Block;
 import org.jetbrains.annotations.Nullable;
-import rocks.minestom.worldgen.NoiseChunk;
 import rocks.minestom.worldgen.VMath;
+import rocks.minestom.worldgen.density.ChunkContext;
 import rocks.minestom.worldgen.density.DensityFunction;
 import rocks.minestom.worldgen.random.PositionalRandomFactory;
 
@@ -25,29 +27,29 @@ public interface Aquifer {
     boolean shouldScheduleFluidUpdate();
 
     static Aquifer create(
-            NoiseChunk noiseChunk,
+            ChunkContext densityContext,
             int minBlockX,
             int minBlockZ,
             DensityFunction barrierNoise,
             DensityFunction fluidLevelFloodednessNoise,
             DensityFunction fluidLevelSpreadNoise,
             DensityFunction lavaNoise,
-            DensityFunction erosion,
-            DensityFunction depth,
+            DensityFunction exclusion,
+            DensityFunction surfaceLevel,
             PositionalRandomFactory positionalRandomFactory,
             int minBlockY,
             int yBlockSize,
             FluidPicker globalFluidPicker) {
         return new NoiseBasedAquifer(
-                noiseChunk,
+                densityContext,
                 minBlockX,
                 minBlockZ,
                 barrierNoise,
                 fluidLevelFloodednessNoise,
                 fluidLevelSpreadNoise,
                 lavaNoise,
-                erosion,
-                depth,
+                exclusion,
+                surfaceLevel,
                 positionalRandomFactory,
                 minBlockY,
                 yBlockSize,
@@ -121,7 +123,8 @@ public interface Aquifer {
                     {-2, 1}, {-1, 1}, {0, 1}, {1, 1}
                 };
 
-        private final NoiseChunk noiseChunk;
+        private final ChunkContext densityContext;
+        private final Map<Long, Integer> surfaceLevelCache = new HashMap<>();
         private final DensityFunction barrierNoise;
         private final DensityFunction fluidLevelFloodednessNoise;
         private final DensityFunction fluidLevelSpreadNoise;
@@ -130,8 +133,8 @@ public interface Aquifer {
         private final FluidStatus[] aquiferCache;
         private final long[] aquiferLocationCache;
         private final FluidPicker globalFluidPicker;
-        private final DensityFunction erosion;
-        private final DensityFunction depth;
+        private final DensityFunction exclusion;
+        private final DensityFunction surfaceLevel;
         private boolean shouldScheduleFluidUpdate;
         private final int skipSamplingAboveY;
         private final int minGridX;
@@ -141,26 +144,26 @@ public interface Aquifer {
         private final int gridSizeZ;
 
         private NoiseBasedAquifer(
-                NoiseChunk noiseChunk,
+                ChunkContext densityContext,
                 int minBlockX,
                 int minBlockZ,
                 DensityFunction barrierNoise,
                 DensityFunction fluidLevelFloodednessNoise,
                 DensityFunction fluidLevelSpreadNoise,
                 DensityFunction lavaNoise,
-                DensityFunction erosion,
-                DensityFunction depth,
+                DensityFunction exclusion,
+                DensityFunction surfaceLevel,
                 PositionalRandomFactory positionalRandomFactory,
                 int minBlockY,
                 int yBlockSize,
                 FluidPicker globalFluidPicker) {
-            this.noiseChunk = noiseChunk;
+            this.densityContext = densityContext;
             this.barrierNoise = barrierNoise;
             this.fluidLevelFloodednessNoise = fluidLevelFloodednessNoise;
             this.fluidLevelSpreadNoise = fluidLevelSpreadNoise;
             this.lavaNoise = lavaNoise;
-            this.erosion = erosion;
-            this.depth = depth;
+            this.exclusion = exclusion;
+            this.surfaceLevel = surfaceLevel;
             this.positionalRandomFactory = positionalRandomFactory;
             this.minGridX = gridX(minBlockX + SAMPLE_OFFSET_X) + MIN_CELL_SAMPLE_X;
             this.globalFluidPicker = globalFluidPicker;
@@ -178,7 +181,7 @@ public interface Aquifer {
             Arrays.fill(this.aquiferLocationCache, Long.MAX_VALUE);
             var maxAdjustedSurfaceLevel =
                     this.adjustSurfaceLevel(
-                            noiseChunk.maxPreliminarySurfaceLevel(
+                            this.maxPreliminarySurfaceLevel(
                                     fromGridX(this.minGridX, 0),
                                     fromGridZ(this.minGridZ, 0),
                                     fromGridX(maxGridX, X_RANGE - 1),
@@ -186,6 +189,33 @@ public interface Aquifer {
             var skipSamplingAboveGridY =
                     gridY(maxAdjustedSurfaceLevel + Y_SPACING) - MIN_CELL_SAMPLE_Y;
             this.skipSamplingAboveY = fromGridY(skipSamplingAboveGridY, Y_SPACING - 1) - 1;
+        }
+
+        private int preliminarySurfaceLevel(int blockX, int blockZ) {
+            var quantizedX = (blockX >> 2) << 2;
+            var quantizedZ = (blockZ >> 2) << 2;
+            var key = ((long) quantizedX << 32) | (quantizedZ & 0xFFFFFFFFL);
+            var cached = this.surfaceLevelCache.get(key);
+            if (cached != null) {
+                return cached;
+            }
+            var level =
+                    VMath.floor(
+                            this.densityContext.sample(
+                                    this.surfaceLevel, quantizedX, 0, quantizedZ));
+            this.surfaceLevelCache.put(key, level);
+            return level;
+        }
+
+        private int maxPreliminarySurfaceLevel(
+                int minBlockX, int minBlockZ, int maxBlockX, int maxBlockZ) {
+            var maxY = Integer.MIN_VALUE;
+            for (var blockZ = minBlockZ; blockZ <= maxBlockZ; blockZ += 4) {
+                for (var blockX = minBlockX; blockX <= maxBlockX; blockX += 4) {
+                    maxY = Math.max(maxY, this.preliminarySurfaceLevel(blockX, blockZ));
+                }
+            }
+            return maxY;
         }
 
         private int getIndex(int gridX, int gridY, int gridZ) {
@@ -476,8 +506,7 @@ public interface Aquifer {
             for (var offset : SURFACE_SAMPLING_OFFSETS_IN_CHUNKS) {
                 var sampleX = x + (offset[0] << 4);
                 var sampleZ = z + (offset[1] << 4);
-                var preliminarySurfaceLevel =
-                        this.noiseChunk.preliminarySurfaceLevel(sampleX, sampleZ);
+                var preliminarySurfaceLevel = this.preliminarySurfaceLevel(sampleX, sampleZ);
                 var adjustedSurfaceLevel = this.adjustSurfaceLevel(preliminarySurfaceLevel);
                 var start = offset[0] == 0 && offset[1] == 0;
                 if (start && bottomOfAquiferCell > adjustedSurfaceLevel) {
@@ -530,7 +559,7 @@ public interface Aquifer {
             var context = new DensityFunction.SinglePointContext(x, y, z);
             double partiallyFloodedness;
             double fullyFloodedness;
-            if (isDeepDarkRegion(this.erosion, this.depth, context)) {
+            if (this.exclusion.compute(context) > 0.0) {
                 partiallyFloodedness = -1.0;
                 fullyFloodedness = -1.0;
             } else {
@@ -595,12 +624,6 @@ public interface Aquifer {
             }
 
             return fluidType;
-        }
-
-        // Port of OverworldBiomeBuilder.isDeepDarkRegion
-        private static boolean isDeepDarkRegion(
-                DensityFunction erosion, DensityFunction depth, DensityFunction.Context context) {
-            return erosion.compute(context) < -0.225F && depth.compute(context) > 0.9F;
         }
 
         // Exact port of Mth.clampedMap (clampedLerp over inverseLerp)

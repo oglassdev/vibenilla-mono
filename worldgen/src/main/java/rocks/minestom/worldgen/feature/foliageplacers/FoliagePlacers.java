@@ -75,6 +75,10 @@ public final class FoliagePlacers {
                                 CherryFoliagePlacer.CODEC
                                         .decode(coder, value)
                                         .mapResult(placer -> (FoliagePlacer) placer);
+                        case "minecraft:poplar_foliage_placer" ->
+                                PoplarFoliagePlacer.CODEC
+                                        .decode(coder, value)
+                                        .mapResult(placer -> (FoliagePlacer) placer);
                         default -> new Result.Error<>("Unknown foliage placer type: " + type);
                     };
                 }

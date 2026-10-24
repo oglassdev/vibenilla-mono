@@ -10,7 +10,6 @@ import rocks.minestom.worldgen.feature.FeatureConfiguration;
 import rocks.minestom.worldgen.feature.Features;
 import rocks.minestom.worldgen.structure.context.BlockTagManager;
 import rocks.minestom.worldgen.structure.processor.StructureProcessorList;
-import rocks.minestom.worldgen.structure.processor.StructureProcessors;
 import rocks.minestom.worldgen.structure.template.StructureTemplate;
 
 /**
@@ -48,8 +47,10 @@ public record FossilFeatureConfiguration(
         var fossilStructures = parseTemplates(object.getAsJsonArray("fossil_structures"), dataPack);
         var overlayStructures =
                 parseTemplates(object.getAsJsonArray("overlay_structures"), dataPack);
-        var fossilProcessors = parseProcessorList(object.get("fossil_processors"), dataPack);
-        var overlayProcessors = parseProcessorList(object.get("overlay_processors"), dataPack);
+        var fossilProcessors =
+                StructureData.processorList(object.get("fossil_processors"), dataPack);
+        var overlayProcessors =
+                StructureData.processorList(object.get("overlay_processors"), dataPack);
         var maxEmptyCornersAllowed = object.get("max_empty_corners_allowed").getAsInt();
 
         return new FossilFeatureConfiguration(
@@ -64,35 +65,8 @@ public record FossilFeatureConfiguration(
     private static List<StructureTemplate> parseTemplates(JsonArray array, DataPack dataPack) {
         var templates = new ArrayList<StructureTemplate>(array.size());
         for (var element : array) {
-            templates.add(loadTemplate(dataPack, Key.key(element.getAsString())));
+            templates.add(StructureData.template(dataPack, Key.key(element.getAsString())));
         }
         return List.copyOf(templates);
-    }
-
-    private static StructureTemplate loadTemplate(DataPack dataPack, Key key) {
-        var path =
-                dataPack.rootPath()
-                        .resolve("data")
-                        .resolve(key.namespace())
-                        .resolve("structure")
-                        .resolve(key.value() + ".nbt");
-        return StructureTemplate.load(path);
-    }
-
-    private static StructureProcessorList parseProcessorList(JsonElement json, DataPack dataPack) {
-        if (json == null) {
-            return StructureProcessorList.EMPTY;
-        }
-
-        if (json.isJsonPrimitive()) {
-            return StructureProcessors.parseProcessorList(
-                    dataPack.readProcessorList(Key.key(json.getAsString())));
-        }
-
-        if (json.isJsonObject()) {
-            return StructureProcessors.parseProcessorList(json);
-        }
-
-        return StructureProcessorList.EMPTY;
     }
 }

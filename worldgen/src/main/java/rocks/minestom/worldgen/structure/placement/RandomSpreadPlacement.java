@@ -1,5 +1,7 @@
 package rocks.minestom.worldgen.structure.placement;
 
+import java.util.function.Supplier;
+import org.jetbrains.annotations.Nullable;
 import rocks.minestom.worldgen.random.LegacyRandomSource;
 import rocks.minestom.worldgen.structure.StructurePlacement;
 
@@ -19,6 +21,8 @@ import rocks.minestom.worldgen.structure.StructurePlacement;
  *   <li>{@code spreadType} - Distribution of random offset (linear or triangular)
  *   <li>{@code frequency} - Chance for a placement chunk to actually generate
  *   <li>{@code frequencyReduction} - Random scheme used for the frequency roll
+ *   <li>{@code exclusionZone} - Another set's placement that must not start within a chunk range,
+ *       or null
  * </ul>
  *
  * @see RandomSpreadType for offset distribution options
@@ -29,8 +33,31 @@ public record RandomSpreadPlacement(
         int salt,
         RandomSpreadType spreadType,
         float frequency,
-        FrequencyReduction frequencyReduction)
+        FrequencyReduction frequencyReduction,
+        @Nullable ExclusionZone exclusionZone)
         implements StructurePlacement {
+
+    /**
+     * Vanilla {@code StructurePlacement.ExclusionZone}: forbids a start when the other set has a
+     * start chunk within {@code chunkCount} chunks. The other placement is resolved lazily; an
+     * unavailable set (already logged by the loader) excludes nothing.
+     */
+    public record ExclusionZone(Supplier<StructurePlacement> otherPlacement, int chunkCount) {
+        boolean forbids(int chunkX, int chunkZ, long seed, boolean legacyRandomSource) {
+            var other = this.otherPlacement.get();
+            if (other == null) {
+                return false;
+            }
+            for (var x = chunkX - this.chunkCount; x <= chunkX + this.chunkCount; x++) {
+                for (var z = chunkZ - this.chunkCount; z <= chunkZ + this.chunkCount; z++) {
+                    if (other.isStartChunk(x, z, seed, legacyRandomSource)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+    }
 
     @Override
     public boolean isStartChunk(int chunkX, int chunkZ, long seed, boolean legacyRandomSource) {
@@ -62,8 +89,13 @@ public record RandomSpreadPlacement(
         }
 
         // Vanilla applyAdditionalChunkRestrictions: frequency gate
-        return !(this.frequency < 1.0F)
-                || this.frequencyReduction.shouldGenerate(
-                        seed, this.salt, chunkX, chunkZ, this.frequency);
+        if (this.frequency < 1.0F
+                && !this.frequencyReduction.shouldGenerate(
+                        seed, this.salt, chunkX, chunkZ, this.frequency)) {
+            return false;
+        }
+
+        return this.exclusionZone == null
+                || !this.exclusionZone.forbids(chunkX, chunkZ, seed, legacyRandomSource);
     }
 }

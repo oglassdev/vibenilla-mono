@@ -2,6 +2,7 @@ package rocks.minestom.worldgen.structure;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -24,17 +25,15 @@ import rocks.minestom.worldgen.structure.template.StructureShapeUpdater;
 public final class StructureWrites {
     private static final Map<int[], List<Write>> PENDING =
             Collections.synchronizedMap(new WeakHashMap<>());
-    // Not keyed per chunk: a structure's leaves commonly span several chunks,
-    // and each one only settles correctly once every chunk touching that
-    // canopy (and whatever natural vegetation grew alongside it) has placed
-    // its blocks. Every flush relaxes the whole accumulated set again with
-    // that chunk's live cross-chunk view, so the last chunk to decorate ends
-    // up converging the whole canopy, mirroring vanilla leaves eventually
-    // settling once enough real time (and ticks) has passed nearby.
-    private static final List<BlockVec> PENDING_LEAVES =
-            Collections.synchronizedList(new ArrayList<>());
+    // Leaves queued by structure placement, per generator (its terrain lookup identity) and per
+    // chunk of the leaf. A structure's leaves commonly span several chunks, and each one only
+    // settles correctly once every chunk touching that canopy (and whatever natural vegetation grew
+    // alongside it) has been decorated, so every flush relaxes the pending leaves again with that
+    // chunk's live cross-chunk view. Leaves are dropped once their whole 3x3 chunk neighborhood is
+    // decorated.
+    private static final Map<GenerationUnitAdapter.TerrainLookup, LeavesQueue> PENDING_LEAVES =
+            Collections.synchronizedMap(new WeakHashMap<>());
     private static volatile GenerationUnitAdapter.TerrainLookup terrainLookup;
-    private static volatile BlockTagManager leavesBlockTags;
 
     private StructureWrites() {}
 
@@ -135,31 +134,77 @@ public final class StructureWrites {
      * through scheduled ticks that only fire once natural trees near the structure already exist.
      */
     public static void queueLeavesUpdate(
-            int[] chunkHandle, BlockTagManager blockTags, List<BlockVec> positions) {
-        if (chunkHandle == null || positions.isEmpty()) {
+            GenerationUnitAdapter.TerrainLookup lookup,
+            BlockTagManager blockTags,
+            List<BlockVec> positions) {
+        if (lookup == null || positions.isEmpty()) {
             return;
         }
-        leavesBlockTags = blockTags;
-        PENDING_LEAVES.addAll(positions);
+        var queue = PENDING_LEAVES.computeIfAbsent(lookup, unused -> new LeavesQueue(blockTags));
+        synchronized (queue) {
+            for (var position : positions) {
+                queue.byChunk
+                        .computeIfAbsent(
+                                chunkKey(position.blockX() >> 4, position.blockZ() >> 4),
+                                unused -> new ArrayList<>())
+                        .add(position);
+            }
+        }
     }
 
     /**
-     * Re-relaxes every leaf queued so far (from this chunk and any other chunk a structure's canopy
-     * has touched) against this chunk's live cross-chunk view, now that its own decoration has
-     * finished planting whatever natural trees end up nearby.
+     * Re-relaxes every pending leaf (from this chunk and any other chunk a structure's canopy has
+     * touched) against this chunk's live cross-chunk view, now that its own decoration has finished
+     * planting whatever natural trees end up nearby, then drops the leaves that can no longer
+     * change.
      */
     public static void flushLeavesUpdates(int[] chunkHandle, GenerationUnitAdapter level) {
-        if (chunkHandle == null || leavesBlockTags == null) {
+        var lookup = level.terrainLookup();
+        if (chunkHandle == null || lookup == null) {
             return;
         }
-        List<BlockVec> seeds;
-        synchronized (PENDING_LEAVES) {
-            if (PENDING_LEAVES.isEmpty()) {
-                return;
-            }
-            seeds = new ArrayList<>(PENDING_LEAVES);
+        var queue = PENDING_LEAVES.get(lookup);
+        if (queue == null) {
+            return;
         }
+
+        List<BlockVec> seeds;
+        synchronized (queue) {
+            seeds = queue.byChunk.values().stream().flatMap(List::stream).toList();
+            queue.byChunk.keySet().removeIf(chunkKey -> isNeighborhoodDecorated(lookup, chunkKey));
+        }
+        if (seeds.isEmpty()) {
+            return;
+        }
+
         var positions = StructureShapeUpdater.expandConnectedLeaves(level, seeds);
-        StructureShapeUpdater.updateLeavesDistance(level, leavesBlockTags, positions);
+        StructureShapeUpdater.updateLeavesDistance(level, queue.blockTags, positions);
+    }
+
+    private static boolean isNeighborhoodDecorated(
+            GenerationUnitAdapter.TerrainLookup lookup, long chunkKey) {
+        var chunkX = (int) (chunkKey >> 32);
+        var chunkZ = (int) chunkKey;
+        for (var offsetX = -1; offsetX <= 1; offsetX++) {
+            for (var offsetZ = -1; offsetZ <= 1; offsetZ++) {
+                if (!Boolean.TRUE.equals(lookup.decorated(chunkX + offsetX, chunkZ + offsetZ))) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static long chunkKey(int chunkX, int chunkZ) {
+        return (long) chunkX << 32 | (chunkZ & 0xFFFFFFFFL);
+    }
+
+    private static final class LeavesQueue {
+        private final BlockTagManager blockTags;
+        private final Map<Long, List<BlockVec>> byChunk = new HashMap<>();
+
+        private LeavesQueue(BlockTagManager blockTags) {
+            this.blockTags = blockTags;
+        }
     }
 }

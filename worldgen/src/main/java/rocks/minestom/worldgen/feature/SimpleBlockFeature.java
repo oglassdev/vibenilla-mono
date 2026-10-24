@@ -9,17 +9,22 @@ public final class SimpleBlockFeature implements Feature<SimpleBlockConfiguratio
     public <T extends Block.Getter & Block.Setter> boolean place(
             FeaturePlaceContext<SimpleBlockConfiguration, T> context) {
         var targetPosition = context.origin();
+        var config = context.config();
         var toPlace =
-                context.config()
-                        .toPlace()
-                        .getState(context.accessor(), context.random(), targetPosition);
-        if (!this.canSurvive(context.accessor(), targetPosition, toPlace)) {
+                config.toPlace()
+                        .getOptionalState(context.accessor(), context.random(), targetPosition);
+        if (toPlace == null
+                || !this.canSurvive(
+                        config.blockSupports(), context.accessor(), targetPosition, toPlace)) {
             return false;
         }
 
         if (this.isDoublePlant(toPlace)) {
             var upperPosition = targetPosition.add(0, 1, 0);
-            if (!context.accessor().getBlock(upperPosition).air()) {
+            var above = context.accessor().getBlock(upperPosition);
+            if (!above.air()
+                    && (WaterStates.hasWaterFluid(above) != WaterStates.hasWaterFluid(toPlace)
+                            || !above.replaceable())) {
                 return false;
             }
 
@@ -38,7 +43,8 @@ public final class SimpleBlockFeature implements Feature<SimpleBlockConfiguratio
      * not require the target position to be empty here; that gating comes from the placement block
      * predicates.
      */
-    private boolean canSurvive(Block.Getter accessor, BlockVec position, Block toPlace) {
+    private boolean canSurvive(
+            BlockSupports supports, Block.Getter accessor, BlockVec position, Block toPlace) {
         var key = toPlace.key().asString();
         if (this.requiresPlantGround(key)) {
             return this.isPlantGround(accessor.getBlock(position.sub(0, 1, 0)));
@@ -49,7 +55,7 @@ public final class SimpleBlockFeature implements Feature<SimpleBlockConfiguratio
         if (key.equals("minecraft:dead_bush")
                 || key.equals("minecraft:short_dry_grass")
                 || key.equals("minecraft:tall_dry_grass")) {
-            return BlockSupports.isInTag(
+            return supports.isInTag(
                     "minecraft:supports_dry_vegetation", accessor.getBlock(position.sub(0, 1, 0)));
         }
 
@@ -61,7 +67,7 @@ public final class SimpleBlockFeature implements Feature<SimpleBlockConfiguratio
         // against the real light
         if (key.equals("minecraft:red_mushroom") || key.equals("minecraft:brown_mushroom")) {
             var below = accessor.getBlock(position.sub(0, 1, 0));
-            if (BlockSupports.isInTag("minecraft:overrides_mushroom_light_requirement", below)) {
+            if (supports.isInTag("minecraft:overrides_mushroom_light_requirement", below)) {
                 return true;
             }
             if (accessor instanceof GenerationUnitAdapter adapter
@@ -72,7 +78,7 @@ public final class SimpleBlockFeature implements Feature<SimpleBlockConfiguratio
         }
 
         // 26.x per-block supports_<name> tags carry most plant survival rules
-        var supported = BlockSupports.supportsOf(toPlace);
+        var supported = supports.supportsOf(toPlace);
         if (supported != null) {
             return supported.contains(accessor.getBlock(position.sub(0, 1, 0)).key());
         }

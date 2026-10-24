@@ -66,7 +66,7 @@ public final class HugeFungusFeature implements Feature<HugeFungusConfiguration>
             return false;
         }
 
-        var totalHeight = WeepingVinesFeature.nextIntInclusive(random, 4, 13);
+        var totalHeight = nextIntInclusive(random, 4, 13);
         if (random.nextInt(12) == 0) {
             totalHeight *= 2;
         }
@@ -81,7 +81,7 @@ public final class HugeFungusFeature implements Feature<HugeFungusConfiguration>
         }
 
         var isHuge = !config.planted() && random.nextFloat() < HUGE_PROBABILITY;
-        var predicateContext = Feature.predicateContext(level, context.minY(), context.maxY());
+        var predicateContext = Feature.predicateContext(context);
         level.setBlock(origin, Block.AIR);
         placeStem(level, predicateContext, random, config, origin, totalHeight, isHuge);
         placeHat(level, predicateContext, random, config, origin, totalHeight, isHuge);
@@ -249,13 +249,44 @@ public final class HugeFungusFeature implements Feature<HugeFungusConfiguration>
             BlockVec hatBlockPos, T level, RandomSource random) {
         var placePos = hatBlockPos.sub(0, 1, 0);
         if (level.getBlock(placePos).air()) {
-            var goalVineHeight = WeepingVinesFeature.nextIntInclusive(random, 1, 5);
+            var goalVineHeight = nextIntInclusive(random, 1, 5);
             if (random.nextInt(7) == 0) {
                 goalVineHeight *= 2;
             }
 
-            WeepingVinesFeature.placeWeepingVinesColumn(
-                    level, random, placePos, goalVineHeight, 23, 25);
+            placeWeepingVinesColumn(level, random, placePos, goalVineHeight, 23, 25);
         }
+    }
+
+    private static <T extends Block.Getter & Block.Setter> void placeWeepingVinesColumn(
+            T level,
+            RandomSource random,
+            BlockVec placePos,
+            int totalHeight,
+            int minAge,
+            int maxAge) {
+        for (var height = 0; height <= totalHeight; height++) {
+            if (level.getBlock(placePos).air()) {
+                if (height == totalHeight || !level.getBlock(placePos.sub(0, 1, 0)).air()) {
+                    level.setBlock(
+                            placePos,
+                            Block.WEEPING_VINES.withProperty(
+                                    "age",
+                                    String.valueOf(nextIntInclusive(random, minAge, maxAge))));
+                    break;
+                }
+
+                level.setBlock(placePos, Block.WEEPING_VINES_PLANT);
+            }
+
+            placePos = placePos.sub(0, 1, 0);
+        }
+    }
+
+    /** Vanilla {@code Mth.nextInt}: inclusive bounds, no draw when min >= max. */
+    private static int nextIntInclusive(RandomSource random, int minInclusive, int maxInclusive) {
+        return minInclusive >= maxInclusive
+                ? minInclusive
+                : minInclusive + random.nextInt(maxInclusive - minInclusive + 1);
     }
 }

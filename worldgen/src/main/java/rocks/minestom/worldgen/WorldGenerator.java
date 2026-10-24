@@ -18,6 +18,7 @@ import rocks.minestom.worldgen.biome.BiomeZoomer;
 import rocks.minestom.worldgen.biome.CachedBiomeSource;
 import rocks.minestom.worldgen.carver.CarverLoader;
 import rocks.minestom.worldgen.carver.Carvers;
+import rocks.minestom.worldgen.density.ChunkContext;
 import rocks.minestom.worldgen.feature.*;
 import rocks.minestom.worldgen.feature.placement.PlacementContext;
 import rocks.minestom.worldgen.random.RandomSource;
@@ -53,6 +54,9 @@ public final class WorldGenerator implements Generator {
     // arriving in that window must still land chronologically, so writePending
     // only switches to the live (fork) path once decoration is fully done
     private final Set<Long> fullyDecorated = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    // Makes "not decorated yet, so queue" atomic against "decorated, so drain the queue"; without
+    // it a spill checked just before completion is queued just after the final drain and is lost
+    private final Object spillHandoff = new Object();
     private final Map<Long, Map<Integer, Block>> pendingCrossWrites =
             new java.util.concurrent.ConcurrentHashMap<>();
     private final Map<Long, List<BlockVec>> pendingFluidTicks =
@@ -69,10 +73,6 @@ public final class WorldGenerator implements Generator {
                 public boolean writePending(
                         int chunkX, int chunkZ, int bufferIndex, Block block, Block previousBlock) {
                     var key = (long) chunkX << 32 | (chunkZ & 0xFFFFFFFFL);
-                    if (WorldGenerator.this.fullyDecorated.contains(key)) {
-                        return false;
-                    }
-
                     // Every spill into a not-yet-decorated chunk defers to that
                     // chunk's blit: Minestom applies queued forks only after the
                     // target's whole generate pass, which would re-assert this
@@ -81,12 +81,18 @@ public final class WorldGenerator implements Generator {
                     // what actually broke the earlier unconditional-deferral
                     // attempt (placement-style writes then lived only in the
                     // evictable buffer)
-                    WorldGenerator.this
-                            .pendingCrossWrites
-                            .computeIfAbsent(
-                                    key, mapKey -> new java.util.concurrent.ConcurrentHashMap<>())
-                            .put(bufferIndex, block);
-                    return true;
+                    synchronized (WorldGenerator.this.spillHandoff) {
+                        if (WorldGenerator.this.fullyDecorated.contains(key)) {
+                            return false;
+                        }
+                        WorldGenerator.this
+                                .pendingCrossWrites
+                                .computeIfAbsent(
+                                        key,
+                                        mapKey -> new java.util.concurrent.ConcurrentHashMap<>())
+                                .put(bufferIndex, block);
+                        return true;
+                    }
                 }
 
                 @Override
@@ -125,7 +131,8 @@ public final class WorldGenerator implements Generator {
                         this.biomeSource,
                         biomeResolver,
                         this.biomeZoomer,
-                        new CarverLoader(featureLoader.dataPack(), featureLoader.blockTags()));
+                        new CarverLoader(featureLoader.dataPack()),
+                        featureLoader.blockTags());
     }
 
     @Override
@@ -187,7 +194,6 @@ public final class WorldGenerator implements Generator {
         // the already-blitted chunk (its own terrain blit will never run
         // again), landing on top of its decoration exactly like a live spill
         // would
-        this.fullyDecorated.add(chunkKey);
         this.applyLateSpillWrites(unit, chunkKey, height);
         // Spills delivered through the blit may carry block-entity blocks
         // (a dungeon chest) that this chunk's own decoration then overwrote
@@ -349,12 +355,16 @@ public final class WorldGenerator implements Generator {
     }
 
     /**
-     * Replays the cross-chunk writes queued for this chunk while it was mid-decoration, translating
-     * each terrain-buffer index back into a position relative to the unit and writing it through
-     * the modifier so it lands directly on the already-blitted chunk.
+     * Marks the chunk decorated and replays the cross-chunk writes queued for it while it was
+     * mid-decoration, translating each terrain-buffer index back into a position relative to the
+     * unit and writing it through the modifier so it lands directly on the already-blitted chunk.
      */
     private void applyLateSpillWrites(GenerationUnit unit, long chunkKey, int height) {
-        var lateWrites = this.pendingCrossWrites.remove(chunkKey);
+        Map<Integer, Block> lateWrites;
+        synchronized (this.spillHandoff) {
+            this.fullyDecorated.add(chunkKey);
+            lateWrites = this.pendingCrossWrites.remove(chunkKey);
+        }
         if (lateWrites != null) {
             this.replaySpills(unit, chunkKey, height, lateWrites);
         }
@@ -547,7 +557,8 @@ public final class WorldGenerator implements Generator {
                         this.settings.randomState(),
                         this.biomeResolver,
                         this.biomeZoomer,
-                        this.settings.preliminarySurfaceLevel(),
+                        this.settings.chunkSurfaceLevel(),
+                        new ChunkContext(),
                         minY,
                         maxY);
 

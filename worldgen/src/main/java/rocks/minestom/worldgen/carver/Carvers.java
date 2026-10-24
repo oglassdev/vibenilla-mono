@@ -1,10 +1,16 @@
 package rocks.minestom.worldgen.carver;
 
+import java.util.Set;
+import net.kyori.adventure.key.Key;
+import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.NoiseGeneratorSettingsRuntime;
 import rocks.minestom.worldgen.biome.BiomeZoomer;
 import rocks.minestom.worldgen.biome.CachedBiomeSource;
+import rocks.minestom.worldgen.density.ChunkContext;
+import rocks.minestom.worldgen.density.DensityFunction;
 import rocks.minestom.worldgen.random.LegacyRandomSource;
 import rocks.minestom.worldgen.random.WorldgenRandom;
+import rocks.minestom.worldgen.structure.context.BlockTagManager;
 import rocks.minestom.worldgen.surface.BiomeResolver;
 import rocks.minestom.worldgen.surface.SurfaceRules;
 import rocks.minestom.worldgen.terrain.Aquifer;
@@ -24,18 +30,21 @@ public final class Carvers {
     private final BiomeResolver biomeResolver;
     private final BiomeZoomer biomeZoomer;
     private final CarverLoader carverLoader;
+    private final Set<Key> uncarvable;
 
     public Carvers(
             NoiseGeneratorSettingsRuntime settings,
             CachedBiomeSource biomeSource,
             BiomeResolver biomeResolver,
             BiomeZoomer biomeZoomer,
-            CarverLoader carverLoader) {
+            CarverLoader carverLoader,
+            BlockTagManager blockTags) {
         this.settings = settings;
         this.biomeSource = biomeSource;
         this.biomeResolver = biomeResolver;
         this.biomeZoomer = biomeZoomer;
         this.carverLoader = carverLoader;
+        this.uncarvable = blockTags.blocks(Key.key("minecraft:uncarvable"));
     }
 
     /**
@@ -72,7 +81,58 @@ public final class Carvers {
             }
         }
 
+        this.applyMask(context);
         recomputeHeights(data, minY, height);
+    }
+
+    /**
+     * Vanilla {@code applyCarvingMask}: every carved column run is re-resolved through the aquifer
+     * at density 0. Dirt under a carved-away grass or mycelium block gets the surface rule's top
+     * material back.
+     */
+    private void applyMask(CarvingContext context) {
+        var aquifer = context.aquifer();
+        var bottomY = context.minGenY() + 1;
+        var topY = context.maxGenYInclusive() - 7;
+        for (var localX = 0; localX < 16; localX++) {
+            for (var localZ = 0; localZ < 16; localZ++) {
+                var worldX = context.minBlockX() + localX;
+                var worldZ = context.minBlockZ() + localZ;
+                var hasGrass = false;
+                for (var worldY = topY; worldY >= bottomY; worldY--) {
+                    if (!context.maskGet(localX, worldY, localZ)) {
+                        hasGrass = false;
+                        continue;
+                    }
+                    var block = context.getBlock(worldX, worldY, worldZ);
+                    if (this.uncarvable.contains(block.key())) {
+                        continue;
+                    }
+                    if (block.compare(Block.GRASS_BLOCK) || block.compare(Block.MYCELIUM)) {
+                        hasGrass = true;
+                    }
+                    var state =
+                            aquifer.computeSubstance(
+                                    new DensityFunction.SinglePointContext(worldX, worldY, worldZ),
+                                    0.0);
+                    if (state == null) {
+                        continue;
+                    }
+                    context.setCarved(worldX, worldY, worldZ, state);
+                    var fluid = !state.air();
+                    if (aquifer.shouldScheduleFluidUpdate() && fluid) {
+                        context.recordFluidTick(worldX, worldY, worldZ);
+                    }
+                    if (hasGrass
+                            && context.getBlock(worldX, worldY - 1, worldZ).compare(Block.DIRT)) {
+                        var topMaterial = context.topMaterial(worldX, worldY - 1, worldZ, fluid);
+                        if (topMaterial != null) {
+                            context.setSolid(worldX, worldY - 1, worldZ, topMaterial);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -92,7 +152,8 @@ public final class Carvers {
                         this.settings.randomState(),
                         this.biomeResolver,
                         this.biomeZoomer,
-                        this.settings.preliminarySurfaceLevel(),
+                        this.settings.chunkSurfaceLevel(),
+                        new ChunkContext(),
                         this.settings.minY(),
                         this.settings.maxYInclusive());
         return (blockX, blockY, blockZ, underFluid) -> {

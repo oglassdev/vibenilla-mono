@@ -30,6 +30,10 @@ public enum MineshaftType {
     }
 
     public static MineshaftType fromName(String name) {
-        return name.equals("mesa") ? MESA : NORMAL;
+        return switch (name) {
+            case "normal" -> NORMAL;
+            case "mesa" -> MESA;
+            default -> throw new IllegalArgumentException("Unknown mineshaft type: " + name);
+        };
     }
 }

@@ -9,8 +9,9 @@ import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.BlockCodec;
 import rocks.minestom.worldgen.NoiseParameters;
 import rocks.minestom.worldgen.noise.NormalNoise;
+import rocks.minestom.worldgen.random.LegacyRandomSource;
 import rocks.minestom.worldgen.random.RandomSource;
-import rocks.minestom.worldgen.random.XoroshiroRandomSource;
+import rocks.minestom.worldgen.random.WorldgenRandom;
 
 public final class DualNoiseProvider extends NoiseProvider {
     public static final Codec<DualNoiseProvider> CODEC =
@@ -57,7 +58,7 @@ public final class DualNoiseProvider extends NoiseProvider {
         this.slowScale = slowScale;
         this.slowNoise =
                 NormalNoise.create(
-                        new XoroshiroRandomSource(seed),
+                        new WorldgenRandom(new LegacyRandomSource(seed)),
                         new NormalNoise.NoiseParameters(
                                 slowNoiseParameters.firstOctave(),
                                 slowNoiseParameters.amplitudes().stream()
@@ -96,7 +97,7 @@ public final class DualNoiseProvider extends NoiseProvider {
 
         for (var varietyIndex = 0; varietyIndex < varietyCount; varietyIndex++) {
             var sampledPosition = position.add(varietyIndex * 54545, 0, varietyIndex * 34234);
-            variedStates.add(this.getRandomState(this.states, sampledPosition, this.slowScale));
+            variedStates.add(this.getRandomState(this.states, this.getSlowNoise(sampledPosition)));
         }
 
         if (variedStates.isEmpty()) {
@@ -108,9 +109,9 @@ public final class DualNoiseProvider extends NoiseProvider {
 
     private double getSlowNoise(BlockVec position) {
         return this.slowNoise.getValue(
-                position.blockX() * this.slowScale,
-                position.blockY() * this.slowScale,
-                position.blockZ() * this.slowScale);
+                position.blockX() * (double) this.slowScale,
+                position.blockY() * (double) this.slowScale,
+                position.blockZ() * (double) this.slowScale);
     }
 
     public record InclusiveRange(int minInclusive, int maxInclusive) {

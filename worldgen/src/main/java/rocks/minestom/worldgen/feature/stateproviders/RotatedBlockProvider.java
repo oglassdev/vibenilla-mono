@@ -4,32 +4,41 @@ import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
-import rocks.minestom.worldgen.BlockCodec;
+import rocks.minestom.worldgen.feature.BlockProperties;
+import rocks.minestom.worldgen.feature.Direction;
 import rocks.minestom.worldgen.random.RandomSource;
 
 /**
- * A block state provider that provides a block with random axis rotation. Used for hay bales and
- * other blocks that can be oriented on different axes.
+ * Orients the wrapped provider's state along {@code direction}, or along a random direction when it
+ * is null, by setting the {@code axis} and {@code facing} properties the block accepts.
  */
-public record RotatedBlockProvider(Block state) implements BlockStateProvider {
+public record RotatedBlockProvider(BlockStateProvider state, Direction direction)
+        implements BlockStateProvider {
 
     public static final Codec<RotatedBlockProvider> CODEC =
             StructCodec.struct(
                     "state",
-                    BlockCodec.CODEC,
+                    BlockStateProviders.CODEC,
                     RotatedBlockProvider::state,
+                    "direction",
+                    Direction.CODEC.optional(),
+                    RotatedBlockProvider::direction,
                     RotatedBlockProvider::new);
-
-    private static final String[] AXES = {"x", "y", "z"};
 
     @Override
     public Block getState(RandomSource random, BlockVec position) {
-        var axis = this.state.getProperty("axis");
-        if (axis != null) {
-            // Randomly rotate to one of the three axes
-            var newAxis = AXES[random.nextInt(AXES.length)];
-            return this.state.withProperty("axis", newAxis);
-        }
-        return this.state;
+        var direction = this.direction != null ? this.direction : Direction.getRandom(random);
+        return this.rotate(this.state.getState(random, position), direction);
+    }
+
+    @Override
+    public Block getState(Block.Getter accessor, RandomSource random, BlockVec position) {
+        var direction = this.direction != null ? this.direction : Direction.getRandom(random);
+        return this.rotate(this.state.getState(accessor, random, position), direction);
+    }
+
+    private Block rotate(Block block, Direction direction) {
+        var rotated = BlockProperties.trySet(block, "axis", direction.axisName());
+        return BlockProperties.trySet(rotated, "facing", direction.serializedName());
     }
 }

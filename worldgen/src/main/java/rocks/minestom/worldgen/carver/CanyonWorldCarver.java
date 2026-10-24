@@ -1,5 +1,7 @@
 package rocks.minestom.worldgen.carver;
 
+import com.google.gson.JsonObject;
+import rocks.minestom.worldgen.feature.valueproviders.FloatProvider;
 import rocks.minestom.worldgen.random.LegacyRandomSource;
 import rocks.minestom.worldgen.random.RandomSource;
 
@@ -7,41 +9,70 @@ import rocks.minestom.worldgen.random.RandomSource;
  * Exact port of vanilla {@code CanyonWorldCarver} (ravines), including the per-height width factors
  * and per-step radius jitter.
  */
-public final class CanyonWorldCarver extends WorldCarver<CanyonCarverConfiguration> {
+public record CanyonWorldCarver(
+        float probability, CarverHeightProvider y, FloatProvider verticalRotation, Shape shape)
+        implements WorldCarver {
 
-    @Override
-    public boolean isStartChunk(CanyonCarverConfiguration configuration, RandomSource random) {
-        return random.nextFloat() <= configuration.base().probability();
+    public record Shape(
+            FloatProvider distanceFactor,
+            FloatProvider thickness,
+            int widthSmoothness,
+            FloatProvider horizontalRadiusFactor,
+            float verticalRadiusDefaultFactor,
+            float verticalRadiusCenterFactor,
+            FloatProvider yScale) {
+        static Shape fromJson(JsonObject json) {
+            var widthSmoothness = json.get("width_smoothness").getAsInt();
+            if (widthSmoothness < 1) {
+                throw new IllegalArgumentException(
+                        "width_smoothness must be positive: " + widthSmoothness);
+            }
+            return new Shape(
+                    FloatProvider.fromJson(json.get("distance_factor")),
+                    FloatProvider.fromJson(json.get("thickness")),
+                    widthSmoothness,
+                    FloatProvider.fromJson(json.get("horizontal_radius_factor")),
+                    json.get("vertical_radius_default_factor").getAsFloat(),
+                    json.get("vertical_radius_center_factor").getAsFloat(),
+                    FloatProvider.fromJson(json.get("y_scale")));
+        }
+    }
+
+    static CanyonWorldCarver fromJson(JsonObject json) {
+        return new CanyonWorldCarver(
+                json.get("probability").getAsFloat(),
+                CarverHeightProvider.fromJson(json.get("y")),
+                FloatProvider.fromJson(json.get("vertical_rotation")),
+                Shape.fromJson(json.getAsJsonObject("shape")));
     }
 
     @Override
-    protected CarverConfiguration baseConfig(CanyonCarverConfiguration configuration) {
-        return configuration.base();
+    public boolean isStartChunk(RandomSource random) {
+        return random.nextFloat() <= this.probability;
     }
 
     @Override
     public boolean carve(
-            CarvingContext context,
-            CanyonCarverConfiguration configuration,
+            GenerationRange range,
             RandomSource random,
+            int chunkX,
+            int chunkZ,
             int sourceChunkX,
-            int sourceChunkZ) {
+            int sourceChunkZ,
+            CarverOutput output) {
         var maxDistance = (this.getRange() * 2 - 1) * 16;
         double x = sourceChunkX * 16 + random.nextInt(16);
-        var y =
-                configuration
-                        .base()
-                        .y()
-                        .sample(random, context.minGenY(), context.maxGenYInclusive());
+        var y = this.y.sample(random, range.minGenY(), range.maxGenYInclusive());
         double z = sourceChunkZ * 16 + random.nextInt(16);
         var horizontalRotation = random.nextFloat() * (float) (Math.PI * 2);
-        var verticalRotation = configuration.verticalRotation().sample(random);
-        double yScale = configuration.base().yScale().sample(random);
-        var thickness = configuration.shape().thickness().sample(random);
-        var distance = (int) (maxDistance * configuration.shape().distanceFactor().sample(random));
+        var verticalRotation = this.verticalRotation.sample(random);
+        double yScale = this.shape.yScale().sample(random);
+        var thickness = this.shape.thickness().sample(random);
+        var distance = (int) (maxDistance * this.shape.distanceFactor().sample(random));
         this.doCarve(
-                context,
-                configuration,
+                range,
+                chunkX,
+                chunkZ,
                 random.nextLong(),
                 x,
                 y,
@@ -51,13 +82,15 @@ public final class CanyonWorldCarver extends WorldCarver<CanyonCarverConfigurati
                 verticalRotation,
                 0,
                 distance,
-                yScale);
+                yScale,
+                output);
         return true;
     }
 
     private void doCarve(
-            CarvingContext context,
-            CanyonCarverConfiguration configuration,
+            GenerationRange range,
+            int chunkX,
+            int chunkZ,
             long tunnelSeed,
             double x,
             double y,
@@ -67,24 +100,25 @@ public final class CanyonWorldCarver extends WorldCarver<CanyonCarverConfigurati
             float verticalRotation,
             int step,
             int distance,
-            double yScale) {
+            double yScale,
+            CarverOutput output) {
         var random = new LegacyRandomSource(tunnelSeed);
-        var widthFactorPerHeight = this.initWidthFactors(context, configuration, random);
+        var widthFactorPerHeight = this.initWidthFactors(range, random);
         var yRota = 0.0F;
         var xRota = 0.0F;
 
         for (var currentStep = step; currentStep < distance; currentStep++) {
-            var horizontalRadius = 1.5 + sin(currentStep * (float) Math.PI / distance) * thickness;
+            var horizontalRadius =
+                    1.5 + CarverMath.sin(currentStep * (float) Math.PI / distance) * thickness;
             var verticalRadius = horizontalRadius * yScale;
-            horizontalRadius *= configuration.shape().horizontalRadiusFactor().sample(random);
+            horizontalRadius *= this.shape.horizontalRadiusFactor().sample(random);
             verticalRadius =
-                    this.updateVerticalRadius(
-                            configuration, random, verticalRadius, distance, currentStep);
-            var xc = cos(verticalRotation);
-            var xs = sin(verticalRotation);
-            x += cos(horizontalRotation) * xc;
+                    this.updateVerticalRadius(random, verticalRadius, distance, currentStep);
+            var xc = CarverMath.cos(verticalRotation);
+            var xs = CarverMath.sin(verticalRotation);
+            x += CarverMath.cos(horizontalRotation) * xc;
             y += xs;
-            z += sin(horizontalRotation) * xc;
+            z += CarverMath.sin(horizontalRotation) * xc;
             verticalRotation *= 0.7F;
             verticalRotation += xRota * 0.05F;
             horizontalRotation += yRota * 0.05F;
@@ -93,40 +127,32 @@ public final class CanyonWorldCarver extends WorldCarver<CanyonCarverConfigurati
             xRota += (random.nextFloat() - random.nextFloat()) * random.nextFloat() * 2.0F;
             yRota += (random.nextFloat() - random.nextFloat()) * random.nextFloat() * 4.0F;
             if (random.nextInt(4) != 0) {
-                if (!canReach(
-                        context.chunkX(),
-                        context.chunkZ(),
-                        x,
-                        z,
-                        currentStep,
-                        distance,
-                        thickness)) {
+                if (!WorldCarver.canReach(chunkX, chunkZ, x, z, currentStep, distance, thickness)) {
                     return;
                 }
 
-                this.carveEllipsoid(
-                        context,
-                        configuration,
+                WorldCarver.carveEllipsoid(
+                        chunkX,
+                        chunkZ,
                         x,
                         y,
                         z,
                         horizontalRadius,
                         verticalRadius,
-                        (skipContext, xd, yd, zd, blockY) ->
-                                this.shouldSkip(
-                                        skipContext, widthFactorPerHeight, xd, yd, zd, blockY));
+                        output,
+                        (xd, yd, zd, blockY) ->
+                                this.shouldSkip(range, widthFactorPerHeight, xd, yd, zd, blockY));
             }
         }
     }
 
-    private float[] initWidthFactors(
-            CarvingContext context, CanyonCarverConfiguration configuration, RandomSource random) {
-        var depth = context.genDepth();
+    private float[] initWidthFactors(GenerationRange range, RandomSource random) {
+        var depth = range.genDepth();
         var widthFactorPerHeight = new float[depth];
         var widthFactor = 1.0F;
 
         for (var yIndex = 0; yIndex < depth; yIndex++) {
-            if (yIndex == 0 || random.nextInt(configuration.shape().widthSmoothness()) == 0) {
+            if (yIndex == 0 || random.nextInt(this.shape.widthSmoothness()) == 0) {
                 widthFactor = 1.0F + random.nextFloat() * random.nextFloat();
             }
 
@@ -137,26 +163,22 @@ public final class CanyonWorldCarver extends WorldCarver<CanyonCarverConfigurati
     }
 
     private double updateVerticalRadius(
-            CanyonCarverConfiguration configuration,
-            RandomSource random,
-            double verticalRadius,
-            float distance,
-            float currentStep) {
+            RandomSource random, double verticalRadius, float distance, float currentStep) {
         var verticalMultiplier = 1.0F - Math.abs(0.5F - currentStep / distance) * 2.0F;
         var factor =
-                configuration.shape().verticalRadiusDefaultFactor()
-                        + configuration.shape().verticalRadiusCenterFactor() * verticalMultiplier;
+                this.shape.verticalRadiusDefaultFactor()
+                        + this.shape.verticalRadiusCenterFactor() * verticalMultiplier;
         return factor * verticalRadius * (random.nextFloat() * (1.0F - 0.75F) + 0.75F);
     }
 
     private boolean shouldSkip(
-            CarvingContext context,
+            GenerationRange range,
             float[] widthFactorPerHeight,
             double xd,
             double yd,
             double zd,
             int blockY) {
-        var yIndex = blockY - context.minGenY();
+        var yIndex = blockY - range.minGenY();
         return (xd * xd + zd * zd) * widthFactorPerHeight[yIndex - 1] + yd * yd / 6.0 >= 1.0;
     }
 }

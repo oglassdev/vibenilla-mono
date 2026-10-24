@@ -6,6 +6,10 @@ public enum Projection {
     TERRAIN_MATCHING;
 
     public static Projection fromName(String name) {
-        return "terrain_matching".equals(name) ? TERRAIN_MATCHING : RIGID;
+        return switch (name) {
+            case "rigid" -> RIGID;
+            case "terrain_matching" -> TERRAIN_MATCHING;
+            default -> throw new IllegalArgumentException("Unknown projection: " + name);
+        };
     }
 }

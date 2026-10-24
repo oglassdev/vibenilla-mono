@@ -6,7 +6,17 @@ package rocks.minestom.worldgen.density;
  * final solid/air decision.
  */
 public interface DensityFunction {
+    int AXIS_X = 1;
+    int AXIS_Y = 2;
+    int AXIS_Z = 4;
+    int AXES_XYZ = AXIS_X | AXIS_Y | AXIS_Z;
+
     double compute(Context context);
+
+    /** Bit set of the coordinates the value depends on. */
+    default int domainAxes() {
+        return AXES_XYZ;
+    }
 
     interface Context {
         int blockX();
