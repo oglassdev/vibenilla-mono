@@ -52,6 +52,9 @@ public final class Server {
                 .addChild(MinestomFluids.events())
                 .addChild(MinestomFluids.bucketEvents())
                 .addChild(Items.events())
+                .addChild(Deaths.events())
+                .addChild(Experience.events())
+                .addChild(Respawns.events(spawn))
                 .addChild(crafting.events())
                 .addListener(
                         AsyncPlayerConfigurationEvent.class,
