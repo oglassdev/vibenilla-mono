@@ -22,8 +22,6 @@ import rocks.minestom.worldgen.WorldGenerators;
 public final class Server {
     public static void main(String[] args) {
         var dataPath = Path.of(System.getProperty("vibenilla.data", "vanilla"));
-        var worldgenDataPath =
-                Path.of(System.getProperty("vibenilla.worldgenData", "vanilla-worldgen"));
         var vanillaData = dataPath.resolve("data").resolve("minecraft");
         var seed = Long.getLong("vibenilla.seed", ThreadLocalRandom.current().nextLong());
         var port = Integer.getInteger("vibenilla.port", 25565);
@@ -37,7 +35,7 @@ public final class Server {
         MinestomPvP.init();
 
         var combat = CombatFeatures.modernVanilla();
-        var overworld = createOverworld(worldgenDataPath, seed);
+        var overworld = createOverworld(dataPath, seed);
         overworld.setExplosionSupplier(combat.get(FeatureType.EXPLOSION).getExplosionSupplier());
         var spawn = findSurface(overworld, 0, 0);
 

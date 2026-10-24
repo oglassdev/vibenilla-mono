@@ -41,7 +41,7 @@ Vanilla Minecraft features as Minestom libraries, in one Gradle build. Forked fr
 
 - **Minestom**: The from-scratch Minecraft server library these modules build on. It ships no vanilla gameplay.
 - **Module**: One library in this repository (`pvp`, `worldgen`, `placement`, `crafting`, `fluids`, `loot`), published as its own artifact. `server` is the unpublished application that wires them together.
-- **Vanilla data**: The `data/` directory from the vanilla server jar (recipes, loot tables, tags, worldgen). Downloaded by the `vanillaData`/`worldgenData` tasks into `server/run/`.
+- **Vanilla data**: The `data/` directory from the vanilla server jar (recipes, loot tables, tags, worldgen). Downloaded by the `vanillaData` task into `server/run/`.
 - **Upstream**: The original vibenilla repositories this was forked from. Not synced.
 - **Vanilla parity**: Behaving exactly like the official Minecraft server.
 - **Version scheme**: `yyyy.MM.dd-<minecraft version>`, e.g. `2026.10.24-26.3`. The Minecraft version is `minecraft` in the version catalog.

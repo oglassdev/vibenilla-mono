@@ -26,18 +26,12 @@ val runDirectory = layout.projectDirectory.dir("run")
 
 val vanillaData =
     tasks.register<VanillaDataTask>("vanillaData") {
-        minecraftVersion = libs.versions.minecraft.asProvider()
+        minecraftVersion = libs.versions.minecraft
         outputDirectory = runDirectory.dir("vanilla")
     }
 
-val worldgenData =
-    tasks.register<VanillaDataTask>("worldgenData") {
-        minecraftVersion = libs.versions.minecraft.worldgen
-        outputDirectory = runDirectory.dir("vanilla-worldgen")
-    }
-
 tasks.named<JavaExec>("run") {
-    dependsOn(vanillaData, worldgenData)
+    dependsOn(vanillaData)
     workingDir = runDirectory.asFile
     standardInput = System.`in`
     systemProperties(providers.systemPropertiesPrefixedBy("vibenilla.").get())

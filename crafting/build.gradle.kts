@@ -14,7 +14,7 @@ dependencies {
 
 val vanillaData =
     tasks.register<VanillaDataTask>("vanillaData") {
-        minecraftVersion = libs.versions.minecraft.asProvider()
+        minecraftVersion = libs.versions.minecraft
         outputDirectory = layout.buildDirectory.dir("vanilla")
     }
 
