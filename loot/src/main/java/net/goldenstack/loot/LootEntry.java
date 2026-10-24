@@ -378,7 +378,7 @@ public interface LootEntry {
 
             if (table == null || inner == null) return List.of();
 
-            return LootFunction.apply(functions, table.generate(inner), context);
+            return LootFunction.apply(functions, table.generateRaw(inner), context);
         }
 
         @Override

@@ -50,8 +50,11 @@ public record LootTable(
                     LootTable::randomSequence,
                     LootTable::new);
 
-    @Override
-    public @NotNull List<ItemStack> generate(@NotNull LootContext context) {
+    /**
+     * Generates this table's loot without splitting oversized stacks or removing empty stacks, like
+     * a table that is referenced by another table.
+     */
+    public @NotNull List<ItemStack> generateRaw(@NotNull LootContext context) {
         var generationContext =
                 this.randomSequence == null
                         ? context
@@ -65,6 +68,25 @@ public record LootTable(
         for (var pool : this.pools) {
             for (var item : pool.generate(generationContext)) {
                 items.add(LootFunction.apply(this.functions, item, generationContext));
+            }
+        }
+
+        return items;
+    }
+
+    @Override
+    public @NotNull List<ItemStack> generate(@NotNull LootContext context) {
+        var items = new ArrayList<ItemStack>();
+
+        for (var item : generateRaw(context)) {
+            if (item.isAir()) continue;
+
+            var remaining = item.amount();
+            var maximum = item.maxStackSize();
+            while (remaining > 0) {
+                var amount = Math.min(maximum, remaining);
+                items.add(item.withAmount(amount));
+                remaining -= amount;
             }
         }
 
