@@ -1,5 +1,6 @@
 package net.goldenstack.loot.util.predicate;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -8,6 +9,7 @@ import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import net.goldenstack.loot.LootNumber;
 import net.goldenstack.loot.util.LootNumberRange;
 import net.goldenstack.loot.util.VanillaInterface;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
@@ -17,6 +19,7 @@ import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.Transcoder;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
+import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.Player;
@@ -190,5 +193,45 @@ class EntityPredicateTest {
                         Map.of("minecraft:test", rawValue));
 
         assertTrue(predicate.test(null, null, player, vanilla));
+    }
+
+    @Test
+    void movementConvertsMinestomVelocityToBlocksPerTick() {
+        MinecraftServer.init();
+
+        var entity = new Entity(EntityType.ITEM);
+        entity.setVelocity(new Vec(0.0, 20.0, 0.0));
+        var range = new LootNumberRange(null, null);
+        var verticalSpeed =
+                new LootNumberRange(new LootNumber.Constant(0.9), new LootNumber.Constant(1.1));
+        var predicate =
+                new EntityPredicate.EntityMovementPredicate(
+                        range, range, range, range, range, verticalSpeed, range);
+
+        assertTrue(predicate.test(null, null, entity, VanillaInterface.defaults()));
+    }
+
+    @Test
+    void entityRelativePredicatesKeepTheOriginalPosition() {
+        MinecraftServer.init();
+
+        var origin = new Pos(5.0, 6.0, 7.0);
+        var seen = new Point[1];
+        var recording =
+                new EntityPredicate() {
+                    @Override
+                    public boolean test(Instance instance, Point position, Entity entity) {
+                        seen[0] = position;
+                        return true;
+                    }
+                };
+        var instance = MinecraftServer.getInstanceManager().createInstanceContainer();
+        var vehicle = new Entity(EntityType.ITEM);
+        var passenger = new Entity(EntityType.ITEM);
+        vehicle.setInstance(instance, new Pos(0.0, 0.0, 0.0)).join();
+        vehicle.addPassenger(passenger);
+
+        assertTrue(new EntityPredicate.EntityVehicle(recording).test(instance, origin, passenger));
+        assertEquals(origin, seen[0]);
     }
 }
