@@ -47,7 +47,7 @@ public final class Server {
                 .addChild(Items.events())
                 .addChild(Deaths.events())
                 .addChild(Experience.events())
-                .addChild(new Respawns(spawn).events())
+                .addChild(Respawns.events(spawn))
                 .addChild(crafting.events())
                 .addChild(new BlockDrops(vanillaData.resolve("loot_table")).events())
                 .addListener(

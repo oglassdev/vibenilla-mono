@@ -8,9 +8,11 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import net.minestom.server.collision.BoundingBox;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
+import net.minestom.server.entity.Player;
 import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.player.PlayerRespawnEvent;
@@ -20,39 +22,56 @@ import net.minestom.server.sound.SoundEvent;
 import org.jetbrains.annotations.Nullable;
 
 /** Chooses where a respawning player appears: a valid bed or anchor, else near world spawn. */
-final class Respawns {
+public final class Respawns {
     private static final int SPAWN_RADIUS = 10;
     private static final int SPAWN_ATTEMPTS = 16;
     private static final double EPSILON = 1.0E-4;
+    private static final BoundingBox PLAYER_BOX = new BoundingBox(0.6, 1.8, 0.6);
+    private static final Set<String> HAZARDS =
+            Set.of(
+                    "fire",
+                    "soul_fire",
+                    "cactus",
+                    "sweet_berry_bush",
+                    "powder_snow",
+                    "magma_block",
+                    "campfire",
+                    "soul_campfire",
+                    "wither_rose");
 
-    private final Pos worldSpawn;
+    private static Pos worldSpawn = Pos.ZERO;
 
-    Respawns(Pos worldSpawn) {
-        this.worldSpawn = worldSpawn;
+    private Respawns() {}
+
+    static EventNode<Event> events(Pos worldSpawn) {
+        Respawns.worldSpawn = worldSpawn;
+        return EventNode.all("respawns").addListener(PlayerRespawnEvent.class, Respawns::onRespawn);
     }
 
-    EventNode<Event> events() {
-        return EventNode.all("respawns").addListener(PlayerRespawnEvent.class, this::onRespawn);
-    }
-
-    private void onRespawn(PlayerRespawnEvent event) {
+    private static void onRespawn(PlayerRespawnEvent event) {
         var player = event.getPlayer();
-        var instance = player.getInstance();
         player.clearEffects();
+        event.setRespawnPosition(resolve(player));
+    }
 
+    /**
+     * Where the player should appear after dying: their bed or anchor if still valid (consuming an
+     * anchor charge), otherwise a safe spot near world spawn.
+     */
+    public static Pos resolve(Player player) {
+        var instance = player.getInstance();
         var point = player.getRespawnPoint();
-        if (point == null || point.samePoint(this.worldSpawn)) {
-            event.setRespawnPosition(this.randomSpawn(instance));
-            return;
+        if (point == null || point.samePoint(worldSpawn)) {
+            return randomSpawn(instance);
         }
 
         var position = findPersonalSpawn(instance, point);
         if (position == null) {
-            player.setRespawnPoint(this.worldSpawn);
+            player.setRespawnPoint(worldSpawn);
             player.sendMessage(Component.translatable("block.minecraft.spawn.not_valid"));
-            position = this.randomSpawn(instance);
+            position = randomSpawn(instance);
         }
-        event.setRespawnPosition(position);
+        return position;
     }
 
     private static @Nullable Pos findPersonalSpawn(Instance instance, Point point) {
@@ -132,32 +151,84 @@ final class Respawns {
 
     private static @Nullable Pos standAt(Instance instance, int x, int y, int z) {
         instance.loadChunk(x >> 4, z >> 4).join();
-        var floor = height(instance.getBlock(x, y - 1, z));
-        if (floor <= EPSILON || floor > 1.0) {
-            return null;
-        }
-
-        var feetY = y - 1 + floor;
-        var clearance = feetY - y > 0.2 ? 3 : 2;
-        for (var i = 0; i < clearance; i++) {
-            if (!isPassable(instance.getBlock(x, y + i, z))) {
-                return null;
-            }
-        }
-        return new Pos(x + 0.5, feetY, z + 0.5);
+        var cellHeight = height(instance.getBlock(x, y, z));
+        var feetY =
+                cellHeight > EPSILON
+                        ? y + cellHeight
+                        : y - 1 + height(instance.getBlock(x, y - 1, z));
+        var spawn = new Pos(x + 0.5, feetY, z + 0.5);
+        return isSafeStandingSpot(instance, spawn) ? spawn : null;
     }
 
-    private Pos randomSpawn(Instance instance) {
+    /**
+     * Whether the player's full bounding box is free of collisions and hazards, on solid ground.
+     */
+    static boolean isSafeStandingSpot(Instance instance, Pos pos) {
+        var minX = (int) Math.floor(pos.x() - PLAYER_BOX.width() / 2);
+        var maxX = (int) Math.floor(pos.x() + PLAYER_BOX.width() / 2);
+        var minZ = (int) Math.floor(pos.z() - PLAYER_BOX.depth() / 2);
+        var maxZ = (int) Math.floor(pos.z() + PLAYER_BOX.depth() / 2);
+        var minY = (int) Math.floor(pos.y());
+        var maxY = (int) Math.floor(pos.y() + PLAYER_BOX.height());
+        var dimension = instance.getCachedDimensionType();
+        if (minY - 1 < dimension.minY() || maxY >= dimension.maxY()) {
+            return false;
+        }
+
+        var test = pos.add(0, EPSILON, 0);
+        for (var x = minX; x <= maxX; x++) {
+            for (var z = minZ; z <= maxZ; z++) {
+                instance.loadChunk(x >> 4, z >> 4).join();
+                for (var y = minY; y <= maxY; y++) {
+                    var block = instance.getBlock(x, y, z);
+                    if (block.liquid() || isHazard(block)) {
+                        return false;
+                    }
+                    var shape = block.collisionShape();
+                    if (shape.intersectBox(test.sub(x, y, z), PLAYER_BOX)) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        var floorY = (int) Math.floor(pos.y() - EPSILON);
+        var floor = instance.getBlock(pos.blockX(), floorY, pos.blockZ());
+        var floorHeight = height(floor);
+        return !isHazard(floor)
+                && floorHeight > EPSILON
+                && Math.abs(floorY + floorHeight - pos.y()) < 1.0E-3;
+    }
+
+    private static boolean isHazard(Block block) {
+        return HAZARDS.contains(block.key().value());
+    }
+
+    private static Pos randomSpawn(Instance instance) {
         var random = ThreadLocalRandom.current();
         for (var attempt = 0; attempt < SPAWN_ATTEMPTS; attempt++) {
-            var x = this.worldSpawn.blockX() + random.nextInt(-SPAWN_RADIUS, SPAWN_RADIUS + 1);
-            var z = this.worldSpawn.blockZ() + random.nextInt(-SPAWN_RADIUS, SPAWN_RADIUS + 1);
+            var x = worldSpawn.blockX() + random.nextInt(-SPAWN_RADIUS, SPAWN_RADIUS + 1);
+            var z = worldSpawn.blockZ() + random.nextInt(-SPAWN_RADIUS, SPAWN_RADIUS + 1);
             var surface = surfaceAt(instance, x, z);
-            if (surface != null) {
+            if (surface != null && isSafeStandingSpot(instance, surface)) {
                 return surface;
             }
         }
-        return this.worldSpawn;
+        return safeAbove(instance, worldSpawn);
+    }
+
+    private static Pos safeAbove(Instance instance, Pos origin) {
+        if (isSafeStandingSpot(instance, origin)) {
+            return origin;
+        }
+        var maxY = instance.getCachedDimensionType().maxY();
+        for (var y = origin.blockY(); y < maxY; y++) {
+            var spawn = standAt(instance, origin.blockX(), y, origin.blockZ());
+            if (spawn != null) {
+                return spawn;
+            }
+        }
+        return origin;
     }
 
     private static @Nullable Pos surfaceAt(Instance instance, int x, int z) {
@@ -178,10 +249,6 @@ final class Respawns {
 
     private static double height(Block block) {
         return block.collisionShape().relativeEnd().y();
-    }
-
-    private static boolean isPassable(Block block) {
-        return !block.liquid() && height(block) <= EPSILON;
     }
 
     private static Vec horizontal(String facing) {
