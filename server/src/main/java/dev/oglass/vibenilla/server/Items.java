@@ -17,7 +17,6 @@ import net.minestom.server.item.ItemStack;
 import net.minestom.server.network.packet.server.play.CollectItemPacket;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.timer.TaskSchedule;
-import net.minestom.server.utils.time.TimeUnit;
 
 /** Item entities: dropping, merging, expiring and picking them up. */
 final class Items {
@@ -26,6 +25,7 @@ final class Items {
     private static final int LIFETIME_TICKS = 6000;
     private static final float MERGE_RANGE = 0.5f;
     private static final Tag<Long> EXPIRY = Tag.Transient("vibenilla:item-expiry");
+    private static final Tag<Long> PICKABLE_AT = Tag.Transient("vibenilla:item-pickable-at");
 
     private Items() {}
 
@@ -39,7 +39,7 @@ final class Items {
 
     static void spawn(Instance instance, Point position, ItemStack item) {
         var random = ThreadLocalRandom.current();
-        var entity = create(item, PICKUP_DELAY_TICKS);
+        var entity = create(instance, item, PICKUP_DELAY_TICKS);
         entity.setInstance(instance, position);
         entity.setVelocity(
                 new Vec(
@@ -48,9 +48,10 @@ final class Items {
                         random.nextDouble(-2, 2)));
     }
 
-    private static ItemEntity create(ItemStack item, int pickupDelayTicks) {
+    /** The pickup delay is counted in world ticks, as Minestom's own delay runs on wall time. */
+    private static ItemEntity create(Instance instance, ItemStack item, int pickupDelayTicks) {
         var entity = new ItemEntity(item);
-        entity.setPickupDelay(pickupDelayTicks, TimeUnit.SERVER_TICK);
+        entity.setTag(PICKABLE_AT, instance.getWorldAge() + pickupDelayTicks);
         return entity;
     }
 
@@ -79,30 +80,40 @@ final class Items {
                         });
     }
 
-    /** The surviving entity keeps the younger of the two ages. */
+    /** The surviving entity keeps the younger of the two ages and the longer pickup delay. */
     private static void onMerge(EntityItemMergeEvent event) {
         var survivor = event.getEntity();
-        var merged = event.getMerged().getTag(EXPIRY);
-        var current = survivor.getTag(EXPIRY);
-        if (merged != null && current != null && merged > current) {
-            survivor.setTag(EXPIRY, merged);
+        keepLater(event.getMerged(), survivor, EXPIRY);
+        keepLater(event.getMerged(), survivor, PICKABLE_AT);
+    }
+
+    private static void keepLater(ItemEntity from, ItemEntity to, Tag<Long> tag) {
+        var other = from.getTag(tag);
+        var current = to.getTag(tag);
+        if (other != null && current != null && other > current) {
+            to.setTag(tag, other);
         }
     }
 
     private static void onDrop(ItemDropEvent event) {
         var player = event.getPlayer();
-        var entity = create(event.getItemStack(), THROWN_PICKUP_DELAY_TICKS);
+        var entity = create(player.getInstance(), event.getItemStack(), THROWN_PICKUP_DELAY_TICKS);
         entity.setInstance(
                 player.getInstance(), player.getPosition().add(0, player.getEyeHeight() - 0.3, 0));
         entity.setVelocity(player.getPosition().direction().mul(6));
     }
 
     private static void onPickup(PickupItemEvent event) {
+        var entity = event.getItemEntity();
+        var pickableAt = entity.getTag(PICKABLE_AT);
+        if (pickableAt != null && entity.getInstance().getWorldAge() < pickableAt) {
+            event.setCancelled(true);
+            return;
+        }
         if (!(event.getLivingEntity() instanceof Player player)) {
             return;
         }
 
-        var entity = event.getItemEntity();
         var stack = entity.getItemStack();
         var leftover = player.getInventory().addItemStack(stack, TransactionOption.ALL);
         var taken = leftover.isAir() ? stack.amount() : stack.amount() - leftover.amount();

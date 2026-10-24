@@ -10,8 +10,9 @@ import net.minestom.server.entity.attribute.Attribute;
 import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.player.PlayerBlockBreakEvent;
-import net.minestom.server.event.player.PlayerStartDiggingEvent;
+import net.minestom.server.event.player.PlayerPacketEvent;
 import net.minestom.server.instance.block.Block;
+import net.minestom.server.network.packet.client.play.ClientPlayerActionPacket;
 import net.minestom.server.network.packet.server.play.BlockChangePacket;
 import net.minestom.server.potion.PotionEffect;
 import net.minestom.server.tag.Tag;
@@ -35,24 +36,37 @@ final class BlockBreaking {
 
     EventNode<Event> events() {
         return EventNode.all("block-breaking")
-                .addListener(PlayerStartDiggingEvent.class, this::onStart)
+                .addListener(PlayerPacketEvent.class, BlockBreaking::onPacket)
                 .addListener(PlayerBlockBreakEvent.class, this::onBreak);
     }
 
-    private void onStart(PlayerStartDiggingEvent event) {
-        var player = event.getPlayer();
-        if (player.getGameMode() != GameMode.SURVIVAL) {
+    /**
+     * Minestom breaks instant-looking blocks while handling the start packet, before any dig event,
+     * so the start is recorded from the packet itself.
+     */
+    private static void onPacket(PlayerPacketEvent event) {
+        if (!(event.getPacket() instanceof ClientPlayerActionPacket packet)) {
             return;
         }
 
-        var position = event.getBlockPosition();
-        player.setTag(
-                DIG,
-                new Dig(
-                        position.blockX(),
-                        position.blockY(),
-                        position.blockZ(),
-                        event.getInstance().getWorldAge()));
+        var player = event.getPlayer();
+        switch (packet.status()) {
+            case STARTED_DIGGING -> {
+                var instance = player.getInstance();
+                if (instance != null && player.getGameMode() == GameMode.SURVIVAL) {
+                    var position = packet.blockPosition();
+                    player.setTag(
+                            DIG,
+                            new Dig(
+                                    position.blockX(),
+                                    position.blockY(),
+                                    position.blockZ(),
+                                    instance.getWorldAge()));
+                }
+            }
+            case CANCELLED_DIGGING -> player.removeTag(DIG);
+            default -> {}
+        }
     }
 
     private void onBreak(PlayerBlockBreakEvent event) {
@@ -64,7 +78,6 @@ final class BlockBreaking {
         var block = event.getBlock();
         var position = event.getBlockPosition();
         var dig = player.getTag(DIG);
-        player.removeTag(DIG);
         var progress = progressPerTick(player, block);
         if (progress < 1
                 && !finishedInTime(
@@ -78,6 +91,7 @@ final class BlockBreaking {
             player.sendPacket(new BlockChangePacket(position, block));
             return;
         }
+        player.removeTag(DIG);
 
         var tool = player.getItemInMainHand().get(DataComponents.TOOL);
         if (canHarvest(player, block)) {
