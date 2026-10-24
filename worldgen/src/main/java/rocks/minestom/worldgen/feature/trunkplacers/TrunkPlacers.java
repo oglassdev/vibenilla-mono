@@ -68,6 +68,10 @@ public final class TrunkPlacers {
                                 CherryTrunkPlacer.CODEC
                                         .decode(coder, value)
                                         .mapResult(placer -> (TrunkPlacer) placer);
+                        case "minecraft:poplar_trunk_placer" ->
+                                PoplarTrunkPlacer.CODEC
+                                        .decode(coder, value)
+                                        .mapResult(placer -> (TrunkPlacer) placer);
                         default -> new Result.Error<>("Unknown trunk placer type: " + type);
                     };
                 }

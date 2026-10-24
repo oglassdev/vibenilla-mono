@@ -57,9 +57,23 @@ public final class TreeDecorators {
                                 CocoaDecorator.CODEC
                                         .decode(coder, value)
                                         .mapResult(decorator -> (TreeDecorator) decorator);
-                        // pale_moss, creaking_heart, attached_to_leaves are not
-                        // implemented yet; parse them as no-ops
-                        default -> new Result.Ok<>(NoOpDecorator.INSTANCE);
+                        case "minecraft:shelf_mushroom" ->
+                                ShelfMushroomDecorator.CODEC
+                                        .decode(coder, value)
+                                        .mapResult(decorator -> (TreeDecorator) decorator);
+                        case "minecraft:pale_moss" ->
+                                PaleMossDecorator.CODEC
+                                        .decode(coder, value)
+                                        .mapResult(decorator -> (TreeDecorator) decorator);
+                        case "minecraft:creaking_heart" ->
+                                CreakingHeartDecorator.CODEC
+                                        .decode(coder, value)
+                                        .mapResult(decorator -> (TreeDecorator) decorator);
+                        case "minecraft:attached_to_leaves" ->
+                                AttachedToLeavesDecorator.CODEC
+                                        .decode(coder, value)
+                                        .mapResult(decorator -> (TreeDecorator) decorator);
+                        default -> new Result.Error<>("Unknown tree decorator type: " + type);
                     };
                 }
             };
