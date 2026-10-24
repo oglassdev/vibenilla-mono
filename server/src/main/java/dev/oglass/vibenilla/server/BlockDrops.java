@@ -17,9 +17,8 @@ import net.minestom.server.event.player.PlayerBlockBreakEvent;
 final class BlockDrops {
     private final Map<Key, LootTable> tables;
 
-    /** Tables are keyed by their path relative to the directory, which matches block keys. */
-    BlockDrops(Path blockLootTableDirectory) {
-        this.tables = Trove.readTables(blockLootTableDirectory);
+    BlockDrops(Path lootTableDirectory) {
+        this.tables = Trove.readTables(lootTableDirectory);
     }
 
     EventNode<Event> events() {
@@ -33,7 +32,8 @@ final class BlockDrops {
         }
 
         var block = event.getBlock();
-        var table = this.tables.get(block.key());
+        var table =
+                this.tables.get(Key.key(block.key().namespace(), "blocks/" + block.key().value()));
         if (table == null) {
             return;
         }

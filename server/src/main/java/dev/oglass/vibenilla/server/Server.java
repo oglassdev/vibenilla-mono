@@ -48,9 +48,7 @@ public final class Server {
                 .addChild(MinestomFluids.bucketEvents())
                 .addChild(Items.events())
                 .addChild(crafting.events())
-                .addChild(
-                        new BlockDrops(vanillaData.resolve("loot_table").resolve("blocks"))
-                                .events())
+                .addChild(new BlockDrops(vanillaData.resolve("loot_table")).events())
                 .addListener(
                         AsyncPlayerConfigurationEvent.class,
                         event -> {
