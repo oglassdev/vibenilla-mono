@@ -43,6 +43,7 @@ public final class Respawns {
                     "wither_rose");
 
     private static Pos worldSpawn = Pos.ZERO;
+    private static @Nullable Pos searchedSpawn;
 
     private Respawns() {}
 
@@ -237,6 +238,15 @@ public final class Respawns {
     }
 
     private static Pos searchSpawn(Instance instance) {
+        var cached = searchedSpawn;
+        if (cached != null && isSafeStandingSpot(instance, cached)) {
+            return cached;
+        }
+        searchedSpawn = findSearchedSpawn(instance);
+        return searchedSpawn;
+    }
+
+    private static Pos findSearchedSpawn(Instance instance) {
         for (var radius = 0; radius <= SEARCH_RADIUS; radius++) {
             for (var dx = -radius; dx <= radius; dx++) {
                 for (var dz = -radius; dz <= radius; dz++) {
