@@ -131,7 +131,8 @@ public final class WorldGenerator implements Generator {
                         this.biomeSource,
                         biomeResolver,
                         this.biomeZoomer,
-                        new CarverLoader(featureLoader.dataPack(), featureLoader.blockTags()));
+                        new CarverLoader(featureLoader.dataPack()),
+                        featureLoader.blockTags());
     }
 
     @Override

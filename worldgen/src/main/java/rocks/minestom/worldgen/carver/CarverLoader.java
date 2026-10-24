@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rocks.minestom.worldgen.datapack.DataPack;
 import rocks.minestom.worldgen.feature.valueproviders.IntProvider;
-import rocks.minestom.worldgen.structure.context.BlockTagManager;
 
 /**
  * Loads carvers and per-biome carver lists from the datapack, mirroring {@link
@@ -31,10 +30,6 @@ public final class CarverLoader {
         this.dataPack = dataPack;
         this.biomeCarverCache = new ConcurrentHashMap<>();
         this.carverCache = new ConcurrentHashMap<>();
-    }
-
-    public CarverLoader(DataPack dataPack, BlockTagManager unused) {
-        this(dataPack);
     }
 
     /**

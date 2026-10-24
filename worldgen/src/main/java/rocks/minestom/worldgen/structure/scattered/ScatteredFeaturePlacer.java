@@ -426,7 +426,8 @@ public final class ScatteredFeaturePlacer {
                                 biomeSource,
                                 new DataPackBiomeResolver(dataPack),
                                 biomeZoomer,
-                                new CarverLoader(dataPack, this.featureLoader.blockTags()));
+                                new CarverLoader(dataPack),
+                                this.featureLoader.blockTags());
             }
             return this.carvers;
         }
