@@ -6,9 +6,10 @@ import io.github.togar2.pvp.feature.RegistrableFeature;
 import io.github.togar2.pvp.feature.config.DefinedFeature;
 import io.github.togar2.pvp.feature.config.FeatureConfiguration;
 import io.github.togar2.pvp.feature.config.PlayerInitReason;
-import io.github.togar2.pvp.utils.FluidUtil;
 import io.github.togar2.pvp.feature.provider.DifficultyProvider;
 import io.github.togar2.pvp.utils.CombatVersion;
+import io.github.togar2.pvp.utils.FluidUtil;
+import java.util.Objects;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.event.EventDispatcher;
@@ -20,17 +21,15 @@ import net.minestom.server.event.trait.EntityInstanceEvent;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.world.Difficulty;
 
-import java.util.Objects;
-
-/**
- * Vanilla implementation of {@link ExhaustionFeature}
- */
+/** Vanilla implementation of {@link ExhaustionFeature} */
 public class VanillaExhaustionFeature implements ExhaustionFeature, RegistrableFeature {
-    public static final DefinedFeature<VanillaExhaustionFeature> DEFINED = new DefinedFeature<>(
-            FeatureType.EXHAUSTION, VanillaExhaustionFeature::new,
-            VanillaExhaustionFeature::initPlayer,
-            FeatureType.DIFFICULTY, FeatureType.VERSION
-    );
+    public static final DefinedFeature<VanillaExhaustionFeature> DEFINED =
+            new DefinedFeature<>(
+                    FeatureType.EXHAUSTION,
+                    VanillaExhaustionFeature::new,
+                    VanillaExhaustionFeature::initPlayer,
+                    FeatureType.DIFFICULTY,
+                    FeatureType.VERSION);
 
     public static final Tag<Float> EXHAUSTION = Tag.Float("exhaustion");
 
@@ -63,8 +62,11 @@ public class VanillaExhaustionFeature implements ExhaustionFeature, RegistrableF
     public void init(EventNode<EntityInstanceEvent> node) {
         node.addListener(PlayerTickEvent.class, event -> this.onTick(event.getPlayer()));
 
-        node.addListener(PlayerBlockBreakEvent.class, event ->
-                this.addExhaustion(event.getPlayer(), this.version.legacy() ? 0.025F : 0.005F));
+        node.addListener(
+                PlayerBlockBreakEvent.class,
+                event ->
+                        this.addExhaustion(
+                                event.getPlayer(), this.version.legacy() ? 0.025F : 0.005F));
 
         node.addListener(PlayerMoveEvent.class, this::onMove);
     }
@@ -102,14 +104,19 @@ public class VanillaExhaustionFeature implements ExhaustionFeature, RegistrableF
         if (FluidUtil.isTouchingWater(player, event.getNewPosition())) {
             var eyePosition = event.getNewPosition().add(0.0, player.getEyeHeight(), 0.0);
             var submerged = FluidUtil.isWater(instance.getBlock(eyePosition));
-            var distance = submerged
-                    ? Math.sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff)
-                    : Math.sqrt(xDiff * xDiff + zDiff * zDiff);
+            var distance =
+                    submerged
+                            ? Math.sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff)
+                            : Math.sqrt(xDiff * xDiff + zDiff * zDiff);
             var distanceUnits = (int) Math.round(distance * 100.0F);
-            if (distanceUnits > 0) this.addExhaustion(player, 0.01F * (float) distanceUnits * 0.01F);
+            if (distanceUnits > 0)
+                this.addExhaustion(player, 0.01F * (float) distanceUnits * 0.01F);
         } else if (player.isOnGround()) {
             var distanceUnits = (int) Math.round(Math.sqrt(xDiff * xDiff + zDiff * zDiff) * 100.0F);
-            if (distanceUnits > 0) this.addExhaustion(player, (player.isSprinting() ? 0.1F : 0.0F) * (float) distanceUnits * 0.01F);
+            if (distanceUnits > 0)
+                this.addExhaustion(
+                        player,
+                        (player.isSprinting() ? 0.1F : 0.0F) * (float) distanceUnits * 0.01F);
         }
     }
 
@@ -117,13 +124,19 @@ public class VanillaExhaustionFeature implements ExhaustionFeature, RegistrableF
     public void addExhaustion(Player player, float exhaustion) {
         if (player.getGameMode().invulnerable()) return;
         var playerExhaustEvent = new PlayerExhaustEvent(player, exhaustion);
-        EventDispatcher.callCancellable(playerExhaustEvent, () -> player.setTag(EXHAUSTION,
-                Math.min(player.getTag(EXHAUSTION) + playerExhaustEvent.getAmount(), 40)));
+        EventDispatcher.callCancellable(
+                playerExhaustEvent,
+                () ->
+                        player.setTag(
+                                EXHAUSTION,
+                                Math.min(
+                                        player.getTag(EXHAUSTION) + playerExhaustEvent.getAmount(),
+                                        40)));
     }
 
     @Override
     public void addAttackExhaustion(Player player) {
-        this.addExhaustion(player, this.version.legacy() ? 0.3F: 0.1F);
+        this.addExhaustion(player, this.version.legacy() ? 0.3F : 0.1F);
     }
 
     @Override
@@ -133,6 +146,7 @@ public class VanillaExhaustionFeature implements ExhaustionFeature, RegistrableF
 
     @Override
     public void applyHungerEffect(Player player, int amplifier) {
-        this.addExhaustion(player, (this.version.legacy() ? 0.025F : 0.005F) * (float) (amplifier + 1));
+        this.addExhaustion(
+                player, (this.version.legacy() ? 0.025F : 0.005F) * (float) (amplifier + 1));
     }
 }

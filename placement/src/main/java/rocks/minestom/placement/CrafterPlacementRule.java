@@ -12,30 +12,40 @@ public final class CrafterPlacementRule extends BlockPlacementRule {
     @Override
     public Block blockPlace(PlacementState placementState) {
         var playerPosition = placementState.playerPosition();
-        var nearestLooking = playerPosition == null
-                ? BlockFace.NORTH
-                : nearestLookingDirection(playerPosition.yaw(), playerPosition.pitch()).getOppositeFace();
-        var horizontal = playerPosition == null ? BlockFace.NORTH : BlockFace.fromYaw(playerPosition.yaw());
-        var verticalDirection = switch (nearestLooking) {
-            case BOTTOM -> horizontal.getOppositeFace();
-            case TOP -> horizontal;
-            default -> BlockFace.TOP;
-        };
+        var nearestLooking =
+                playerPosition == null
+                        ? BlockFace.NORTH
+                        : nearestLookingDirection(playerPosition.yaw(), playerPosition.pitch())
+                                .getOppositeFace();
+        var horizontal =
+                playerPosition == null ? BlockFace.NORTH : BlockFace.fromYaw(playerPosition.yaw());
+        var verticalDirection =
+                switch (nearestLooking) {
+                    case BOTTOM -> horizontal.getOppositeFace();
+                    case TOP -> horizontal;
+                    default -> BlockFace.TOP;
+                };
 
-        var triggered = VanillaPlacementUtils.hasNeighborSignal(
-                placementState.instance(), placementState.placePosition());
+        var triggered =
+                VanillaPlacementUtils.hasNeighborSignal(
+                        placementState.instance(), placementState.placePosition());
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withHandler(ConsumeInteractionBlockHandler.INSTANCE)
-                .withProperty("orientation", orientationName(nearestLooking) + "_" + orientationName(verticalDirection))
+                .withProperty(
+                        "orientation",
+                        orientationName(nearestLooking) + "_" + orientationName(verticalDirection))
                 .withProperty("triggered", String.valueOf(triggered));
     }
 
     @Override
     public Block blockUpdate(UpdateState updateState) {
-        var triggered = VanillaPlacementUtils.hasNeighborSignal(
-                updateState.instance(), updateState.blockPosition());
-        var updated = updateState.currentBlock().withProperty("triggered", String.valueOf(triggered));
+        var triggered =
+                VanillaPlacementUtils.hasNeighborSignal(
+                        updateState.instance(), updateState.blockPosition());
+        var updated =
+                updateState.currentBlock().withProperty("triggered", String.valueOf(triggered));
         return triggered ? updated : updated.withProperty("crafting", "false");
     }
 

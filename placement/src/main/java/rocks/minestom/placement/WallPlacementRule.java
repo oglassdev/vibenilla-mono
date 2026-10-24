@@ -13,39 +13,36 @@ import org.jetbrains.annotations.Nullable;
 
 public final class WallPlacementRule extends BlockPlacementRule {
     private static final BlockFace[] HORIZONTAL_FACES = {
-            BlockFace.NORTH,
-            BlockFace.EAST,
-            BlockFace.SOUTH,
-            BlockFace.WEST
+        BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST
     };
 
     private static final Block[] CROSS_CONNECTING_BLOCKS = {
-            Block.IRON_BARS,
-            Block.COPPER_BARS,
-            Block.EXPOSED_COPPER_BARS,
-            Block.WEATHERED_COPPER_BARS,
-            Block.OXIDIZED_COPPER_BARS,
-            Block.WAXED_COPPER_BARS,
-            Block.WAXED_EXPOSED_COPPER_BARS,
-            Block.WAXED_WEATHERED_COPPER_BARS,
-            Block.WAXED_OXIDIZED_COPPER_BARS,
-            Block.GLASS_PANE,
-            Block.WHITE_STAINED_GLASS_PANE,
-            Block.LIGHT_GRAY_STAINED_GLASS_PANE,
-            Block.GRAY_STAINED_GLASS_PANE,
-            Block.BLACK_STAINED_GLASS_PANE,
-            Block.BROWN_STAINED_GLASS_PANE,
-            Block.RED_STAINED_GLASS_PANE,
-            Block.ORANGE_STAINED_GLASS_PANE,
-            Block.YELLOW_STAINED_GLASS_PANE,
-            Block.LIME_STAINED_GLASS_PANE,
-            Block.GREEN_STAINED_GLASS_PANE,
-            Block.CYAN_STAINED_GLASS_PANE,
-            Block.LIGHT_BLUE_STAINED_GLASS_PANE,
-            Block.BLUE_STAINED_GLASS_PANE,
-            Block.PURPLE_STAINED_GLASS_PANE,
-            Block.MAGENTA_STAINED_GLASS_PANE,
-            Block.PINK_STAINED_GLASS_PANE
+        Block.IRON_BARS,
+        Block.COPPER_BARS,
+        Block.EXPOSED_COPPER_BARS,
+        Block.WEATHERED_COPPER_BARS,
+        Block.OXIDIZED_COPPER_BARS,
+        Block.WAXED_COPPER_BARS,
+        Block.WAXED_EXPOSED_COPPER_BARS,
+        Block.WAXED_WEATHERED_COPPER_BARS,
+        Block.WAXED_OXIDIZED_COPPER_BARS,
+        Block.GLASS_PANE,
+        Block.WHITE_STAINED_GLASS_PANE,
+        Block.LIGHT_GRAY_STAINED_GLASS_PANE,
+        Block.GRAY_STAINED_GLASS_PANE,
+        Block.BLACK_STAINED_GLASS_PANE,
+        Block.BROWN_STAINED_GLASS_PANE,
+        Block.RED_STAINED_GLASS_PANE,
+        Block.ORANGE_STAINED_GLASS_PANE,
+        Block.YELLOW_STAINED_GLASS_PANE,
+        Block.LIME_STAINED_GLASS_PANE,
+        Block.GREEN_STAINED_GLASS_PANE,
+        Block.CYAN_STAINED_GLASS_PANE,
+        Block.LIGHT_BLUE_STAINED_GLASS_PANE,
+        Block.BLUE_STAINED_GLASS_PANE,
+        Block.PURPLE_STAINED_GLASS_PANE,
+        Block.MAGENTA_STAINED_GLASS_PANE,
+        Block.PINK_STAINED_GLASS_PANE
     };
 
     public WallPlacementRule(Block block) {
@@ -64,13 +61,53 @@ public final class WallPlacementRule extends BlockPlacementRule {
         var shulkerBoxesTag = blockRegistry.getTag(Key.key("minecraft:shulker_boxes"));
         var replaced = blockGetter.getBlock(placePosition);
         var waterlogged = replaced.compare(Block.WATER);
-        var north = connectsTo(blockGetter, placePosition, BlockFace.NORTH, wallsTag, fenceGatesTag, leavesTag, shulkerBoxesTag);
-        var east = connectsTo(blockGetter, placePosition, BlockFace.EAST, wallsTag, fenceGatesTag, leavesTag, shulkerBoxesTag);
-        var south = connectsTo(blockGetter, placePosition, BlockFace.SOUTH, wallsTag, fenceGatesTag, leavesTag, shulkerBoxesTag);
-        var west = connectsTo(blockGetter, placePosition, BlockFace.WEST, wallsTag, fenceGatesTag, leavesTag, shulkerBoxesTag);
+        var north =
+                connectsTo(
+                        blockGetter,
+                        placePosition,
+                        BlockFace.NORTH,
+                        wallsTag,
+                        fenceGatesTag,
+                        leavesTag,
+                        shulkerBoxesTag);
+        var east =
+                connectsTo(
+                        blockGetter,
+                        placePosition,
+                        BlockFace.EAST,
+                        wallsTag,
+                        fenceGatesTag,
+                        leavesTag,
+                        shulkerBoxesTag);
+        var south =
+                connectsTo(
+                        blockGetter,
+                        placePosition,
+                        BlockFace.SOUTH,
+                        wallsTag,
+                        fenceGatesTag,
+                        leavesTag,
+                        shulkerBoxesTag);
+        var west =
+                connectsTo(
+                        blockGetter,
+                        placePosition,
+                        BlockFace.WEST,
+                        wallsTag,
+                        fenceGatesTag,
+                        leavesTag,
+                        shulkerBoxesTag);
         var aboveBlock = blockGetter.getBlock(placePosition.relative(BlockFace.TOP));
         return buildState(
-                placementState.block(), north, east, south, west, aboveBlock, waterlogged, wallsTag, wallPostOverrideTag);
+                placementState.block(),
+                north,
+                east,
+                south,
+                west,
+                aboveBlock,
+                waterlogged,
+                wallsTag,
+                wallPostOverrideTag);
     }
 
     @Override
@@ -91,21 +128,61 @@ public final class WallPlacementRule extends BlockPlacementRule {
         var shulkerBoxesTag = blockRegistry.getTag(Key.key("minecraft:shulker_boxes"));
         var current = updateState.currentBlock();
         var waterlogged = "true".equals(current.getProperty("waterlogged"));
-        var north = fromFace == BlockFace.NORTH
-                ? connectsTo(blockGetter, blockPosition, BlockFace.NORTH, wallsTag, fenceGatesTag, leavesTag, shulkerBoxesTag)
-                : isConnected(current.getProperty("north"));
-        var east = fromFace == BlockFace.EAST
-                ? connectsTo(blockGetter, blockPosition, BlockFace.EAST, wallsTag, fenceGatesTag, leavesTag, shulkerBoxesTag)
-                : isConnected(current.getProperty("east"));
-        var south = fromFace == BlockFace.SOUTH
-                ? connectsTo(blockGetter, blockPosition, BlockFace.SOUTH, wallsTag, fenceGatesTag, leavesTag, shulkerBoxesTag)
-                : isConnected(current.getProperty("south"));
-        var west = fromFace == BlockFace.WEST
-                ? connectsTo(blockGetter, blockPosition, BlockFace.WEST, wallsTag, fenceGatesTag, leavesTag, shulkerBoxesTag)
-                : isConnected(current.getProperty("west"));
+        var north =
+                fromFace == BlockFace.NORTH
+                        ? connectsTo(
+                                blockGetter,
+                                blockPosition,
+                                BlockFace.NORTH,
+                                wallsTag,
+                                fenceGatesTag,
+                                leavesTag,
+                                shulkerBoxesTag)
+                        : isConnected(current.getProperty("north"));
+        var east =
+                fromFace == BlockFace.EAST
+                        ? connectsTo(
+                                blockGetter,
+                                blockPosition,
+                                BlockFace.EAST,
+                                wallsTag,
+                                fenceGatesTag,
+                                leavesTag,
+                                shulkerBoxesTag)
+                        : isConnected(current.getProperty("east"));
+        var south =
+                fromFace == BlockFace.SOUTH
+                        ? connectsTo(
+                                blockGetter,
+                                blockPosition,
+                                BlockFace.SOUTH,
+                                wallsTag,
+                                fenceGatesTag,
+                                leavesTag,
+                                shulkerBoxesTag)
+                        : isConnected(current.getProperty("south"));
+        var west =
+                fromFace == BlockFace.WEST
+                        ? connectsTo(
+                                blockGetter,
+                                blockPosition,
+                                BlockFace.WEST,
+                                wallsTag,
+                                fenceGatesTag,
+                                leavesTag,
+                                shulkerBoxesTag)
+                        : isConnected(current.getProperty("west"));
         var aboveBlock = blockGetter.getBlock(blockPosition.relative(BlockFace.TOP));
         return buildState(
-                this.block, north, east, south, west, aboveBlock, waterlogged, wallsTag, wallPostOverrideTag);
+                this.block,
+                north,
+                east,
+                south,
+                west,
+                aboveBlock,
+                waterlogged,
+                wallsTag,
+                wallPostOverrideTag);
     }
 
     private static Block buildState(
@@ -117,8 +194,7 @@ public final class WallPlacementRule extends BlockPlacementRule {
             Block aboveBlock,
             boolean waterlogged,
             @Nullable RegistryTag<Block> wallsTag,
-            @Nullable RegistryTag<Block> wallPostOverrideTag
-    ) {
+            @Nullable RegistryTag<Block> wallPostOverrideTag) {
         var aboveShape = aboveBlock.collisionShape();
         var northSide = wallSide(north, isCovered(aboveShape, BlockFace.NORTH));
         var eastSide = wallSide(east, isCovered(aboveShape, BlockFace.EAST));
@@ -130,18 +206,20 @@ public final class WallPlacementRule extends BlockPlacementRule {
         var eastNone = !east;
         var southNone = !south;
         var westNone = !west;
-        var hasCorner = northNone && southNone && westNone && eastNone
-                || northNone != southNone
-                || westNone != eastNone;
-        var hasHighWall = "tall".equals(northSide) && "tall".equals(southSide)
-                || "tall".equals(eastSide) && "tall".equals(westSide);
+        var hasCorner =
+                northNone && southNone && westNone && eastNone
+                        || northNone != southNone
+                        || westNone != eastNone;
+        var hasHighWall =
+                "tall".equals(northSide) && "tall".equals(southSide)
+                        || "tall".equals(eastSide) && "tall".equals(westSide);
         var postOverride = wallPostOverrideTag != null && wallPostOverrideTag.contains(aboveBlock);
-        var up = topIsWallWithPost
-                || hasCorner
-                || !hasHighWall && (postOverride || isCovered(aboveShape, null));
+        var up =
+                topIsWallWithPost
+                        || hasCorner
+                        || !hasHighWall && (postOverride || isCovered(aboveShape, null));
 
-        return base
-                .withProperty("north", northSide)
+        return base.withProperty("north", northSide)
                 .withProperty("east", eastSide)
                 .withProperty("south", southSide)
                 .withProperty("west", westSide)
@@ -205,8 +283,7 @@ public final class WallPlacementRule extends BlockPlacementRule {
             @Nullable RegistryTag<Block> wallsTag,
             @Nullable RegistryTag<Block> fenceGatesTag,
             @Nullable RegistryTag<Block> leavesTag,
-            @Nullable RegistryTag<Block> shulkerBoxesTag
-    ) {
+            @Nullable RegistryTag<Block> shulkerBoxesTag) {
         var neighborPosition = centerPosition.relative(face);
         var neighbor = blockGetter.getBlock(neighborPosition);
         var oppositeFace = face.getOppositeFace();
@@ -251,8 +328,7 @@ public final class WallPlacementRule extends BlockPlacementRule {
     private static boolean isExceptionForConnection(
             Block neighbor,
             @Nullable RegistryTag<Block> leavesTag,
-            @Nullable RegistryTag<Block> shulkerBoxesTag
-    ) {
+            @Nullable RegistryTag<Block> shulkerBoxesTag) {
         if (leavesTag != null && leavesTag.contains(neighbor)) {
             return true;
         }

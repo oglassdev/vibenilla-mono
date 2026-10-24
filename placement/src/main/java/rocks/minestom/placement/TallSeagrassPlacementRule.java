@@ -7,7 +7,8 @@ import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
 
 public final class TallSeagrassPlacementRule extends BlockPlacementRule {
-    private static final Key CANNOT_SUPPORT_SEAGRASS_TAG = Key.key("minecraft:cannot_support_seagrass");
+    private static final Key CANNOT_SUPPORT_SEAGRASS_TAG =
+            Key.key("minecraft:cannot_support_seagrass");
 
     public TallSeagrassPlacementRule(Block block) {
         super(block);
@@ -34,7 +35,8 @@ public final class TallSeagrassPlacementRule extends BlockPlacementRule {
             return null;
         }
 
-        instance.setBlock(upperPosition, placementState.block().withProperty("half", "upper"), false);
+        instance.setBlock(
+                upperPosition, placementState.block().withProperty("half", "upper"), false);
         return placementState.block().withProperty("half", "lower");
     }
 
@@ -45,17 +47,26 @@ public final class TallSeagrassPlacementRule extends BlockPlacementRule {
         var fromFace = updateState.fromFace();
 
         if ("lower".equals(half) && fromFace == BlockFace.TOP) {
-            var above = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.TOP));
+            var above =
+                    updateState
+                            .instance()
+                            .getBlock(updateState.blockPosition().relative(BlockFace.TOP));
             return this.isMatchingHalf(above, "upper") ? currentBlock : Block.AIR;
         }
 
         if ("lower".equals(half) && fromFace == BlockFace.BOTTOM) {
-            var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+            var below =
+                    updateState
+                            .instance()
+                            .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
             return canSupport(below) ? currentBlock : Block.AIR;
         }
 
         if ("upper".equals(half) && fromFace == BlockFace.BOTTOM) {
-            var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+            var below =
+                    updateState
+                            .instance()
+                            .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
             return this.isMatchingHalf(below, "lower") ? currentBlock : Block.AIR;
         }
 

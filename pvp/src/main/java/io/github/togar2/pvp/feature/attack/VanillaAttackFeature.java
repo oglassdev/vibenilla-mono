@@ -18,18 +18,18 @@ import io.github.togar2.pvp.player.CombatPlayer;
 import io.github.togar2.pvp.utils.CombatVersion;
 import io.github.togar2.pvp.utils.ViewUtil;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.sound.Sound;
 import net.minestom.server.ServerFlag;
 import net.minestom.server.collision.BoundingBox;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.coordinate.Point;
-import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.*;
 import net.minestom.server.entity.attribute.Attribute;
 import net.minestom.server.entity.damage.Damage;
 import net.minestom.server.entity.damage.DamageType;
-import net.minestom.server.item.ItemStack;
 import net.minestom.server.event.EventDispatcher;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityAttackEvent;
@@ -43,21 +43,25 @@ import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.List;
-
 /**
  * Vanilla implementation of {@link AttackFeature}
- * <p>
- * Listens on {@link EntityAttackEvent}
+ *
+ * <p>Listens on {@link EntityAttackEvent}
  */
 public class VanillaAttackFeature implements AttackFeature, RegistrableFeature {
-    public static final DefinedFeature<VanillaAttackFeature> DEFINED = new DefinedFeature<>(
-        FeatureType.ATTACK, VanillaAttackFeature::new,
-        FeatureType.ATTACK_COOLDOWN, FeatureType.EXHAUSTION, FeatureType.ITEM_DAMAGE,
-        FeatureType.ENCHANTMENT, FeatureType.CRITICAL, FeatureType.SWEEPING, FeatureType.KNOCKBACK,
-        FeatureType.SMASH_ATTACK, FeatureType.VERSION
-    );
+    public static final DefinedFeature<VanillaAttackFeature> DEFINED =
+            new DefinedFeature<>(
+                    FeatureType.ATTACK,
+                    VanillaAttackFeature::new,
+                    FeatureType.ATTACK_COOLDOWN,
+                    FeatureType.EXHAUSTION,
+                    FeatureType.ITEM_DAMAGE,
+                    FeatureType.ENCHANTMENT,
+                    FeatureType.CRITICAL,
+                    FeatureType.SWEEPING,
+                    FeatureType.KNOCKBACK,
+                    FeatureType.SMASH_ATTACK,
+                    FeatureType.VERSION);
 
     private static final double ATTACK_RANGE_MARGIN = 3.0;
     private static final double ATTACK_CHARGE_TOLERANCE_TICKS = 5.0;
@@ -97,19 +101,29 @@ public class VanillaAttackFeature implements AttackFeature, RegistrableFeature {
     @Override
     public void init(EventNode<EntityInstanceEvent> node) {
         node.addListener(PlayerPacketEvent.class, this::handleSprintAction);
-        node.addListener(EntityAttackEvent.class, event -> {
-            if (event.getEntity() instanceof Player player && player.getGameMode() != GameMode.SPECTATOR && !player.isDead()) {
-                var mainHand = player.getItemInMainHand();
-                if (mainHand.has(DataComponents.PIERCING_WEAPON)) return;
-                if (this.cooldownFeature.cannotAttackWith(player, mainHand, ATTACK_CHARGE_TOLERANCE_TICKS)) return;
+        node.addListener(
+                EntityAttackEvent.class,
+                event -> {
+                    if (event.getEntity() instanceof Player player
+                            && player.getGameMode() != GameMode.SPECTATOR
+                            && !player.isDead()) {
+                        var mainHand = player.getItemInMainHand();
+                        if (mainHand.has(DataComponents.PIERCING_WEAPON)) return;
+                        if (this.cooldownFeature.cannotAttackWith(
+                                player, mainHand, ATTACK_CHARGE_TOLERANCE_TICKS)) return;
 
-                var target = event.getTarget();
-                var maxDistanceSquared = Math.pow(player.getAttributeValue(Attribute.ENTITY_INTERACTION_RANGE) + ATTACK_RANGE_MARGIN, 2);
-                var eyePosition = player.getPosition().add(0.0, player.getEyeHeight(), 0.0);
-                if (this.distanceSquaredToBox(eyePosition, target.getBoundingBox(), target.getPosition()) < maxDistanceSquared)
-                    this.performAttack(player, target);
-            }
-        });
+                        var target = event.getTarget();
+                        var maxDistanceSquared =
+                                Math.pow(
+                                        player.getAttributeValue(Attribute.ENTITY_INTERACTION_RANGE)
+                                                + ATTACK_RANGE_MARGIN,
+                                        2);
+                        var eyePosition = player.getPosition().add(0.0, player.getEyeHeight(), 0.0);
+                        if (this.distanceSquaredToBox(
+                                        eyePosition, target.getBoundingBox(), target.getPosition())
+                                < maxDistanceSquared) this.performAttack(player, target);
+                    }
+                });
     }
 
     private void handleSprintAction(PlayerPacketEvent event) {
@@ -158,42 +172,61 @@ public class VanillaAttackFeature implements AttackFeature, RegistrableFeature {
 
         if (target instanceof WindCharge windCharge && windCharge.deflect(attacker)) {
             if (attack.sounds() && attack.playSoundsOnFail()) {
-                ViewUtil.viewersAndSelf(attacker).playSound(Sound.sound(
-                        SoundEvent.ENTITY_PLAYER_ATTACK_NODAMAGE, Sound.Source.PLAYER,
-                        1.0F, 1.0F
-                ), attacker);
+                ViewUtil.viewersAndSelf(attacker)
+                        .playSound(
+                                Sound.sound(
+                                        SoundEvent.ENTITY_PLAYER_ATTACK_NODAMAGE,
+                                        Sound.Source.PLAYER,
+                                        1.0F,
+                                        1.0F),
+                                attacker);
             }
 
             return true;
         }
 
-        var smashAttack = target instanceof LivingEntity
-                && this.smashAttackFeature.canSmashAttack(attacker);
+        var smashAttack =
+                target instanceof LivingEntity && this.smashAttackFeature.canSmashAttack(attacker);
 
         var originalHealth = 0.0F;
         var damageSucceeded = false;
         if (target instanceof CrystalEntity crystal) {
-            damageSucceeded = crystal.damage(new Damage(
-                    attacker instanceof Player ? DamageType.PLAYER_ATTACK : DamageType.MOB_ATTACK,
-                    attacker, attacker,
-                    null, attack.damage()
-            ));
+            damageSucceeded =
+                    crystal.damage(
+                            new Damage(
+                                    attacker instanceof Player
+                                            ? DamageType.PLAYER_ATTACK
+                                            : DamageType.MOB_ATTACK,
+                                    attacker,
+                                    attacker,
+                                    null,
+                                    attack.damage()));
         } else if (target instanceof LivingEntity livingTarget) {
             originalHealth = livingTarget.getHealth();
-            damageSucceeded = livingTarget.damage(new Damage(
-                smashAttack ? DamageType.MACE_SMASH :
-                        (attacker instanceof Player ? DamageType.PLAYER_ATTACK : DamageType.MOB_ATTACK),
-                attacker, attacker,
-                null, attack.damage()
-            ));
+            damageSucceeded =
+                    livingTarget.damage(
+                            new Damage(
+                                    smashAttack
+                                            ? DamageType.MACE_SMASH
+                                            : (attacker instanceof Player
+                                                    ? DamageType.PLAYER_ATTACK
+                                                    : DamageType.MOB_ATTACK),
+                                    attacker,
+                                    attacker,
+                                    null,
+                                    attack.damage()));
         }
 
         if (!damageSucceeded) {
             if (attack.sounds() && attack.playSoundsOnFail()) {
-                ViewUtil.viewersAndSelf(attacker).playSound(Sound.sound(
-                    SoundEvent.ENTITY_PLAYER_ATTACK_NODAMAGE, Sound.Source.PLAYER,
-                    1.0F, 1.0F
-                ), attacker);
+                ViewUtil.viewersAndSelf(attacker)
+                        .playSound(
+                                Sound.sound(
+                                        SoundEvent.ENTITY_PLAYER_ATTACK_NODAMAGE,
+                                        Sound.Source.PLAYER,
+                                        1.0F,
+                                        1.0F),
+                                attacker);
             }
             return false;
         }
@@ -210,15 +243,17 @@ public class VanillaAttackFeature implements AttackFeature, RegistrableFeature {
         var living = (LivingEntity) target;
         Collection<LivingEntity> affectedEntities = new ArrayList<>(List.of(living));
 
-        var appliedKnockback = this.knockbackFeature.applyAttackKnockback(attacker, living, attack.knockback());
+        var appliedKnockback =
+                this.knockbackFeature.applyAttackKnockback(attacker, living, attack.knockback());
 
         if (appliedKnockback && attack.sprint() && attacker instanceof Player player) {
             player.setTag(SPRINT_ATTACK_RESET, true);
         }
 
         if (attack.sweeping()) {
-            affectedEntities = this.sweepingFeature.applySweeping(
-                    attacker, living, attack.baseDamage(), attack.cooldownProgress());
+            affectedEntities =
+                    this.sweepingFeature.applySweeping(
+                            attacker, living, attack.baseDamage(), attack.cooldownProgress());
             affectedEntities.add(living);
         }
 
@@ -228,19 +263,19 @@ public class VanillaAttackFeature implements AttackFeature, RegistrableFeature {
             this.smashAttackFeature.applyWindBurst(attacker);
         }
 
-        if (target instanceof CombatPlayer custom)
-            custom.sendImmediateVelocityUpdate();
+        if (target instanceof CombatPlayer custom) custom.sendImmediateVelocityUpdate();
 
         this.playAttackSounds(attacker, attack);
 
-        if (attack.critical()) attacker.sendPacketToViewersAndSelf(new EntityAnimationPacket(
-            target.getEntityId(),
-            EntityAnimationPacket.Animation.CRITICAL_EFFECT
-        ));
-        if (attack.magical()) attacker.sendPacketToViewersAndSelf(new EntityAnimationPacket(
-            target.getEntityId(),
-            EntityAnimationPacket.Animation.MAGICAL_CRITICAL_EFFECT
-        ));
+        if (attack.critical())
+            attacker.sendPacketToViewersAndSelf(
+                    new EntityAnimationPacket(
+                            target.getEntityId(), EntityAnimationPacket.Animation.CRITICAL_EFFECT));
+        if (attack.magical())
+            attacker.sendPacketToViewersAndSelf(
+                    new EntityAnimationPacket(
+                            target.getEntityId(),
+                            EntityAnimationPacket.Animation.MAGICAL_CRITICAL_EFFECT));
 
         for (var affectedEntity : affectedEntities) {
             this.enchantmentFeature.onUserDamaged(affectedEntity, attacker);
@@ -248,10 +283,12 @@ public class VanillaAttackFeature implements AttackFeature, RegistrableFeature {
 
             if (attack.fireAspect() > 0) {
                 var fireTicks = attack.fireAspect() * 4 * ServerFlag.SERVER_TICKS_PER_SECOND;
-                var adjustedFireTicks = this.enchantmentFeature.getFireDuration(affectedEntity, fireTicks);
+                var adjustedFireTicks =
+                        this.enchantmentFeature.getFireDuration(affectedEntity, fireTicks);
 
                 if (affectedEntity.getFireTicks() < adjustedFireTicks) {
-                    affectedEntity.setTag(VanillaEnchantmentFeature.FIRE_DURATION_ALREADY_SCALED, true);
+                    affectedEntity.setTag(
+                            VanillaEnchantmentFeature.FIRE_DURATION_ALREADY_SCALED, true);
                     affectedEntity.setFireTicks(adjustedFireTicks);
                 }
             }
@@ -259,23 +296,30 @@ public class VanillaAttackFeature implements AttackFeature, RegistrableFeature {
 
         var weapon = attacker.getItemInMainHand().get(DataComponents.WEAPON);
         if (weapon != null) {
-            this.itemDamageFeature.damageEquipment(attacker, EquipmentSlot.MAIN_HAND, weapon.itemDamagePerAttack());
+            this.itemDamageFeature.damageEquipment(
+                    attacker, EquipmentSlot.MAIN_HAND, weapon.itemDamagePerAttack());
         }
 
         var damageDone = originalHealth - living.getHealth();
         if (damageDone > 2) {
             var particleCount = (int) (damageDone * 0.5);
             var targetPosition = target.getPosition();
-            target.sendPacketToViewersAndSelf(new ParticlePacket(
-                Particle.DAMAGE_INDICATOR, false, false,
-                targetPosition.x(), targetPosition.y() + target.getBoundingBox().height() * 0.5, targetPosition.z(),
-                0.1F, 0, 0.1F,
-                0.2F, particleCount
-            ));
+            target.sendPacketToViewersAndSelf(
+                    new ParticlePacket(
+                            Particle.DAMAGE_INDICATOR,
+                            false,
+                            false,
+                            targetPosition.x(),
+                            targetPosition.y() + target.getBoundingBox().height() * 0.5,
+                            targetPosition.z(),
+                            0.1F,
+                            0,
+                            0.1F,
+                            0.2F,
+                            particleCount));
         }
 
-        if (attacker instanceof Player player)
-            this.exhaustionFeature.addAttackExhaustion(player);
+        if (attacker instanceof Player player) this.exhaustionFeature.addAttackExhaustion(player);
 
         return true;
     }
@@ -284,35 +328,45 @@ public class VanillaAttackFeature implements AttackFeature, RegistrableFeature {
         if (!attack.sounds()) return;
 
         var audience = attacker.getViewersAsAudience();
-        if (attacker instanceof Player player)
-            audience = Audience.audience(audience, player);
+        if (attacker instanceof Player player) audience = Audience.audience(audience, player);
 
-        if (attack.sprint()) audience.playSound(Sound.sound(
-                SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK, Sound.Source.PLAYER,
-                1.0F, 1.0F
-        ), attacker);
+        if (attack.sprint())
+            audience.playSound(
+                    Sound.sound(
+                            SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK,
+                            Sound.Source.PLAYER,
+                            1.0F,
+                            1.0F),
+                    attacker);
 
-        if (attack.sweeping()) audience.playSound(Sound.sound(
-                SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP, Sound.Source.PLAYER,
-                1.0F, 1.0F
-        ), attacker);
+        if (attack.sweeping())
+            audience.playSound(
+                    Sound.sound(
+                            SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP, Sound.Source.PLAYER, 1.0F, 1.0F),
+                    attacker);
 
-        if (attack.critical()) audience.playSound(Sound.sound(
-                SoundEvent.ENTITY_PLAYER_ATTACK_CRIT, Sound.Source.PLAYER,
-                1.0F, 1.0F
-        ), attacker);
+        if (attack.critical())
+            audience.playSound(
+                    Sound.sound(
+                            SoundEvent.ENTITY_PLAYER_ATTACK_CRIT, Sound.Source.PLAYER, 1.0F, 1.0F),
+                    attacker);
 
-        if (!attack.critical() && !attack.sweeping()) audience.playSound(Sound.sound(
-                attack.strong() ?
-                        SoundEvent.ENTITY_PLAYER_ATTACK_STRONG :
-                        SoundEvent.ENTITY_PLAYER_ATTACK_WEAK,
-                Sound.Source.PLAYER, 1.0F, 1.0F
-        ), attacker);
+        if (!attack.critical() && !attack.sweeping())
+            audience.playSound(
+                    Sound.sound(
+                            attack.strong()
+                                    ? SoundEvent.ENTITY_PLAYER_ATTACK_STRONG
+                                    : SoundEvent.ENTITY_PLAYER_ATTACK_WEAK,
+                            Sound.Source.PLAYER,
+                            1.0F,
+                            1.0F),
+                    attacker);
     }
 
     protected @Nullable AttackValues.Final prepareAttack(LivingEntity attacker, Entity target) {
         var damage = (float) attacker.getAttributeValue(Attribute.ATTACK_DAMAGE);
-        var magicalDamage = this.enchantmentFeature.getAttackDamage(attacker.getItemInMainHand(), target);
+        var magicalDamage =
+                this.enchantmentFeature.getAttackDamage(attacker.getItemInMainHand(), target);
 
         var cooldownProgress = 1.0;
         if (attacker instanceof Player player) {
@@ -328,28 +382,43 @@ public class VanillaAttackFeature implements AttackFeature, RegistrableFeature {
         }
 
         var strongAttack = cooldownProgress > 0.9;
-        var sprintAttack = attacker.isSprinting() && strongAttack && !this.isSprintAttackReset(attacker);
+        var sprintAttack =
+                attacker.isSprinting() && strongAttack && !this.isSprintAttackReset(attacker);
         var knockback = this.enchantmentFeature.getKnockback(attacker);
         var fireAspect = this.enchantmentFeature.getFireAspect(attacker);
 
-        AttackValues.PreCritical preCritical = new AttackValues.PreCritical(
-            damage, magicalDamage, cooldownProgress,
-            strongAttack, sprintAttack, knockback, fireAspect
-        );
-        AttackValues.PreSweeping preSweeping = preCritical.withCritical(
-                target instanceof LivingEntity && this.criticalFeature.shouldCrit(attacker, preCritical)
-        );
-        AttackValues.PreSounds preSounds = preSweeping.withSweeping(this.sweepingFeature.shouldSweep(attacker, preSweeping));
+        AttackValues.PreCritical preCritical =
+                new AttackValues.PreCritical(
+                        damage,
+                        magicalDamage,
+                        cooldownProgress,
+                        strongAttack,
+                        sprintAttack,
+                        knockback,
+                        fireAspect);
+        AttackValues.PreSweeping preSweeping =
+                preCritical.withCritical(
+                        target instanceof LivingEntity
+                                && this.criticalFeature.shouldCrit(attacker, preCritical));
+        AttackValues.PreSounds preSounds =
+                preSweeping.withSweeping(this.sweepingFeature.shouldSweep(attacker, preSweeping));
 
         var critical = preSounds.critical();
         var sweeping = preSounds.sweeping();
 
         var sounds = this.version.modern();
 
-        var finalAttackEvent = new FinalAttackEvent(
-            attacker, target, sprintAttack, critical, sweeping, damage,
-            magicalDamage, sounds, sounds
-        );
+        var finalAttackEvent =
+                new FinalAttackEvent(
+                        attacker,
+                        target,
+                        sprintAttack,
+                        critical,
+                        sweeping,
+                        damage,
+                        magicalDamage,
+                        sounds,
+                        sounds);
         EventDispatcher.call(finalAttackEvent);
         if (finalAttackEvent.isCancelled()) return null;
 
@@ -366,11 +435,18 @@ public class VanillaAttackFeature implements AttackFeature, RegistrableFeature {
         if (sprintAttack) knockback += this.version.legacy() ? 1.0 : 0.5;
 
         return new AttackValues.Final(
-            damage, baseDamage, cooldownProgress, strongAttack, sprintAttack, knockback, critical,
-            magicalDamage > 0, fireAspect, sweeping,
-            finalAttackEvent.hasAttackSounds(),
-            finalAttackEvent.playSoundsOnFail()
-        );
+                damage,
+                baseDamage,
+                cooldownProgress,
+                strongAttack,
+                sprintAttack,
+                knockback,
+                critical,
+                magicalDamage > 0,
+                fireAspect,
+                sweeping,
+                finalAttackEvent.hasAttackSounds(),
+                finalAttackEvent.playSoundsOnFail());
     }
 
     private boolean isSprintAttackReset(LivingEntity attacker) {

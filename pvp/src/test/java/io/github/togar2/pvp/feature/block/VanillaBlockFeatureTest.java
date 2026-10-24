@@ -1,5 +1,7 @@
 package io.github.togar2.pvp.feature.block;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import io.github.togar2.pvp.feature.CombatFeatures;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.ServerFlag;
@@ -15,8 +17,6 @@ import net.minestom.server.item.Material;
 import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @EnvTest
 public final class VanillaBlockFeatureTest {

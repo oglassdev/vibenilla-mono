@@ -19,10 +19,10 @@ import io.github.togar2.pvp.feature.tracking.TrackingFeature;
 import io.github.togar2.pvp.utils.CombatVersion;
 import io.github.togar2.pvp.utils.EntityUtil;
 import io.github.togar2.pvp.utils.RegistryTags;
+import java.util.concurrent.ThreadLocalRandom;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.minestom.server.MinecraftServer;
-import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EquipmentSlot;
 import net.minestom.server.entity.LivingEntity;
 import net.minestom.server.entity.Player;
@@ -38,22 +38,27 @@ import net.minestom.server.network.packet.server.play.SoundEffectPacket;
 import net.minestom.server.potion.PotionEffect;
 import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
-
 import org.jetbrains.annotations.Nullable;
 
-import java.util.concurrent.ThreadLocalRandom;
-
 /**
- * Vanilla implementation of {@link DamageFeature}.
- * Supports blocking, knockback, totems, armor, etc.
+ * Vanilla implementation of {@link DamageFeature}. Supports blocking, knockback, totems, armor,
+ * etc.
  */
 public class VanillaDamageFeature implements DamageFeature, RegistrableFeature {
-    public static final DefinedFeature<VanillaDamageFeature> DEFINED = new DefinedFeature<>(
-            FeatureType.DAMAGE, VanillaDamageFeature::new,
-            FeatureType.DIFFICULTY, FeatureType.BLOCK, FeatureType.ARMOR, FeatureType.TOTEM,
-            FeatureType.EXHAUSTION, FeatureType.KNOCKBACK, FeatureType.TRACKING,
-            FeatureType.ITEM_DAMAGE, FeatureType.ENCHANTMENT, FeatureType.VERSION
-    );
+    public static final DefinedFeature<VanillaDamageFeature> DEFINED =
+            new DefinedFeature<>(
+                    FeatureType.DAMAGE,
+                    VanillaDamageFeature::new,
+                    FeatureType.DIFFICULTY,
+                    FeatureType.BLOCK,
+                    FeatureType.ARMOR,
+                    FeatureType.TOTEM,
+                    FeatureType.EXHAUSTION,
+                    FeatureType.KNOCKBACK,
+                    FeatureType.TRACKING,
+                    FeatureType.ITEM_DAMAGE,
+                    FeatureType.ENCHANTMENT,
+                    FeatureType.VERSION);
 
     public static final Tag<Long> NEW_DAMAGE_TIME = Tag.Long("newDamageTime");
     public static final Tag<Float> LAST_DAMAGE_AMOUNT = Tag.Float("lastDamageAmount");
@@ -123,7 +128,8 @@ public class VanillaDamageFeature implements DamageFeature, RegistrableFeature {
             return;
         }
 
-        if (event.getEntity() instanceof Player player && typeInfo.shouldScaleWithDifficulty(damage)) {
+        if (event.getEntity() instanceof Player player
+                && typeInfo.shouldScaleWithDifficulty(damage)) {
             damage.setAmount(this.scaleWithDifficulty(player, damage.getAmount()));
 
             if (damage.getAmount() == 0.0F) {
@@ -147,11 +153,15 @@ public class VanillaDamageFeature implements DamageFeature, RegistrableFeature {
         }
 
         var amount = damage.getAmount();
-        if (typeInfo.freeze() && RegistryTags.contains(RegistryTags.FREEZE_HURTS_EXTRA_TYPES, entity.getEntityType())) {
+        if (typeInfo.freeze()
+                && RegistryTags.contains(
+                        RegistryTags.FREEZE_HURTS_EXTRA_TYPES, entity.getEntityType())) {
             amount *= 5.0F;
         }
 
-        if (entity instanceof Player && typeInfo.damagesHelmet() && !entity.getEquipment(EquipmentSlot.HELMET).isAir()) {
+        if (entity instanceof Player
+                && typeInfo.damagesHelmet()
+                && !entity.getEquipment(EquipmentSlot.HELMET).isAir()) {
             this.itemDamageFeature.damageArmor(entity, damageType, amount, EquipmentSlot.HELMET);
             amount *= 0.75F;
         }
@@ -159,9 +169,11 @@ public class VanillaDamageFeature implements DamageFeature, RegistrableFeature {
         var amountBeforeProcessing = amount;
 
         var hurtSoundAndAnimation = true;
-        var newDamageTime = entity.hasTag(NEW_DAMAGE_TIME) ? entity.getTag(NEW_DAMAGE_TIME) : -10000;
+        var newDamageTime =
+                entity.hasTag(NEW_DAMAGE_TIME) ? entity.getTag(NEW_DAMAGE_TIME) : -10000;
         if (entity.getAliveTicks() - newDamageTime < 0) {
-            var lastDamage = entity.hasTag(LAST_DAMAGE_AMOUNT) ? entity.getTag(LAST_DAMAGE_AMOUNT) : 0;
+            var lastDamage =
+                    entity.hasTag(LAST_DAMAGE_AMOUNT) ? entity.getTag(LAST_DAMAGE_AMOUNT) : 0;
 
             if (amount <= lastDamage) {
                 event.setCancelled(true);
@@ -174,13 +186,21 @@ public class VanillaDamageFeature implements DamageFeature, RegistrableFeature {
 
         if (entity instanceof Player && !typeInfo.bypassesArmor()) {
             this.itemDamageFeature.damageArmor(
-                    entity, damageType, amount,
-                    EquipmentSlot.BOOTS, EquipmentSlot.LEGGINGS, EquipmentSlot.CHESTPLATE, EquipmentSlot.HELMET
-            );
+                    entity,
+                    damageType,
+                    amount,
+                    EquipmentSlot.BOOTS,
+                    EquipmentSlot.LEGGINGS,
+                    EquipmentSlot.CHESTPLATE,
+                    EquipmentSlot.HELMET);
         }
 
-        amount = this.armorFeature.getDamageWithProtection(entity, damageType, amount,
-                attacker instanceof LivingEntity livingAttacker ? livingAttacker : null);
+        amount =
+                this.armorFeature.getDamageWithProtection(
+                        entity,
+                        damageType,
+                        amount,
+                        attacker instanceof LivingEntity livingAttacker ? livingAttacker : null);
 
         damage.setAmount(amount);
         var finalDamageEvent = new FinalDamageEvent(entity, damage, 10, shouldAnimate);
@@ -205,16 +225,22 @@ public class VanillaDamageFeature implements DamageFeature, RegistrableFeature {
         var appliedKnockback = false;
 
         if (hurtSoundAndAnimation) {
-            entity.setTag(NEW_DAMAGE_TIME, entity.getAliveTicks() + finalDamageEvent.getInvulnerabilityTicks());
+            entity.setTag(
+                    NEW_DAMAGE_TIME,
+                    entity.getAliveTicks() + finalDamageEvent.getInvulnerabilityTicks());
 
             if (!fullyBlocked && finalDamageEvent.shouldAnimate()) {
-                entity.sendPacketToViewersAndSelf(new DamageEventPacket(
-                        entity.getEntityId(),
-                        damage.getType(),
-                        damage.getAttacker() == null ? null : damage.getAttacker().getEntityId(),
-                        damage.getSource() == null ? null : damage.getSource().getEntityId(),
-                        null
-                ));
+                entity.sendPacketToViewersAndSelf(
+                        new DamageEventPacket(
+                                entity.getEntityId(),
+                                damage.getType(),
+                                damage.getAttacker() == null
+                                        ? null
+                                        : damage.getAttacker().getEntityId(),
+                                damage.getSource() == null
+                                        ? null
+                                        : damage.getSource().getEntityId(),
+                                null));
             }
 
             if (!this.isNoKnockbackDamage(damage)) {
@@ -235,8 +261,9 @@ public class VanillaDamageFeature implements DamageFeature, RegistrableFeature {
         }
 
         var death = false;
-        var totalHealth = entity.getHealth() +
-                (entity instanceof Player player ? player.getAdditionalHearts() : 0);
+        var totalHealth =
+                entity.getHealth()
+                        + (entity instanceof Player player ? player.getAdditionalHearts() : 0);
         if (totalHealth - amount <= 0) {
             var totem = this.totemFeature.tryProtect(entity, damageType);
 
@@ -245,19 +272,24 @@ public class VanillaDamageFeature implements DamageFeature, RegistrableFeature {
             } else {
                 death = true;
                 if (hurtSoundAndAnimation) {
-                    sound = entity instanceof Player ? SoundEvent.ENTITY_PLAYER_DEATH : SoundEvent.ENTITY_GENERIC_DEATH;
+                    sound =
+                            entity instanceof Player
+                                    ? SoundEvent.ENTITY_PLAYER_DEATH
+                                    : SoundEvent.ENTITY_GENERIC_DEATH;
                 }
             }
         } else if (hurtSoundAndAnimation) {
             if (entity instanceof Player && sound == SoundEvent.ENTITY_PLAYER_HURT) {
                 var effects = damageType.effects();
-                if (effects != null) sound = switch (effects) {
-                    case "drowning" -> SoundEvent.ENTITY_PLAYER_HURT_DROWN;
-                    case "burning" -> SoundEvent.ENTITY_PLAYER_HURT_ON_FIRE;
-                    case "poking" -> SoundEvent.ENTITY_PLAYER_HURT_SWEET_BERRY_BUSH;
-                    case "freezing" -> SoundEvent.ENTITY_PLAYER_HURT_FREEZE;
-                    default -> sound;
-                };
+                if (effects != null)
+                    sound =
+                            switch (effects) {
+                                case "drowning" -> SoundEvent.ENTITY_PLAYER_HURT_DROWN;
+                                case "burning" -> SoundEvent.ENTITY_PLAYER_HURT_ON_FIRE;
+                                case "poking" -> SoundEvent.ENTITY_PLAYER_HURT_SWEET_BERRY_BUSH;
+                                case "freezing" -> SoundEvent.ENTITY_PLAYER_HURT_FREEZE;
+                                default -> sound;
+                            };
             }
         }
 
@@ -265,12 +297,16 @@ public class VanillaDamageFeature implements DamageFeature, RegistrableFeature {
             this.playHurtSound(entity, sound);
 
             if (damage.getType().equals(DamageType.THORNS)) {
-                entity.sendPacketToViewersAndSelf(new SoundEffectPacket(
-                        SoundEvent.ENCHANT_THORNS_HIT,
-                        entity instanceof Player ? Sound.Source.PLAYER : Sound.Source.HOSTILE,
-                        entity.getPosition(),
-                        1.0F, 1.0F, ThreadLocalRandom.current().nextLong()
-                ));
+                entity.sendPacketToViewersAndSelf(
+                        new SoundEffectPacket(
+                                SoundEvent.ENCHANT_THORNS_HIT,
+                                entity instanceof Player
+                                        ? Sound.Source.PLAYER
+                                        : Sound.Source.HOSTILE,
+                                entity.getPosition(),
+                                1.0F,
+                                1.0F,
+                                ThreadLocalRandom.current().nextLong()));
             }
         }
 
@@ -279,7 +315,8 @@ public class VanillaDamageFeature implements DamageFeature, RegistrableFeature {
         if (death && !event.isCancelled()) {
             var entityPreDeathEvent = new EntityPreDeathEvent(entity, damage);
             EventDispatcher.call(entityPreDeathEvent);
-            if ((entityPreDeathEvent.isCancelled() || entityPreDeathEvent.isCancelDeath()) && appliedKnockback) {
+            if ((entityPreDeathEvent.isCancelled() || entityPreDeathEvent.isCancelDeath())
+                    && appliedKnockback) {
                 entity.setVelocity(velocityBeforeKnockback);
             }
 
@@ -293,7 +330,6 @@ public class VanillaDamageFeature implements DamageFeature, RegistrableFeature {
         damage.setAmount(amount);
 
         if (register) EntityUtil.setLastDamage(entity, damage);
-
     }
 
     private void playHurtSound(LivingEntity entity, @Nullable SoundEvent sound) {
@@ -301,21 +337,29 @@ public class VanillaDamageFeature implements DamageFeature, RegistrableFeature {
 
         var random = ThreadLocalRandom.current();
         var pitch = (random.nextFloat() - random.nextFloat()) * 0.2F + 1.0F;
-        entity.sendPacketToViewersAndSelf(new SoundEffectPacket(
-                sound, entity instanceof Player ? Sound.Source.PLAYER : Sound.Source.HOSTILE,
-                entity.getPosition(),
-                1.0F, pitch, random.nextLong()
-        ));
+        entity.sendPacketToViewersAndSelf(
+                new SoundEffectPacket(
+                        sound,
+                        entity instanceof Player ? Sound.Source.PLAYER : Sound.Source.HOSTILE,
+                        entity.getPosition(),
+                        1.0F,
+                        pitch,
+                        random.nextLong()));
     }
 
     private boolean isNoKnockbackDamage(Damage damage) {
-        var noKnockback = MinecraftServer.process().damageType().getTag(Key.key("minecraft:no_knockback"));
+        var noKnockback =
+                MinecraftServer.process().damageType().getTag(Key.key("minecraft:no_knockback"));
 
         return noKnockback != null && noKnockback.contains(damage.getType());
     }
 
-    private boolean isImmuneToDamageFromEnchantments(LivingEntity entity, Damage damage, DamageType damageType) {
-        var burnFromStepping = MinecraftServer.process().damageType().getTag(Key.key("minecraft:burn_from_stepping"));
+    private boolean isImmuneToDamageFromEnchantments(
+            LivingEntity entity, Damage damage, DamageType damageType) {
+        var burnFromStepping =
+                MinecraftServer.process()
+                        .damageType()
+                        .getTag(Key.key("minecraft:burn_from_stepping"));
 
         return burnFromStepping != null
                 && burnFromStepping.contains(damage.getType())
@@ -324,10 +368,14 @@ public class VanillaDamageFeature implements DamageFeature, RegistrableFeature {
     }
 
     private boolean bypassesInvulnerability(DamageType damageType) {
-        var bypassesInvulnerability = MinecraftServer.process().damageType().getTag(Key.key("minecraft:bypasses_invulnerability"));
+        var bypassesInvulnerability =
+                MinecraftServer.process()
+                        .damageType()
+                        .getTag(Key.key("minecraft:bypasses_invulnerability"));
 
         return bypassesInvulnerability != null
-                && bypassesInvulnerability.contains(MinecraftServer.getDamageTypeRegistry().getKey(damageType));
+                && bypassesInvulnerability.contains(
+                        MinecraftServer.getDamageTypeRegistry().getKey(damageType));
     }
 
     protected float scaleWithDifficulty(Player player, float amount) {
@@ -338,5 +386,4 @@ public class VanillaDamageFeature implements DamageFeature, RegistrableFeature {
             default -> amount;
         };
     }
-
 }

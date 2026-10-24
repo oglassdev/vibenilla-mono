@@ -1,10 +1,9 @@
 package rocks.minestom.worldgen.structure;
 
 /**
- * How the noise terrain molds itself around a structure's pieces, mirroring
- * vanilla's {@code TerrainAdjustment}. Structures declare this through the
- * {@code terrain_adaptation} datapack field; the beardifier turns it into a
- * density contribution added during the noise fill.
+ * How the noise terrain molds itself around a structure's pieces, mirroring vanilla's {@code
+ * TerrainAdjustment}. Structures declare this through the {@code terrain_adaptation} datapack
+ * field; the beardifier turns it into a density contribution added during the noise fill.
  */
 public enum TerrainAdjustment {
     /** No terrain adaptation (the datapack default). */

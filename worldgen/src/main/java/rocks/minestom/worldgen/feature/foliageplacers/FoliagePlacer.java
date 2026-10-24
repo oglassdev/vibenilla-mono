@@ -16,8 +16,7 @@ public interface FoliagePlacer {
             int maxFreeTreeHeight,
             FoliageAttachment attachment,
             int foliageHeight,
-            int foliageRadius
-    );
+            int foliageRadius);
 
     int foliageHeight(RandomSource random, int treeHeight, TreeConfiguration config);
 
@@ -28,14 +27,15 @@ public interface FoliagePlacer {
             FoliageSetter setter,
             RandomSource random,
             TreeConfiguration config,
-            BlockVec position
-    ) {
+            BlockVec position) {
         var current = getter.getBlock(position);
         var persistent = "true".equals(current.getProperty("persistent"));
         if (!persistent && Feature.isValidTreePosition(getter, position)) {
             var blockState = config.foliageProvider().getState(getter, random, position);
             if (blockState.getProperty("waterlogged") != null) {
-                var inWater = current.compare(Block.WATER) || "true".equals(current.getProperty("waterlogged"));
+                var inWater =
+                        current.compare(Block.WATER)
+                                || "true".equals(current.getProperty("waterlogged"));
                 blockState = blockState.withProperty("waterlogged", inWater ? "true" : "false");
             }
             setter.set(position, blockState);
@@ -44,8 +44,7 @@ public interface FoliagePlacer {
         return false;
     }
 
-    record FoliageAttachment(BlockVec pos, int radiusOffset, boolean doubleTrunk) {
-    }
+    record FoliageAttachment(BlockVec pos, int radiusOffset, boolean doubleTrunk) {}
 
     interface FoliageSetter {
         void set(BlockVec position, Block block);

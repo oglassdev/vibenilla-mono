@@ -8,9 +8,7 @@ public final class LightBlockHandler implements BlockHandler {
     public static final LightBlockHandler INSTANCE = new LightBlockHandler();
     private static final Key KEY = Key.key("placement:light");
 
-    private LightBlockHandler() {
-
-    }
+    private LightBlockHandler() {}
 
     @Override
     public Key getKey() {
@@ -28,8 +26,11 @@ public final class LightBlockHandler implements BlockHandler {
         if (player.getGameMode() == GameMode.CREATIVE && player.getPermissionLevel() >= 2) {
             var block = interaction.getBlock();
             var level = Integer.parseInt(block.getProperty("level"));
-            interaction.getInstance().setBlock(
-                    interaction.getBlockPosition(), block.withProperty("level", String.valueOf((level + 1) % 16)));
+            interaction
+                    .getInstance()
+                    .setBlock(
+                            interaction.getBlockPosition(),
+                            block.withProperty("level", String.valueOf((level + 1) % 16)));
         }
 
         return false;

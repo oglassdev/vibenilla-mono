@@ -2,10 +2,9 @@ package io.github.togar2.pvp.feature.config;
 
 import io.github.togar2.pvp.feature.CombatFeature;
 import io.github.togar2.pvp.feature.FeatureType;
+import java.util.Set;
 import net.minestom.server.entity.Player;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Set;
 
 public class DefinedFeature<F extends CombatFeature> {
     private final FeatureType<?> featureType;
@@ -13,13 +12,18 @@ public class DefinedFeature<F extends CombatFeature> {
     private final Constructor<F> constructor;
     private final PlayerInit playerInit;
 
-    public DefinedFeature(FeatureType<? super F> featureType, Constructor<F> constructor,
-                          FeatureType<?>... dependencies) {
+    public DefinedFeature(
+            FeatureType<? super F> featureType,
+            Constructor<F> constructor,
+            FeatureType<?>... dependencies) {
         this(featureType, constructor, null, dependencies);
     }
 
-    public DefinedFeature(FeatureType<? super F> featureType, Constructor<F> constructor,
-                          @Nullable PlayerInit playerInit, FeatureType<?>... dependencies) {
+    public DefinedFeature(
+            FeatureType<? super F> featureType,
+            Constructor<F> constructor,
+            @Nullable PlayerInit playerInit,
+            FeatureType<?>... dependencies) {
         this.featureType = featureType;
         this.dependencies = Set.of(dependencies);
         this.constructor = constructor;
@@ -39,7 +43,8 @@ public class DefinedFeature<F extends CombatFeature> {
         return this.dependencies;
     }
 
-    @Nullable PlayerInit playerInit() {
+    @Nullable
+    PlayerInit playerInit() {
         return this.playerInit;
     }
 

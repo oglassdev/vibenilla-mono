@@ -11,7 +11,8 @@ public final class NormalNoise {
     private final double maxValue;
     private final NoiseParameters parameters;
 
-    public static NormalNoise createLegacyNetherBiome(RandomSource randomSource, NoiseParameters noiseParameters) {
+    public static NormalNoise createLegacyNetherBiome(
+            RandomSource randomSource, NoiseParameters noiseParameters) {
         return new NormalNoise(randomSource, noiseParameters, false);
     }
 
@@ -19,7 +20,10 @@ public final class NormalNoise {
         return new NormalNoise(randomSource, noiseParameters, true);
     }
 
-    private NormalNoise(RandomSource randomSource, NoiseParameters noiseParameters, boolean usePositionalFactory) {
+    private NormalNoise(
+            RandomSource randomSource,
+            NoiseParameters noiseParameters,
+            boolean usePositionalFactory) {
         var firstOctave = noiseParameters.firstOctave();
         var amplitudes = noiseParameters.amplitudes();
         this.parameters = noiseParameters;
@@ -28,8 +32,12 @@ public final class NormalNoise {
             this.first = PerlinNoise.create(randomSource, firstOctave, amplitudes);
             this.second = PerlinNoise.create(randomSource, firstOctave, amplitudes);
         } else {
-            this.first = PerlinNoise.createLegacyForLegacyNetherBiome(randomSource, firstOctave, amplitudes);
-            this.second = PerlinNoise.createLegacyForLegacyNetherBiome(randomSource, firstOctave, amplitudes);
+            this.first =
+                    PerlinNoise.createLegacyForLegacyNetherBiome(
+                            randomSource, firstOctave, amplitudes);
+            this.second =
+                    PerlinNoise.createLegacyForLegacyNetherBiome(
+                            randomSource, firstOctave, amplitudes);
         }
 
         var minIndex = Integer.MAX_VALUE;
@@ -58,9 +66,9 @@ public final class NormalNoise {
         var scaledX = x * INPUT_FACTOR;
         var scaledY = y * INPUT_FACTOR;
         var scaledZ = z * INPUT_FACTOR;
-        return (this.first.getValue(x, y, z) + this.second.getValue(scaledX, scaledY, scaledZ)) * this.valueFactor;
+        return (this.first.getValue(x, y, z) + this.second.getValue(scaledX, scaledY, scaledZ))
+                * this.valueFactor;
     }
 
-    public record NoiseParameters(int firstOctave, double[] amplitudes) {
-    }
+    public record NoiseParameters(int firstOctave, double[] amplitudes) {}
 }

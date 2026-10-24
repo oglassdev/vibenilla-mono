@@ -1,5 +1,6 @@
 package rocks.minestom.worldgen.terrain;
 
+import java.util.Arrays;
 import net.minestom.server.instance.block.Block;
 import org.jetbrains.annotations.Nullable;
 import rocks.minestom.worldgen.NoiseChunk;
@@ -7,18 +8,16 @@ import rocks.minestom.worldgen.VMath;
 import rocks.minestom.worldgen.density.DensityFunction;
 import rocks.minestom.worldgen.random.PositionalRandomFactory;
 
-import java.util.Arrays;
-
 /**
- * Port of vanilla's {@code Aquifer}. Decides, for every block whose final density is
- * non-positive, whether it becomes air, water, lava or stays solid (barrier). Aquifer
- * cells are placed on a jittered grid and each cell rolls a local fluid level and type,
- * with pressure barriers computed between neighboring cells.
+ * Port of vanilla's {@code Aquifer}. Decides, for every block whose final density is non-positive,
+ * whether it becomes air, water, lava or stays solid (barrier). Aquifer cells are placed on a
+ * jittered grid and each cell rolls a local fluid level and type, with pressure barriers computed
+ * between neighboring cells.
  */
 public interface Aquifer {
     /**
-     * Returns the block to place at the current position, or {@code null} if the block
-     * should be the default solid block (possibly overridden by ore veins).
+     * Returns the block to place at the current position, or {@code null} if the block should be
+     * the default solid block (possibly overridden by ore veins).
      */
     @Nullable
     Block computeSubstance(DensityFunction.Context context, double density);
@@ -62,7 +61,9 @@ public interface Aquifer {
                 if (density > 0.0) {
                     return null;
                 }
-                return fluidPicker.computeFluid(context.blockX(), context.blockY(), context.blockZ()).at(context.blockY());
+                return fluidPicker
+                        .computeFluid(context.blockX(), context.blockY(), context.blockZ())
+                        .at(context.blockY());
             }
 
             @Override
@@ -73,8 +74,8 @@ public interface Aquifer {
     }
 
     /**
-     * Port of vanilla's {@code NoiseBasedChunkGenerator.createFluidPicker}: lava below
-     * {@code min(-54, seaLevel)}, the default fluid up to sea level above that.
+     * Port of vanilla's {@code NoiseBasedChunkGenerator.createFluidPicker}: lava below {@code
+     * min(-54, seaLevel)}, the default fluid up to sea level above that.
      */
     static FluidPicker createGlobalFluidPicker(int seaLevel, Block defaultFluid) {
         var lavaStatus = new FluidStatus(-54, Block.LAVA);
@@ -114,9 +115,11 @@ public interface Aquifer {
         private static final int MAX_CELL_SAMPLE_Z = 1;
         // DimensionType.WAY_BELOW_MIN_Y = MIN_Y << 4 with MIN_Y = -2032
         private static final int WAY_BELOW_MIN_Y = -2032 << 4;
-        private static final int[][] SURFACE_SAMPLING_OFFSETS_IN_CHUNKS = new int[][]{
-                {0, 0}, {-2, -1}, {-1, -1}, {0, -1}, {1, -1}, {-3, 0}, {-2, 0}, {-1, 0}, {1, 0}, {-2, 1}, {-1, 1}, {0, 1}, {1, 1}
-        };
+        private static final int[][] SURFACE_SAMPLING_OFFSETS_IN_CHUNKS =
+                new int[][] {
+                    {0, 0}, {-2, -1}, {-1, -1}, {0, -1}, {1, -1}, {-3, 0}, {-2, 0}, {-1, 0}, {1, 0},
+                    {-2, 1}, {-1, 1}, {0, 1}, {1, 1}
+                };
 
         private final NoiseChunk noiseChunk;
         private final DensityFunction barrierNoise;
@@ -173,13 +176,15 @@ public interface Aquifer {
             this.aquiferCache = new FluidStatus[totalGridSize];
             this.aquiferLocationCache = new long[totalGridSize];
             Arrays.fill(this.aquiferLocationCache, Long.MAX_VALUE);
-            var maxAdjustedSurfaceLevel = this.adjustSurfaceLevel(
-                    noiseChunk.maxPreliminarySurfaceLevel(
-                            fromGridX(this.minGridX, 0),
-                            fromGridZ(this.minGridZ, 0),
-                            fromGridX(maxGridX, X_RANGE - 1),
-                            fromGridZ(maxGridZ, Z_RANGE - 1)));
-            var skipSamplingAboveGridY = gridY(maxAdjustedSurfaceLevel + Y_SPACING) - MIN_CELL_SAMPLE_Y;
+            var maxAdjustedSurfaceLevel =
+                    this.adjustSurfaceLevel(
+                            noiseChunk.maxPreliminarySurfaceLevel(
+                                    fromGridX(this.minGridX, 0),
+                                    fromGridZ(this.minGridZ, 0),
+                                    fromGridX(maxGridX, X_RANGE - 1),
+                                    fromGridZ(maxGridZ, Z_RANGE - 1)));
+            var skipSamplingAboveGridY =
+                    gridY(maxAdjustedSurfaceLevel + Y_SPACING) - MIN_CELL_SAMPLE_Y;
             this.skipSamplingAboveY = fromGridY(skipSamplingAboveGridY, Y_SPACING - 1) - 1;
         }
 
@@ -233,11 +238,14 @@ public interface Aquifer {
                         if (existingLocation != Long.MAX_VALUE) {
                             location = existingLocation;
                         } else {
-                            var random = this.positionalRandomFactory.at(spacedGridX, spacedGridY, spacedGridZ);
-                            location = packBlockPos(
-                                    fromGridX(spacedGridX, random.nextInt(X_RANGE)),
-                                    fromGridY(spacedGridY, random.nextInt(Y_RANGE)),
-                                    fromGridZ(spacedGridZ, random.nextInt(Z_RANGE)));
+                            var random =
+                                    this.positionalRandomFactory.at(
+                                            spacedGridX, spacedGridY, spacedGridZ);
+                            location =
+                                    packBlockPos(
+                                            fromGridX(spacedGridX, random.nextInt(X_RANGE)),
+                                            fromGridY(spacedGridY, random.nextInt(Y_RANGE)),
+                                            fromGridZ(spacedGridZ, random.nextInt(Z_RANGE)));
                             this.aquiferLocationCache[index] = location;
                         }
 
@@ -286,14 +294,21 @@ public interface Aquifer {
                 }
                 return fluidState;
             }
-            if (fluidState.compare(Block.WATER) && this.globalFluidPicker.computeFluid(posX, posY - 1, posZ).at(posY - 1).compare(Block.LAVA)) {
+            if (fluidState.compare(Block.WATER)
+                    && this.globalFluidPicker
+                            .computeFluid(posX, posY - 1, posZ)
+                            .at(posY - 1)
+                            .compare(Block.LAVA)) {
                 this.shouldScheduleFluidUpdate = true;
                 return fluidState;
             }
 
             var barrierNoiseValue = new MutableDouble();
             var closestStatus2 = this.getAquiferStatus(closestIndex2);
-            var barrier12 = similarity12 * this.calculatePressure(context, barrierNoiseValue, closestStatus1, closestStatus2);
+            var barrier12 =
+                    similarity12
+                            * this.calculatePressure(
+                                    context, barrierNoiseValue, closestStatus1, closestStatus2);
             if (density + barrier12 > 0.0) {
                 this.shouldScheduleFluidUpdate = false;
                 return null;
@@ -302,7 +317,11 @@ public interface Aquifer {
             var closestStatus3 = this.getAquiferStatus(closestIndex3);
             var similarity13 = similarity(distanceSqr1, distanceSqr3);
             if (similarity13 > 0.0) {
-                var barrier13 = similarity12 * similarity13 * this.calculatePressure(context, barrierNoiseValue, closestStatus1, closestStatus3);
+                var barrier13 =
+                        similarity12
+                                * similarity13
+                                * this.calculatePressure(
+                                        context, barrierNoiseValue, closestStatus1, closestStatus3);
                 if (density + barrier13 > 0.0) {
                     this.shouldScheduleFluidUpdate = false;
                     return null;
@@ -311,7 +330,11 @@ public interface Aquifer {
 
             var similarity23 = similarity(distanceSqr2, distanceSqr3);
             if (similarity23 > 0.0) {
-                var barrier23 = similarity12 * similarity23 * this.calculatePressure(context, barrierNoiseValue, closestStatus2, closestStatus3);
+                var barrier23 =
+                        similarity12
+                                * similarity23
+                                * this.calculatePressure(
+                                        context, barrierNoiseValue, closestStatus2, closestStatus3);
                 if (density + barrier23 > 0.0) {
                     this.shouldScheduleFluidUpdate = false;
                     return null;
@@ -319,12 +342,18 @@ public interface Aquifer {
             }
 
             var mayFlow12 = !closestStatus1.equals(closestStatus2);
-            var mayFlow23 = similarity23 >= FLOWING_UPDATE_SIMILARITY && !closestStatus2.equals(closestStatus3);
-            var mayFlow13 = similarity13 >= FLOWING_UPDATE_SIMILARITY && !closestStatus1.equals(closestStatus3);
+            var mayFlow23 =
+                    similarity23 >= FLOWING_UPDATE_SIMILARITY
+                            && !closestStatus2.equals(closestStatus3);
+            var mayFlow13 =
+                    similarity13 >= FLOWING_UPDATE_SIMILARITY
+                            && !closestStatus1.equals(closestStatus3);
             if (!mayFlow12 && !mayFlow23 && !mayFlow13) {
-                this.shouldScheduleFluidUpdate = similarity13 >= FLOWING_UPDATE_SIMILARITY
-                        && similarity(distanceSqr1, distanceSqr4) >= FLOWING_UPDATE_SIMILARITY
-                        && !closestStatus1.equals(this.getAquiferStatus(closestIndex4));
+                this.shouldScheduleFluidUpdate =
+                        similarity13 >= FLOWING_UPDATE_SIMILARITY
+                                && similarity(distanceSqr1, distanceSqr4)
+                                        >= FLOWING_UPDATE_SIMILARITY
+                                && !closestStatus1.equals(this.getAquiferStatus(closestIndex4));
             } else {
                 this.shouldScheduleFluidUpdate = true;
             }
@@ -349,7 +378,8 @@ public interface Aquifer {
             var posY = context.blockY();
             var type1 = statusClosest1.at(posY);
             var type2 = statusClosest2.at(posY);
-            if ((type1.compare(Block.LAVA) && type2.compare(Block.WATER)) || (type1.compare(Block.WATER) && type2.compare(Block.LAVA))) {
+            if ((type1.compare(Block.LAVA) && type2.compare(Block.WATER))
+                    || (type1.compare(Block.WATER) && type2.compare(Block.LAVA))) {
                 return 2.0;
             }
 
@@ -361,7 +391,8 @@ public interface Aquifer {
             var averageFluidY = 0.5 * (statusClosest1.fluidLevel() + statusClosest2.fluidLevel());
             var howFarAboveAverageFluidPoint = posY + 0.5 - averageFluidY;
             var baseValue = fluidYDiff / 2.0;
-            var distanceFromBarrierEdgeTowardsMiddle = baseValue - Math.abs(howFarAboveAverageFluidPoint);
+            var distanceFromBarrierEdgeTowardsMiddle =
+                    baseValue - Math.abs(howFarAboveAverageFluidPoint);
             double gradient;
             if (howFarAboveAverageFluidPoint > 0.0) {
                 var centerPoint = 0.0 + distanceFromBarrierEdgeTowardsMiddle;
@@ -426,7 +457,11 @@ public interface Aquifer {
                 return oldStatus;
             }
             var location = this.aquiferLocationCache[index];
-            var status = this.computeFluid(unpackBlockPosX(location), unpackBlockPosY(location), unpackBlockPosZ(location));
+            var status =
+                    this.computeFluid(
+                            unpackBlockPosX(location),
+                            unpackBlockPosY(location),
+                            unpackBlockPosZ(location));
             this.aquiferCache[index] = status;
             return status;
         }
@@ -441,7 +476,8 @@ public interface Aquifer {
             for (var offset : SURFACE_SAMPLING_OFFSETS_IN_CHUNKS) {
                 var sampleX = x + (offset[0] << 4);
                 var sampleZ = z + (offset[1] << 4);
-                var preliminarySurfaceLevel = this.noiseChunk.preliminarySurfaceLevel(sampleX, sampleZ);
+                var preliminarySurfaceLevel =
+                        this.noiseChunk.preliminarySurfaceLevel(sampleX, sampleZ);
                 var adjustedSurfaceLevel = this.adjustSurfaceLevel(preliminarySurfaceLevel);
                 var start = offset[0] == 0 && offset[1] == 0;
                 if (start && bottomOfAquiferCell > adjustedSurfaceLevel) {
@@ -450,7 +486,9 @@ public interface Aquifer {
 
                 var topOfAquiferCellPokesAboveSurface = topOfAquiferCell > adjustedSurfaceLevel;
                 if (topOfAquiferCellPokesAboveSurface || start) {
-                    var globalFluidAtSurface = this.globalFluidPicker.computeFluid(sampleX, adjustedSurfaceLevel, sampleZ);
+                    var globalFluidAtSurface =
+                            this.globalFluidPicker.computeFluid(
+                                    sampleX, adjustedSurfaceLevel, sampleZ);
                     if (!globalFluidAtSurface.at(adjustedSurfaceLevel).air()) {
                         if (start) {
                             surfaceAtCenterIsUnderGlobalFluidLevel = true;
@@ -461,11 +499,21 @@ public interface Aquifer {
                     }
                 }
 
-                lowestPreliminarySurface = Math.min(lowestPreliminarySurface, preliminarySurfaceLevel);
+                lowestPreliminarySurface =
+                        Math.min(lowestPreliminarySurface, preliminarySurfaceLevel);
             }
 
-            var fluidSurfaceLevel = this.computeSurfaceLevel(x, y, z, globalFluid, lowestPreliminarySurface, surfaceAtCenterIsUnderGlobalFluidLevel);
-            return new FluidStatus(fluidSurfaceLevel, this.computeFluidType(x, y, z, globalFluid, fluidSurfaceLevel));
+            var fluidSurfaceLevel =
+                    this.computeSurfaceLevel(
+                            x,
+                            y,
+                            z,
+                            globalFluid,
+                            lowestPreliminarySurface,
+                            surfaceAtCenterIsUnderGlobalFluidLevel);
+            return new FluidStatus(
+                    fluidSurfaceLevel,
+                    this.computeFluidType(x, y, z, globalFluid, fluidSurfaceLevel));
         }
 
         private int adjustSurfaceLevel(int preliminarySurfaceLevel) {
@@ -487,10 +535,12 @@ public interface Aquifer {
                 fullyFloodedness = -1.0;
             } else {
                 var distanceBelowSurface = lowestPreliminarySurface + 8 - y;
-                var floodednessFactor = surfaceAtCenterIsUnderGlobalFluidLevel
-                        ? clampedMap(distanceBelowSurface, 0.0, 64.0, 1.0, 0.0)
-                        : 0.0;
-                var floodednessNoiseValue = VMath.clamp(this.fluidLevelFloodednessNoise.compute(context), -1.0, 1.0);
+                var floodednessFactor =
+                        surfaceAtCenterIsUnderGlobalFluidLevel
+                                ? clampedMap(distanceBelowSurface, 0.0, 64.0, 1.0, 0.0)
+                                : 0.0;
+                var floodednessNoiseValue =
+                        VMath.clamp(this.fluidLevelFloodednessNoise.compute(context), -1.0, 1.0);
                 var fullyFloodedThreshold = map(floodednessFactor, 1.0, 0.0, -0.3, 0.8);
                 var partiallyFloodedThreshold = map(floodednessFactor, 1.0, 0.0, -0.8, 0.4);
                 partiallyFloodedness = floodednessNoiseValue - partiallyFloodedThreshold;
@@ -501,7 +551,8 @@ public interface Aquifer {
             if (fullyFloodedness > 0.0) {
                 fluidSurfaceLevel = globalFluid.fluidLevel();
             } else if (partiallyFloodedness > 0.0) {
-                fluidSurfaceLevel = this.computeRandomizedFluidSurfaceLevel(x, y, z, lowestPreliminarySurface);
+                fluidSurfaceLevel =
+                        this.computeRandomizedFluidSurfaceLevel(x, y, z, lowestPreliminarySurface);
             } else {
                 fluidSurfaceLevel = WAY_BELOW_MIN_Y;
             }
@@ -509,26 +560,35 @@ public interface Aquifer {
             return fluidSurfaceLevel;
         }
 
-        private int computeRandomizedFluidSurfaceLevel(int x, int y, int z, int lowestPreliminarySurface) {
+        private int computeRandomizedFluidSurfaceLevel(
+                int x, int y, int z, int lowestPreliminarySurface) {
             var fluidLevelCellX = Math.floorDiv(x, 16);
             var fluidLevelCellY = Math.floorDiv(y, 40);
             var fluidLevelCellZ = Math.floorDiv(z, 16);
             var fluidCellMiddleY = fluidLevelCellY * 40 + 20;
-            var fluidLevelSpread = this.fluidLevelSpreadNoise
-                    .compute(new DensityFunction.SinglePointContext(fluidLevelCellX, fluidLevelCellY, fluidLevelCellZ)) * 10.0;
+            var fluidLevelSpread =
+                    this.fluidLevelSpreadNoise.compute(
+                                    new DensityFunction.SinglePointContext(
+                                            fluidLevelCellX, fluidLevelCellY, fluidLevelCellZ))
+                            * 10.0;
             var fluidLevelSpreadQuantized = quantize(fluidLevelSpread, 3);
             var targetFluidSurfaceLevel = fluidCellMiddleY + fluidLevelSpreadQuantized;
             return Math.min(lowestPreliminarySurface, targetFluidSurfaceLevel);
         }
 
-        private Block computeFluidType(int x, int y, int z, FluidStatus globalFluid, int fluidSurfaceLevel) {
+        private Block computeFluidType(
+                int x, int y, int z, FluidStatus globalFluid, int fluidSurfaceLevel) {
             var fluidType = globalFluid.fluidType();
-            if (fluidSurfaceLevel <= -10 && fluidSurfaceLevel != WAY_BELOW_MIN_Y && !globalFluid.fluidType().compare(Block.LAVA)) {
+            if (fluidSurfaceLevel <= -10
+                    && fluidSurfaceLevel != WAY_BELOW_MIN_Y
+                    && !globalFluid.fluidType().compare(Block.LAVA)) {
                 var fluidTypeCellX = Math.floorDiv(x, 64);
                 var fluidTypeCellY = Math.floorDiv(y, 40);
                 var fluidTypeCellZ = Math.floorDiv(z, 64);
-                var lavaNoiseValue = this.lavaNoise
-                        .compute(new DensityFunction.SinglePointContext(fluidTypeCellX, fluidTypeCellY, fluidTypeCellZ));
+                var lavaNoiseValue =
+                        this.lavaNoise.compute(
+                                new DensityFunction.SinglePointContext(
+                                        fluidTypeCellX, fluidTypeCellY, fluidTypeCellZ));
                 if (Math.abs(lavaNoiseValue) > 0.3) {
                     fluidType = Block.LAVA;
                 }
@@ -538,12 +598,14 @@ public interface Aquifer {
         }
 
         // Port of OverworldBiomeBuilder.isDeepDarkRegion
-        private static boolean isDeepDarkRegion(DensityFunction erosion, DensityFunction depth, DensityFunction.Context context) {
+        private static boolean isDeepDarkRegion(
+                DensityFunction erosion, DensityFunction depth, DensityFunction.Context context) {
             return erosion.compute(context) < -0.225F && depth.compute(context) > 0.9F;
         }
 
         // Exact port of Mth.clampedMap (clampedLerp over inverseLerp)
-        private static double clampedMap(double value, double fromMin, double fromMax, double toMin, double toMax) {
+        private static double clampedMap(
+                double value, double fromMin, double fromMax, double toMin, double toMax) {
             var delta = inverseLerp(value, fromMin, fromMax);
             if (delta < 0.0) {
                 return toMin;
@@ -555,7 +617,8 @@ public interface Aquifer {
         }
 
         // Exact port of Mth.map
-        private static double map(double value, double fromMin, double fromMax, double toMin, double toMax) {
+        private static double map(
+                double value, double fromMin, double fromMax, double toMin, double toMax) {
             return VMath.lerp(inverseLerp(value, fromMin, fromMax), toMin, toMax);
         }
 

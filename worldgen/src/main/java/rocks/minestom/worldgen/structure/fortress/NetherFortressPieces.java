@@ -1,36 +1,33 @@
 package rocks.minestom.worldgen.structure.fortress;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.Direction;
 import rocks.minestom.worldgen.random.RandomSource;
 import rocks.minestom.worldgen.structure.template.BoundingBox;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * Port of vanilla {@code NetherFortressPieces}: the procedural bridge and
- * castle pieces that make up a nether fortress. Random call order matches
- * vanilla exactly so a seeded {@code WorldgenRandom} reproduces vanilla
- * layouts and decoration block-for-block.
+ * Port of vanilla {@code NetherFortressPieces}: the procedural bridge and castle pieces that make
+ * up a nether fortress. Random call order matches vanilla exactly so a seeded {@code
+ * WorldgenRandom} reproduces vanilla layouts and decoration block-for-block.
  *
- * <p>Two deviations from vanilla, both noted at their call sites: chests are
- * placed without loot table NBT, and the monster-throne / castle-entrance
- * mob spawners are placed without spawn-potential NBT.
+ * <p>Two deviations from vanilla, both noted at their call sites: chests are placed without loot
+ * table NBT, and the monster-throne / castle-entrance mob spawners are placed without
+ * spawn-potential NBT.
  */
 public final class NetherFortressPieces {
     private static final int MAX_DEPTH = 30;
     private static final int MAGIC_START_Y = 64;
     private static final int MAX_DISTANCE_FROM_START = 112;
 
-    private NetherFortressPieces() {
-    }
+    private NetherFortressPieces() {}
 
     /**
-     * Vanilla {@code NetherFortressStructure.generatePieces}: builds the
-     * start piece, processes its pending children breadth over a random
-     * shuffled queue, then centers the whole structure inside [48, 70].
+     * Vanilla {@code NetherFortressStructure.generatePieces}: builds the start piece, processes its
+     * pending children breadth over a random shuffled queue, then centers the whole structure
+     * inside [48, 70].
      */
     public static List<FortressPiece> generatePieces(RandomSource random, int chunkX, int chunkZ) {
         var start = new StartPiece(random, (chunkX << 4) + 2, (chunkZ << 4) + 2);
@@ -51,7 +48,14 @@ public final class NetherFortressPieces {
 
     static BoundingBox boundsOf(List<FortressPiece> pieces) {
         var first = pieces.getFirst().boundingBox;
-        var bounds = new BoundingBox(first.minX(), first.minY(), first.minZ(), first.maxX(), first.maxY(), first.maxZ());
+        var bounds =
+                new BoundingBox(
+                        first.minX(),
+                        first.minY(),
+                        first.minZ(),
+                        first.maxX(),
+                        first.maxY(),
+                        first.maxZ());
         for (var index = 1; index < pieces.size(); index++) {
             bounds.encapsulate(pieces.get(index).boundingBox);
         }
@@ -59,7 +63,11 @@ public final class NetherFortressPieces {
     }
 
     /** Vanilla {@code StructurePiecesBuilder.moveInsideHeights}. */
-    private static void moveInsideHeights(List<FortressPiece> pieces, RandomSource random, int lowestAllowed, int highestAllowed) {
+    private static void moveInsideHeights(
+            List<FortressPiece> pieces,
+            RandomSource random,
+            int lowestAllowed,
+            int highestAllowed) {
         var bounds = boundsOf(pieces);
         var heightSpan = highestAllowed - lowestAllowed + 1 - bounds.getYSpan();
         var y0 = heightSpan > 1 ? lowestAllowed + random.nextInt(heightSpan) : lowestAllowed;
@@ -70,9 +78,12 @@ public final class NetherFortressPieces {
     }
 
     private static boolean isInside(BoundingBox box, int x, int y, int z) {
-        return x >= box.minX() && x <= box.maxX()
-                && y >= box.minY() && y <= box.maxY()
-                && z >= box.minZ() && z <= box.maxZ();
+        return x >= box.minX()
+                && x <= box.maxX()
+                && y >= box.minY()
+                && y <= box.maxY()
+                && z >= box.minZ()
+                && z <= box.maxZ();
     }
 
     private static Block fence(String... connections) {
@@ -101,30 +112,70 @@ public final class NetherFortressPieces {
     }
 
     /** Vanilla {@code BoundingBox.orientBox}. */
-    private static BoundingBox orientBox(int footX, int footY, int footZ, int offX, int offY, int offZ,
-            int width, int height, int depth, Direction direction) {
+    private static BoundingBox orientBox(
+            int footX,
+            int footY,
+            int footZ,
+            int offX,
+            int offY,
+            int offZ,
+            int width,
+            int height,
+            int depth,
+            Direction direction) {
         return switch (direction) {
-            case NORTH -> new BoundingBox(footX + offX, footY + offY, footZ - depth + 1 + offZ,
-                    footX + width - 1 + offX, footY + height - 1 + offY, footZ + offZ);
-            case WEST -> new BoundingBox(footX - depth + 1 + offZ, footY + offY, footZ + offX,
-                    footX + offZ, footY + height - 1 + offY, footZ + width - 1 + offX);
-            case EAST -> new BoundingBox(footX + offZ, footY + offY, footZ + offX,
-                    footX + depth - 1 + offZ, footY + height - 1 + offY, footZ + width - 1 + offX);
-            default -> new BoundingBox(footX + offX, footY + offY, footZ + offZ,
-                    footX + width - 1 + offX, footY + height - 1 + offY, footZ + depth - 1 + offZ);
+            case NORTH ->
+                    new BoundingBox(
+                            footX + offX,
+                            footY + offY,
+                            footZ - depth + 1 + offZ,
+                            footX + width - 1 + offX,
+                            footY + height - 1 + offY,
+                            footZ + offZ);
+            case WEST ->
+                    new BoundingBox(
+                            footX - depth + 1 + offZ,
+                            footY + offY,
+                            footZ + offX,
+                            footX + offZ,
+                            footY + height - 1 + offY,
+                            footZ + width - 1 + offX);
+            case EAST ->
+                    new BoundingBox(
+                            footX + offZ,
+                            footY + offY,
+                            footZ + offX,
+                            footX + depth - 1 + offZ,
+                            footY + height - 1 + offY,
+                            footZ + width - 1 + offX);
+            default ->
+                    new BoundingBox(
+                            footX + offX,
+                            footY + offY,
+                            footZ + offZ,
+                            footX + width - 1 + offX,
+                            footY + height - 1 + offY,
+                            footZ + depth - 1 + offZ);
         };
     }
 
     /** Vanilla {@code StructurePiece.makeBoundingBox}. */
-    private static BoundingBox makeBoundingBox(int x, int y, int z, Direction direction, int width, int height, int depth) {
+    private static BoundingBox makeBoundingBox(
+            int x, int y, int z, Direction direction, int width, int height, int depth) {
         return direction == Direction.NORTH || direction == Direction.SOUTH
                 ? new BoundingBox(x, y, z, x + width - 1, y + height - 1, z + depth - 1)
                 : new BoundingBox(x, y, z, x + depth - 1, y + height - 1, z + width - 1);
     }
 
     private interface PieceFactory {
-        FortressPiece create(List<FortressPiece> pieces, RandomSource random,
-                int footX, int footY, int footZ, Direction direction, int genDepth);
+        FortressPiece create(
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction,
+                int genDepth);
     }
 
     private static final class PieceWeight {
@@ -236,8 +287,7 @@ public final class NetherFortressPieces {
             return this.orientation;
         }
 
-        void addChildren(StartPiece startPiece, List<FortressPiece> pieces, RandomSource random) {
-        }
+        void addChildren(StartPiece startPiece, List<FortressPiece> pieces, RandomSource random) {}
 
         abstract void postProcess(FortressLevel level, RandomSource random, BoundingBox chunkBB);
 
@@ -275,7 +325,8 @@ public final class NetherFortressPieces {
             return new BlockVec(this.worldX(x, z), this.worldY(y), this.worldZ(x, z));
         }
 
-        void placeBlock(FortressLevel level, Block block, int x, int y, int z, BoundingBox chunkBB) {
+        void placeBlock(
+                FortressLevel level, Block block, int x, int y, int z, BoundingBox chunkBB) {
             var wx = this.worldX(x, z);
             var wy = this.worldY(y);
             var wz = this.worldZ(x, z);
@@ -295,8 +346,18 @@ public final class NetherFortressPieces {
             return level.getBlock(wx, wy, wz);
         }
 
-        void generateBox(FortressLevel level, BoundingBox chunkBB, int x0, int y0, int z0,
-                int x1, int y1, int z1, Block edgeBlock, Block fillBlock, boolean skipAir) {
+        void generateBox(
+                FortressLevel level,
+                BoundingBox chunkBB,
+                int x0,
+                int y0,
+                int z0,
+                int x1,
+                int y1,
+                int z1,
+                Block edgeBlock,
+                Block fillBlock,
+                boolean skipAir) {
             for (var y = y0; y <= y1; y++) {
                 for (var x = x0; x <= x1; x++) {
                     for (var z = z0; z <= z1; z++) {
@@ -313,7 +374,8 @@ public final class NetherFortressPieces {
             }
         }
 
-        void fillColumnDown(FortressLevel level, Block block, int x, int startY, int z, BoundingBox chunkBB) {
+        void fillColumnDown(
+                FortressLevel level, Block block, int x, int startY, int z, BoundingBox chunkBB) {
             var wx = this.worldX(x, z);
             var wy = this.worldY(startY);
             var wz = this.worldZ(x, z);
@@ -328,16 +390,25 @@ public final class NetherFortressPieces {
         }
 
         private static boolean isReplaceableByStructures(Block block) {
-            return block.air() || block.liquid() || block.compare(Block.GLOW_LICHEN)
-                    || block.compare(Block.SEAGRASS) || block.compare(Block.TALL_SEAGRASS);
+            return block.air()
+                    || block.liquid()
+                    || block.compare(Block.GLOW_LICHEN)
+                    || block.compare(Block.SEAGRASS)
+                    || block.compare(Block.TALL_SEAGRASS);
         }
 
         /**
-         * Vanilla {@code StructurePiece.createChest}: places a chest whose
-         * facing is oriented away from a single solid neighbor (or toward an
-         * adjacent chest to pair as a double chest), without loot table NBT.
+         * Vanilla {@code StructurePiece.createChest}: places a chest whose facing is oriented away
+         * from a single solid neighbor (or toward an adjacent chest to pair as a double chest),
+         * without loot table NBT.
          */
-        void createChest(FortressLevel level, BoundingBox chunkBB, RandomSource random, int x, int y, int z) {
+        void createChest(
+                FortressLevel level,
+                BoundingBox chunkBB,
+                RandomSource random,
+                int x,
+                int y,
+                int z) {
             var wx = this.worldX(x, z);
             var wy = this.worldY(y);
             var wz = this.worldZ(x, z);
@@ -428,8 +499,8 @@ public final class NetherFortressPieces {
         }
 
         /**
-         * Vanilla {@code NetherBridgePiece.updatePieceWeight}: total weight
-         * of pieces that still have placements left, or -1 if none remain.
+         * Vanilla {@code NetherBridgePiece.updatePieceWeight}: total weight of pieces that still
+         * have placements left, or -1 if none remain.
          */
         private static int updatePieceWeight(List<PieceWeight> currentPieces) {
             var hasAny = false;
@@ -444,15 +515,21 @@ public final class NetherFortressPieces {
         }
 
         /**
-         * Vanilla {@code NetherBridgePiece.generatePiece}: weighted piece
-         * selection with up to 5 attempts, cascading through the remaining
-         * piece list in order once a weight bracket is entered but fails
-         * (this mirrors vanilla's {@code weightSelection} never being reset
-         * to non-negative after the first successful bracket match).
+         * Vanilla {@code NetherBridgePiece.generatePiece}: weighted piece selection with up to 5
+         * attempts, cascading through the remaining piece list in order once a weight bracket is
+         * entered but fails (this mirrors vanilla's {@code weightSelection} never being reset to
+         * non-negative after the first successful bracket match).
          */
-        private FortressPiece generatePiece(StartPiece startPiece, List<PieceWeight> currentPieces,
-                List<FortressPiece> pieces, RandomSource random, int footX, int footY, int footZ,
-                Direction direction, int depth) {
+        private FortressPiece generatePiece(
+                StartPiece startPiece,
+                List<PieceWeight> currentPieces,
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction,
+                int depth) {
             var totalWeight = updatePieceWeight(currentPieces);
             var doStuff = totalWeight > 0 && depth <= MAX_DEPTH;
             var numAttempts = 0;
@@ -464,11 +541,14 @@ public final class NetherFortressPieces {
                 for (var piece : currentPieces) {
                     weightSelection -= piece.weight;
                     if (weightSelection < 0) {
-                        if (!piece.doPlace(depth) || (piece == startPiece.previousPiece && !piece.allowInRow)) {
+                        if (!piece.doPlace(depth)
+                                || (piece == startPiece.previousPiece && !piece.allowInRow)) {
                             break;
                         }
 
-                        var structurePiece = piece.factory.create(pieces, random, footX, footY, footZ, direction, depth);
+                        var structurePiece =
+                                piece.factory.create(
+                                        pieces, random, footX, footY, footZ, direction, depth);
                         if (structurePiece != null) {
                             piece.placeCount++;
                             startPiece.previousPiece = piece;
@@ -481,16 +561,38 @@ public final class NetherFortressPieces {
                 }
             }
 
-            return BridgeEndFiller.createPiece(pieces, random, footX, footY, footZ, direction, depth);
+            return BridgeEndFiller.createPiece(
+                    pieces, random, footX, footY, footZ, direction, depth);
         }
 
         /** Vanilla {@code NetherBridgePiece.generateAndAddPiece}. */
-        private FortressPiece generateAndAddPiece(StartPiece startPiece, List<FortressPiece> pieces,
-                RandomSource random, int footX, int footY, int footZ, Direction direction, int depth, boolean isCastle) {
+        private FortressPiece generateAndAddPiece(
+                StartPiece startPiece,
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction,
+                int depth,
+                boolean isCastle) {
             if (Math.abs(footX - startPiece.boundingBox.minX()) <= MAX_DISTANCE_FROM_START
                     && Math.abs(footZ - startPiece.boundingBox.minZ()) <= MAX_DISTANCE_FROM_START) {
-                var availablePieces = isCastle ? startPiece.availableCastlePieces : startPiece.availableBridgePieces;
-                var newPiece = this.generatePiece(startPiece, availablePieces, pieces, random, footX, footY, footZ, direction, depth + 1);
+                var availablePieces =
+                        isCastle
+                                ? startPiece.availableCastlePieces
+                                : startPiece.availableBridgePieces;
+                var newPiece =
+                        this.generatePiece(
+                                startPiece,
+                                availablePieces,
+                                pieces,
+                                random,
+                                footX,
+                                footY,
+                                footZ,
+                                direction,
+                                depth + 1);
                 if (newPiece != null) {
                     pieces.add(newPiece);
                     startPiece.pendingChildren.add(newPiece);
@@ -501,62 +603,142 @@ public final class NetherFortressPieces {
             // Vanilla: out of range - a filler may still be constructed (and
             // consume random state) but is discarded, never added to the
             // piece list or the pending-children queue.
-            return BridgeEndFiller.createPiece(pieces, random, footX, footY, footZ, direction, depth);
+            return BridgeEndFiller.createPiece(
+                    pieces, random, footX, footY, footZ, direction, depth);
         }
 
-        FortressPiece generateChildForward(StartPiece startPiece, List<FortressPiece> pieces, RandomSource random,
-                int xOff, int yOff, boolean isCastle) {
+        FortressPiece generateChildForward(
+                StartPiece startPiece,
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int xOff,
+                int yOff,
+                boolean isCastle) {
             var orientation = this.getOrientation();
             if (orientation == null) {
                 return null;
             }
             return switch (orientation) {
-                case NORTH -> this.generateAndAddPiece(startPiece, pieces, random,
-                        this.boundingBox.minX() + xOff, this.boundingBox.minY() + yOff, this.boundingBox.minZ() - 1,
-                        orientation, this.genDepth, isCastle);
-                case SOUTH -> this.generateAndAddPiece(startPiece, pieces, random,
-                        this.boundingBox.minX() + xOff, this.boundingBox.minY() + yOff, this.boundingBox.maxZ() + 1,
-                        orientation, this.genDepth, isCastle);
-                case WEST -> this.generateAndAddPiece(startPiece, pieces, random,
-                        this.boundingBox.minX() - 1, this.boundingBox.minY() + yOff, this.boundingBox.minZ() + xOff,
-                        orientation, this.genDepth, isCastle);
-                case EAST -> this.generateAndAddPiece(startPiece, pieces, random,
-                        this.boundingBox.maxX() + 1, this.boundingBox.minY() + yOff, this.boundingBox.minZ() + xOff,
-                        orientation, this.genDepth, isCastle);
+                case NORTH ->
+                        this.generateAndAddPiece(
+                                startPiece,
+                                pieces,
+                                random,
+                                this.boundingBox.minX() + xOff,
+                                this.boundingBox.minY() + yOff,
+                                this.boundingBox.minZ() - 1,
+                                orientation,
+                                this.genDepth,
+                                isCastle);
+                case SOUTH ->
+                        this.generateAndAddPiece(
+                                startPiece,
+                                pieces,
+                                random,
+                                this.boundingBox.minX() + xOff,
+                                this.boundingBox.minY() + yOff,
+                                this.boundingBox.maxZ() + 1,
+                                orientation,
+                                this.genDepth,
+                                isCastle);
+                case WEST ->
+                        this.generateAndAddPiece(
+                                startPiece,
+                                pieces,
+                                random,
+                                this.boundingBox.minX() - 1,
+                                this.boundingBox.minY() + yOff,
+                                this.boundingBox.minZ() + xOff,
+                                orientation,
+                                this.genDepth,
+                                isCastle);
+                case EAST ->
+                        this.generateAndAddPiece(
+                                startPiece,
+                                pieces,
+                                random,
+                                this.boundingBox.maxX() + 1,
+                                this.boundingBox.minY() + yOff,
+                                this.boundingBox.minZ() + xOff,
+                                orientation,
+                                this.genDepth,
+                                isCastle);
                 default -> null;
             };
         }
 
-        FortressPiece generateChildLeft(StartPiece startPiece, List<FortressPiece> pieces, RandomSource random,
-                int yOff, int zOff, boolean isCastle) {
+        FortressPiece generateChildLeft(
+                StartPiece startPiece,
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int yOff,
+                int zOff,
+                boolean isCastle) {
             var orientation = this.getOrientation();
             if (orientation == null) {
                 return null;
             }
             return switch (orientation) {
-                case NORTH, SOUTH -> this.generateAndAddPiece(startPiece, pieces, random,
-                        this.boundingBox.minX() - 1, this.boundingBox.minY() + yOff, this.boundingBox.minZ() + zOff,
-                        Direction.WEST, this.genDepth, isCastle);
-                case WEST, EAST -> this.generateAndAddPiece(startPiece, pieces, random,
-                        this.boundingBox.minX() + zOff, this.boundingBox.minY() + yOff, this.boundingBox.minZ() - 1,
-                        Direction.NORTH, this.genDepth, isCastle);
+                case NORTH, SOUTH ->
+                        this.generateAndAddPiece(
+                                startPiece,
+                                pieces,
+                                random,
+                                this.boundingBox.minX() - 1,
+                                this.boundingBox.minY() + yOff,
+                                this.boundingBox.minZ() + zOff,
+                                Direction.WEST,
+                                this.genDepth,
+                                isCastle);
+                case WEST, EAST ->
+                        this.generateAndAddPiece(
+                                startPiece,
+                                pieces,
+                                random,
+                                this.boundingBox.minX() + zOff,
+                                this.boundingBox.minY() + yOff,
+                                this.boundingBox.minZ() - 1,
+                                Direction.NORTH,
+                                this.genDepth,
+                                isCastle);
                 default -> null;
             };
         }
 
-        FortressPiece generateChildRight(StartPiece startPiece, List<FortressPiece> pieces, RandomSource random,
-                int yOff, int zOff, boolean isCastle) {
+        FortressPiece generateChildRight(
+                StartPiece startPiece,
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int yOff,
+                int zOff,
+                boolean isCastle) {
             var orientation = this.getOrientation();
             if (orientation == null) {
                 return null;
             }
             return switch (orientation) {
-                case NORTH, SOUTH -> this.generateAndAddPiece(startPiece, pieces, random,
-                        this.boundingBox.maxX() + 1, this.boundingBox.minY() + yOff, this.boundingBox.minZ() + zOff,
-                        Direction.EAST, this.genDepth, isCastle);
-                case WEST, EAST -> this.generateAndAddPiece(startPiece, pieces, random,
-                        this.boundingBox.minX() + zOff, this.boundingBox.minY() + yOff, this.boundingBox.maxZ() + 1,
-                        Direction.SOUTH, this.genDepth, isCastle);
+                case NORTH, SOUTH ->
+                        this.generateAndAddPiece(
+                                startPiece,
+                                pieces,
+                                random,
+                                this.boundingBox.maxX() + 1,
+                                this.boundingBox.minY() + yOff,
+                                this.boundingBox.minZ() + zOff,
+                                Direction.EAST,
+                                this.genDepth,
+                                isCastle);
+                case WEST, EAST ->
+                        this.generateAndAddPiece(
+                                startPiece,
+                                pieces,
+                                random,
+                                this.boundingBox.minX() + zOff,
+                                this.boundingBox.minY() + yOff,
+                                this.boundingBox.maxZ() + 1,
+                                Direction.SOUTH,
+                                this.genDepth,
+                                isCastle);
                 default -> null;
             };
         }
@@ -569,7 +751,10 @@ public final class NetherFortressPieces {
         PieceWeight previousPiece;
 
         StartPiece(RandomSource random, int west, int north) {
-            super(west, north, Direction.HORIZONTAL.get(random.nextInt(Direction.HORIZONTAL.size())));
+            super(
+                    west,
+                    north,
+                    Direction.HORIZONTAL.get(random.nextInt(Direction.HORIZONTAL.size())));
         }
     }
 
@@ -591,8 +776,14 @@ public final class NetherFortressPieces {
             this.generateChildRight(startPiece, pieces, random, 3, 8, false);
         }
 
-        static FortressPiece createPiece(List<FortressPiece> pieces, RandomSource random,
-                int footX, int footY, int footZ, Direction direction, int genDepth) {
+        static FortressPiece createPiece(
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction,
+                int genDepth) {
             var box = orientBox(footX, footY, footZ, -8, -3, 0, 19, 10, 19, direction);
             return isOkBox(box) && findCollisionPiece(pieces, box) == null
                     ? new BridgeCrossing(genDepth, box, direction)
@@ -644,14 +835,21 @@ public final class NetherFortressPieces {
     public static final class BridgeEndFiller extends FortressPiece {
         private final int selfSeed;
 
-        BridgeEndFiller(int genDepth, RandomSource random, BoundingBox boundingBox, Direction direction) {
+        BridgeEndFiller(
+                int genDepth, RandomSource random, BoundingBox boundingBox, Direction direction) {
             super(genDepth, boundingBox);
             this.setOrientation(direction);
             this.selfSeed = random.nextInt();
         }
 
-        static FortressPiece createPiece(List<FortressPiece> pieces, RandomSource random,
-                int footX, int footY, int footZ, Direction direction, int genDepth) {
+        static FortressPiece createPiece(
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction,
+                int genDepth) {
             var box = orientBox(footX, footY, footZ, -1, -3, 0, 5, 10, 8, direction);
             return isOkBox(box) && findCollisionPiece(pieces, box) == null
                     ? new BridgeEndFiller(genDepth, random, box, direction)
@@ -661,8 +859,9 @@ public final class NetherFortressPieces {
         @Override
         void postProcess(FortressLevel level, RandomSource random, BoundingBox chunkBB) {
             var bricks = Block.NETHER_BRICKS;
-            var selfRandom = new rocks.minestom.worldgen.random.WorldgenRandom(
-                    new rocks.minestom.worldgen.random.LegacyRandomSource(this.selfSeed));
+            var selfRandom =
+                    new rocks.minestom.worldgen.random.WorldgenRandom(
+                            new rocks.minestom.worldgen.random.LegacyRandomSource(this.selfSeed));
 
             for (var x = 0; x <= 4; x++) {
                 for (var y = 3; y <= 4; y++) {
@@ -701,8 +900,14 @@ public final class NetherFortressPieces {
             this.generateChildForward(startPiece, pieces, random, 1, 3, false);
         }
 
-        static FortressPiece createPiece(List<FortressPiece> pieces, RandomSource random,
-                int footX, int footY, int footZ, Direction direction, int genDepth) {
+        static FortressPiece createPiece(
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction,
+                int genDepth) {
             var box = orientBox(footX, footY, footZ, -1, -3, 0, 5, 10, 19, direction);
             return isOkBox(box) && findCollisionPiece(pieces, box) == null
                     ? new BridgeStraight(genDepth, box, direction)
@@ -753,8 +958,14 @@ public final class NetherFortressPieces {
             this.generateChildForward(startPiece, pieces, random, 1, 0, true);
         }
 
-        static FortressPiece createPiece(List<FortressPiece> pieces, RandomSource random,
-                int footX, int footY, int footZ, Direction direction, int genDepth) {
+        static FortressPiece createPiece(
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction,
+                int genDepth) {
             var box = orientBox(footX, footY, footZ, -1, -7, 0, 5, 14, 10, direction);
             return isOkBox(box) && findCollisionPiece(pieces, box) == null
                     ? new CastleCorridorStairsPiece(genDepth, box, direction)
@@ -773,19 +984,29 @@ public final class NetherFortressPieces {
                 var roof = Math.min(Math.max(floor + 5, 14 - step), 13);
                 var z = step;
                 this.generateBox(level, chunkBB, 0, 0, step, 4, floor, step, bricks, bricks, false);
-                this.generateBox(level, chunkBB, 1, floor + 1, step, 3, roof - 1, step, air, air, false);
+                this.generateBox(
+                        level, chunkBB, 1, floor + 1, step, 3, roof - 1, step, air, air, false);
                 if (step <= 6) {
                     this.placeBlock(level, stairSouth, 1, floor + 1, step, chunkBB);
                     this.placeBlock(level, stairSouth, 2, floor + 1, step, chunkBB);
                     this.placeBlock(level, stairSouth, 3, floor + 1, step, chunkBB);
                 }
 
-                this.generateBox(level, chunkBB, 0, roof, step, 4, roof, step, bricks, bricks, false);
-                this.generateBox(level, chunkBB, 0, floor + 1, step, 0, roof - 1, step, bricks, bricks, false);
-                this.generateBox(level, chunkBB, 4, floor + 1, step, 4, roof - 1, step, bricks, bricks, false);
+                this.generateBox(
+                        level, chunkBB, 0, roof, step, 4, roof, step, bricks, bricks, false);
+                this.generateBox(
+                        level, chunkBB, 0, floor + 1, step, 0, roof - 1, step, bricks, bricks,
+                        false);
+                this.generateBox(
+                        level, chunkBB, 4, floor + 1, step, 4, roof - 1, step, bricks, bricks,
+                        false);
                 if ((step & 1) == 0) {
-                    this.generateBox(level, chunkBB, 0, floor + 2, step, 0, floor + 3, step, nsFence, nsFence, false);
-                    this.generateBox(level, chunkBB, 4, floor + 2, step, 4, floor + 3, step, nsFence, nsFence, false);
+                    this.generateBox(
+                            level, chunkBB, 0, floor + 2, step, 0, floor + 3, step, nsFence,
+                            nsFence, false);
+                    this.generateBox(
+                            level, chunkBB, 4, floor + 2, step, 4, floor + 3, step, nsFence,
+                            nsFence, false);
                 }
 
                 for (var x = 0; x <= 4; x++) {
@@ -813,8 +1034,14 @@ public final class NetherFortressPieces {
             this.generateChildRight(startPiece, pieces, random, 0, zOff, random.nextInt(8) > 0);
         }
 
-        static FortressPiece createPiece(List<FortressPiece> pieces, RandomSource random,
-                int footX, int footY, int footZ, Direction direction, int genDepth) {
+        static FortressPiece createPiece(
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction,
+                int genDepth) {
             var box = orientBox(footX, footY, footZ, -3, 0, 0, 9, 7, 9, direction);
             return isOkBox(box) && findCollisionPiece(pieces, box) == null
                     ? new CastleCorridorTBalconyPiece(genDepth, box, direction)
@@ -868,8 +1095,14 @@ public final class NetherFortressPieces {
             this.generateChildForward(startPiece, pieces, random, 5, 3, true);
         }
 
-        static FortressPiece createPiece(List<FortressPiece> pieces, RandomSource random,
-                int footX, int footY, int footZ, Direction direction, int genDepth) {
+        static FortressPiece createPiece(
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction,
+                int genDepth) {
             var box = orientBox(footX, footY, footZ, -5, -3, 0, 13, 14, 13, direction);
             return isOkBox(box) && findCollisionPiece(pieces, box) == null
                     ? new CastleEntrance(genDepth, box, direction)
@@ -891,7 +1124,18 @@ public final class NetherFortressPieces {
             this.generateBox(level, chunkBB, 8, 5, 0, 10, 12, 1, bricks, bricks, false);
             this.generateBox(level, chunkBB, 5, 9, 0, 7, 12, 1, bricks, bricks, false);
             this.generateBox(level, chunkBB, 2, 11, 2, 10, 12, 10, bricks, bricks, false);
-            this.generateBox(level, chunkBB, 5, 8, 0, 7, 8, 0, Block.NETHER_BRICK_FENCE, Block.NETHER_BRICK_FENCE, false);
+            this.generateBox(
+                    level,
+                    chunkBB,
+                    5,
+                    8,
+                    0,
+                    7,
+                    8,
+                    0,
+                    Block.NETHER_BRICK_FENCE,
+                    Block.NETHER_BRICK_FENCE,
+                    false);
             var weFence = fence("west", "east");
             var nsFence = fence("north", "south");
 
@@ -918,8 +1162,30 @@ public final class NetherFortressPieces {
             this.placeBlock(level, fence("north", "west"), 12, 13, 0, chunkBB);
 
             for (var z = 3; z <= 9; z += 2) {
-                this.generateBox(level, chunkBB, 1, 7, z, 1, 8, z, fence("north", "south", "west"), fence("north", "south", "west"), false);
-                this.generateBox(level, chunkBB, 11, 7, z, 11, 8, z, fence("north", "south", "east"), fence("north", "south", "east"), false);
+                this.generateBox(
+                        level,
+                        chunkBB,
+                        1,
+                        7,
+                        z,
+                        1,
+                        8,
+                        z,
+                        fence("north", "south", "west"),
+                        fence("north", "south", "west"),
+                        false);
+                this.generateBox(
+                        level,
+                        chunkBB,
+                        11,
+                        7,
+                        z,
+                        11,
+                        8,
+                        z,
+                        fence("north", "south", "east"),
+                        fence("north", "south", "east"),
+                        false);
             }
 
             this.generateBox(level, chunkBB, 4, 2, 0, 8, 2, 12, bricks, bricks, false);
@@ -953,7 +1219,8 @@ public final class NetherFortressPieces {
     }
 
     public static final class CastleSmallCorridorCrossingPiece extends FortressPiece {
-        CastleSmallCorridorCrossingPiece(int genDepth, BoundingBox boundingBox, Direction direction) {
+        CastleSmallCorridorCrossingPiece(
+                int genDepth, BoundingBox boundingBox, Direction direction) {
             super(genDepth, boundingBox);
             this.setOrientation(direction);
         }
@@ -965,8 +1232,14 @@ public final class NetherFortressPieces {
             this.generateChildRight(startPiece, pieces, random, 0, 1, true);
         }
 
-        static FortressPiece createPiece(List<FortressPiece> pieces, RandomSource random,
-                int footX, int footY, int footZ, Direction direction, int genDepth) {
+        static FortressPiece createPiece(
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction,
+                int genDepth) {
             var box = orientBox(footX, footY, footZ, -1, 0, 0, 5, 7, 5, direction);
             return isOkBox(box) && findCollisionPiece(pieces, box) == null
                     ? new CastleSmallCorridorCrossingPiece(genDepth, box, direction)
@@ -996,7 +1269,8 @@ public final class NetherFortressPieces {
     public static final class CastleSmallCorridorLeftTurnPiece extends FortressPiece {
         private boolean isNeedingChest;
 
-        CastleSmallCorridorLeftTurnPiece(int genDepth, RandomSource random, BoundingBox boundingBox, Direction direction) {
+        CastleSmallCorridorLeftTurnPiece(
+                int genDepth, RandomSource random, BoundingBox boundingBox, Direction direction) {
             super(genDepth, boundingBox);
             this.setOrientation(direction);
             this.isNeedingChest = random.nextInt(3) == 0;
@@ -1007,8 +1281,14 @@ public final class NetherFortressPieces {
             this.generateChildLeft(startPiece, pieces, random, 0, 1, true);
         }
 
-        static FortressPiece createPiece(List<FortressPiece> pieces, RandomSource random,
-                int footX, int footY, int footZ, Direction direction, int genDepth) {
+        static FortressPiece createPiece(
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction,
+                int genDepth) {
             var box = orientBox(footX, footY, footZ, -1, 0, 0, 5, 7, 5, direction);
             return isOkBox(box) && findCollisionPiece(pieces, box) == null
                     ? new CastleSmallCorridorLeftTurnPiece(genDepth, random, box, direction)
@@ -1059,8 +1339,14 @@ public final class NetherFortressPieces {
             this.generateChildForward(startPiece, pieces, random, 1, 0, true);
         }
 
-        static FortressPiece createPiece(List<FortressPiece> pieces, RandomSource random,
-                int footX, int footY, int footZ, Direction direction, int genDepth) {
+        static FortressPiece createPiece(
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction,
+                int genDepth) {
             var box = orientBox(footX, footY, footZ, -1, 0, 0, 5, 7, 5, direction);
             return isOkBox(box) && findCollisionPiece(pieces, box) == null
                     ? new CastleSmallCorridorPiece(genDepth, box, direction)
@@ -1093,7 +1379,8 @@ public final class NetherFortressPieces {
     public static final class CastleSmallCorridorRightTurnPiece extends FortressPiece {
         private boolean isNeedingChest;
 
-        CastleSmallCorridorRightTurnPiece(int genDepth, RandomSource random, BoundingBox boundingBox, Direction direction) {
+        CastleSmallCorridorRightTurnPiece(
+                int genDepth, RandomSource random, BoundingBox boundingBox, Direction direction) {
             super(genDepth, boundingBox);
             this.setOrientation(direction);
             this.isNeedingChest = random.nextInt(3) == 0;
@@ -1104,8 +1391,14 @@ public final class NetherFortressPieces {
             this.generateChildRight(startPiece, pieces, random, 0, 1, true);
         }
 
-        static FortressPiece createPiece(List<FortressPiece> pieces, RandomSource random,
-                int footX, int footY, int footZ, Direction direction, int genDepth) {
+        static FortressPiece createPiece(
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction,
+                int genDepth) {
             var box = orientBox(footX, footY, footZ, -1, 0, 0, 5, 7, 5, direction);
             return isOkBox(box) && findCollisionPiece(pieces, box) == null
                     ? new CastleSmallCorridorRightTurnPiece(genDepth, random, box, direction)
@@ -1157,8 +1450,14 @@ public final class NetherFortressPieces {
             this.generateChildForward(startPiece, pieces, random, 5, 11, true);
         }
 
-        static FortressPiece createPiece(List<FortressPiece> pieces, RandomSource random,
-                int footX, int footY, int footZ, Direction direction, int genDepth) {
+        static FortressPiece createPiece(
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction,
+                int genDepth) {
             var box = orientBox(footX, footY, footZ, -5, -3, 0, 13, 14, 13, direction);
             return isOkBox(box) && findCollisionPiece(pieces, box) == null
                     ? new CastleStalkRoom(genDepth, box, direction)
@@ -1255,10 +1554,14 @@ public final class NetherFortressPieces {
             this.placeBlock(level, eastStairs, 8, 5, 3, chunkBB);
             this.placeBlock(level, eastStairs, 8, 5, 9, chunkBB);
             this.placeBlock(level, eastStairs, 8, 5, 10, chunkBB);
-            this.generateBox(level, chunkBB, 3, 4, 4, 4, 4, 8, Block.SOUL_SAND, Block.SOUL_SAND, false);
-            this.generateBox(level, chunkBB, 8, 4, 4, 9, 4, 8, Block.SOUL_SAND, Block.SOUL_SAND, false);
-            this.generateBox(level, chunkBB, 3, 5, 4, 4, 5, 8, Block.NETHER_WART, Block.NETHER_WART, false);
-            this.generateBox(level, chunkBB, 8, 5, 4, 9, 5, 8, Block.NETHER_WART, Block.NETHER_WART, false);
+            this.generateBox(
+                    level, chunkBB, 3, 4, 4, 4, 4, 8, Block.SOUL_SAND, Block.SOUL_SAND, false);
+            this.generateBox(
+                    level, chunkBB, 8, 4, 4, 9, 4, 8, Block.SOUL_SAND, Block.SOUL_SAND, false);
+            this.generateBox(
+                    level, chunkBB, 3, 5, 4, 4, 5, 8, Block.NETHER_WART, Block.NETHER_WART, false);
+            this.generateBox(
+                    level, chunkBB, 8, 5, 4, 9, 5, 8, Block.NETHER_WART, Block.NETHER_WART, false);
             this.generateBox(level, chunkBB, 4, 2, 0, 8, 2, 12, bricks, bricks, false);
             this.generateBox(level, chunkBB, 0, 2, 4, 12, 2, 8, bricks, bricks, false);
             this.generateBox(level, chunkBB, 4, 0, 0, 8, 1, 3, bricks, bricks, false);
@@ -1290,8 +1593,14 @@ public final class NetherFortressPieces {
             this.setOrientation(direction);
         }
 
-        static FortressPiece createPiece(List<FortressPiece> pieces, RandomSource random,
-                int footX, int footY, int footZ, Direction direction, int genDepth) {
+        static FortressPiece createPiece(
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction,
+                int genDepth) {
             var box = orientBox(footX, footY, footZ, -2, 0, 0, 7, 8, 9, direction);
             return isOkBox(box) && findCollisionPiece(pieces, box) == null
                     ? new MonsterThrone(genDepth, box, direction)
@@ -1362,8 +1671,14 @@ public final class NetherFortressPieces {
             this.generateChildRight(startPiece, pieces, random, 0, 2, false);
         }
 
-        static FortressPiece createPiece(List<FortressPiece> pieces, RandomSource random,
-                int footX, int footY, int footZ, Direction direction, int genDepth) {
+        static FortressPiece createPiece(
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction,
+                int genDepth) {
             var box = orientBox(footX, footY, footZ, -2, 0, 0, 7, 9, 7, direction);
             return isOkBox(box) && findCollisionPiece(pieces, box) == null
                     ? new RoomCrossing(genDepth, box, direction)
@@ -1414,8 +1729,14 @@ public final class NetherFortressPieces {
             this.generateChildRight(startPiece, pieces, random, 6, 2, false);
         }
 
-        static FortressPiece createPiece(List<FortressPiece> pieces, RandomSource random,
-                int footX, int footY, int footZ, Direction direction, int genDepth) {
+        static FortressPiece createPiece(
+                List<FortressPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction,
+                int genDepth) {
             var box = orientBox(footX, footY, footZ, -2, 0, 0, 7, 11, 7, direction);
             return isOkBox(box) && findCollisionPiece(pieces, box) == null
                     ? new StairsRoom(genDepth, box, direction)

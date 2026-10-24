@@ -4,21 +4,20 @@ import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.EndGatewayConfiguration;
 
 /**
- * Exact port of vanilla {@code EndGatewayFeature}. Carves a three by five by
- * three frame centered on the origin: the center block becomes an end
- * gateway, the four horizontal and vertical bedrock struts running through
- * the center become bedrock, and the remaining corners and the middle
- * horizontal ring become air. Vanilla additionally stores the configured
- * exit position and exactness flag on the end gateway block entity created
- * at the center block so teleporting entities can be routed to another
- * gateway or the overworld spawn; this codebase has no block entity model,
- * so {@link EndGatewayConfiguration#exit()} and
- * {@link EndGatewayConfiguration#exact()} are read by callers directly
- * rather than being attached to the placed block.
+ * Exact port of vanilla {@code EndGatewayFeature}. Carves a three by five by three frame centered
+ * on the origin: the center block becomes an end gateway, the four horizontal and vertical bedrock
+ * struts running through the center become bedrock, and the remaining corners and the middle
+ * horizontal ring become air. Vanilla additionally stores the configured exit position and
+ * exactness flag on the end gateway block entity created at the center block so teleporting
+ * entities can be routed to another gateway or the overworld spawn; this codebase has no block
+ * entity model, so {@link EndGatewayConfiguration#exit()} and {@link
+ * EndGatewayConfiguration#exact()} are read by callers directly rather than being attached to the
+ * placed block.
  */
 public final class EndGatewayFeature implements Feature<EndGatewayConfiguration> {
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<EndGatewayConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<EndGatewayConfiguration, T> context) {
         var level = context.accessor();
         var origin = context.origin();
         var originX = origin.blockX();

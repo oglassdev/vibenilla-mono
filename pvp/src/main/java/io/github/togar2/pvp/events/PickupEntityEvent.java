@@ -7,43 +7,41 @@ import net.minestom.server.event.trait.CancellableEvent;
 import net.minestom.server.event.trait.EntityInstanceEvent;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a player picks up an entity (arrow or trident).
- */
+/** Called when a player picks up an entity (arrow or trident). */
 public class PickupEntityEvent implements EntityInstanceEvent, CancellableEvent {
 
-	private final Player player;
-	private final AbstractArrow arrowEntity;
+    private final Player player;
+    private final AbstractArrow arrowEntity;
 
-	private boolean cancelled;
+    private boolean cancelled;
 
-	public PickupEntityEvent(@NotNull Player player, @NotNull AbstractArrow arrowEntity) {
-		this.player = player;
-		this.arrowEntity = arrowEntity;
-	}
+    public PickupEntityEvent(@NotNull Player player, @NotNull AbstractArrow arrowEntity) {
+        this.player = player;
+        this.arrowEntity = arrowEntity;
+    }
 
-	@NotNull
-	public Player getPlayer() {
-		return this.player;
-	}
+    @NotNull
+    public Player getPlayer() {
+        return this.player;
+    }
 
-	@NotNull
-	public AbstractArrow getPickedUp() {
-		return this.arrowEntity;
-	}
+    @NotNull
+    public AbstractArrow getPickedUp() {
+        return this.arrowEntity;
+    }
 
-	@Override
-	public boolean isCancelled() {
-		return this.cancelled;
-	}
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
 
-	@Override
-	public void setCancelled(boolean cancel) {
-		this.cancelled = cancel;
-	}
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
+    }
 
-	@Override
-	public @NotNull Entity getEntity() {
-		return this.player;
-	}
+    @Override
+    public @NotNull Entity getEntity() {
+        return this.player;
+    }
 }

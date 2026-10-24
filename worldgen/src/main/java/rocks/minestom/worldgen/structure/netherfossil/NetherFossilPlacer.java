@@ -1,5 +1,10 @@
 package rocks.minestom.worldgen.structure.netherfossil;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
@@ -25,31 +30,24 @@ import rocks.minestom.worldgen.terrain.Beardifier;
 import rocks.minestom.worldgen.terrain.TerrainData;
 import rocks.minestom.worldgen.terrain.TerrainGenerator;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
- * Places nether fossils with vanilla-exact seeding, mirroring
- * {@code rocks.minestom.worldgen.structure.shipwreck.ShipwreckPlacer}. Unlike
- * every other single-template structure in this codebase, vanilla's
- * {@code NetherFossilStructure.findGenerationPoint} does not place at the
- * chunk-center raw terrain surface: it samples a height provider, then walks
- * the raw noise column (vanilla {@code ChunkGenerator.getBaseColumn} - no
- * carvers, no bedrock) downward looking for the first air block directly
- * above a solid or soul sand block, giving up if that search reaches sea
- * level. Placing at the generic surface height instead (as the previous,
- * incorrect implementation did) lands almost every fossil at the nether
- * ceiling, where the raw terrain's topmost solid block sits right against the
- * bedrock roof.
+ * Places nether fossils with vanilla-exact seeding, mirroring {@code
+ * rocks.minestom.worldgen.structure.shipwreck.ShipwreckPlacer}. Unlike every other single-template
+ * structure in this codebase, vanilla's {@code NetherFossilStructure.findGenerationPoint} does not
+ * place at the chunk-center raw terrain surface: it samples a height provider, then walks the raw
+ * noise column (vanilla {@code ChunkGenerator.getBaseColumn} - no carvers, no bedrock) downward
+ * looking for the first air block directly above a solid or soul sand block, giving up if that
+ * search reaches sea level. Placing at the generic surface height instead (as the previous,
+ * incorrect implementation did) lands almost every fossil at the nether ceiling, where the raw
+ * terrain's topmost solid block sits right against the bedrock roof.
  */
 public final class NetherFossilPlacer {
     /** The largest fossil template stays within 2 chunks. */
     private static final int REFERENCE_RADIUS = 2;
+
     /** Vanilla {@code StructurePiece.isCloseToChunk} kernel distance. */
     private static final int BEARD_CLOSE_DISTANCE = 12;
+
     private static final Key SOUL_SAND = Key.key("minecraft:soul_sand");
 
     private final StructureLoader structureLoader;
@@ -62,25 +60,40 @@ public final class NetherFossilPlacer {
 
     public boolean isNetherFossilSet(StructureSet structureSet) {
         for (var entry : structureSet.structures()) {
-            if (this.structureLoader.getStructure(entry.structure()) instanceof NetherFossilStructure) {
+            if (this.structureLoader.getStructure(entry.structure())
+                    instanceof NetherFossilStructure) {
                 return true;
             }
         }
         return false;
     }
 
-    public void place(GenerationUnit unit, BiomeZoomer biomeZoomer, NoiseGeneratorSettingsRuntime settings,
-            StructureSet structureSet, int[] surfaceHeights) {
+    public void place(
+            GenerationUnit unit,
+            BiomeZoomer biomeZoomer,
+            NoiseGeneratorSettingsRuntime settings,
+            StructureSet structureSet,
+            int[] surfaceHeights) {
         var startX = unit.absoluteStart().blockX();
         var startZ = unit.absoluteStart().blockZ();
         var chunkX = Math.floorDiv(startX, 16);
         var chunkZ = Math.floorDiv(startZ, 16);
-        var chunkBounds = new BoundingBox(startX, settings.minY(), startZ,
-                startX + 15, settings.maxYInclusive(), startZ + 15);
+        var chunkBounds =
+                new BoundingBox(
+                        startX,
+                        settings.minY(),
+                        startZ,
+                        startX + 15,
+                        settings.maxYInclusive(),
+                        startZ + 15);
 
         var intersecting = new ArrayList<NetherFossilStart>();
-        for (var sourceX = chunkX - REFERENCE_RADIUS; sourceX <= chunkX + REFERENCE_RADIUS; sourceX++) {
-            for (var sourceZ = chunkZ - REFERENCE_RADIUS; sourceZ <= chunkZ + REFERENCE_RADIUS; sourceZ++) {
+        for (var sourceX = chunkX - REFERENCE_RADIUS;
+                sourceX <= chunkX + REFERENCE_RADIUS;
+                sourceX++) {
+            for (var sourceZ = chunkZ - REFERENCE_RADIUS;
+                    sourceZ <= chunkZ + REFERENCE_RADIUS;
+                    sourceZ++) {
                 var start = this.startAt(sourceX, sourceZ, structureSet, settings, biomeZoomer);
                 if (start != null && start.bounds().intersects(chunkBounds)) {
                     intersecting.add(start);
@@ -93,10 +106,19 @@ public final class NetherFossilPlacer {
         }
 
         var chunkBlocks = this.liveChunkBlocks(chunkX, chunkZ, surfaceHeights);
-        var adapter = chunkBlocks != null
-                ? new GenerationUnitAdapter(unit, startX, startZ, 16, 16, settings.minY(), chunkBlocks,
-                        settings.height(), StructureWrites.terrainLookup())
-                : new GenerationUnitAdapter(unit);
+        var adapter =
+                chunkBlocks != null
+                        ? new GenerationUnitAdapter(
+                                unit,
+                                startX,
+                                startZ,
+                                16,
+                                16,
+                                settings.minY(),
+                                chunkBlocks,
+                                settings.height(),
+                                StructureWrites.terrainLookup())
+                        : new GenerationUnitAdapter(unit);
 
         var connectionShapeUpdates = new ArrayList<BlockVec>();
         for (var start : intersecting) {
@@ -108,20 +130,36 @@ public final class NetherFossilPlacer {
             // (a chunk-border fence connecting to this part), which the plain
             // chunk-bound adapter would silently drop; a one-chunk padded fork
             // applies those writes directly onto the neighbor.
-            var edgeUnit = unit.fork(
-                    new BlockVec(startX - 16, settings.minY(), startZ - 16),
-                    new BlockVec(startX + 32, settings.maxYInclusive() + 1, startZ + 32));
-            var edgeAdapter = chunkBlocks != null
-                    ? new GenerationUnitAdapter(edgeUnit, startX, startZ, 16, 16, settings.minY(), chunkBlocks,
-                            settings.height(), StructureWrites.terrainLookup())
-                    : new GenerationUnitAdapter(edgeUnit);
-            StructureShapeUpdater.updateEdges(edgeAdapter, this.structureLoader.blockTags(), connectionShapeUpdates);
-            StructureShapeUpdater.update(adapter, this.structureLoader.blockTags(), connectionShapeUpdates);
+            var edgeUnit =
+                    unit.fork(
+                            new BlockVec(startX - 16, settings.minY(), startZ - 16),
+                            new BlockVec(startX + 32, settings.maxYInclusive() + 1, startZ + 32));
+            var edgeAdapter =
+                    chunkBlocks != null
+                            ? new GenerationUnitAdapter(
+                                    edgeUnit,
+                                    startX,
+                                    startZ,
+                                    16,
+                                    16,
+                                    settings.minY(),
+                                    chunkBlocks,
+                                    settings.height(),
+                                    StructureWrites.terrainLookup())
+                            : new GenerationUnitAdapter(edgeUnit);
+            StructureShapeUpdater.updateEdges(
+                    edgeAdapter, this.structureLoader.blockTags(), connectionShapeUpdates);
+            StructureShapeUpdater.update(
+                    adapter, this.structureLoader.blockTags(), connectionShapeUpdates);
         }
     }
 
-    private void placeStart(NetherFossilStart start, GenerationUnitAdapter adapter, BoundingBox chunkBounds,
-            NoiseGeneratorSettingsRuntime settings, List<BlockVec> connectionShapeUpdates) {
+    private void placeStart(
+            NetherFossilStart start,
+            GenerationUnitAdapter adapter,
+            BoundingBox chunkBounds,
+            NoiseGeneratorSettingsRuntime settings,
+            List<BlockVec> connectionShapeUpdates) {
         if (!start.bounds().intersects(chunkBounds)) {
             return;
         }
@@ -131,32 +169,51 @@ public final class NetherFossilPlacer {
             return;
         }
 
-        var processorContext = new StructureProcessorContext(
-                adapter, this.structureLoader.blockTags(), settings.randomState().seed(),
-                start.position(), start.position(), null);
-        var placementContext = new StructureTemplate.PlacementContext(
-                adapter, chunkBounds, processorContext, connectionShapeUpdates);
-        var processors = new StructureProcessorList(List.of(BlockIgnoreProcessor.STRUCTURE_AND_AIR));
-        template.place(placementContext, start.position(), start.rotation(), processors, false, false,
-                LiquidSettings.APPLY_WATERLOGGING, true);
+        var processorContext =
+                new StructureProcessorContext(
+                        adapter,
+                        this.structureLoader.blockTags(),
+                        settings.randomState().seed(),
+                        start.position(),
+                        start.position(),
+                        null);
+        var placementContext =
+                new StructureTemplate.PlacementContext(
+                        adapter, chunkBounds, processorContext, connectionShapeUpdates);
+        var processors =
+                new StructureProcessorList(List.of(BlockIgnoreProcessor.STRUCTURE_AND_AIR));
+        template.place(
+                placementContext,
+                start.position(),
+                start.rotation(),
+                processors,
+                false,
+                false,
+                LiquidSettings.APPLY_WATERLOGGING,
+                true);
         this.placeDriedGhast(start, adapter, settings);
     }
 
     /**
-     * Vanilla {@code NetherFossilPieces.NetherFossilPiece.placeDriedGhast}: a
-     * positional random seeded at the fossil bounding box center sometimes
-     * drops a dried ghast on the fossil floor. Vanilla runs this once per
-     * intersecting chunk against the chunk box encapsulated with the fossil
-     * box, which makes its in-box check always pass; the air check makes the
-     * repeated runs idempotent, and the adapter drops writes outside the
-     * current unit, so the chunk that owns the target position places it.
+     * Vanilla {@code NetherFossilPieces.NetherFossilPiece.placeDriedGhast}: a positional random
+     * seeded at the fossil bounding box center sometimes drops a dried ghast on the fossil floor.
+     * Vanilla runs this once per intersecting chunk against the chunk box encapsulated with the
+     * fossil box, which makes its in-box check always pass; the air check makes the repeated runs
+     * idempotent, and the adapter drops writes outside the current unit, so the chunk that owns the
+     * target position places it.
      */
-    private void placeDriedGhast(NetherFossilStart start, GenerationUnitAdapter adapter,
+    private void placeDriedGhast(
+            NetherFossilStart start,
+            GenerationUnitAdapter adapter,
             NoiseGeneratorSettingsRuntime settings) {
         var bounds = start.bounds();
-        var positionalRandom = new LegacyRandomSource(settings.randomState().seed())
-                .forkPositional()
-                .at(bounds.getCenter().blockX(), bounds.getCenter().blockY(), bounds.getCenter().blockZ());
+        var positionalRandom =
+                new LegacyRandomSource(settings.randomState().seed())
+                        .forkPositional()
+                        .at(
+                                bounds.getCenter().blockX(),
+                                bounds.getCenter().blockY(),
+                                bounds.getCenter().blockZ());
         if (positionalRandom.nextFloat() >= 0.5F) {
             return;
         }
@@ -169,31 +226,44 @@ public final class NetherFossilPlacer {
         }
 
         var rotation = Rotation.getRandom(positionalRandom);
-        adapter.setBlock(new BlockVec(x, y, z),
+        adapter.setBlock(
+                new BlockVec(x, y, z),
                 StructureTemplate.rotateBlockState(Block.DRIED_GHAST, rotation));
     }
 
     /**
-     * Vanilla {@code Beardifier.forStructuresInChunk} for the beard_thin
-     * support platform: like {@code StrongholdPlacer.contributeBeard}, this
-     * bypasses {@code StructurePlacer.beardifier}'s generic template path
-     * since fossils have their own start cache.
+     * Vanilla {@code Beardifier.forStructuresInChunk} for the beard_thin support platform: like
+     * {@code StrongholdPlacer.contributeBeard}, this bypasses {@code StructurePlacer.beardifier}'s
+     * generic template path since fossils have their own start cache.
      */
-    public void contributeBeard(int chunkX, int chunkZ, StructureSet structureSet,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer, List<Beardifier.Rigid> rigids) {
+    public void contributeBeard(
+            int chunkX,
+            int chunkZ,
+            StructureSet structureSet,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer,
+            List<Beardifier.Rigid> rigids) {
         var chunkStartBlockX = chunkX << 4;
         var chunkStartBlockZ = chunkZ << 4;
 
-        for (var sourceX = chunkX - REFERENCE_RADIUS; sourceX <= chunkX + REFERENCE_RADIUS; sourceX++) {
-            for (var sourceZ = chunkZ - REFERENCE_RADIUS; sourceZ <= chunkZ + REFERENCE_RADIUS; sourceZ++) {
+        for (var sourceX = chunkX - REFERENCE_RADIUS;
+                sourceX <= chunkX + REFERENCE_RADIUS;
+                sourceX++) {
+            for (var sourceZ = chunkZ - REFERENCE_RADIUS;
+                    sourceZ <= chunkZ + REFERENCE_RADIUS;
+                    sourceZ++) {
                 var start = this.startAt(sourceX, sourceZ, structureSet, settings, biomeZoomer);
                 // Vanilla StructureStart.getBoundingBox is inflated by 12 for
                 // terrain-adapting structures, so the reference test reaches
                 // 12 blocks beyond the raw bounds; the per-piece kernel then
                 // has the same reach for the single fossil piece
-                if (start == null || !intersectsXZ(start.bounds(), chunkStartBlockX - BEARD_CLOSE_DISTANCE,
-                        chunkStartBlockZ - BEARD_CLOSE_DISTANCE,
-                        chunkStartBlockX + 15 + BEARD_CLOSE_DISTANCE, chunkStartBlockZ + 15 + BEARD_CLOSE_DISTANCE)) {
+                if (start == null
+                        || !intersectsXZ(
+                                start.bounds(),
+                                chunkStartBlockX - BEARD_CLOSE_DISTANCE,
+                                chunkStartBlockZ - BEARD_CLOSE_DISTANCE,
+                                chunkStartBlockX + 15 + BEARD_CLOSE_DISTANCE,
+                                chunkStartBlockZ + 15 + BEARD_CLOSE_DISTANCE)) {
                     continue;
                 }
 
@@ -202,9 +272,12 @@ public final class NetherFossilPlacer {
         }
     }
 
-    private static boolean intersectsXZ(BoundingBox bounds, int minX, int minZ, int maxX, int maxZ) {
-        return bounds.maxX() >= minX && bounds.minX() <= maxX
-                && bounds.maxZ() >= minZ && bounds.minZ() <= maxZ;
+    private static boolean intersectsXZ(
+            BoundingBox bounds, int minX, int minZ, int maxX, int maxZ) {
+        return bounds.maxX() >= minX
+                && bounds.minX() <= maxX
+                && bounds.maxZ() >= minZ
+                && bounds.minZ() <= maxZ;
     }
 
     private Block[] liveChunkBlocks(int chunkX, int chunkZ, int[] surfaceHeights) {
@@ -224,25 +297,44 @@ public final class NetherFossilPlacer {
         return (long) chunkX & 0xFFFFFFFFL | ((long) chunkZ & 0xFFFFFFFFL) << 32;
     }
 
-    private NetherFossilStart startAt(int chunkX, int chunkZ, StructureSet structureSet,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer) {
+    private NetherFossilStart startAt(
+            int chunkX,
+            int chunkZ,
+            StructureSet structureSet,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer) {
         var key = packChunk(chunkX, chunkZ);
-        return this.starts.computeIfAbsent(key,
-                unused -> Optional.ofNullable(this.computeStart(chunkX, chunkZ, structureSet, settings, biomeZoomer)))
+        return this.starts
+                .computeIfAbsent(
+                        key,
+                        unused ->
+                                Optional.ofNullable(
+                                        this.computeStart(
+                                                chunkX,
+                                                chunkZ,
+                                                structureSet,
+                                                settings,
+                                                biomeZoomer)))
                 .orElse(null);
     }
 
-    private NetherFossilStart computeStart(int chunkX, int chunkZ, StructureSet structureSet,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer) {
+    private NetherFossilStart computeStart(
+            int chunkX,
+            int chunkZ,
+            StructureSet structureSet,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer) {
         var seed = settings.randomState().seed();
         var placement = structureSet.placement();
-        if (!placement.isStartChunk(chunkX, chunkZ, seed, settings.randomState().legacyRandomSource())) {
+        if (!placement.isStartChunk(
+                chunkX, chunkZ, seed, settings.randomState().legacyRandomSource())) {
             return null;
         }
 
         var structures = structureSet.structures();
         if (structures.size() == 1) {
-            return this.tryGenerate(structures.getFirst().structure(), chunkX, chunkZ, settings, biomeZoomer);
+            return this.tryGenerate(
+                    structures.getFirst().structure(), chunkX, chunkZ, settings, biomeZoomer);
         }
 
         var options = new ArrayList<>(structures);
@@ -265,8 +357,11 @@ public final class NetherFossilPlacer {
             }
 
             var selected = options.get(index);
-            if (this.structureLoader.getStructure(selected.structure()) instanceof NetherFossilStructure) {
-                var start = this.tryGenerate(selected.structure(), chunkX, chunkZ, settings, biomeZoomer);
+            if (this.structureLoader.getStructure(selected.structure())
+                    instanceof NetherFossilStructure) {
+                var start =
+                        this.tryGenerate(
+                                selected.structure(), chunkX, chunkZ, settings, biomeZoomer);
                 if (start != null) {
                     return start;
                 }
@@ -279,17 +374,20 @@ public final class NetherFossilPlacer {
     }
 
     /**
-     * Vanilla {@code NetherFossilStructure.findGenerationPoint}: a random
-     * column within the chunk, a height sampled from the structure's uniform
-     * height provider, then a downward scan of the raw noise column for the
-     * first air block directly above a solid or soul sand floor - giving up
-     * once the scan reaches sea level. The biome check
-     * ({@code Structure.isValidBiome}) runs at this resolved position, not
-     * the chunk center.
+     * Vanilla {@code NetherFossilStructure.findGenerationPoint}: a random column within the chunk,
+     * a height sampled from the structure's uniform height provider, then a downward scan of the
+     * raw noise column for the first air block directly above a solid or soul sand floor - giving
+     * up once the scan reaches sea level. The biome check ({@code Structure.isValidBiome}) runs at
+     * this resolved position, not the chunk center.
      */
-    private NetherFossilStart tryGenerate(Key structureKey, int chunkX, int chunkZ,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer) {
-        if (!(this.structureLoader.getStructure(structureKey) instanceof NetherFossilStructure fossil)) {
+    private NetherFossilStart tryGenerate(
+            Key structureKey,
+            int chunkX,
+            int chunkZ,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer) {
+        if (!(this.structureLoader.getStructure(structureKey)
+                instanceof NetherFossilStructure fossil)) {
             return null;
         }
         if (fossil.templates().isEmpty()) {
@@ -313,7 +411,8 @@ public final class NetherFossilPlacer {
         var localZ = blockZ - (chunkZ << 4);
 
         while (y > seaLevel) {
-            var currentAir = this.columnMask(terrainData, localX, localZ, y, settings) == TerrainData.AIR;
+            var currentAir =
+                    this.columnMask(terrainData, localX, localZ, y, settings) == TerrainData.AIR;
             y--;
             var belowSturdy = this.isSturdyFloor(terrainData, localX, localZ, y, settings);
             if (currentAir && belowSturdy) {
@@ -342,7 +441,11 @@ public final class NetherFossilPlacer {
         return new NetherFossilStart(templateKey, position, rotation, copyBounds(bounds));
     }
 
-    private boolean isSturdyFloor(TerrainData terrainData, int localX, int localZ, int y,
+    private boolean isSturdyFloor(
+            TerrainData terrainData,
+            int localX,
+            int localZ,
+            int y,
             NoiseGeneratorSettingsRuntime settings) {
         var mask = this.columnMask(terrainData, localX, localZ, y, settings);
         if (mask == TerrainData.SOLID || mask == TerrainData.SOLID_OTHER) {
@@ -352,7 +455,11 @@ public final class NetherFossilPlacer {
         return block != null && block.key().equals(SOUL_SAND);
     }
 
-    private byte columnMask(TerrainData terrainData, int localX, int localZ, int y,
+    private byte columnMask(
+            TerrainData terrainData,
+            int localX,
+            int localZ,
+            int y,
             NoiseGeneratorSettingsRuntime settings) {
         var yIndex = y - settings.minY();
         if (yIndex < 0 || yIndex >= settings.height()) {
@@ -362,7 +469,11 @@ public final class NetherFossilPlacer {
         return terrainData.stoneMask()[index];
     }
 
-    private Block columnBlock(TerrainData terrainData, int localX, int localZ, int y,
+    private Block columnBlock(
+            TerrainData terrainData,
+            int localX,
+            int localZ,
+            int y,
             NoiseGeneratorSettingsRuntime settings) {
         var yIndex = y - settings.minY();
         if (yIndex < 0 || yIndex >= settings.height()) {
@@ -372,16 +483,23 @@ public final class NetherFossilPlacer {
         return terrainData.blocks()[index];
     }
 
-    private TerrainData terrainData(int chunkX, int chunkZ, NoiseGeneratorSettingsRuntime settings) {
-        return this.terrainCache.computeIfAbsent(packChunk(chunkX, chunkZ),
+    private TerrainData terrainData(
+            int chunkX, int chunkZ, NoiseGeneratorSettingsRuntime settings) {
+        return this.terrainCache.computeIfAbsent(
+                packChunk(chunkX, chunkZ),
                 unused -> new TerrainGenerator(settings).generate(chunkX, chunkZ));
     }
 
     private static BoundingBox copyBounds(BoundingBox bounds) {
-        return new BoundingBox(bounds.minX(), bounds.minY(), bounds.minZ(),
-                bounds.maxX(), bounds.maxY(), bounds.maxZ());
+        return new BoundingBox(
+                bounds.minX(),
+                bounds.minY(),
+                bounds.minZ(),
+                bounds.maxX(),
+                bounds.maxY(),
+                bounds.maxZ());
     }
 
-    private record NetherFossilStart(Key template, BlockVec position, Rotation rotation, BoundingBox bounds) {
-    }
+    private record NetherFossilStart(
+            Key template, BlockVec position, Rotation rotation, BoundingBox bounds) {}
 }

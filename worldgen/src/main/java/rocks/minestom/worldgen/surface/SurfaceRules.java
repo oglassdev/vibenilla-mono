@@ -1,5 +1,6 @@
 package rocks.minestom.worldgen.surface;
 
+import java.util.List;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.Result;
@@ -13,16 +14,13 @@ import rocks.minestom.worldgen.biome.BiomeClimate;
 import rocks.minestom.worldgen.biome.BiomeZoomer;
 import rocks.minestom.worldgen.density.DensityFunction;
 
-import java.util.List;
-
 /**
- * Describes the surface material rule system that selects top-layer blocks from climate and noise inputs.
- * Surface rules are responsible for the visible ground: topsoil, stone, sand, and biome-specific
- * layers that sit on top of the raw terrain density.
+ * Describes the surface material rule system that selects top-layer blocks from climate and noise
+ * inputs. Surface rules are responsible for the visible ground: topsoil, stone, sand, and
+ * biome-specific layers that sit on top of the raw terrain density.
  */
 public final class SurfaceRules {
-    private SurfaceRules() {
-    }
+    private SurfaceRules() {}
 
     public static final Codec<RuleSource> CODEC = createRuleCodec();
 
@@ -34,163 +32,247 @@ public final class SurfaceRules {
     }
 
     private static Codec<RuleSource> createRuleCodec() {
-        return Codec.Recursive(self -> {
-            var conditionCodec = createConditionCodec();
+        return Codec.Recursive(
+                self -> {
+                    var conditionCodec = createConditionCodec();
 
-            var unionCodec = Codec.KEY.<RuleSource>unionType(
-                    "type",
-                    type -> structForRule(type, self, conditionCodec),
-                    rule -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    }
-            );
+                    var unionCodec =
+                            Codec.KEY.<RuleSource>unionType(
+                                    "type",
+                                    type -> structForRule(type, self, conditionCodec),
+                                    rule -> {
+                                        throw new UnsupportedOperationException(
+                                                "Encoding is not supported");
+                                    });
 
-            return new Codec<>() {
-                @Override
-                public <D> Result<RuleSource> decode(Transcoder<D> coder, D value) {
-                    return unionCodec.decode(coder, value);
-                }
+                    return new Codec<>() {
+                        @Override
+                        public <D> Result<RuleSource> decode(Transcoder<D> coder, D value) {
+                            return unionCodec.decode(coder, value);
+                        }
 
-                @Override
-                public <D> Result<D> encode(Transcoder<D> coder, RuleSource value) {
-                    throw new UnsupportedOperationException("Encoding is not supported");
-                }
-            };
-        });
+                        @Override
+                        public <D> Result<D> encode(Transcoder<D> coder, RuleSource value) {
+                            throw new UnsupportedOperationException("Encoding is not supported");
+                        }
+                    };
+                });
     }
 
     private static Codec<ConditionSource> createConditionCodec() {
-        return Codec.Recursive(self -> Codec.KEY.<ConditionSource>unionType(
-                "type",
-                type -> structForCondition(type, self),
-                condition -> {
-                    throw new UnsupportedOperationException("Encoding is not supported");
-                }
-        ));
+        return Codec.Recursive(
+                self ->
+                        Codec.KEY.<ConditionSource>unionType(
+                                "type",
+                                type -> structForCondition(type, self),
+                                condition -> {
+                                    throw new UnsupportedOperationException(
+                                            "Encoding is not supported");
+                                }));
     }
 
-    private static StructCodec<? extends RuleSource> structForRule(Key type, Codec<RuleSource> self, Codec<ConditionSource> conditionCodec) {
+    private static StructCodec<? extends RuleSource> structForRule(
+            Key type, Codec<RuleSource> self, Codec<ConditionSource> conditionCodec) {
         return switch (type.asString()) {
             case "minecraft:bandlands" -> StructCodec.struct(Bandlands::new);
-            case "minecraft:block" -> StructCodec.struct(
-                    "result_state", BlockCodec.CODEC, rule -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    BlockRuleSource::new
-            );
-            case "minecraft:sequence" -> StructCodec.struct(
-                    "sequence", self.list(), rule -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    SequenceRuleSource::new
-            );
-            case "minecraft:condition" -> StructCodec.struct(
-                    "if_true", conditionCodec, rule -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    "then_run", self, rule -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    ConditionRuleSource::new
-            );
-            default -> throw new IllegalStateException("Unsupported surface rule type: " + type.asString());
+            case "minecraft:block" ->
+                    StructCodec.struct(
+                            "result_state",
+                            BlockCodec.CODEC,
+                            rule -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            BlockRuleSource::new);
+            case "minecraft:sequence" ->
+                    StructCodec.struct(
+                            "sequence",
+                            self.list(),
+                            rule -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            SequenceRuleSource::new);
+            case "minecraft:condition" ->
+                    StructCodec.struct(
+                            "if_true",
+                            conditionCodec,
+                            rule -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            "then_run",
+                            self,
+                            rule -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            ConditionRuleSource::new);
+            default ->
+                    throw new IllegalStateException(
+                            "Unsupported surface rule type: " + type.asString());
         };
     }
 
-    private static StructCodec<? extends ConditionSource> structForCondition(Key type, Codec<ConditionSource> self) {
+    private static StructCodec<? extends ConditionSource> structForCondition(
+            Key type, Codec<ConditionSource> self) {
         return switch (type.asString()) {
-            case "minecraft:biome" -> StructCodec.struct(
-                    "biome_is", Codec.KEY.listOrSingle(), condition -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    BiomeConditionSource::new
-            );
-            case "minecraft:noise_threshold" -> StructCodec.struct(
-                    "noise", Codec.KEY, condition -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    "min_threshold", Codec.DOUBLE, condition -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    "max_threshold", Codec.DOUBLE, condition -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    "is_3d", Codec.BOOLEAN.optional(false), condition -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    NoiseThresholdConditionSource::new
-            );
-            case "minecraft:vertical_gradient" -> StructCodec.struct(
-                    "random_name", Codec.KEY, condition -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    "true_at_and_below", VerticalAnchor.CODEC, condition -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    "false_at_and_above", VerticalAnchor.CODEC, condition -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    VerticalGradientConditionSource::new
-            );
-            case "minecraft:y_above" -> StructCodec.struct(
-                    "anchor", VerticalAnchor.CODEC, condition -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    "surface_depth_multiplier", Codec.INT, condition -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    "add_stone_depth", Codec.BOOLEAN, condition -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    YAboveConditionSource::new
-            );
-            case "minecraft:water" -> StructCodec.struct(
-                    "offset", Codec.INT, condition -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    "surface_depth_multiplier", Codec.INT, condition -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    "add_stone_depth", Codec.BOOLEAN, condition -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    WaterConditionSource::new
-            );
-            case "minecraft:stone_depth" -> StructCodec.struct(
-                    "offset", Codec.INT, condition -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    "add_surface_depth", Codec.BOOLEAN, condition -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    "secondary_depth_range", Codec.INT, condition -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    "surface_type", Codec.STRING.transform(
-                            value -> switch (value) {
-                                case "floor" -> SurfaceType.FLOOR;
-                                case "ceiling" -> SurfaceType.CEILING;
-                                default -> throw new IllegalStateException("Unsupported surface_type: " + value);
+            case "minecraft:biome" ->
+                    StructCodec.struct(
+                            "biome_is",
+                            Codec.KEY.listOrSingle(),
+                            condition -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
                             },
-                            value -> {
-                                throw new UnsupportedOperationException("Encoding is not supported");
-                            }
-                    ), condition -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    StoneDepthConditionSource::new
-            );
-            case "minecraft:not" -> StructCodec.struct(
-                    "invert", self, condition -> {
-                        throw new UnsupportedOperationException("Encoding is not supported");
-                    },
-                    NotConditionSource::new
-            );
+                            BiomeConditionSource::new);
+            case "minecraft:noise_threshold" ->
+                    StructCodec.struct(
+                            "noise",
+                            Codec.KEY,
+                            condition -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            "min_threshold",
+                            Codec.DOUBLE,
+                            condition -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            "max_threshold",
+                            Codec.DOUBLE,
+                            condition -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            "is_3d",
+                            Codec.BOOLEAN.optional(false),
+                            condition -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            NoiseThresholdConditionSource::new);
+            case "minecraft:vertical_gradient" ->
+                    StructCodec.struct(
+                            "random_name",
+                            Codec.KEY,
+                            condition -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            "true_at_and_below",
+                            VerticalAnchor.CODEC,
+                            condition -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            "false_at_and_above",
+                            VerticalAnchor.CODEC,
+                            condition -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            VerticalGradientConditionSource::new);
+            case "minecraft:y_above" ->
+                    StructCodec.struct(
+                            "anchor",
+                            VerticalAnchor.CODEC,
+                            condition -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            "surface_depth_multiplier",
+                            Codec.INT,
+                            condition -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            "add_stone_depth",
+                            Codec.BOOLEAN,
+                            condition -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            YAboveConditionSource::new);
+            case "minecraft:water" ->
+                    StructCodec.struct(
+                            "offset",
+                            Codec.INT,
+                            condition -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            "surface_depth_multiplier",
+                            Codec.INT,
+                            condition -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            "add_stone_depth",
+                            Codec.BOOLEAN,
+                            condition -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            WaterConditionSource::new);
+            case "minecraft:stone_depth" ->
+                    StructCodec.struct(
+                            "offset",
+                            Codec.INT,
+                            condition -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            "add_surface_depth",
+                            Codec.BOOLEAN,
+                            condition -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            "secondary_depth_range",
+                            Codec.INT,
+                            condition -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            "surface_type",
+                            Codec.STRING.transform(
+                                    value ->
+                                            switch (value) {
+                                                case "floor" -> SurfaceType.FLOOR;
+                                                case "ceiling" -> SurfaceType.CEILING;
+                                                default ->
+                                                        throw new IllegalStateException(
+                                                                "Unsupported surface_type: "
+                                                                        + value);
+                                            },
+                                    value -> {
+                                        throw new UnsupportedOperationException(
+                                                "Encoding is not supported");
+                                    }),
+                            condition -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            StoneDepthConditionSource::new);
+            case "minecraft:not" ->
+                    StructCodec.struct(
+                            "invert",
+                            self,
+                            condition -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            NotConditionSource::new);
             case "minecraft:hole" -> StructCodec.struct(HoleConditionSource::new);
             case "minecraft:steep" -> StructCodec.struct(SteepConditionSource::new);
-            case "minecraft:above_preliminary_surface" -> StructCodec.struct(AbovePreliminarySurfaceConditionSource::new);
+            case "minecraft:above_preliminary_surface" ->
+                    StructCodec.struct(AbovePreliminarySurfaceConditionSource::new);
             case "minecraft:temperature" -> StructCodec.struct(TemperatureConditionSource::new);
-            default -> throw new IllegalStateException("Unsupported surface condition type: " + type.asString());
+            default ->
+                    throw new IllegalStateException(
+                            "Unsupported surface condition type: " + type.asString());
         };
     }
 
@@ -236,8 +318,14 @@ public final class SurfaceRules {
         private int stoneDepthAbove;
         private boolean steep;
 
-        public Context(SurfaceSystem system, RandomState randomState, BiomeResolver biomeResolver, BiomeZoomer biomeZoomer,
-                DensityFunction preliminarySurfaceLevel, int minY, int maxYInclusive) {
+        public Context(
+                SurfaceSystem system,
+                RandomState randomState,
+                BiomeResolver biomeResolver,
+                BiomeZoomer biomeZoomer,
+                DensityFunction preliminarySurfaceLevel,
+                int minY,
+                int maxYInclusive) {
             this.system = system;
             this.randomState = randomState;
             this.biomeResolver = biomeResolver;
@@ -328,20 +416,30 @@ public final class SurfaceRules {
                 var cellOrigin = (long) cellX << 32 | (cellZ & 0xFFFFFFFFL);
                 if (this.lastPreliminarySurfaceCellOrigin != cellOrigin) {
                     this.lastPreliminarySurfaceCellOrigin = cellOrigin;
-                    this.preliminarySurfaceCache[0] = this.samplePreliminarySurface(cellX << 4, cellZ << 4);
-                    this.preliminarySurfaceCache[1] = this.samplePreliminarySurface((cellX + 1) << 4, cellZ << 4);
-                    this.preliminarySurfaceCache[2] = this.samplePreliminarySurface(cellX << 4, (cellZ + 1) << 4);
-                    this.preliminarySurfaceCache[3] = this.samplePreliminarySurface((cellX + 1) << 4, (cellZ + 1) << 4);
+                    this.preliminarySurfaceCache[0] =
+                            this.samplePreliminarySurface(cellX << 4, cellZ << 4);
+                    this.preliminarySurfaceCache[1] =
+                            this.samplePreliminarySurface((cellX + 1) << 4, cellZ << 4);
+                    this.preliminarySurfaceCache[2] =
+                            this.samplePreliminarySurface(cellX << 4, (cellZ + 1) << 4);
+                    this.preliminarySurfaceCache[3] =
+                            this.samplePreliminarySurface((cellX + 1) << 4, (cellZ + 1) << 4);
                 }
 
-                var preliminarySurface = (int) Math.floor(VMath.lerp2(
-                        (this.blockX & 15) / 16.0,
-                        (this.blockZ & 15) / 16.0,
-                        this.preliminarySurfaceCache[0],
-                        this.preliminarySurfaceCache[1],
-                        this.preliminarySurfaceCache[2],
-                        this.preliminarySurfaceCache[3]));
-                this.minSurfaceLevel = preliminarySurface + this.surfaceDepth - HOW_FAR_BELOW_PRELIMINARY_SURFACE_LEVEL_TO_BUILD_SURFACE;
+                var preliminarySurface =
+                        (int)
+                                Math.floor(
+                                        VMath.lerp2(
+                                                (this.blockX & 15) / 16.0,
+                                                (this.blockZ & 15) / 16.0,
+                                                this.preliminarySurfaceCache[0],
+                                                this.preliminarySurfaceCache[1],
+                                                this.preliminarySurfaceCache[2],
+                                                this.preliminarySurfaceCache[3]));
+                this.minSurfaceLevel =
+                        preliminarySurface
+                                + this.surfaceDepth
+                                - HOW_FAR_BELOW_PRELIMINARY_SURFACE_LEVEL_TO_BUILD_SURFACE;
             }
             return this.minSurfaceLevel;
         }
@@ -349,8 +447,10 @@ public final class SurfaceRules {
         private int samplePreliminarySurface(int blockX, int blockZ) {
             var quartX = (blockX >> 2) << 2;
             var quartZ = (blockZ >> 2) << 2;
-            return (int) Math.floor(this.preliminarySurfaceLevel.compute(
-                    new DensityFunction.SinglePointContext(quartX, 0, quartZ)));
+            return (int)
+                    Math.floor(
+                            this.preliminarySurfaceLevel.compute(
+                                    new DensityFunction.SinglePointContext(quartX, 0, quartZ)));
         }
 
         public int waterHeight() {
@@ -397,7 +497,8 @@ public final class SurfaceRules {
         }
     }
 
-    private record ConditionRuleSource(ConditionSource condition, RuleSource thenRun) implements RuleSource {
+    private record ConditionRuleSource(ConditionSource condition, RuleSource thenRun)
+            implements RuleSource {
         @Override
         public Block tryApply(Context context) {
             if (!this.condition.test(context)) {
@@ -414,18 +515,27 @@ public final class SurfaceRules {
         }
     }
 
-    private record NoiseThresholdConditionSource(Key noise, double minThreshold, double maxThreshold, boolean is3d) implements ConditionSource {
+    private record NoiseThresholdConditionSource(
+            Key noise, double minThreshold, double maxThreshold, boolean is3d)
+            implements ConditionSource {
         @Override
         public boolean test(Context context) {
             var normalNoise = context.randomState().getOrCreateNoise(this.noise);
-            var value = this.is3d
-                    ? normalNoise.getValue((double) context.blockX(), (double) context.blockY(), (double) context.blockZ())
-                    : normalNoise.getValue((double) context.blockX(), 0.0D, (double) context.blockZ());
+            var value =
+                    this.is3d
+                            ? normalNoise.getValue(
+                                    (double) context.blockX(),
+                                    (double) context.blockY(),
+                                    (double) context.blockZ())
+                            : normalNoise.getValue(
+                                    (double) context.blockX(), 0.0D, (double) context.blockZ());
             return value >= this.minThreshold && value <= this.maxThreshold;
         }
     }
 
-    private record VerticalGradientConditionSource(Key randomName, VerticalAnchor trueAtAndBelow, VerticalAnchor falseAtAndAbove) implements ConditionSource {
+    private record VerticalGradientConditionSource(
+            Key randomName, VerticalAnchor trueAtAndBelow, VerticalAnchor falseAtAndAbove)
+            implements ConditionSource {
         @Override
         public boolean test(Context context) {
             var trueY = this.trueAtAndBelow.resolveY(context.minY(), context.maxYInclusive());
@@ -445,15 +555,21 @@ public final class SurfaceRules {
         }
     }
 
-    private record YAboveConditionSource(VerticalAnchor anchor, int surfaceDepthMultiplier, boolean addStoneDepth) implements ConditionSource {
+    private record YAboveConditionSource(
+            VerticalAnchor anchor, int surfaceDepthMultiplier, boolean addStoneDepth)
+            implements ConditionSource {
         @Override
         public boolean test(Context context) {
             var depth = this.addStoneDepth ? context.stoneDepthAbove() : 0;
-            return context.blockY() + depth >= this.anchor.resolveY(context.minY(), context.maxYInclusive()) + context.surfaceDepth() * this.surfaceDepthMultiplier;
+            return context.blockY() + depth
+                    >= this.anchor.resolveY(context.minY(), context.maxYInclusive())
+                            + context.surfaceDepth() * this.surfaceDepthMultiplier;
         }
     }
 
-    private record WaterConditionSource(int offset, int surfaceDepthMultiplier, boolean addStoneDepth) implements ConditionSource {
+    private record WaterConditionSource(
+            int offset, int surfaceDepthMultiplier, boolean addStoneDepth)
+            implements ConditionSource {
         @Override
         public boolean test(Context context) {
             if (context.waterHeight() == Integer.MIN_VALUE) {
@@ -461,17 +577,31 @@ public final class SurfaceRules {
             }
 
             var depth = this.addStoneDepth ? context.stoneDepthAbove() : 0;
-            return context.blockY() + depth >= context.waterHeight() + this.offset + context.surfaceDepth() * this.surfaceDepthMultiplier;
+            return context.blockY() + depth
+                    >= context.waterHeight()
+                            + this.offset
+                            + context.surfaceDepth() * this.surfaceDepthMultiplier;
         }
     }
 
-    private record StoneDepthConditionSource(int offset, boolean addSurfaceDepth, int secondaryDepthRange, SurfaceType surfaceType) implements ConditionSource {
+    private record StoneDepthConditionSource(
+            int offset, boolean addSurfaceDepth, int secondaryDepthRange, SurfaceType surfaceType)
+            implements ConditionSource {
         @Override
         public boolean test(Context context) {
             var ceiling = this.surfaceType == SurfaceType.CEILING;
             var stoneDepth = ceiling ? context.stoneDepthBelow() : context.stoneDepthAbove();
             var surfaceDepth = this.addSurfaceDepth ? context.surfaceDepth() : 0;
-            var secondary = this.secondaryDepthRange == 0 ? 0 : (int) map(context.surfaceSecondary(), -1.0D, 1.0D, 0.0D, (double) this.secondaryDepthRange);
+            var secondary =
+                    this.secondaryDepthRange == 0
+                            ? 0
+                            : (int)
+                                    map(
+                                            context.surfaceSecondary(),
+                                            -1.0D,
+                                            1.0D,
+                                            0.0D,
+                                            (double) this.secondaryDepthRange);
             return stoneDepth <= 1 + this.offset + surfaceDepth + secondary;
         }
     }
@@ -508,12 +638,17 @@ public final class SurfaceRules {
         @Override
         public boolean test(Context context) {
             return BiomeClimate.coldEnoughToSnow(
-                    context.biomeResolver(), context.biome(),
-                    context.blockX(), context.blockY(), context.blockZ(), context.seaLevel());
+                    context.biomeResolver(),
+                    context.biome(),
+                    context.blockX(),
+                    context.blockY(),
+                    context.blockZ(),
+                    context.seaLevel());
         }
     }
 
-    private static double map(double value, double inMin, double inMax, double outMin, double outMax) {
+    private static double map(
+            double value, double inMin, double inMax, double outMin, double outMax) {
         if (inMax - inMin == 0.0D) {
             return outMin;
         }

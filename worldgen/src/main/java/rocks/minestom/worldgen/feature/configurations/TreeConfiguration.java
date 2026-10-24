@@ -1,5 +1,6 @@
 package rocks.minestom.worldgen.feature.configurations;
 
+import java.util.List;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import rocks.minestom.worldgen.feature.FeatureConfiguration;
@@ -14,8 +15,6 @@ import rocks.minestom.worldgen.feature.treedecorators.TreeDecorators;
 import rocks.minestom.worldgen.feature.trunkplacers.TrunkPlacer;
 import rocks.minestom.worldgen.feature.trunkplacers.TrunkPlacers;
 
-import java.util.List;
-
 public record TreeConfiguration(
         BlockStateProvider trunkProvider,
         TrunkPlacer trunkPlacer,
@@ -24,17 +23,33 @@ public record TreeConfiguration(
         BlockStateProvider belowTrunkProvider,
         FeatureSize minimumSize,
         List<TreeDecorator> decorators,
-        boolean ignoreVines
-) implements FeatureConfiguration {
-    public static final Codec<TreeConfiguration> CODEC = StructCodec.struct(
-            "trunk_provider", BlockStateProviders.CODEC, TreeConfiguration::trunkProvider,
-            "trunk_placer", TrunkPlacers.CODEC, TreeConfiguration::trunkPlacer,
-            "foliage_provider", BlockStateProviders.CODEC, TreeConfiguration::foliageProvider,
-            "foliage_placer", FoliagePlacers.CODEC, TreeConfiguration::foliagePlacer,
-            "below_trunk_provider", BlockStateProviders.CODEC.optional(), TreeConfiguration::belowTrunkProvider,
-            "minimum_size", FeatureSizes.CODEC, TreeConfiguration::minimumSize,
-            "decorators", TreeDecorators.CODEC.list().optional(List.of()), TreeConfiguration::decorators,
-            "ignore_vines", Codec.BOOLEAN.optional(false), TreeConfiguration::ignoreVines,
-            TreeConfiguration::new
-    );
+        boolean ignoreVines)
+        implements FeatureConfiguration {
+    public static final Codec<TreeConfiguration> CODEC =
+            StructCodec.struct(
+                    "trunk_provider",
+                    BlockStateProviders.CODEC,
+                    TreeConfiguration::trunkProvider,
+                    "trunk_placer",
+                    TrunkPlacers.CODEC,
+                    TreeConfiguration::trunkPlacer,
+                    "foliage_provider",
+                    BlockStateProviders.CODEC,
+                    TreeConfiguration::foliageProvider,
+                    "foliage_placer",
+                    FoliagePlacers.CODEC,
+                    TreeConfiguration::foliagePlacer,
+                    "below_trunk_provider",
+                    BlockStateProviders.CODEC.optional(),
+                    TreeConfiguration::belowTrunkProvider,
+                    "minimum_size",
+                    FeatureSizes.CODEC,
+                    TreeConfiguration::minimumSize,
+                    "decorators",
+                    TreeDecorators.CODEC.list().optional(List.of()),
+                    TreeConfiguration::decorators,
+                    "ignore_vines",
+                    Codec.BOOLEAN.optional(false),
+                    TreeConfiguration::ignoreVines,
+                    TreeConfiguration::new);
 }

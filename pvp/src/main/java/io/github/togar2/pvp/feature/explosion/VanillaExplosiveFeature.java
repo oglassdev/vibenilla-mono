@@ -13,13 +13,14 @@ import io.github.togar2.pvp.feature.explosion.ExplosionFeature.IgnitionCause.ByP
 import io.github.togar2.pvp.feature.item.ItemDamageFeature;
 import io.github.togar2.pvp.utils.FluidUtil;
 import io.github.togar2.pvp.utils.ViewUtil;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.sound.Sound.Source;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.collision.BoundingBox;
 import net.minestom.server.coordinate.Point;
-import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EquipmentSlot;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
@@ -37,55 +38,130 @@ import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.world.attribute.BedRule;
 import net.minestom.server.world.attribute.EnvironmentAttribute;
 import net.minestom.server.world.attribute.EnvironmentAttribute.Modifier;
-import net.minestom.server.world.attribute.EnvironmentAttributeMap;
-import net.minestom.server.world.biome.Biome;
 import org.jspecify.annotations.Nullable;
 
-import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
-
-/**
- * Vanilla implementation of {@link ExplosiveFeature}
- */
+/** Vanilla implementation of {@link ExplosiveFeature} */
 public class VanillaExplosiveFeature implements ExplosiveFeature, RegistrableFeature {
-    private static final Set<String> WOOD_TYPES = Set.of(
-            "oak", "spruce", "birch", "jungle", "acacia", "cherry",
-            "dark_oak", "pale_oak", "mangrove", "bamboo"
-    );
-    private static final Set<String> LOG_WOOD_TYPES = Set.of(
-            "oak", "spruce", "birch", "jungle", "acacia", "cherry",
-            "dark_oak", "pale_oak", "mangrove"
-    );
-    private static final Set<String> COLORS = Set.of(
-            "white", "orange", "magenta", "light_blue", "yellow", "lime",
-            "pink", "gray", "light_gray", "cyan", "purple", "blue",
-            "brown", "green", "red", "black"
-    );
-    private static final Set<String> FLAMMABLE_BLOCKS = Set.of(
-            "mangrove_roots", "bookshelf", "tnt", "short_grass", "fern",
-            "dead_bush", "short_dry_grass", "tall_dry_grass", "sunflower",
-            "lilac", "rose_bush", "peony", "tall_grass", "large_fern",
-            "dandelion", "golden_dandelion", "poppy", "open_eyeblossom",
-            "closed_eyeblossom", "blue_orchid", "allium", "azure_bluet",
-            "red_tulip", "orange_tulip", "white_tulip", "pink_tulip",
-            "oxeye_daisy", "cornflower", "lily_of_the_valley", "torchflower",
-            "pitcher_plant", "wither_rose", "pink_petals", "wildflowers",
-            "leaf_litter", "cactus_flower", "vine", "coal_block", "hay_block",
-            "target", "pale_moss_block", "pale_moss_carpet", "pale_hanging_moss",
-            "dried_kelp_block", "bamboo", "bamboo_block", "stripped_bamboo_block",
-            "bamboo_mosaic", "bamboo_mosaic_slab", "bamboo_mosaic_stairs",
-            "scaffolding", "lectern", "composter", "sweet_berry_bush",
-            "beehive", "bee_nest", "azalea_leaves", "flowering_azalea_leaves",
-            "cave_vines", "cave_vines_plant", "spore_blossom", "azalea",
-            "flowering_azalea", "big_dripleaf", "big_dripleaf_stem",
-            "small_dripleaf", "hanging_roots", "glow_lichen", "firefly_bush",
-            "bush"
-    );
+    private static final Set<String> WOOD_TYPES =
+            Set.of(
+                    "oak",
+                    "spruce",
+                    "birch",
+                    "jungle",
+                    "acacia",
+                    "cherry",
+                    "dark_oak",
+                    "pale_oak",
+                    "mangrove",
+                    "bamboo");
+    private static final Set<String> LOG_WOOD_TYPES =
+            Set.of(
+                    "oak",
+                    "spruce",
+                    "birch",
+                    "jungle",
+                    "acacia",
+                    "cherry",
+                    "dark_oak",
+                    "pale_oak",
+                    "mangrove");
+    private static final Set<String> COLORS =
+            Set.of(
+                    "white",
+                    "orange",
+                    "magenta",
+                    "light_blue",
+                    "yellow",
+                    "lime",
+                    "pink",
+                    "gray",
+                    "light_gray",
+                    "cyan",
+                    "purple",
+                    "blue",
+                    "brown",
+                    "green",
+                    "red",
+                    "black");
+    private static final Set<String> FLAMMABLE_BLOCKS =
+            Set.of(
+                    "mangrove_roots",
+                    "bookshelf",
+                    "tnt",
+                    "short_grass",
+                    "fern",
+                    "dead_bush",
+                    "short_dry_grass",
+                    "tall_dry_grass",
+                    "sunflower",
+                    "lilac",
+                    "rose_bush",
+                    "peony",
+                    "tall_grass",
+                    "large_fern",
+                    "dandelion",
+                    "golden_dandelion",
+                    "poppy",
+                    "open_eyeblossom",
+                    "closed_eyeblossom",
+                    "blue_orchid",
+                    "allium",
+                    "azure_bluet",
+                    "red_tulip",
+                    "orange_tulip",
+                    "white_tulip",
+                    "pink_tulip",
+                    "oxeye_daisy",
+                    "cornflower",
+                    "lily_of_the_valley",
+                    "torchflower",
+                    "pitcher_plant",
+                    "wither_rose",
+                    "pink_petals",
+                    "wildflowers",
+                    "leaf_litter",
+                    "cactus_flower",
+                    "vine",
+                    "coal_block",
+                    "hay_block",
+                    "target",
+                    "pale_moss_block",
+                    "pale_moss_carpet",
+                    "pale_hanging_moss",
+                    "dried_kelp_block",
+                    "bamboo",
+                    "bamboo_block",
+                    "stripped_bamboo_block",
+                    "bamboo_mosaic",
+                    "bamboo_mosaic_slab",
+                    "bamboo_mosaic_stairs",
+                    "scaffolding",
+                    "lectern",
+                    "composter",
+                    "sweet_berry_bush",
+                    "beehive",
+                    "bee_nest",
+                    "azalea_leaves",
+                    "flowering_azalea_leaves",
+                    "cave_vines",
+                    "cave_vines_plant",
+                    "spore_blossom",
+                    "azalea",
+                    "flowering_azalea",
+                    "big_dripleaf",
+                    "big_dripleaf_stem",
+                    "small_dripleaf",
+                    "hanging_roots",
+                    "glow_lichen",
+                    "firefly_bush",
+                    "bush");
 
-    public static final DefinedFeature<VanillaExplosiveFeature> DEFINED = new DefinedFeature<>(
-            FeatureType.EXPLOSIVE, VanillaExplosiveFeature::new,
-            FeatureType.EXPLOSION, FeatureType.ITEM_DAMAGE
-    );
+    public static final DefinedFeature<VanillaExplosiveFeature> DEFINED =
+            new DefinedFeature<>(
+                    FeatureType.EXPLOSIVE,
+                    VanillaExplosiveFeature::new,
+                    FeatureType.EXPLOSION,
+                    FeatureType.ITEM_DAMAGE);
 
     private final FeatureConfiguration configuration;
 
@@ -106,178 +182,230 @@ public class VanillaExplosiveFeature implements ExplosiveFeature, RegistrableFea
     public void init(EventNode<EntityInstanceEvent> node) {
         node.addListener(PlayerUseItemOnBlockEvent.class, this::handleIgnitionItem);
 
-        node.addListener(PlayerUseItemOnBlockEvent.class, event -> {
-            if (event.getItemStack().material() != Material.END_CRYSTAL) return;
-            var instance = event.getInstance();
-            var block = instance.getBlock(event.getPosition());
-            if (!block.compare(Block.OBSIDIAN) && !block.compare(Block.BEDROCK)) return;
+        node.addListener(
+                PlayerUseItemOnBlockEvent.class,
+                event -> {
+                    if (event.getItemStack().material() != Material.END_CRYSTAL) return;
+                    var instance = event.getInstance();
+                    var block = instance.getBlock(event.getPosition());
+                    if (!block.compare(Block.OBSIDIAN) && !block.compare(Block.BEDROCK)) return;
 
-            this.installExplosionSupplier(instance);
+                    this.installExplosionSupplier(instance);
 
-            var above = event.getPosition().add(0, 1, 0);
-            if (!instance.getBlock(above).air()) return;
+                    var above = event.getPosition().add(0, 1, 0);
+                    if (!instance.getBlock(above).air()) return;
 
-            var spawnPosition = above.add(0.5, 0, 0.5);
-            var checkIntersect = new BoundingBox(1, 2, 1);
-            for (var entity : instance.getNearbyEntities(above, 3)) {
-                if (entity instanceof Player) continue;
+                    var spawnPosition = above.add(0.5, 0, 0.5);
+                    var checkIntersect = new BoundingBox(1, 2, 1);
+                    for (var entity : instance.getNearbyEntities(above, 3)) {
+                        if (entity instanceof Player) continue;
 
-                if (checkIntersect.intersectEntity(spawnPosition, entity)) return;
-            }
-            for (var player : instance.getPlayers()) {
-                if (player.getGameMode() == GameMode.SPECTATOR) continue;
+                        if (checkIntersect.intersectEntity(spawnPosition, entity)) return;
+                    }
+                    for (var player : instance.getPlayers()) {
+                        if (player.getGameMode() == GameMode.SPECTATOR) continue;
 
-                if (checkIntersect.intersectEntity(spawnPosition, player)) return;
-            }
+                        if (checkIntersect.intersectEntity(spawnPosition, player)) return;
+                    }
 
-            var crystalPlaceEvent = new CrystalPlaceEvent(event.getPlayer(), spawnPosition);
+                    var crystalPlaceEvent = new CrystalPlaceEvent(event.getPlayer(), spawnPosition);
 
-            EventDispatcher.callCancellable(crystalPlaceEvent, () -> {
-                var entity = new CrystalEntity();
-                entity.setInstance(instance, crystalPlaceEvent.getSpawnPosition());
+                    EventDispatcher.callCancellable(
+                            crystalPlaceEvent,
+                            () -> {
+                                var entity = new CrystalEntity();
+                                entity.setInstance(instance, crystalPlaceEvent.getSpawnPosition());
 
-                if (event.getPlayer().getGameMode() != GameMode.CREATIVE)
-                    event.getPlayer().setItemInHand(event.getHand(), event.getItemStack().consume(1));
-            });
-        });
+                                if (event.getPlayer().getGameMode() != GameMode.CREATIVE)
+                                    event.getPlayer()
+                                            .setItemInHand(
+                                                    event.getHand(),
+                                                    event.getItemStack().consume(1));
+                            });
+                });
 
-        node.addListener(PlayerBlockInteractEvent.class, event -> {
-            var instance = event.getInstance();
-            var block = instance.getBlock(event.getBlockPosition());
-            var player = event.getPlayer();
-            if (!block.compare(Block.RESPAWN_ANCHOR)) return;
+        node.addListener(
+                PlayerBlockInteractEvent.class,
+                event -> {
+                    var instance = event.getInstance();
+                    var block = instance.getBlock(event.getBlockPosition());
+                    var player = event.getPlayer();
+                    if (!block.compare(Block.RESPAWN_ANCHOR)) return;
 
-            if (event.getHand() == PlayerHand.MAIN
-                    && player.getItemInMainHand().material() != Material.GLOWSTONE
-                    && player.getItemInOffHand().material() == Material.GLOWSTONE)
-                return;
+                    if (event.getHand() == PlayerHand.MAIN
+                            && player.getItemInMainHand().material() != Material.GLOWSTONE
+                            && player.getItemInOffHand().material() == Material.GLOWSTONE) return;
 
-            var stack = player.getItemInHand(event.getHand());
-            if (this.shouldSuppressAnchorUse(player)) return;
+                    var stack = player.getItemInHand(event.getHand());
+                    if (this.shouldSuppressAnchorUse(player)) return;
 
-            var charges = Integer.parseInt(block.getProperty("charges"));
-            if (stack.material() == Material.GLOWSTONE && charges < 4) {
-                var anchorChargeEvent = new AnchorChargeEvent(player, event.getBlockPosition());
-                EventDispatcher.call(anchorChargeEvent);
+                    var charges = Integer.parseInt(block.getProperty("charges"));
+                    if (stack.material() == Material.GLOWSTONE && charges < 4) {
+                        var anchorChargeEvent =
+                                new AnchorChargeEvent(player, event.getBlockPosition());
+                        EventDispatcher.call(anchorChargeEvent);
 
-                if (!anchorChargeEvent.isCancelled()) {
-                    instance.setBlock(event.getBlockPosition(),
-                            block.withProperty("charges", String.valueOf(charges + 1)));
-                    ViewUtil.packetGroup(player).playSound(Sound.sound(
-                            SoundEvent.BLOCK_RESPAWN_ANCHOR_CHARGE, Source.BLOCK,
-                            1.0F, 1.0F
-                    ), event.getBlockPosition().add(0.5, 0.5, 0.5));
+                        if (!anchorChargeEvent.isCancelled()) {
+                            instance.setBlock(
+                                    event.getBlockPosition(),
+                                    block.withProperty("charges", String.valueOf(charges + 1)));
+                            ViewUtil.packetGroup(player)
+                                    .playSound(
+                                            Sound.sound(
+                                                    SoundEvent.BLOCK_RESPAWN_ANCHOR_CHARGE,
+                                                    Source.BLOCK,
+                                                    1.0F,
+                                                    1.0F),
+                                            event.getBlockPosition().add(0.5, 0.5, 0.5));
 
-                    if (player.getGameMode() != GameMode.CREATIVE)
-                        player.setItemInHand(event.getHand(), player.getItemInHand(event.getHand()).consume(1));
+                            if (player.getGameMode() != GameMode.CREATIVE)
+                                player.setItemInHand(
+                                        event.getHand(),
+                                        player.getItemInHand(event.getHand()).consume(1));
+
+                            event.setBlockingItemUse(true);
+                            return;
+                        }
+                    }
+
+                    if (charges == 0) return;
+
+                    var dimension =
+                            MinecraftServer.getDimensionTypeRegistry()
+                                    .get(instance.getDimensionType())
+                                    .attributes();
+                    var respawnAnchorEntry =
+                            dimension.entries().get(EnvironmentAttribute.RESPAWN_ANCHOR_WORKS);
+
+                    var worksInDimension =
+                            respawnAnchorEntry != null
+                                    ? (Boolean) respawnAnchorEntry.argument()
+                                    : EnvironmentAttribute.RESPAWN_ANCHOR_WORKS.defaultValue();
+
+                    var biome =
+                            MinecraftServer.getBiomeRegistry()
+                                    .get(
+                                            instance.getChunkAt(event.getBlockPosition())
+                                                    .getBiome(event.getBlockPosition()));
+
+                    boolean respawnAnchorWorks;
+                    if (biome.attributes()
+                            .entries()
+                            .containsKey(EnvironmentAttribute.RESPAWN_ANCHOR_WORKS)) {
+                        respawnAnchorWorks =
+                                ((Modifier<Boolean, Boolean>)
+                                                biome.attributes()
+                                                        .entries()
+                                                        .get(
+                                                                EnvironmentAttribute
+                                                                        .RESPAWN_ANCHOR_WORKS)
+                                                        .modifier())
+                                        .modify(
+                                                worksInDimension,
+                                                (Boolean)
+                                                        biome.attributes()
+                                                                .entries()
+                                                                .get(
+                                                                        EnvironmentAttribute
+                                                                                .RESPAWN_ANCHOR_WORKS)
+                                                                .argument());
+
+                    } else {
+                        respawnAnchorWorks = worksInDimension;
+                    }
+
+                    this.installExplosionSupplier(instance);
+
+                    if (instance.getExplosionSupplier() != null && !respawnAnchorWorks) {
+                        var anchorExplodeEvent =
+                                new AnchorExplodeEvent(player, event.getBlockPosition());
+                        EventDispatcher.callCancellable(
+                                anchorExplodeEvent,
+                                () -> {
+                                    instance.setBlock(event.getBlockPosition(), Block.AIR);
+                                    instance.explode(
+                                            (float) (event.getBlockPosition().x() + 0.5),
+                                            (float) (event.getBlockPosition().y() + 0.5),
+                                            (float) (event.getBlockPosition().z() + 0.5),
+                                            5.0F,
+                                            CompoundBinaryTag.builder()
+                                                    .putBoolean("fire", true)
+                                                    .putBoolean("anchor", true)
+                                                    .putBoolean(
+                                                            "anchorWater",
+                                                            this.isAnchorInWater(
+                                                                    instance,
+                                                                    event.getBlockPosition()))
+                                                    .build());
+                                    if (event.getHand() == PlayerHand.MAIN) {
+                                        player.swingMainHand();
+                                    } else {
+                                        player.swingOffHand();
+                                    }
+                                });
+                    }
 
                     event.setBlockingItemUse(true);
-                    return;
-                }
-            }
-
-            if (charges == 0) return;
-
-            var dimension = MinecraftServer.getDimensionTypeRegistry().get(instance.getDimensionType()).attributes();
-            var respawnAnchorEntry = dimension.entries().get(EnvironmentAttribute.RESPAWN_ANCHOR_WORKS);
-
-            var worksInDimension = respawnAnchorEntry != null
-                    ? (Boolean) respawnAnchorEntry.argument()
-                    : EnvironmentAttribute.RESPAWN_ANCHOR_WORKS.defaultValue();
-
-            var biome = MinecraftServer.getBiomeRegistry().get(instance.getChunkAt(event.getBlockPosition())
-                .getBiome(event.getBlockPosition()));
-
-            boolean respawnAnchorWorks;
-             if (biome.attributes().entries().containsKey(EnvironmentAttribute.RESPAWN_ANCHOR_WORKS)) {
-                 respawnAnchorWorks = ((Modifier<Boolean, Boolean>) biome.attributes().entries()
-                     .get(EnvironmentAttribute.RESPAWN_ANCHOR_WORKS).modifier())
-                     .modify(worksInDimension, (Boolean) biome.attributes().entries()
-                         .get(EnvironmentAttribute.RESPAWN_ANCHOR_WORKS).argument());
-
-             } else {
-                 respawnAnchorWorks = worksInDimension;
-             }
-
-            this.installExplosionSupplier(instance);
-
-            if (instance.getExplosionSupplier() != null && !respawnAnchorWorks) {
-                var anchorExplodeEvent = new AnchorExplodeEvent(player, event.getBlockPosition());
-                EventDispatcher.callCancellable(anchorExplodeEvent, () -> {
-                    instance.setBlock(event.getBlockPosition(), Block.AIR);
-                    instance.explode(
-                            (float) (event.getBlockPosition().x() + 0.5),
-                            (float) (event.getBlockPosition().y() + 0.5),
-                            (float) (event.getBlockPosition().z() + 0.5),
-                            5.0F,
-                            CompoundBinaryTag.builder()
-                                    .putBoolean("fire", true)
-                                    .putBoolean("anchor", true)
-                                    .putBoolean("anchorWater", this.isAnchorInWater(instance, event.getBlockPosition()))
-                                    .build()
-                    );
-                    if (event.getHand() == PlayerHand.MAIN) {
-                        player.swingMainHand();
-                    } else {
-                        player.swingOffHand();
-                    }
                 });
-            }
 
-            event.setBlockingItemUse(true);
-        });
+        node.addListener(
+                PlayerBlockInteractEvent.class,
+                event -> {
+                    if (event.getHand() != PlayerHand.MAIN) return;
 
-        node.addListener(PlayerBlockInteractEvent.class, event -> {
-            if (event.getHand() != PlayerHand.MAIN) return;
+                    var instance = event.getInstance();
+                    var clickedPosition = event.getBlockPosition();
+                    var clickedBlock = instance.getBlock(clickedPosition);
+                    if (!this.isBed(clickedBlock)) return;
 
-            var instance = event.getInstance();
-            var clickedPosition = event.getBlockPosition();
-            var clickedBlock = instance.getBlock(clickedPosition);
-            if (!this.isBed(clickedBlock)) return;
+                    var player = event.getPlayer();
+                    if (this.shouldSuppressBedUse(player)) return;
 
-            var player = event.getPlayer();
-            if (this.shouldSuppressBedUse(player)) return;
+                    var bedRule = this.resolveBedRule(instance, clickedPosition);
+                    if (bedRule == null || !bedRule.explodes()) return;
 
-            var bedRule = this.resolveBedRule(instance, clickedPosition);
-            if (bedRule == null || !bedRule.explodes()) return;
+                    var headPosition = (Point) clickedPosition;
+                    var headBlock = clickedBlock;
+                    if (!"head".equals(clickedBlock.getProperty("part"))) {
+                        headPosition =
+                                this.offsetByFacing(
+                                        clickedPosition, clickedBlock.getProperty("facing"));
+                        headBlock = instance.getBlock(headPosition);
+                        if (!this.isBed(headBlock)) return;
+                    }
 
-            var headPosition = (Point) clickedPosition;
-            var headBlock = clickedBlock;
-            if (!"head".equals(clickedBlock.getProperty("part"))) {
-                headPosition = this.offsetByFacing(clickedPosition, clickedBlock.getProperty("facing"));
-                headBlock = instance.getBlock(headPosition);
-                if (!this.isBed(headBlock)) return;
-            }
+                    this.installExplosionSupplier(instance);
+                    if (instance.getExplosionSupplier() == null) return;
 
-            this.installExplosionSupplier(instance);
-            if (instance.getExplosionSupplier() == null) return;
+                    var finalHeadPosition = headPosition;
+                    var finalHeadBlock = headBlock;
+                    var bedExplodeEvent = new BedExplodeEvent(player, finalHeadPosition);
+                    EventDispatcher.callCancellable(
+                            bedExplodeEvent,
+                            () -> {
+                                instance.setBlock(finalHeadPosition, Block.AIR);
 
-            var finalHeadPosition = headPosition;
-            var finalHeadBlock = headBlock;
-            var bedExplodeEvent = new BedExplodeEvent(player, finalHeadPosition);
-            EventDispatcher.callCancellable(bedExplodeEvent, () -> {
-                instance.setBlock(finalHeadPosition, Block.AIR);
+                                var facing = finalHeadBlock.getProperty("facing");
+                                var footPosition =
+                                        this.offsetByFacing(
+                                                finalHeadPosition, this.opposite(facing));
+                                if (this.isBed(instance.getBlock(footPosition))) {
+                                    instance.setBlock(footPosition, Block.AIR);
+                                }
 
-                var facing = finalHeadBlock.getProperty("facing");
-                var footPosition = this.offsetByFacing(finalHeadPosition, this.opposite(facing));
-                if (this.isBed(instance.getBlock(footPosition))) {
-                    instance.setBlock(footPosition, Block.AIR);
-                }
+                                instance.explode(
+                                        (float) (finalHeadPosition.x() + 0.5),
+                                        (float) (finalHeadPosition.y() + 0.5),
+                                        (float) (finalHeadPosition.z() + 0.5),
+                                        5.0F,
+                                        CompoundBinaryTag.builder()
+                                                .putBoolean("fire", true)
+                                                .putBoolean("anchor", true)
+                                                .build());
+                            });
 
-                instance.explode(
-                        (float) (finalHeadPosition.x() + 0.5),
-                        (float) (finalHeadPosition.y() + 0.5),
-                        (float) (finalHeadPosition.z() + 0.5),
-                        5.0F,
-                        CompoundBinaryTag.builder()
-                                .putBoolean("fire", true)
-                                .putBoolean("anchor", true)
-                                .build()
-                );
-            });
-
-            event.setBlockingItemUse(true);
-        });
+                    event.setBlockingItemUse(true);
+                });
     }
 
     private boolean isBed(Block block) {
@@ -318,7 +446,8 @@ public class VanillaExplosiveFeature implements ExplosiveFeature, RegistrableFea
         return material == Material.FLINT_AND_STEEL || material == Material.FIRE_CHARGE;
     }
 
-    private boolean lightBlock(Instance instance, Point position, Block block, Material material, Player player) {
+    private boolean lightBlock(
+            Instance instance, Point position, Block block, Material material, Player player) {
         if (!this.canLight(block)) return false;
 
         this.playIgnitionSound(player, material, position);
@@ -343,7 +472,8 @@ public class VanillaExplosiveFeature implements ExplosiveFeature, RegistrableFea
     }
 
     private boolean isCandle(String blockKey) {
-        return "candle".equals(blockKey) || blockKey.endsWith("_candle") && !blockKey.endsWith("_candle_cake");
+        return "candle".equals(blockKey)
+                || blockKey.endsWith("_candle") && !blockKey.endsWith("_candle_cake");
     }
 
     private boolean isCandleCake(String blockKey) {
@@ -366,12 +496,21 @@ public class VanillaExplosiveFeature implements ExplosiveFeature, RegistrableFea
         var fire = Block.FIRE.withProperty("age", "0");
         if (belowBlock.solid() || this.isFlammable(belowBlock)) return fire;
 
-        return fire
-                .withProperty("north", String.valueOf(this.isFlammable(instance.getBlock(position.add(0, 0, -1)))))
-                .withProperty("east", String.valueOf(this.isFlammable(instance.getBlock(position.add(1, 0, 0)))))
-                .withProperty("south", String.valueOf(this.isFlammable(instance.getBlock(position.add(0, 0, 1)))))
-                .withProperty("west", String.valueOf(this.isFlammable(instance.getBlock(position.add(-1, 0, 0)))))
-                .withProperty("up", String.valueOf(this.isFlammable(instance.getBlock(position.add(0, 1, 0)))));
+        return fire.withProperty(
+                        "north",
+                        String.valueOf(this.isFlammable(instance.getBlock(position.add(0, 0, -1)))))
+                .withProperty(
+                        "east",
+                        String.valueOf(this.isFlammable(instance.getBlock(position.add(1, 0, 0)))))
+                .withProperty(
+                        "south",
+                        String.valueOf(this.isFlammable(instance.getBlock(position.add(0, 0, 1)))))
+                .withProperty(
+                        "west",
+                        String.valueOf(this.isFlammable(instance.getBlock(position.add(-1, 0, 0)))))
+                .withProperty(
+                        "up",
+                        String.valueOf(this.isFlammable(instance.getBlock(position.add(0, 1, 0)))));
     }
 
     private boolean hasFlammableNeighbor(Instance instance, Point position) {
@@ -428,8 +567,10 @@ public class VanillaExplosiveFeature implements ExplosiveFeature, RegistrableFea
         if (player.getGameMode() == GameMode.CREATIVE) return;
 
         if (stack.material() == Material.FLINT_AND_STEEL) {
-            this.itemDamageFeature.damageEquipment(player, hand == PlayerHand.MAIN
-                    ? EquipmentSlot.MAIN_HAND : EquipmentSlot.OFF_HAND, 1);
+            this.itemDamageFeature.damageEquipment(
+                    player,
+                    hand == PlayerHand.MAIN ? EquipmentSlot.MAIN_HAND : EquipmentSlot.OFF_HAND,
+                    1);
         } else {
             player.setItemInHand(hand, stack.consume(1));
         }
@@ -437,15 +578,17 @@ public class VanillaExplosiveFeature implements ExplosiveFeature, RegistrableFea
 
     private void playIgnitionSound(Player player, Material material, Point position) {
         var random = ThreadLocalRandom.current();
-        var soundEvent = material == Material.FLINT_AND_STEEL
-                ? SoundEvent.ITEM_FLINTANDSTEEL_USE : SoundEvent.ITEM_FIRECHARGE_USE;
-        var pitch = material == Material.FLINT_AND_STEEL
-                ? random.nextFloat() * 0.4F + 0.8F : (random.nextFloat() - random.nextFloat()) * 0.2F + 1.0F;
+        var soundEvent =
+                material == Material.FLINT_AND_STEEL
+                        ? SoundEvent.ITEM_FLINTANDSTEEL_USE
+                        : SoundEvent.ITEM_FIRECHARGE_USE;
+        var pitch =
+                material == Material.FLINT_AND_STEEL
+                        ? random.nextFloat() * 0.4F + 0.8F
+                        : (random.nextFloat() - random.nextFloat()) * 0.2F + 1.0F;
 
-        ViewUtil.packetGroup(player).playSound(Sound.sound(
-                soundEvent, Source.BLOCK,
-                1.0F, pitch
-        ), position);
+        ViewUtil.packetGroup(player)
+                .playSound(Sound.sound(soundEvent, Source.BLOCK, 1.0F, pitch), position);
     }
 
     private boolean shouldSuppressBedUse(Player player) {
@@ -454,18 +597,31 @@ public class VanillaExplosiveFeature implements ExplosiveFeature, RegistrableFea
     }
 
     private @Nullable BedRule resolveBedRule(Instance instance, Point position) {
-        var dim = MinecraftServer.getDimensionTypeRegistry().get(instance.getDimensionType()).attributes();
+        var dim =
+                MinecraftServer.getDimensionTypeRegistry()
+                        .get(instance.getDimensionType())
+                        .attributes();
         var dimensionEntry = dim.entries().get(EnvironmentAttribute.BED_RULE);
         if (dimensionEntry == null) return null;
 
         var dimensionBedRule = (BedRule) dimensionEntry.argument();
 
-        var biome = MinecraftServer.getBiomeRegistry().get(instance.getChunkAt(position).getBiome(position));
+        var biome =
+                MinecraftServer.getBiomeRegistry()
+                        .get(instance.getChunkAt(position).getBiome(position));
         if (biome.attributes().entries().containsKey(EnvironmentAttribute.BED_RULE)) {
-            return ((Modifier<BedRule, BedRule>) biome.attributes().entries()
-                    .get(EnvironmentAttribute.BED_RULE).modifier())
-                    .modify(dimensionBedRule, (BedRule) biome.attributes().entries()
-                            .get(EnvironmentAttribute.BED_RULE).argument());
+            return ((Modifier<BedRule, BedRule>)
+                            biome.attributes()
+                                    .entries()
+                                    .get(EnvironmentAttribute.BED_RULE)
+                                    .modifier())
+                    .modify(
+                            dimensionBedRule,
+                            (BedRule)
+                                    biome.attributes()
+                                            .entries()
+                                            .get(EnvironmentAttribute.BED_RULE)
+                                            .argument());
         }
 
         return dimensionBedRule;

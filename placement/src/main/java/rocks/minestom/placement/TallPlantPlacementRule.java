@@ -50,25 +50,39 @@ public final class TallPlantPlacementRule extends BlockPlacementRule {
         var fromFace = updateState.fromFace();
 
         if ("lower".equals(half) && fromFace == BlockFace.TOP) {
-            var aboveBlock = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.TOP));
-            return aboveBlock.compare(this.block) && "upper".equals(aboveBlock.getProperty("half")) ? currentBlock : Block.AIR;
+            var aboveBlock =
+                    updateState
+                            .instance()
+                            .getBlock(updateState.blockPosition().relative(BlockFace.TOP));
+            return aboveBlock.compare(this.block) && "upper".equals(aboveBlock.getProperty("half"))
+                    ? currentBlock
+                    : Block.AIR;
         }
 
         if ("lower".equals(half) && fromFace == BlockFace.BOTTOM) {
-            var belowBlock = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+            var belowBlock =
+                    updateState
+                            .instance()
+                            .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
             return supportsVegetation(belowBlock) ? currentBlock : Block.AIR;
         }
 
         if ("upper".equals(half) && fromFace == BlockFace.BOTTOM) {
-            var belowBlock = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
-            return belowBlock.compare(this.block) && "lower".equals(belowBlock.getProperty("half")) ? currentBlock : Block.AIR;
+            var belowBlock =
+                    updateState
+                            .instance()
+                            .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+            return belowBlock.compare(this.block) && "lower".equals(belowBlock.getProperty("half"))
+                    ? currentBlock
+                    : Block.AIR;
         }
 
         return currentBlock;
     }
 
     private static boolean supportsVegetation(Block block) {
-        var supportsVegetation = MinecraftServer.process().blocks().getTag(Key.key("minecraft:supports_vegetation"));
+        var supportsVegetation =
+                MinecraftServer.process().blocks().getTag(Key.key("minecraft:supports_vegetation"));
         return supportsVegetation != null && supportsVegetation.contains(block);
     }
 }

@@ -24,7 +24,10 @@ public final class WallMountedPlacementRule extends BlockPlacementRule {
     }
 
     public WallMountedPlacementRule(
-            Block block, boolean waterloggable, boolean solidSupport, @Nullable BlockHandler handler) {
+            Block block,
+            boolean waterloggable,
+            boolean solidSupport,
+            @Nullable BlockHandler handler) {
         super(block);
         this.waterloggable = waterloggable;
         this.solidSupport = solidSupport;
@@ -36,9 +39,12 @@ public final class WallMountedPlacementRule extends BlockPlacementRule {
         var playerPosition = placementState.playerPosition();
         var yaw = playerPosition == null ? 0.0F : playerPosition.yaw();
         var pitch = playerPosition == null ? 0.0F : playerPosition.pitch();
-        var nearest = playerPosition == null
-                ? new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST}
-                : orderedByNearest(yaw, pitch);
+        var nearest =
+                playerPosition == null
+                        ? new BlockFace[] {
+                            BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST
+                        }
+                        : orderedByNearest(yaw, pitch);
         var instance = placementState.instance();
         var placePosition = placementState.placePosition();
         BlockFace facing = null;
@@ -60,7 +66,10 @@ public final class WallMountedPlacementRule extends BlockPlacementRule {
             return null;
         }
 
-        var configured = this.handler == null ? placementState.block() : placementState.block().withHandler(this.handler);
+        var configured =
+                this.handler == null
+                        ? placementState.block()
+                        : placementState.block().withHandler(this.handler);
 
         if (this.waterloggable) {
             var replaced = instance.getBlock(placePosition);
@@ -88,7 +97,8 @@ public final class WallMountedPlacementRule extends BlockPlacementRule {
             return currentBlock;
         }
 
-        var supportBlock = updateState.instance().getBlock(updateState.blockPosition().relative(supportFace));
+        var supportBlock =
+                updateState.instance().getBlock(updateState.blockPosition().relative(supportFace));
 
         if (!this.canAttach(supportBlock, facing)) {
             return Block.AIR;
@@ -114,7 +124,10 @@ public final class WallMountedPlacementRule extends BlockPlacementRule {
     }
 
     private static boolean isHorizontal(BlockFace face) {
-        return face == BlockFace.NORTH || face == BlockFace.SOUTH || face == BlockFace.EAST || face == BlockFace.WEST;
+        return face == BlockFace.NORTH
+                || face == BlockFace.SOUTH
+                || face == BlockFace.EAST
+                || face == BlockFace.WEST;
     }
 
     private static BlockFace[] orderedByNearest(float yawDegrees, float pitchDegrees) {
@@ -159,7 +172,15 @@ public final class WallMountedPlacementRule extends BlockPlacementRule {
         return makeDirectionArray(axisZ, axisY, axisX);
     }
 
-    private static BlockFace[] makeDirectionArray(BlockFace first, BlockFace second, BlockFace third) {
-        return new BlockFace[]{first, second, third, third.getOppositeFace(), second.getOppositeFace(), first.getOppositeFace()};
+    private static BlockFace[] makeDirectionArray(
+            BlockFace first, BlockFace second, BlockFace third) {
+        return new BlockFace[] {
+            first,
+            second,
+            third,
+            third.getOppositeFace(),
+            second.getOppositeFace(),
+            first.getOppositeFace()
+        };
     }
 }

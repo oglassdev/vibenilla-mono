@@ -4,17 +4,13 @@ import io.github.togar2.pvp.utils.BlockUtil;
 import io.github.togar2.pvp.utils.ChunkBlockGetter;
 import io.github.togar2.pvp.utils.RegistryTags;
 import io.github.togar2.pvp.utils.ViewUtil;
+import java.util.concurrent.ThreadLocalRandom;
 import net.kyori.adventure.sound.Sound;
 import net.minestom.server.MinecraftServer;
-import net.minestom.server.collision.BoundingBox;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Entity;
-import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.sound.SoundEvent;
-import net.minestom.server.world.DimensionType;
-
-import java.util.concurrent.ThreadLocalRandom;
 
 public class ChorusFruitUtil {
     private static boolean randomTeleport(Entity entity, Pos to) {
@@ -23,13 +19,16 @@ public class ChorusFruitUtil {
         if (!instance.isChunkLoaded(to)) return false;
 
         var blockGetter = new ChunkBlockGetter(instance, null, Block.AIR);
-        var minY = MinecraftServer.getDimensionTypeRegistry().get(instance.getDimensionType()).minY();
+        var minY =
+                MinecraftServer.getDimensionTypeRegistry().get(instance.getDimensionType()).minY();
 
         var y = to.y();
         var blockY = to.blockY();
         var landed = false;
         while (!landed && blockY > minY) {
-            if (RegistryTags.contains(RegistryTags.BLOCKS_MOTION, blockGetter.getBlock(to.blockX(), blockY - 1, to.blockZ()).registryKey())) {
+            if (RegistryTags.contains(
+                    RegistryTags.BLOCKS_MOTION,
+                    blockGetter.getBlock(to.blockX(), blockY - 1, to.blockZ()).registryKey())) {
                 landed = true;
             } else {
                 y--;
@@ -64,14 +63,17 @@ public class ChorusFruitUtil {
         var pitch = prevPosition.pitch();
         var yaw = prevPosition.yaw();
 
-        var dimensionType = MinecraftServer.getDimensionTypeRegistry().get(instance.getDimensionType());
+        var dimensionType =
+                MinecraftServer.getDimensionTypeRegistry().get(instance.getDimensionType());
         assert dimensionType != null;
 
         for (var index = 0; index < 16; index++) {
             var x = prevX + (random.nextDouble() - 0.5) * diameter;
-            var y = Math.clamp(prevY + (random.nextDouble() - 0.5) * diameter,
-                    dimensionType.minY(), dimensionType.minY()
-                            + dimensionType.logicalHeight() - 1);
+            var y =
+                    Math.clamp(
+                            prevY + (random.nextDouble() - 0.5) * diameter,
+                            dimensionType.minY(),
+                            dimensionType.minY() + dimensionType.logicalHeight() - 1);
             var z = prevZ + (random.nextDouble() - 0.5) * diameter;
 
             if (entity.getVehicle() != null) {
@@ -79,10 +81,14 @@ public class ChorusFruitUtil {
             }
 
             if (randomTeleport(entity, new Pos(x, y, z, yaw, pitch))) {
-                ViewUtil.viewersAndSelf(entity).playSound(Sound.sound(
-                        SoundEvent.ITEM_CHORUS_FRUIT_TELEPORT, Sound.Source.PLAYER,
-                        1.0F, 1.0F
-                ), entity);
+                ViewUtil.viewersAndSelf(entity)
+                        .playSound(
+                                Sound.sound(
+                                        SoundEvent.ITEM_CHORUS_FRUIT_TELEPORT,
+                                        Sound.Source.PLAYER,
+                                        1.0F,
+                                        1.0F),
+                                entity);
 
                 break;
             }

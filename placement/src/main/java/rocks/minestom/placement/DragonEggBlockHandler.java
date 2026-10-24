@@ -1,20 +1,17 @@
 package rocks.minestom.placement;
 
+import java.util.concurrent.ThreadLocalRandom;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.BlockHandler;
 
-import java.util.concurrent.ThreadLocalRandom;
-
 public final class DragonEggBlockHandler implements BlockHandler {
     public static final DragonEggBlockHandler INSTANCE = new DragonEggBlockHandler();
     private static final Key KEY = Key.key("placement:dragon_egg");
 
-    private DragonEggBlockHandler() {
-
-    }
+    private DragonEggBlockHandler() {}
 
     @Override
     public Key getKey() {
@@ -33,12 +30,14 @@ public final class DragonEggBlockHandler implements BlockHandler {
         var dimension = instance.getCachedDimensionType();
 
         for (var attempt = 0; attempt < 1000; attempt++) {
-            var candidate = new BlockVec(
-                    origin.blockX() + random.nextInt(16) - random.nextInt(16),
-                    origin.blockY() + random.nextInt(8) - random.nextInt(8),
-                    origin.blockZ() + random.nextInt(16) - random.nextInt(16));
+            var candidate =
+                    new BlockVec(
+                            origin.blockX() + random.nextInt(16) - random.nextInt(16),
+                            origin.blockY() + random.nextInt(8) - random.nextInt(8),
+                            origin.blockZ() + random.nextInt(16) - random.nextInt(16));
 
-            if (candidate.blockY() < dimension.minY() || candidate.blockY() >= dimension.maxY()
+            if (candidate.blockY() < dimension.minY()
+                    || candidate.blockY() >= dimension.maxY()
                     || !instance.getWorldBorder().inBounds(candidate)
                     || !instance.getBlock(candidate).air()
                     || instance.getBlock(candidate.relative(BlockFace.BOTTOM)).air()) {

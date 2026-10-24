@@ -1,5 +1,7 @@
 package rocks.minestom.worldgen;
 
+import java.nio.file.Path;
+import java.util.List;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.codec.Transcoder;
 import net.minestom.server.instance.generator.Generator;
@@ -13,9 +15,6 @@ import rocks.minestom.worldgen.preset.WorldPreset;
 import rocks.minestom.worldgen.structure.loader.StructureLoader;
 import rocks.minestom.worldgen.structure.placement.StructurePlacer;
 import rocks.minestom.worldgen.surface.DataPackBiomeResolver;
-
-import java.nio.file.Path;
-import java.util.List;
 
 public final class WorldGenerators {
     private final DataPack dataPack;
@@ -38,44 +37,40 @@ public final class WorldGenerators {
         this.biomeResolver = new DataPackBiomeResolver(this.dataPack);
         this.featureLoader = new FeatureLoader(this.dataPack);
         this.structureLoader = new StructureLoader(this.dataPack);
-        this.overworldStructures = new StructurePlacer(
-                this.structureLoader,
-                this.featureLoader,
-                List.of(
-                        Key.key("minecraft:strongholds"),
-                        Key.key("minecraft:mineshafts"),
-                        Key.key("minecraft:villages"),
-                        Key.key("minecraft:igloos"),
-                        Key.key("minecraft:shipwrecks"),
-                        Key.key("minecraft:ruined_portals"),
-                        Key.key("minecraft:ocean_ruins"),
-                        Key.key("minecraft:pillager_outposts"),
-                        Key.key("minecraft:ancient_cities"),
-                        Key.key("minecraft:trail_ruins"),
-                        Key.key("minecraft:trial_chambers"),
-                        Key.key("minecraft:desert_pyramids"),
-                        Key.key("minecraft:jungle_temples"),
-                        Key.key("minecraft:swamp_huts"),
-                        Key.key("minecraft:buried_treasures"),
-                        Key.key("minecraft:ocean_monuments"),
-                        Key.key("minecraft:woodland_mansions")
-                )
-        );
-        this.netherStructures = new StructurePlacer(
-                this.structureLoader,
-                this.featureLoader,
-                List.of(
-                        Key.key("minecraft:nether_fossils"),
-                        Key.key("minecraft:nether_complexes")
-                )
-        );
-        this.endStructures = new StructurePlacer(
-                this.structureLoader,
-                this.featureLoader,
-                List.of(
-                        Key.key("minecraft:end_cities")
-                )
-        );
+        this.overworldStructures =
+                new StructurePlacer(
+                        this.structureLoader,
+                        this.featureLoader,
+                        List.of(
+                                Key.key("minecraft:strongholds"),
+                                Key.key("minecraft:mineshafts"),
+                                Key.key("minecraft:villages"),
+                                Key.key("minecraft:igloos"),
+                                Key.key("minecraft:shipwrecks"),
+                                Key.key("minecraft:ruined_portals"),
+                                Key.key("minecraft:ocean_ruins"),
+                                Key.key("minecraft:pillager_outposts"),
+                                Key.key("minecraft:ancient_cities"),
+                                Key.key("minecraft:trail_ruins"),
+                                Key.key("minecraft:trial_chambers"),
+                                Key.key("minecraft:desert_pyramids"),
+                                Key.key("minecraft:jungle_temples"),
+                                Key.key("minecraft:swamp_huts"),
+                                Key.key("minecraft:buried_treasures"),
+                                Key.key("minecraft:ocean_monuments"),
+                                Key.key("minecraft:woodland_mansions")));
+        this.netherStructures =
+                new StructurePlacer(
+                        this.structureLoader,
+                        this.featureLoader,
+                        List.of(
+                                Key.key("minecraft:nether_fossils"),
+                                Key.key("minecraft:nether_complexes")));
+        this.endStructures =
+                new StructurePlacer(
+                        this.structureLoader,
+                        this.featureLoader,
+                        List.of(Key.key("minecraft:end_cities")));
         this.biomeZoomSeed = BiomeZoomer.obfuscateSeed(seed);
         var worldPresetJson = this.dataPack.readWorldPreset(Key.key("minecraft:normal"));
         var worldPreset = WorldPreset.CODEC.decode(Transcoder.JSON, worldPresetJson).orElseThrow();
@@ -95,15 +90,33 @@ public final class WorldGenerators {
     }
 
     public Generator overworld() {
-        return new WorldGenerator(this.overworldSettings, this.overworldBiomes, this.biomeZoomSeed, this.biomeResolver, this.featureLoader, this.overworldStructures);
+        return new WorldGenerator(
+                this.overworldSettings,
+                this.overworldBiomes,
+                this.biomeZoomSeed,
+                this.biomeResolver,
+                this.featureLoader,
+                this.overworldStructures);
     }
 
     public Generator nether() {
-        return new WorldGenerator(this.netherSettings, this.netherBiomes, this.biomeZoomSeed, this.biomeResolver, this.featureLoader, this.netherStructures);
+        return new WorldGenerator(
+                this.netherSettings,
+                this.netherBiomes,
+                this.biomeZoomSeed,
+                this.biomeResolver,
+                this.featureLoader,
+                this.netherStructures);
     }
 
     public Generator end() {
-        return new WorldGenerator(this.endSettings, this.endBiomes, this.biomeZoomSeed, this.biomeResolver, this.featureLoader, this.endStructures);
+        return new WorldGenerator(
+                this.endSettings,
+                this.endBiomes,
+                this.biomeZoomSeed,
+                this.biomeResolver,
+                this.featureLoader,
+                this.endStructures);
     }
 
     public Path dataPackRoot() {
@@ -149,12 +162,14 @@ public final class WorldGenerators {
     static WorldPreset.Dimension getDimension(WorldPreset preset, Key dimension) {
         var result = preset.dimensions().get(dimension);
         if (result == null) {
-            throw new IllegalStateException("World preset is missing dimension: " + dimension.asString());
+            throw new IllegalStateException(
+                    "World preset is missing dimension: " + dimension.asString());
         }
         return result;
     }
 
-    private static BiomeSource createBiomeSource(WorldPreset.Generator generator, NoiseGeneratorSettingsRuntime settings) {
+    private static BiomeSource createBiomeSource(
+            WorldPreset.Generator generator, NoiseGeneratorSettingsRuntime settings) {
         var biomeSource = generator.biomeSource();
 
         if (biomeSource instanceof FixedBiomeSourceSettings(var biome)) {
@@ -170,6 +185,7 @@ public final class WorldGenerators {
             return new TheEndBiomeSource(settings.climateSampler());
         }
 
-        throw new IllegalStateException("Unsupported biome source: " + biomeSource.getClass().getName());
+        throw new IllegalStateException(
+                "Unsupported biome source: " + biomeSource.getClass().getName());
     }
 }

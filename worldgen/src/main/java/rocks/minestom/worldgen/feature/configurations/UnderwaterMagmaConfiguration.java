@@ -7,8 +7,8 @@ import rocks.minestom.worldgen.feature.FeatureConfiguration;
 public record UnderwaterMagmaConfiguration(
         int floorSearchRange,
         int placementRadiusAroundFloor,
-        float placementProbabilityPerValidPosition
-) implements FeatureConfiguration {
+        float placementProbabilityPerValidPosition)
+        implements FeatureConfiguration {
 
     public static UnderwaterMagmaConfiguration fromJson(JsonElement json) {
         var object = json.getAsJsonObject();

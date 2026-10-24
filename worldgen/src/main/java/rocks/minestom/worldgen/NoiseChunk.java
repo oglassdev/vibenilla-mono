@@ -1,22 +1,18 @@
 package rocks.minestom.worldgen;
 
-import rocks.minestom.worldgen.density.DensityFunction;
-import rocks.minestom.worldgen.density.DensityFunctions;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import rocks.minestom.worldgen.density.DensityFunction;
+import rocks.minestom.worldgen.density.DensityFunctions;
 
 /**
- * A context object for noise-based chunk generation that pre-computes density
- * values
- * at cell corners and uses tri-linear interpolation between them. This is the
- * core
- * optimization that makes chunk generation fast - instead of computing density
- * at
- * every block, we only compute at cell corners and interpolate the rest.
+ * A context object for noise-based chunk generation that pre-computes density values at cell
+ * corners and uses tri-linear interpolation between them. This is the core optimization that makes
+ * chunk generation fast - instead of computing density at every block, we only compute at cell
+ * corners and interpolate the rest.
  */
 public final class NoiseChunk implements DensityFunction.Context {
     private final int cellWidth;
@@ -64,10 +60,11 @@ public final class NoiseChunk implements DensityFunction.Context {
     }
 
     /**
-     * Highest preliminary surface level over the given block area, sampled every 4 blocks.
-     * Mirrors vanilla {@code NoiseChunk.maxPreliminarySurfaceLevel}.
+     * Highest preliminary surface level over the given block area, sampled every 4 blocks. Mirrors
+     * vanilla {@code NoiseChunk.maxPreliminarySurfaceLevel}.
      */
-    public int maxPreliminarySurfaceLevel(int minBlockX, int minBlockZ, int maxBlockX, int maxBlockZ) {
+    public int maxPreliminarySurfaceLevel(
+            int minBlockX, int minBlockZ, int maxBlockX, int maxBlockZ) {
         var maxY = Integer.MIN_VALUE;
         for (var blockZ = minBlockZ; blockZ <= maxBlockZ; blockZ += 4) {
             for (var blockX = minBlockX; blockX <= maxBlockX; blockX += 4) {
@@ -81,18 +78,21 @@ public final class NoiseChunk implements DensityFunction.Context {
     }
 
     /**
-     * Estimated terrain surface height for the column, quantized to quart positions and
-     * cached per column. Mirrors vanilla {@code NoiseChunk.preliminarySurfaceLevel}.
+     * Estimated terrain surface height for the column, quantized to quart positions and cached per
+     * column. Mirrors vanilla {@code NoiseChunk.preliminarySurfaceLevel}.
      */
     public int preliminarySurfaceLevel(int blockX, int blockZ) {
         var quantizedX = (blockX >> 2) << 2;
         var quantizedZ = (blockZ >> 2) << 2;
         var key = ((long) quantizedX << 32) | (quantizedZ & 0xFFFFFFFFL);
-        return this.preliminarySurfaceLevelCache.computeIfAbsent(key, columnKey -> {
-            var x = (int) (columnKey >> 32);
-            var z = (int) columnKey.longValue();
-            return VMath.floor(this.preliminarySurfaceLevel.compute(new SinglePointContext(x, 0, z)));
-        });
+        return this.preliminarySurfaceLevelCache.computeIfAbsent(
+                key,
+                columnKey -> {
+                    var x = (int) (columnKey >> 32);
+                    var z = (int) columnKey.longValue();
+                    return VMath.floor(
+                            this.preliminarySurfaceLevel.compute(new SinglePointContext(x, 0, z)));
+                });
     }
 
     @Override
@@ -131,15 +131,12 @@ public final class NoiseChunk implements DensityFunction.Context {
     }
 
     /**
-     * Wraps density functions to use our interpolation and caching system.
-     * The Interpolated marker is the key - it tells us to sample corners and
-     * interpolate.
-     * Callers wrapping additional functions (aquifer noises, ore vein channels)
-     * must do so before {@link #initializeForFirstCellX()} so any interpolators
-     * they create are included in the slice fill.
-     * Note: Cannot use computeIfAbsent here because wrapNew recursively calls wrap,
-     * which would modify the map during computation and cause
-     * ConcurrentModificationException.
+     * Wraps density functions to use our interpolation and caching system. The Interpolated marker
+     * is the key - it tells us to sample corners and interpolate. Callers wrapping additional
+     * functions (aquifer noises, ore vein channels) must do so before {@link
+     * #initializeForFirstCellX()} so any interpolators they create are included in the slice fill.
+     * Note: Cannot use computeIfAbsent here because wrapNew recursively calls wrap, which would
+     * modify the map during computation and cause ConcurrentModificationException.
      */
     public DensityFunction wrap(DensityFunction function) {
         var existing = this.wrapped.get(function);
@@ -195,10 +192,14 @@ public final class NoiseChunk implements DensityFunction.Context {
         if (function instanceof DensityFunctions.Mapped(var type, var input2)) {
             return new DensityFunctions.Mapped(type, this.wrap(input2));
         }
-        if (function instanceof DensityFunctions.RangeChoice(
-                var input1, var minInclusive, var maxExclusive, var whenInRange,
-                var whenOutOfRange
-        )) {
+        if (function
+                instanceof
+                DensityFunctions.RangeChoice(
+                        var input1,
+                        var minInclusive,
+                        var maxExclusive,
+                        var whenInRange,
+                        var whenOutOfRange)) {
             return new DensityFunctions.RangeChoice(
                     this.wrap(input1),
                     minInclusive,
@@ -206,10 +207,15 @@ public final class NoiseChunk implements DensityFunction.Context {
                     this.wrap(whenInRange),
                     this.wrap(whenOutOfRange));
         }
-        if (function instanceof DensityFunctions.ShiftedNoise(
-                var shiftX, var shiftY, var shiftZ, var xzScale, var yScale,
-                var noise1
-        )) {
+        if (function
+                instanceof
+                DensityFunctions.ShiftedNoise(
+                        var shiftX,
+                        var shiftY,
+                        var shiftZ,
+                        var xzScale,
+                        var yScale,
+                        var noise1)) {
             return new DensityFunctions.ShiftedNoise(
                     this.wrap(shiftX),
                     this.wrap(shiftY),
@@ -224,20 +230,17 @@ public final class NoiseChunk implements DensityFunction.Context {
         if (function instanceof DensityFunctions.Spline(var spline1)) {
             return new DensityFunctions.Spline(this.wrapSplineNode(spline1));
         }
-        if (function instanceof DensityFunctions.WeirdScaledSampler(
-                var input, var noise,
-                var rarityValueMapper
-        )) {
+        if (function
+                instanceof
+                DensityFunctions.WeirdScaledSampler(var input, var noise, var rarityValueMapper)) {
             return new DensityFunctions.WeirdScaledSampler(
-                    this.wrap(input),
-                    noise,
-                    rarityValueMapper);
+                    this.wrap(input), noise, rarityValueMapper);
         }
-        if (function instanceof DensityFunctions.IntervalSelect(var input, var thresholds, var functions)) {
+        if (function
+                instanceof
+                DensityFunctions.IntervalSelect(var input, var thresholds, var functions)) {
             return new DensityFunctions.IntervalSelect(
-                    this.wrap(input),
-                    thresholds,
-                    functions.stream().map(this::wrap).toList());
+                    this.wrap(input), thresholds, functions.stream().map(this::wrap).toList());
         }
 
         // Leaf nodes that don't need wrapping
@@ -248,26 +251,26 @@ public final class NoiseChunk implements DensityFunction.Context {
         if (node instanceof DensityFunctions.SplineConstant) {
             return node;
         }
-        if (node instanceof DensityFunctions.SplineMultipoint(
-                var coordinate, var locations, var values,
-                var derivatives
-        )) {
+        if (node
+                instanceof
+                DensityFunctions.SplineMultipoint(
+                        var coordinate,
+                        var locations,
+                        var values,
+                        var derivatives)) {
             var wrappedValues = new ArrayList<DensityFunctions.SplineNode>(values.size());
             for (var value : values) {
                 wrappedValues.add(this.wrapSplineNode(value));
             }
             return new DensityFunctions.SplineMultipoint(
-                    this.wrap(coordinate),
-                    locations,
-                    wrappedValues,
-                    derivatives);
+                    this.wrap(coordinate), locations, wrappedValues, derivatives);
         }
         return node;
     }
 
     /**
-     * Initialize for the first cell X slice. Pre-computes density at all corners
-     * for the first X slice.
+     * Initialize for the first cell X slice. Pre-computes density at all corners for the first X
+     * slice.
      */
     public void initializeForFirstCellX() {
         if (this.interpolating) {
@@ -278,17 +281,13 @@ public final class NoiseChunk implements DensityFunction.Context {
         this.fillSlice(true, this.firstCellX);
     }
 
-    /**
-     * Advance to the next cell X slice. Swaps the slices and fills the new one.
-     */
+    /** Advance to the next cell X slice. Swaps the slices and fills the new one. */
     public void advanceCellX(int cellOffsetX) {
         this.fillSlice(false, this.firstCellX + cellOffsetX + 1);
         this.cellStartBlockX = (this.firstCellX + cellOffsetX) * this.cellWidth;
     }
 
-    /**
-     * Fill a slice (either slice0 or slice1) with density values at cell corners.
-     */
+    /** Fill a slice (either slice0 or slice1) with density values at cell corners. */
     private void fillSlice(boolean useSlice0, int cellX) {
         this.cellStartBlockX = cellX * this.cellWidth;
         this.inCellX = 0;
@@ -312,8 +311,8 @@ public final class NoiseChunk implements DensityFunction.Context {
     }
 
     /**
-     * Select the cell at Y index cellY and Z index cellZ for processing.
-     * Loads corner values from the pre-computed slices.
+     * Select the cell at Y index cellY and Z index cellZ for processing. Loads corner values from
+     * the pre-computed slices.
      */
     public void selectCellYZ(int cellY, int cellZ) {
         for (var interpolator : this.interpolators) {
@@ -323,9 +322,7 @@ public final class NoiseChunk implements DensityFunction.Context {
         this.cellStartBlockZ = (this.firstCellZ + cellZ) * this.cellWidth;
     }
 
-    /**
-     * Update interpolation for the given Y position within the cell.
-     */
+    /** Update interpolation for the given Y position within the cell. */
     public void updateForY(int blockY, double deltaY) {
         this.inCellY = blockY - this.cellStartBlockY;
         for (var interpolator : this.interpolators) {
@@ -333,9 +330,7 @@ public final class NoiseChunk implements DensityFunction.Context {
         }
     }
 
-    /**
-     * Update interpolation for the given X position within the cell.
-     */
+    /** Update interpolation for the given X position within the cell. */
     public void updateForX(int blockX, double deltaX) {
         this.inCellX = blockX - this.cellStartBlockX;
         for (var interpolator : this.interpolators) {
@@ -343,9 +338,7 @@ public final class NoiseChunk implements DensityFunction.Context {
         }
     }
 
-    /**
-     * Update interpolation for the given Z position within the cell.
-     */
+    /** Update interpolation for the given Z position within the cell. */
     public void updateForZ(int blockZ, double deltaZ) {
         this.inCellZ = blockZ - this.cellStartBlockZ;
         this.interpolationCounter++;
@@ -354,25 +347,19 @@ public final class NoiseChunk implements DensityFunction.Context {
         }
     }
 
-    /**
-     * Get the interpolated density value at the current position.
-     */
+    /** Get the interpolated density value at the current position. */
     public double getInterpolatedDensity() {
         return this.finalDensity.compute(this);
     }
 
-    /**
-     * Swap slice0 and slice1 after advancing X.
-     */
+    /** Swap slice0 and slice1 after advancing X. */
     public void swapSlices() {
         for (var interpolator : this.interpolators) {
             interpolator.swapSlices();
         }
     }
 
-    /**
-     * Stop interpolation mode.
-     */
+    /** Stop interpolation mode. */
     public void stopInterpolation() {
         if (!this.interpolating) {
             throw new IllegalStateException("Not interpolating");
@@ -381,9 +368,8 @@ public final class NoiseChunk implements DensityFunction.Context {
     }
 
     /**
-     * Interpolator that samples density at 8 cell corners and interpolates between
-     * them.
-     * This is the core optimization.
+     * Interpolator that samples density at 8 cell corners and interpolates between them. This is
+     * the core optimization.
      */
     private final class NoiseInterpolator implements DensityFunction {
         private final DensityFunction noiseFiller;
@@ -452,16 +438,14 @@ public final class NoiseChunk implements DensityFunction.Context {
                 return this.noiseFiller.compute(context);
             }
             if (!NoiseChunk.this.interpolating) {
-                throw new IllegalStateException("Trying to sample interpolator outside the interpolation loop");
+                throw new IllegalStateException(
+                        "Trying to sample interpolator outside the interpolation loop");
             }
             return this.value;
         }
     }
 
-    /**
-     * Cache that stores the last computed value and reuses it if the position
-     * hasn't changed.
-     */
+    /** Cache that stores the last computed value and reuses it if the position hasn't changed. */
     private final class CacheOnce implements DensityFunction {
         private final DensityFunction function;
         private long lastCounter = -1L;
@@ -485,9 +469,7 @@ public final class NoiseChunk implements DensityFunction.Context {
         }
     }
 
-    /**
-     * Cache that only cares about X,Z position (ignores Y).
-     */
+    /** Cache that only cares about X,Z position (ignores Y). */
     private static final class Cache2D implements DensityFunction {
         private final DensityFunction function;
         private long lastPos2D = Long.MIN_VALUE;
@@ -515,9 +497,7 @@ public final class NoiseChunk implements DensityFunction.Context {
         }
     }
 
-    /**
-     * Pre-computes values at quart positions for the whole chunk once.
-     */
+    /** Pre-computes values at quart positions for the whole chunk once. */
     private final class FlatCache implements DensityFunction {
         private final DensityFunction function;
         private final double[] values;
@@ -537,8 +517,8 @@ public final class NoiseChunk implements DensityFunction.Context {
                 var blockX = (this.firstNoiseX + quartX) * 4;
                 for (var quartZ = 0; quartZ < this.sizeXZ; quartZ++) {
                     var blockZ = (this.firstNoiseZ + quartZ) * 4;
-                    this.values[quartX + quartZ * this.sizeXZ] = function
-                            .compute(new SinglePointContext(blockX, 0, blockZ));
+                    this.values[quartX + quartZ * this.sizeXZ] =
+                            function.compute(new SinglePointContext(blockX, 0, blockZ));
                 }
             }
         }
@@ -556,9 +536,7 @@ public final class NoiseChunk implements DensityFunction.Context {
         }
     }
 
-    /**
-     * Pre-computes values for all positions in a cell.
-     */
+    /** Pre-computes values for all positions in a cell. */
     private final class CacheAllInCell implements DensityFunction {
         private final DensityFunction function;
         private final double[] values;
@@ -567,8 +545,11 @@ public final class NoiseChunk implements DensityFunction.Context {
 
         CacheAllInCell(DensityFunction function) {
             this.function = function;
-            this.values = new double[NoiseChunk.this.cellWidth * NoiseChunk.this.cellWidth
-                    * NoiseChunk.this.cellHeight];
+            this.values =
+                    new double
+                            [NoiseChunk.this.cellWidth
+                                    * NoiseChunk.this.cellWidth
+                                    * NoiseChunk.this.cellHeight];
         }
 
         @Override
@@ -577,8 +558,12 @@ public final class NoiseChunk implements DensityFunction.Context {
                 return this.function.compute(context);
             }
 
-            var cellY = (NoiseChunk.this.cellStartBlockY / NoiseChunk.this.cellHeight) - NoiseChunk.this.cellNoiseMinY;
-            var cellZ = (NoiseChunk.this.cellStartBlockZ / NoiseChunk.this.cellWidth) - NoiseChunk.this.firstCellZ;
+            var cellY =
+                    (NoiseChunk.this.cellStartBlockY / NoiseChunk.this.cellHeight)
+                            - NoiseChunk.this.cellNoiseMinY;
+            var cellZ =
+                    (NoiseChunk.this.cellStartBlockZ / NoiseChunk.this.cellWidth)
+                            - NoiseChunk.this.firstCellZ;
 
             if (cellY != this.lastCellY || cellZ != this.lastCellZ) {
                 this.lastCellY = cellY;
@@ -586,7 +571,11 @@ public final class NoiseChunk implements DensityFunction.Context {
                 this.fillCell();
             }
 
-            var index = this.getIndex(NoiseChunk.this.inCellX, NoiseChunk.this.inCellY, NoiseChunk.this.inCellZ);
+            var index =
+                    this.getIndex(
+                            NoiseChunk.this.inCellX,
+                            NoiseChunk.this.inCellY,
+                            NoiseChunk.this.inCellZ);
             return this.values[index];
         }
 
@@ -601,7 +590,8 @@ public final class NoiseChunk implements DensityFunction.Context {
                     NoiseChunk.this.inCellX = x;
                     for (var z = 0; z < NoiseChunk.this.cellWidth; z++) {
                         NoiseChunk.this.inCellZ = z;
-                        this.values[this.getIndex(x, y, z)] = this.function.compute(NoiseChunk.this);
+                        this.values[this.getIndex(x, y, z)] =
+                                this.function.compute(NoiseChunk.this);
                     }
                 }
             }
@@ -612,14 +602,13 @@ public final class NoiseChunk implements DensityFunction.Context {
         }
 
         private int getIndex(int x, int y, int z) {
-            return ((NoiseChunk.this.cellHeight - 1 - y) * NoiseChunk.this.cellWidth + x) * NoiseChunk.this.cellWidth
+            return ((NoiseChunk.this.cellHeight - 1 - y) * NoiseChunk.this.cellWidth + x)
+                            * NoiseChunk.this.cellWidth
                     + z;
         }
     }
 
-    /**
-     * Simple context for a single point, used for pre-computation.
-     */
+    /** Simple context for a single point, used for pre-computation. */
     private record SinglePointContext(int x, int y, int z) implements DensityFunction.Context {
         @Override
         public int blockX() {

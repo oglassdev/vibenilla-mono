@@ -4,8 +4,8 @@ import rocks.minestom.worldgen.random.LegacyRandomSource;
 import rocks.minestom.worldgen.random.RandomSource;
 
 /**
- * Exact port of vanilla {@code CanyonWorldCarver} (ravines), including the
- * per-height width factors and per-step radius jitter.
+ * Exact port of vanilla {@code CanyonWorldCarver} (ravines), including the per-height width factors
+ * and per-step radius jitter.
  */
 public final class CanyonWorldCarver extends WorldCarver<CanyonCarverConfiguration> {
 
@@ -20,11 +20,19 @@ public final class CanyonWorldCarver extends WorldCarver<CanyonCarverConfigurati
     }
 
     @Override
-    public boolean carve(CarvingContext context, CanyonCarverConfiguration configuration, RandomSource random,
-            int sourceChunkX, int sourceChunkZ) {
+    public boolean carve(
+            CarvingContext context,
+            CanyonCarverConfiguration configuration,
+            RandomSource random,
+            int sourceChunkX,
+            int sourceChunkZ) {
         var maxDistance = (this.getRange() * 2 - 1) * 16;
         double x = sourceChunkX * 16 + random.nextInt(16);
-        var y = configuration.base().y().sample(random, context.minGenY(), context.maxGenYInclusive());
+        var y =
+                configuration
+                        .base()
+                        .y()
+                        .sample(random, context.minGenY(), context.maxGenYInclusive());
         double z = sourceChunkZ * 16 + random.nextInt(16);
         var horizontalRotation = random.nextFloat() * (float) (Math.PI * 2);
         var verticalRotation = configuration.verticalRotation().sample(random);
@@ -69,7 +77,9 @@ public final class CanyonWorldCarver extends WorldCarver<CanyonCarverConfigurati
             var horizontalRadius = 1.5 + sin(currentStep * (float) Math.PI / distance) * thickness;
             var verticalRadius = horizontalRadius * yScale;
             horizontalRadius *= configuration.shape().horizontalRadiusFactor().sample(random);
-            verticalRadius = this.updateVerticalRadius(configuration, random, verticalRadius, distance, currentStep);
+            verticalRadius =
+                    this.updateVerticalRadius(
+                            configuration, random, verticalRadius, distance, currentStep);
             var xc = cos(verticalRotation);
             var xs = sin(verticalRotation);
             x += cos(horizontalRotation) * xc;
@@ -83,7 +93,14 @@ public final class CanyonWorldCarver extends WorldCarver<CanyonCarverConfigurati
             xRota += (random.nextFloat() - random.nextFloat()) * random.nextFloat() * 2.0F;
             yRota += (random.nextFloat() - random.nextFloat()) * random.nextFloat() * 4.0F;
             if (random.nextInt(4) != 0) {
-                if (!canReach(context.chunkX(), context.chunkZ(), x, z, currentStep, distance, thickness)) {
+                if (!canReach(
+                        context.chunkX(),
+                        context.chunkZ(),
+                        x,
+                        z,
+                        currentStep,
+                        distance,
+                        thickness)) {
                     return;
                 }
 
@@ -95,14 +112,15 @@ public final class CanyonWorldCarver extends WorldCarver<CanyonCarverConfigurati
                         z,
                         horizontalRadius,
                         verticalRadius,
-                        (skipContext, xd, yd, zd, blockY) -> this.shouldSkip(skipContext, widthFactorPerHeight, xd, yd,
-                                zd, blockY));
+                        (skipContext, xd, yd, zd, blockY) ->
+                                this.shouldSkip(
+                                        skipContext, widthFactorPerHeight, xd, yd, zd, blockY));
             }
         }
     }
 
-    private float[] initWidthFactors(CarvingContext context, CanyonCarverConfiguration configuration,
-            RandomSource random) {
+    private float[] initWidthFactors(
+            CarvingContext context, CanyonCarverConfiguration configuration, RandomSource random) {
         var depth = context.genDepth();
         var widthFactorPerHeight = new float[depth];
         var widthFactor = 1.0F;
@@ -118,15 +136,25 @@ public final class CanyonWorldCarver extends WorldCarver<CanyonCarverConfigurati
         return widthFactorPerHeight;
     }
 
-    private double updateVerticalRadius(CanyonCarverConfiguration configuration, RandomSource random,
-            double verticalRadius, float distance, float currentStep) {
+    private double updateVerticalRadius(
+            CanyonCarverConfiguration configuration,
+            RandomSource random,
+            double verticalRadius,
+            float distance,
+            float currentStep) {
         var verticalMultiplier = 1.0F - Math.abs(0.5F - currentStep / distance) * 2.0F;
-        var factor = configuration.shape().verticalRadiusDefaultFactor()
-                + configuration.shape().verticalRadiusCenterFactor() * verticalMultiplier;
+        var factor =
+                configuration.shape().verticalRadiusDefaultFactor()
+                        + configuration.shape().verticalRadiusCenterFactor() * verticalMultiplier;
         return factor * verticalRadius * (random.nextFloat() * (1.0F - 0.75F) + 0.75F);
     }
 
-    private boolean shouldSkip(CarvingContext context, float[] widthFactorPerHeight, double xd, double yd, double zd,
+    private boolean shouldSkip(
+            CarvingContext context,
+            float[] widthFactorPerHeight,
+            double xd,
+            double yd,
+            double zd,
             int blockY) {
         var yIndex = blockY - context.minGenY();
         return (xd * xd + zd * zd) * widthFactorPerHeight[yIndex - 1] + yd * yd / 6.0 >= 1.0;

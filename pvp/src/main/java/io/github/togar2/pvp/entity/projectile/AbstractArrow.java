@@ -6,9 +6,12 @@ import io.github.togar2.pvp.feature.enchantment.EnchantmentFeature;
 import io.github.togar2.pvp.feature.enchantment.VanillaEnchantmentFeature;
 import io.github.togar2.pvp.utils.EntityUtil;
 import io.github.togar2.pvp.utils.FluidUtil;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import net.kyori.adventure.sound.Sound;
 import net.minestom.server.ServerFlag;
-import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.*;
 import net.minestom.server.entity.attribute.Attribute;
@@ -23,11 +26,6 @@ import net.minestom.server.network.packet.server.play.CollectItemPacket;
 import net.minestom.server.sound.SoundEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 
 public abstract class AbstractArrow extends CustomEntityProjectile {
     private static final double ARROW_BASE_DAMAGE = 2.0;
@@ -47,13 +45,18 @@ public abstract class AbstractArrow extends CustomEntityProjectile {
 
     protected final EnchantmentFeature enchantmentFeature;
 
-    public AbstractArrow(@Nullable Entity shooter, @NotNull EntityType entityType,
-                         EnchantmentFeature enchantmentFeature) {
+    public AbstractArrow(
+            @Nullable Entity shooter,
+            @NotNull EntityType entityType,
+            EnchantmentFeature enchantmentFeature) {
         super(shooter, entityType);
         this.enchantmentFeature = enchantmentFeature;
 
         if (shooter instanceof Player) {
-            pickupMode = ((Player) shooter).getGameMode() == GameMode.CREATIVE ? PickupMode.CREATIVE_ONLY : PickupMode.ALLOWED;
+            pickupMode =
+                    ((Player) shooter).getGameMode() == GameMode.CREATIVE
+                            ? PickupMode.CREATIVE_ONLY
+                            : PickupMode.ALLOWED;
         }
     }
 
@@ -82,36 +85,44 @@ public abstract class AbstractArrow extends CustomEntityProjectile {
 
         // Pickup
         if (canBePickedUp(null)) {
-            instance.getEntityTracker().nearbyEntities(position, 5, EntityTracker.Target.PLAYERS,
-                    player -> {
-                        if (!player.canPickupItem()) return;
+            instance.getEntityTracker()
+                    .nearbyEntities(
+                            position,
+                            5,
+                            EntityTracker.Target.PLAYERS,
+                            player -> {
+                                if (!player.canPickupItem()) return;
 
-                        // Do not pickup if not visible
-                        if (!isViewer(player))
-                            return;
+                                // Do not pickup if not visible
+                                if (!isViewer(player)) return;
 
-                        if (isRemoved() || !canBePickedUp(player))
-                            return;
+                                if (isRemoved() || !canBePickedUp(player)) return;
 
-                        if (player.getBoundingBox().expand(1, 0.5F, 1)
-                                .intersectEntity(player.getPosition(), this)) {
-                            var event = new PickupEntityEvent(player, this);
-                            EventDispatcher.callCancellable(event, () -> {
-                                if (pickup(player)) {
-                                    player.sendPacketToViewersAndSelf(new CollectItemPacket(
-                                            getEntityId(), player.getEntityId(), 1
-                                    ));
-                                    remove();
+                                if (player.getBoundingBox()
+                                        .expand(1, 0.5F, 1)
+                                        .intersectEntity(player.getPosition(), this)) {
+                                    var event = new PickupEntityEvent(player, this);
+                                    EventDispatcher.callCancellable(
+                                            event,
+                                            () -> {
+                                                if (pickup(player)) {
+                                                    player.sendPacketToViewersAndSelf(
+                                                            new CollectItemPacket(
+                                                                    getEntityId(),
+                                                                    player.getEntityId(),
+                                                                    1));
+                                                    remove();
+                                                }
+                                            });
                                 }
                             });
-                        }
-                    });
         }
 
         if (this.isOnFire()) {
             var currentInstance = this.getInstance();
 
-            if (currentInstance != null && (FluidUtil.isTouchingWater(this) || FluidUtil.isInRain(this))) {
+            if (currentInstance != null
+                    && (FluidUtil.isTouchingWater(this) || FluidUtil.isInRain(this))) {
                 this.fireTicksLeft = 0;
                 this.entityMeta.setOnFire(false);
             }
@@ -136,17 +147,18 @@ public abstract class AbstractArrow extends CustomEntityProjectile {
     public void onUnstuck() {
         ((AbstractArrowMeta) getEntityMeta()).setInGround(false);
         var random = ThreadLocalRandom.current();
-        setVelocity(velocity.mul(
-                random.nextDouble() * 0.2,
-                random.nextDouble() * 0.2,
-                random.nextDouble() * 0.2
-        ));
+        setVelocity(
+                velocity.mul(
+                        random.nextDouble() * 0.2,
+                        random.nextDouble() * 0.2,
+                        random.nextDouble() * 0.2));
         ticks = 0;
     }
 
     @Override
     protected boolean canHit(Entity entity) {
-        return (super.canHit(entity) || entity instanceof CrystalEntity) && !piercingIgnore.contains(entity.getEntityId());
+        return (super.canHit(entity) || entity instanceof CrystalEntity)
+                && !piercingIgnore.contains(entity.getEntityId());
     }
 
     @Override
@@ -156,8 +168,7 @@ public abstract class AbstractArrow extends CustomEntityProjectile {
         var random = ThreadLocalRandom.current();
 
         var movementSpeed = getVelocity().length() / ServerFlag.SERVER_TICKS_PER_SECOND;
-        var damage = (int) Math.ceil(Math.clamp(
-                movementSpeed * baseDamage, 0.0, 2.147483647E9));
+        var damage = (int) Math.ceil(Math.clamp(movementSpeed * baseDamage, 0.0, 2.147483647E9));
 
         if (getPiercingLevel() > 0) {
             if (piercingIgnore.size() >= getPiercingLevel() + 1) {
@@ -175,20 +186,28 @@ public abstract class AbstractArrow extends CustomEntityProjectile {
         damage = (int) Math.min(damage + this.damageBonus, 2.147483647E9);
 
         var shooter = getShooter();
-        var damageObj = new Damage(
-                DamageType.ARROW,
-                this, Objects.requireNonNullElse(shooter, this),
-                null, damage
-        );
+        var damageObj =
+                new Damage(
+                        DamageType.ARROW,
+                        this,
+                        Objects.requireNonNullElse(shooter, this),
+                        null,
+                        damage);
         var position = this.getPosition();
 
         if (entity instanceof CrystalEntity crystal) {
             if (crystal.damage(damageObj)) {
                 if (!isSilent()) {
-                    getViewersAsAudience().playSound(Sound.sound(
-                            getSound(), Sound.Source.NEUTRAL,
-                            1.0F, 1.2F / (random.nextFloat() * 0.2F + 0.9F)
-                    ), position.x(), position.y(), position.z());
+                    getViewersAsAudience()
+                            .playSound(
+                                    Sound.sound(
+                                            getSound(),
+                                            Sound.Source.NEUTRAL,
+                                            1.0F,
+                                            1.2F / (random.nextFloat() * 0.2F + 0.9F)),
+                                    position.x(),
+                                    position.y(),
+                                    position.z());
                 }
 
                 return getPiercingLevel() <= 0;
@@ -213,14 +232,20 @@ public abstract class AbstractArrow extends CustomEntityProjectile {
             }
 
             if (knockback > 0) {
-                var knockbackResistance = Math.max(0.0, 1.0 - living.getAttributeValue(Attribute.KNOCKBACK_RESISTANCE));
-                var horizontal = this.getVelocity()
-                        .mul(1, 0, 1)
-                        .normalize().mul(knockback * 0.6 * knockbackResistance);
+                var knockbackResistance =
+                        Math.max(
+                                0.0,
+                                1.0 - living.getAttributeValue(Attribute.KNOCKBACK_RESISTANCE));
+                var horizontal =
+                        this.getVelocity()
+                                .mul(1, 0, 1)
+                                .normalize()
+                                .mul(knockback * 0.6 * knockbackResistance);
 
                 if (horizontal.lengthSquared() > 0) {
-                    var knockbackVec = new Vec(horizontal.x(), 0.1, horizontal.z())
-                            .mul(ServerFlag.SERVER_TICKS_PER_SECOND);
+                    var knockbackVec =
+                            new Vec(horizontal.x(), 0.1, horizontal.z())
+                                    .mul(ServerFlag.SERVER_TICKS_PER_SECOND);
                     living.setVelocity(living.getVelocity().add(knockbackVec));
                 }
             }
@@ -232,22 +257,36 @@ public abstract class AbstractArrow extends CustomEntityProjectile {
 
             onHurt(living);
 
-            if (living != shooter && living instanceof Player
-                    && shooter instanceof Player shooterPlayer && !isSilent()) {
-                shooterPlayer.sendPacket(new ChangeGameStatePacket(ChangeGameStatePacket.Reason.ARROW_HIT_PLAYER, 0.0F));
+            if (living != shooter
+                    && living instanceof Player
+                    && shooter instanceof Player shooterPlayer
+                    && !isSilent()) {
+                shooterPlayer.sendPacket(
+                        new ChangeGameStatePacket(
+                                ChangeGameStatePacket.Reason.ARROW_HIT_PLAYER, 0.0F));
             }
 
             if (!isSilent()) {
-                getViewersAsAudience().playSound(Sound.sound(
-                        getSound(), Sound.Source.NEUTRAL,
-                        1.0F, 1.2F / (random.nextFloat() * 0.2F + 0.9F)
-                ), position.x(), position.y(), position.z());
+                getViewersAsAudience()
+                        .playSound(
+                                Sound.sound(
+                                        getSound(),
+                                        Sound.Source.NEUTRAL,
+                                        1.0F,
+                                        1.2F / (random.nextFloat() * 0.2F + 0.9F)),
+                                position.x(),
+                                position.y(),
+                                position.z());
             }
 
             return getPiercingLevel() <= 0;
         } else {
             setVelocity(getVelocity().mul(-0.1));
-            refreshPosition(position.withYaw(position.yaw() + 170.0F + 20.0F * ThreadLocalRandom.current().nextFloat()));
+            refreshPosition(
+                    position.withYaw(
+                            position.yaw()
+                                    + 170.0F
+                                    + 20.0F * ThreadLocalRandom.current().nextFloat()));
 
             if (getVelocity().lengthSquared() < 1.0E-7) {
                 if (pickupMode == PickupMode.ALLOWED) {
@@ -266,10 +305,16 @@ public abstract class AbstractArrow extends CustomEntityProjectile {
         if (!isSilent()) {
             var random = ThreadLocalRandom.current();
             var position = this.getPosition();
-            getViewersAsAudience().playSound(Sound.sound(
-                    getSound(), Sound.Source.NEUTRAL,
-                    1.0F, 1.2F / (random.nextFloat() * 0.2F + 0.9F)
-            ), position.x(), position.y(), position.z());
+            getViewersAsAudience()
+                    .playSound(
+                            Sound.sound(
+                                    getSound(),
+                                    Sound.Source.NEUTRAL,
+                                    1.0F,
+                                    1.2F / (random.nextFloat() * 0.2F + 0.9F)),
+                            position.x(),
+                            position.y(),
+                            position.z());
         }
 
         pickupDelay = 7;
@@ -295,13 +340,13 @@ public abstract class AbstractArrow extends CustomEntityProjectile {
     }
 
     public boolean pickup(Player player) {
-        return player.getGameMode() == GameMode.CREATIVE || player.getInventory().addItemStack(getPickupItem());
+        return player.getGameMode() == GameMode.CREATIVE
+                || player.getInventory().addItemStack(getPickupItem());
     }
 
     protected abstract ItemStack getPickupItem();
 
-    protected void onHurt(LivingEntity entity) {
-    }
+    protected void onHurt(LivingEntity entity) {}
 
     public SoundEvent getSound() {
         return soundEvent;

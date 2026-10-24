@@ -2,14 +2,13 @@ package rocks.minestom.worldgen.structure.context;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
-import net.kyori.adventure.key.Key;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import net.kyori.adventure.key.Key;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class BlockTagManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(BlockTagManager.class);
@@ -33,7 +32,10 @@ public final class BlockTagManager {
         try {
             Files.walk(tagsRoot)
                     .filter(Files::isRegularFile)
-                    .filter(filePath -> filePath.toString().contains("/tags/block/") || filePath.toString().contains("\\tags\\block\\"))
+                    .filter(
+                            filePath ->
+                                    filePath.toString().contains("/tags/block/")
+                                            || filePath.toString().contains("\\tags\\block\\"))
                     .filter(filePath -> filePath.toString().endsWith(".json"))
                     .sorted()
                     .forEach(this::readDefinition);
@@ -68,9 +70,7 @@ public final class BlockTagManager {
             }
         }
 
-        var tagName = relativePath.toString()
-                .replace('\\', '/')
-                .replace(".json", "");
+        var tagName = relativePath.toString().replace('\\', '/').replace(".json", "");
 
         return Key.key("minecraft", tagName);
     }

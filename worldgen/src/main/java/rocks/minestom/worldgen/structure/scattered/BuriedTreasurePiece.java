@@ -7,10 +7,9 @@ import rocks.minestom.worldgen.random.RandomSource;
 import rocks.minestom.worldgen.structure.template.BoundingBox;
 
 /**
- * Port of vanilla {@code BuriedTreasurePieces.BuriedTreasurePiece}: walks
- * down from the ocean-floor surface at the structure's anchor column until
- * it finds sandstone/stone/andesite/granite/diorite below, then carves a
- * one-block sand/soft pocket around that spot and drops a bare chest (loot
+ * Port of vanilla {@code BuriedTreasurePieces.BuriedTreasurePiece}: walks down from the ocean-floor
+ * surface at the structure's anchor column until it finds sandstone/stone/andesite/granite/diorite
+ * below, then carves a one-block sand/soft pocket around that spot and drops a bare chest (loot
  * table NBT is out of scope, matching the rest of the port).
  */
 final class BuriedTreasurePiece {
@@ -46,7 +45,8 @@ final class BuriedTreasurePiece {
                     var relative = level.getBlock(relativeX, relativeY, relativeZ);
                     if (relative.air() || isLiquid(relative)) {
                         var belowRelative = level.getBlock(relativeX, relativeY - 1, relativeZ);
-                        if ((belowRelative.air() || isLiquid(belowRelative)) && direction != Direction.UP) {
+                        if ((belowRelative.air() || isLiquid(belowRelative))
+                                && direction != Direction.UP) {
                             level.setBlock(relativeX, relativeY, relativeZ, below);
                         } else {
                             level.setBlock(relativeX, relativeY, relativeZ, softState);
@@ -65,8 +65,11 @@ final class BuriedTreasurePiece {
     }
 
     private static boolean isSupportBlock(Block block) {
-        return block.compare(Block.SANDSTONE) || block.compare(Block.STONE) || block.compare(Block.ANDESITE)
-                || block.compare(Block.GRANITE) || block.compare(Block.DIORITE);
+        return block.compare(Block.SANDSTONE)
+                || block.compare(Block.STONE)
+                || block.compare(Block.ANDESITE)
+                || block.compare(Block.GRANITE)
+                || block.compare(Block.DIORITE);
     }
 
     private static boolean isLiquid(Block block) {

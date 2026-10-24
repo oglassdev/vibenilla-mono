@@ -1,5 +1,6 @@
 package rocks.minestom.worldgen.structure;
 
+import java.util.List;
 import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.Nullable;
 import rocks.minestom.worldgen.random.RandomSource;
@@ -7,23 +8,20 @@ import rocks.minestom.worldgen.structure.context.StructurePlaceContext;
 import rocks.minestom.worldgen.structure.pool.PoolAliasBinding;
 import rocks.minestom.worldgen.structure.template.LiquidSettings;
 
-import java.util.List;
-
 /**
- * A structure assembled from multiple pieces connected via jigsaw blocks,
- * mirroring vanilla's {@code JigsawStructure} configuration.
+ * A structure assembled from multiple pieces connected via jigsaw blocks, mirroring vanilla's
+ * {@code JigsawStructure} configuration.
  *
- * @param startJigsawName       jigsaw name the start piece is anchored on
- *                              (ancient cities), or null
- * @param size                  maximum expansion depth
- * @param startHeight           height provider sampled from the assembly random
- * @param projectToHeightmap    whether the start Y is offset by the world
- *                              surface (villages, outposts, trail ruins)
+ * @param startJigsawName jigsaw name the start piece is anchored on (ancient cities), or null
+ * @param size maximum expansion depth
+ * @param startHeight height provider sampled from the assembly random
+ * @param projectToHeightmap whether the start Y is offset by the world surface (villages, outposts,
+ *     trail ruins)
  * @param maxDistanceFromCenter horizontal/vertical piece distance limit
- * @param poolAliases           pool alias bindings (trial chamber spawners)
+ * @param poolAliases pool alias bindings (trial chamber spawners)
  * @param dimensionPaddingBottom min distance of the start piece from the world bottom
- * @param dimensionPaddingTop    min distance of the start piece from the world top
- * @param terrainAdaptation     how the noise terrain molds around the pieces
+ * @param dimensionPaddingTop min distance of the start piece from the world top
+ * @param terrainAdaptation how the noise terrain molds around the pieces
  */
 public record JigsawStructure(
         StructureBiomes biomes,
@@ -38,12 +36,12 @@ public record JigsawStructure(
         int dimensionPaddingBottom,
         int dimensionPaddingTop,
         LiquidSettings liquidSettings,
-        TerrainAdjustment terrainAdaptation
-) implements Structure {
+        TerrainAdjustment terrainAdaptation)
+        implements Structure {
     /**
-     * Minimal vanilla {@code HeightProvider} covering the forms jigsaw
-     * structures use: constant anchors and uniform ranges between absolute
-     * anchors. Uniform sampling draws exactly one {@code nextInt}.
+     * Minimal vanilla {@code HeightProvider} covering the forms jigsaw structures use: constant
+     * anchors and uniform ranges between absolute anchors. Uniform sampling draws exactly one
+     * {@code nextInt}.
      */
     public record StartHeight(int min, int max) {
         public int sample(RandomSource random) {

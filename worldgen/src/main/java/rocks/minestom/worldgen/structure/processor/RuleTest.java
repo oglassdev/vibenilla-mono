@@ -6,9 +6,8 @@ import rocks.minestom.worldgen.random.RandomSource;
 import rocks.minestom.worldgen.structure.context.BlockTagManager;
 
 /**
- * Vanilla {@code RuleTest}: predicates over a block state, drawing from the
- * per-block rule random exactly like vanilla (short-circuit order matters for
- * random-draw parity).
+ * Vanilla {@code RuleTest}: predicates over a block state, drawing from the per-block rule random
+ * exactly like vanilla (short-circuit order matters for random-draw parity).
  */
 public interface RuleTest {
     boolean test(Block state, RandomSource random, BlockTagManager blockTags);

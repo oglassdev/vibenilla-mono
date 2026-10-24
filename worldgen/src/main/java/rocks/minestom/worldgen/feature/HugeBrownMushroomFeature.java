@@ -13,8 +13,7 @@ public final class HugeBrownMushroomFeature extends AbstractHugeMushroomFeature 
             RandomSource random,
             BlockVec origin,
             int treeHeight,
-            HugeMushroomFeatureConfiguration config
-    ) {
+            HugeMushroomFeatureConfiguration config) {
         var radius = config.foliageRadius();
 
         for (var dx = -radius; dx <= radius; dx++) {
@@ -36,12 +35,15 @@ public final class HugeBrownMushroomFeature extends AbstractHugeMushroomFeature 
                 var south = maxZ || xEdge && dz == radius - 1;
 
                 var state = config.capProvider().getState(level, random, origin);
-                if (state.getProperty("west") != null && state.getProperty("east") != null
-                        && state.getProperty("north") != null && state.getProperty("south") != null) {
-                    state = state.withProperty("west", Boolean.toString(west))
-                            .withProperty("east", Boolean.toString(east))
-                            .withProperty("north", Boolean.toString(north))
-                            .withProperty("south", Boolean.toString(south));
+                if (state.getProperty("west") != null
+                        && state.getProperty("east") != null
+                        && state.getProperty("north") != null
+                        && state.getProperty("south") != null) {
+                    state =
+                            state.withProperty("west", Boolean.toString(west))
+                                    .withProperty("east", Boolean.toString(east))
+                                    .withProperty("north", Boolean.toString(north))
+                                    .withProperty("south", Boolean.toString(south));
                 }
 
                 this.placeMushroomBlock(level, position, state);

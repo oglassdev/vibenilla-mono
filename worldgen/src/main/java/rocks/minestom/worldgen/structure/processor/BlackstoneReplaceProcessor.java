@@ -1,17 +1,15 @@
 package rocks.minestom.worldgen.structure.processor;
 
+import java.util.HashMap;
+import java.util.Map;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
- * Vanilla {@code BlackstoneReplaceProcessor}: a fixed cobblestone/stone
- * substitution map turning a ruined portal's masonry into its blackstone
- * equivalent (nether variant). Stair facing/half and slab type are carried
- * over; there is no randomness.
+ * Vanilla {@code BlackstoneReplaceProcessor}: a fixed cobblestone/stone substitution map turning a
+ * ruined portal's masonry into its blackstone equivalent (nether variant). Stair facing/half and
+ * slab type are carried over; there is no randomness.
  */
 public final class BlackstoneReplaceProcessor implements StructureProcessor {
     public static final BlackstoneReplaceProcessor INSTANCE = new BlackstoneReplaceProcessor();

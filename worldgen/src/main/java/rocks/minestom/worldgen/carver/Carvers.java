@@ -11,11 +11,10 @@ import rocks.minestom.worldgen.terrain.Aquifer;
 import rocks.minestom.worldgen.terrain.TerrainData;
 
 /**
- * Vanilla CARVERS stage (runs after the surface stage): every source chunk in
- * a 17x17 neighborhood seeds each of its biome's carvers with
- * {@code setLargeFeatureSeed(seed + index, sourceX, sourceZ)} and carves the
- * portion of its tunnels that intersects the target chunk. The biome is read
- * at the source chunk's (0, 0) corner quart at y = 0, exactly like vanilla.
+ * Vanilla CARVERS stage (runs after the surface stage): every source chunk in a 17x17 neighborhood
+ * seeds each of its biome's carvers with {@code setLargeFeatureSeed(seed + index, sourceX,
+ * sourceZ)} and carves the portion of its tunnels that intersects the target chunk. The biome is
+ * read at the source chunk's (0, 0) corner quart at y = 0, exactly like vanilla.
  */
 public final class Carvers {
     private static final int CHUNK_RANGE = 8;
@@ -26,8 +25,12 @@ public final class Carvers {
     private final BiomeZoomer biomeZoomer;
     private final CarverLoader carverLoader;
 
-    public Carvers(NoiseGeneratorSettingsRuntime settings, CachedBiomeSource biomeSource,
-            BiomeResolver biomeResolver, BiomeZoomer biomeZoomer, CarverLoader carverLoader) {
+    public Carvers(
+            NoiseGeneratorSettingsRuntime settings,
+            CachedBiomeSource biomeSource,
+            BiomeResolver biomeResolver,
+            BiomeZoomer biomeZoomer,
+            CarverLoader carverLoader) {
         this.settings = settings;
         this.biomeSource = biomeSource;
         this.biomeResolver = biomeResolver;
@@ -36,15 +39,15 @@ public final class Carvers {
     }
 
     /**
-     * Carves the chunk's terrain buffer in place and refreshes the height
-     * arrays afterwards. The aquifer must be the one the noise fill used so
-     * flooded caves resolve the same fluids as vanilla's shared NoiseChunk
-     * aquifer.
+     * Carves the chunk's terrain buffer in place and refreshes the height arrays afterwards. The
+     * aquifer must be the one the noise fill used so flooded caves resolve the same fluids as
+     * vanilla's shared NoiseChunk aquifer.
      */
     public void applyCarvers(TerrainData data, int chunkX, int chunkZ, Aquifer aquifer) {
         var minY = this.settings.minY();
         var height = this.settings.height();
-        var context = new CarvingContext(data, chunkX, chunkZ, minY, height, aquifer, this.topMaterial());
+        var context =
+                new CarvingContext(data, chunkX, chunkZ, minY, height, aquifer, this.topMaterial());
         var random = new WorldgenRandom(new LegacyRandomSource(0L));
         var seed = this.settings.randomState().seed();
 
@@ -73,9 +76,9 @@ public final class Carvers {
     }
 
     /**
-     * Surface-rule evaluation for a single exposed floor block, mirroring
-     * vanilla {@code SurfaceSystem.topMaterial} (stone depths of 1, water at
-     * the block above when the carved state is a fluid).
+     * Surface-rule evaluation for a single exposed floor block, mirroring vanilla {@code
+     * SurfaceSystem.topMaterial} (stone depths of 1, water at the block above when the carved state
+     * is a fluid).
      */
     private CarvingContext.TopMaterial topMaterial() {
         var surfaceRule = this.settings.surfaceRule();
@@ -83,14 +86,15 @@ public final class Carvers {
             return null;
         }
 
-        var surfaceContext = new SurfaceRules.Context(
-                this.settings.surfaceSystem(),
-                this.settings.randomState(),
-                this.biomeResolver,
-                this.biomeZoomer,
-                this.settings.preliminarySurfaceLevel(),
-                this.settings.minY(),
-                this.settings.maxYInclusive());
+        var surfaceContext =
+                new SurfaceRules.Context(
+                        this.settings.surfaceSystem(),
+                        this.settings.randomState(),
+                        this.biomeResolver,
+                        this.biomeZoomer,
+                        this.settings.preliminarySurfaceLevel(),
+                        this.settings.minY(),
+                        this.settings.maxYInclusive());
         return (blockX, blockY, blockZ, underFluid) -> {
             surfaceContext.updateXZ(blockX, blockZ, false);
             surfaceContext.updateY(blockY, 1, 1, underFluid ? blockY + 1 : Integer.MIN_VALUE);
@@ -99,8 +103,8 @@ public final class Carvers {
     }
 
     /**
-     * Re-derives the per-column height arrays (first solid / first fluid from
-     * the top) after carving, since features and heightmap consumers read them.
+     * Re-derives the per-column height arrays (first solid / first fluid from the top) after
+     * carving, since features and heightmap consumers read them.
      */
     private static void recomputeHeights(TerrainData data, int minY, int height) {
         var surfaceHeights = data.surfaceHeights();

@@ -18,54 +18,68 @@ import net.minestom.server.instance.block.Block;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Extension of {@link VanillaKnockbackFeature} which tries to make the playing field more even for players with high latency.
- * <p>
- * Rising knockback is applied usually when a player is on the ground.
- * This feature determines if the player would be on the ground <i>client side</i> instead of just server side.
- * To have just this change, use {@link FairKnockbackFeature#ONLY_RISING}.
- * <p>
- * The other option is {@link FairKnockbackFeature#RISING_AND_FALLING}, which, along with rising knockback,
- * also compensates for latency with falling knockback. It will use the (estimated) velocity of when the packet will arrive at the client,
- * possibly making falling knockback feel more natural.
- * <p>
- * The changes made by this feature only apply to players with more than 25 ms ping.
+ * Extension of {@link VanillaKnockbackFeature} which tries to make the playing field more even for
+ * players with high latency.
+ *
+ * <p>Rising knockback is applied usually when a player is on the ground. This feature determines if
+ * the player would be on the ground <i>client side</i> instead of just server side. To have just
+ * this change, use {@link FairKnockbackFeature#ONLY_RISING}.
+ *
+ * <p>The other option is {@link FairKnockbackFeature#RISING_AND_FALLING}, which, along with rising
+ * knockback, also compensates for latency with falling knockback. It will use the (estimated)
+ * velocity of when the packet will arrive at the client, possibly making falling knockback feel
+ * more natural.
+ *
+ * <p>The changes made by this feature only apply to players with more than 25 ms ping.
  */
 public class FairKnockbackFeature extends VanillaKnockbackFeature {
-    public static final DefinedFeature<FairKnockbackFeature> ONLY_RISING = new DefinedFeature<>(
-            FeatureType.KNOCKBACK, configuration -> new FairKnockbackFeature(configuration, false),
-            FeatureType.VERSION
-    );
-    public static final DefinedFeature<FairKnockbackFeature> RISING_AND_FALLING = new DefinedFeature<>(
-            FeatureType.KNOCKBACK, configuration -> new FairKnockbackFeature(configuration, true),
-            FeatureType.VERSION
-    );
+    public static final DefinedFeature<FairKnockbackFeature> ONLY_RISING =
+            new DefinedFeature<>(
+                    FeatureType.KNOCKBACK,
+                    configuration -> new FairKnockbackFeature(configuration, false),
+                    FeatureType.VERSION);
+    public static final DefinedFeature<FairKnockbackFeature> RISING_AND_FALLING =
+            new DefinedFeature<>(
+                    FeatureType.KNOCKBACK,
+                    configuration -> new FairKnockbackFeature(configuration, true),
+                    FeatureType.VERSION);
 
     private static final int PING_OFFSET = 25;
 
     protected final boolean compensateFallKnockback;
 
-    public FairKnockbackFeature(FeatureConfiguration configuration, boolean compensateFallKnockback) {
+    public FairKnockbackFeature(
+            FeatureConfiguration configuration, boolean compensateFallKnockback) {
         super(configuration);
         this.compensateFallKnockback = compensateFallKnockback;
     }
 
     @Override
-    protected boolean applyKnockback(LivingEntity target, Entity attacker, @Nullable Entity source,
-                                     EntityKnockbackEvent.KnockbackType type, double extraKnockback,
-                                     double dx, double dz, boolean legacy) {
+    protected boolean applyKnockback(
+            LivingEntity target,
+            Entity attacker,
+            @Nullable Entity source,
+            EntityKnockbackEvent.KnockbackType type,
+            double extraKnockback,
+            double dx,
+            double dz,
+            boolean legacy) {
         if (!(target instanceof Player player) || player.getLatency() < PING_OFFSET)
-            return super.applyKnockback(target, attacker, source, type, extraKnockback, dx, dz, legacy);
+            return super.applyKnockback(
+                    target, attacker, source, type, extraKnockback, dx, dz, legacy);
 
-        var values = this.prepareKnockback(target, attacker, source, type, extraKnockback, dx, dz, legacy);
+        var values =
+                this.prepareKnockback(
+                        target, attacker, source, type, extraKnockback, dx, dz, legacy);
         if (values == null) return false;
 
         var velocity = target.getVelocity();
         if (legacy && type == EntityKnockbackEvent.KnockbackType.ATTACK) {
-            target.setVelocity(velocity.add(
-                    -values.horizontalModifier().x(),
-                    values.vertical(),
-                    -values.horizontalModifier().z()
-            ));
+            target.setVelocity(
+                    velocity.add(
+                            -values.horizontalModifier().x(),
+                            values.vertical(),
+                            -values.horizontalModifier().z()));
         } else {
 
             var latencyTicks = getLatencyTicks(player.getLatency());
@@ -73,16 +87,18 @@ public class FairKnockbackFeature extends VanillaKnockbackFeature {
             if (this.isOnGroundClientSide(player, latencyTicks)) {
                 vertical = Math.min(values.verticalLimit(), velocity.y() / 2 + values.vertical());
             } else if (this.compensateFallKnockback) {
-                vertical = getCompensatedVerticalVelocity(player.getAerodynamics(), velocity.y(), latencyTicks);
+                vertical =
+                        getCompensatedVerticalVelocity(
+                                player.getAerodynamics(), velocity.y(), latencyTicks);
             } else {
                 vertical = velocity.y();
             }
 
-            target.setVelocity(new Vec(
-                    velocity.x() / 2 - values.horizontalModifier().x(),
-                    vertical,
-                    velocity.z() / 2 - values.horizontalModifier().z()
-            ));
+            target.setVelocity(
+                    new Vec(
+                            velocity.x() / 2 - values.horizontalModifier().x(),
+                            vertical,
+                            velocity.z() / 2 - values.horizontalModifier().z()));
         }
 
         if (values.animationType() == EntityKnockbackEvent.AnimationType.DIRECTIONAL) {
@@ -131,18 +147,19 @@ public class FairKnockbackFeature extends VanillaKnockbackFeature {
     protected boolean isUnpredictableBlock(Instance instance, int blockX, int blockY, int blockZ) {
         var block = instance.getBlock(blockX, blockY, blockZ);
 
-        if (FluidUtil.isWater(block) || FluidUtil.isLava(block)
+        if (FluidUtil.isWater(block)
+                || FluidUtil.isLava(block)
                 || block.compare(Block.COBWEB)
                 || block.compare(Block.POWDER_SNOW)
                 || block.compare(Block.SWEET_BERRY_BUSH)
                 || block.compare(Block.HONEY_BLOCK)
-                || block.compare(Block.SLIME_BLOCK))
-            return true;
+                || block.compare(Block.SLIME_BLOCK)) return true;
 
         return BlockUtil.isClimbable(instance, blockX, blockY, blockZ, block);
     }
 
-    protected static double getCompensatedVerticalVelocity(Aerodynamics aerodynamics, double velocity, int ticks) {
+    protected static double getCompensatedVerticalVelocity(
+            Aerodynamics aerodynamics, double velocity, int ticks) {
         var gravity = aerodynamics.gravity() * ServerFlag.SERVER_TICKS_PER_SECOND;
 
         for (var index = 0; index < ticks; index++) {

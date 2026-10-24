@@ -9,9 +9,7 @@ public final class ComparatorBlockHandler implements BlockHandler {
     public static final ComparatorBlockHandler INSTANCE = new ComparatorBlockHandler();
     private static final Key KEY = Key.key("placement:comparator");
 
-    private ComparatorBlockHandler() {
-
-    }
+    private ComparatorBlockHandler() {}
 
     @Override
     public Key getKey() {
@@ -35,7 +33,8 @@ public final class ComparatorBlockHandler implements BlockHandler {
 
         var pitch = "subtract".equals(newMode) ? 0.55F : 0.5F;
         var sound = Sound.sound(SoundEvent.BLOCK_COMPARATOR_CLICK, Sound.Source.BLOCK, 0.3F, pitch);
-        instance.playSoundExcept(interaction.getPlayer(), sound, blockPosition.add(0.5D, 0.5D, 0.5D));
+        instance.playSoundExcept(
+                interaction.getPlayer(), sound, blockPosition.add(0.5D, 0.5D, 0.5D));
         return false;
     }
 }

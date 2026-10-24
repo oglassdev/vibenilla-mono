@@ -1,12 +1,11 @@
 package rocks.minestom.placement;
 
+import java.util.concurrent.ThreadLocalRandom;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.BlockHandler;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.concurrent.ThreadLocalRandom;
 
 public final class GrowingPlantHeadPlacementRule extends BlockPlacementRule {
     private final BlockFace growthDirection;
@@ -55,7 +54,8 @@ public final class GrowingPlantHeadPlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var supportBlock = updateState.instance().getBlock(updateState.blockPosition().relative(fromFace));
+        var supportBlock =
+                updateState.instance().getBlock(updateState.blockPosition().relative(fromFace));
         return canAttach(supportBlock) ? updateState.currentBlock() : Block.AIR;
     }
 

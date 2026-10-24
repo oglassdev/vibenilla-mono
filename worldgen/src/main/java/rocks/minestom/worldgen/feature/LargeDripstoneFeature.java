@@ -7,8 +7,8 @@ import rocks.minestom.worldgen.feature.valueproviders.FloatProvider;
 import rocks.minestom.worldgen.random.RandomSource;
 
 /**
- * Port of vanilla's {@code LargeDripstoneFeature}: large wind-swept dripstone
- * columns. Random call order matches vanilla exactly.
+ * Port of vanilla's {@code LargeDripstoneFeature}: large wind-swept dripstone columns. Random call
+ * order matches vanilla exactly.
  */
 public final class LargeDripstoneFeature implements Feature<LargeDripstoneConfiguration> {
 
@@ -18,7 +18,8 @@ public final class LargeDripstoneFeature implements Feature<LargeDripstoneConfig
     }
 
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<LargeDripstoneConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<LargeDripstoneConfiguration, T> context) {
         var level = context.accessor();
         var origin = context.origin();
         var config = context.config();
@@ -27,13 +28,18 @@ public final class LargeDripstoneFeature implements Feature<LargeDripstoneConfig
             return false;
         }
 
-        var column = Column.scan(
-                level,
-                origin,
-                config.floorToCeilingSearchRange(),
-                SpeleothemUtils::isEmptyOrWater,
-                state -> SpeleothemUtils.isBaseOrLava(state, Block.DRIPSTONE_BLOCK, config.replaceableBlocks()));
-        if (column.isEmpty() || column.get().floor().isEmpty() || column.get().ceiling().isEmpty()) {
+        var column =
+                Column.scan(
+                        level,
+                        origin,
+                        config.floorToCeilingSearchRange(),
+                        SpeleothemUtils::isEmptyOrWater,
+                        state ->
+                                SpeleothemUtils.isBaseOrLava(
+                                        state, Block.DRIPSTONE_BLOCK, config.replaceableBlocks()));
+        if (column.isEmpty()
+                || column.get().floor().isEmpty()
+                || column.get().ceiling().isEmpty()) {
             return false;
         }
 
@@ -44,16 +50,32 @@ public final class LargeDripstoneFeature implements Feature<LargeDripstoneConfig
             return false;
         }
 
-        var maxColumnRadiusBasedOnColumnHeight = (int) (caveHeight * config.maxColumnRadiusToCaveHeightRatio());
-        var maxColumnRadius = Math.max(config.columnRadius().minValue(),
-                Math.min(config.columnRadius().maxValue(), maxColumnRadiusBasedOnColumnHeight));
-        var radius = randomBetweenInclusive(random, config.columnRadius().minValue(), maxColumnRadius);
-        var stalactite = makeDripstone(
-                new BlockVec(origin.blockX(), ceiling - 1, origin.blockZ()), false, random, radius,
-                config.stalactiteBluntness(), config.heightScale());
-        var stalagmite = makeDripstone(
-                new BlockVec(origin.blockX(), floor + 1, origin.blockZ()), true, random, radius,
-                config.stalagmiteBluntness(), config.heightScale());
+        var maxColumnRadiusBasedOnColumnHeight =
+                (int) (caveHeight * config.maxColumnRadiusToCaveHeightRatio());
+        var maxColumnRadius =
+                Math.max(
+                        config.columnRadius().minValue(),
+                        Math.min(
+                                config.columnRadius().maxValue(),
+                                maxColumnRadiusBasedOnColumnHeight));
+        var radius =
+                randomBetweenInclusive(random, config.columnRadius().minValue(), maxColumnRadius);
+        var stalactite =
+                makeDripstone(
+                        new BlockVec(origin.blockX(), ceiling - 1, origin.blockZ()),
+                        false,
+                        random,
+                        radius,
+                        config.stalactiteBluntness(),
+                        config.heightScale());
+        var stalagmite =
+                makeDripstone(
+                        new BlockVec(origin.blockX(), floor + 1, origin.blockZ()),
+                        true,
+                        random,
+                        radius,
+                        config.stalagmiteBluntness(),
+                        config.heightScale());
 
         WindOffsetter wind;
         if (stalactite.isSuitableForWind(config) && stalagmite.isSuitableForWind(config)) {
@@ -62,8 +84,10 @@ public final class LargeDripstoneFeature implements Feature<LargeDripstoneConfig
             wind = WindOffsetter.noWind();
         }
 
-        var stalactiteBaseEmbeddedInStone = stalactite.moveBackUntilBaseIsInsideStoneAndShrinkRadiusIfNecessary(level, wind);
-        var stalagmiteBaseEmbeddedInStone = stalagmite.moveBackUntilBaseIsInsideStoneAndShrinkRadiusIfNecessary(level, wind);
+        var stalactiteBaseEmbeddedInStone =
+                stalactite.moveBackUntilBaseIsInsideStoneAndShrinkRadiusIfNecessary(level, wind);
+        var stalagmiteBaseEmbeddedInStone =
+                stalagmite.moveBackUntilBaseIsInsideStoneAndShrinkRadiusIfNecessary(level, wind);
         if (stalactiteBaseEmbeddedInStone) {
             stalactite.placeBlocks(level, random, wind);
         }
@@ -76,10 +100,14 @@ public final class LargeDripstoneFeature implements Feature<LargeDripstoneConfig
     }
 
     private static LargeDripstone makeDripstone(
-            BlockVec root, boolean pointingUp, RandomSource random, int radius,
-            FloatProvider bluntness, FloatProvider heightScale
-    ) {
-        return new LargeDripstone(root, pointingUp, radius, bluntness.sample(random), heightScale.sample(random));
+            BlockVec root,
+            boolean pointingUp,
+            RandomSource random,
+            int radius,
+            FloatProvider bluntness,
+            FloatProvider heightScale) {
+        return new LargeDripstone(
+                root, pointingUp, radius, bluntness.sample(random), heightScale.sample(random));
     }
 
     private static int randomBetweenInclusive(RandomSource random, int min, int maxInclusive) {
@@ -90,7 +118,8 @@ public final class LargeDripstoneFeature implements Feature<LargeDripstoneConfig
         return random.nextFloat() * (maxExclusive - min) + min;
     }
 
-    private static <T extends Block.Getter & Block.Setter> int worldSurfaceHeight(T level, int x, int z) {
+    private static <T extends Block.Getter & Block.Setter> int worldSurfaceHeight(
+            T level, int x, int z) {
         // Vanilla WORLD_SURFACE_WG: frozen post-carver terrain
         if (level instanceof GenerationUnitAdapter adapter) {
             var frozen = adapter.frozenWorldSurface(x, z);
@@ -114,7 +143,8 @@ public final class LargeDripstoneFeature implements Feature<LargeDripstoneConfig
         private final double bluntness;
         private final double scale;
 
-        private LargeDripstone(BlockVec root, boolean pointingUp, int radius, double bluntness, double scale) {
+        private LargeDripstone(
+                BlockVec root, boolean pointingUp, int radius, double bluntness, double scale) {
             this.root = root;
             this.pointingUp = pointingUp;
             this.radius = radius;
@@ -127,12 +157,14 @@ public final class LargeDripstoneFeature implements Feature<LargeDripstoneConfig
         }
 
         private int getHeightAtRadius(float checkRadius) {
-            return (int) SpeleothemUtils.getSpeleothemHeight(checkRadius, this.radius, this.scale, this.bluntness);
+            return (int)
+                    SpeleothemUtils.getSpeleothemHeight(
+                            checkRadius, this.radius, this.scale, this.bluntness);
         }
 
-        private <T extends Block.Getter & Block.Setter> boolean moveBackUntilBaseIsInsideStoneAndShrinkRadiusIfNecessary(
-                T level, WindOffsetter wind
-        ) {
+        private <T extends Block.Getter & Block.Setter>
+                boolean moveBackUntilBaseIsInsideStoneAndShrinkRadiusIfNecessary(
+                        T level, WindOffsetter wind) {
             while (this.radius > 1) {
                 var newRoot = this.root;
                 var maxTries = Math.min(10, this.getHeight());
@@ -142,7 +174,8 @@ public final class LargeDripstoneFeature implements Feature<LargeDripstoneConfig
                         return false;
                     }
 
-                    if (SpeleothemUtils.isCircleMostlyEmbeddedInStone(level, wind.offset(newRoot), this.radius)) {
+                    if (SpeleothemUtils.isCircleMostlyEmbeddedInStone(
+                            level, wind.offset(newRoot), this.radius)) {
                         this.root = newRoot;
                         return true;
                     }
@@ -156,7 +189,8 @@ public final class LargeDripstoneFeature implements Feature<LargeDripstoneConfig
             return false;
         }
 
-        private <T extends Block.Getter & Block.Setter> void placeBlocks(T level, RandomSource random, WindOffsetter wind) {
+        private <T extends Block.Getter & Block.Setter> void placeBlocks(
+                T level, RandomSource random, WindOffsetter wind) {
             for (var dx = -this.radius; dx <= this.radius; dx++) {
                 for (var dz = -this.radius; dz <= this.radius; dz++) {
                     var currentRadius = (float) Math.sqrt(dx * dx + dz * dz);
@@ -175,16 +209,18 @@ public final class LargeDripstoneFeature implements Feature<LargeDripstoneConfig
 
                     var pos = this.root.add(dx, 0, dz);
                     var hasBeenOutOfStone = false;
-                    var maxY = this.pointingUp
-                            ? worldSurfaceHeight(level, pos.blockX(), pos.blockZ())
-                            : Integer.MAX_VALUE;
+                    var maxY =
+                            this.pointingUp
+                                    ? worldSurfaceHeight(level, pos.blockX(), pos.blockZ())
+                                    : Integer.MAX_VALUE;
 
                     for (var step = 0; step < height && pos.blockY() < maxY; step++) {
                         var windAdjustedPos = wind.offset(pos);
                         if (SpeleothemUtils.isEmptyOrWaterOrLava(level.getBlock(windAdjustedPos))) {
                             hasBeenOutOfStone = true;
                             level.setBlock(windAdjustedPos, Block.DRIPSTONE_BLOCK);
-                        } else if (hasBeenOutOfStone && isBaseStone(level.getBlock(windAdjustedPos))) {
+                        } else if (hasBeenOutOfStone
+                                && isBaseStone(level.getBlock(windAdjustedPos))) {
                             break;
                         }
 
@@ -196,12 +232,17 @@ public final class LargeDripstoneFeature implements Feature<LargeDripstoneConfig
 
         /** Vanilla checks {@code BlockTags.BASE_STONE_OVERWORLD} here. */
         private static boolean isBaseStone(Block state) {
-            return state.compare(Block.STONE) || state.compare(Block.GRANITE) || state.compare(Block.DIORITE)
-                    || state.compare(Block.ANDESITE) || state.compare(Block.TUFF) || state.compare(Block.DEEPSLATE);
+            return state.compare(Block.STONE)
+                    || state.compare(Block.GRANITE)
+                    || state.compare(Block.DIORITE)
+                    || state.compare(Block.ANDESITE)
+                    || state.compare(Block.TUFF)
+                    || state.compare(Block.DEEPSLATE);
         }
 
         private boolean isSuitableForWind(LargeDripstoneConfiguration config) {
-            return this.radius >= config.minRadiusForWind() && this.bluntness >= config.minBluntnessForWind();
+            return this.radius >= config.minRadiusForWind()
+                    && this.bluntness >= config.minBluntnessForWind();
         }
     }
 
@@ -212,7 +253,8 @@ public final class LargeDripstoneFeature implements Feature<LargeDripstoneConfig
         private final boolean hasWind;
         private final int maxOffset;
 
-        private WindOffsetter(int originY, RandomSource random, FloatProvider windSpeedRange, int maxOffset) {
+        private WindOffsetter(
+                int originY, RandomSource random, FloatProvider windSpeedRange, int maxOffset) {
             this.originY = originY;
             this.maxOffset = maxOffset;
             var speed = windSpeedRange.sample(random);
@@ -240,8 +282,16 @@ public final class LargeDripstoneFeature implements Feature<LargeDripstoneConfig
             }
 
             var dy = this.originY - pos.blockY();
-            var dx = (int) Math.max(-this.maxOffset, Math.min(this.maxOffset, Math.floor(this.windSpeedX * dy)));
-            var dz = (int) Math.max(-this.maxOffset, Math.min(this.maxOffset, Math.floor(this.windSpeedZ * dy)));
+            var dx =
+                    (int)
+                            Math.max(
+                                    -this.maxOffset,
+                                    Math.min(this.maxOffset, Math.floor(this.windSpeedX * dy)));
+            var dz =
+                    (int)
+                            Math.max(
+                                    -this.maxOffset,
+                                    Math.min(this.maxOffset, Math.floor(this.windSpeedZ * dy)));
             return pos.add(dx, 0, dz);
         }
     }

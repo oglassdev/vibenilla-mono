@@ -5,9 +5,7 @@ import rocks.minestom.worldgen.feature.Direction;
 import rocks.minestom.worldgen.random.RandomSource;
 import rocks.minestom.worldgen.structure.template.BoundingBox;
 
-/**
- * Port of vanilla {@code JungleTemplePiece}.
- */
+/** Port of vanilla {@code JungleTemplePiece}. */
 final class JungleTemplePiece extends ScatteredFeaturePiece {
     static final int WIDTH = 12;
     static final int DEPTH = 15;
@@ -28,7 +26,18 @@ final class JungleTemplePiece extends ScatteredFeaturePiece {
             return;
         }
 
-        this.generateBox(level, chunkBB, 0, -4, 0, this.width - 1, 0, this.depth - 1, false, random, STONE_SELECTOR);
+        this.generateBox(
+                level,
+                chunkBB,
+                0,
+                -4,
+                0,
+                this.width - 1,
+                0,
+                this.depth - 1,
+                false,
+                random,
+                STONE_SELECTOR);
         this.generateBox(level, chunkBB, 2, 1, 2, 9, 2, 2, false, random, STONE_SELECTOR);
         this.generateBox(level, chunkBB, 2, 1, 12, 9, 2, 12, false, random, STONE_SELECTOR);
         this.generateBox(level, chunkBB, 2, 1, 3, 2, 2, 11, false, random, STONE_SELECTOR);
@@ -131,51 +140,109 @@ final class JungleTemplePiece extends ScatteredFeaturePiece {
         this.generateBox(level, chunkBB, 6, -3, 1, 6, -3, 1, false, random, STONE_SELECTOR);
         this.generateBox(level, chunkBB, 6, -1, 1, 6, -1, 1, false, random, STONE_SELECTOR);
 
-        this.placeBlock(level, Block.TRIPWIRE_HOOK.withProperty("facing", "east").withProperty("attached", "true"),
-                1, -3, 8, chunkBB);
-        this.placeBlock(level, Block.TRIPWIRE_HOOK.withProperty("facing", "west").withProperty("attached", "true"),
-                4, -3, 8, chunkBB);
-        var tripwireEastWest = Block.TRIPWIRE.withProperty("east", "true").withProperty("west", "true")
-                .withProperty("attached", "true");
+        this.placeBlock(
+                level,
+                Block.TRIPWIRE_HOOK.withProperty("facing", "east").withProperty("attached", "true"),
+                1,
+                -3,
+                8,
+                chunkBB);
+        this.placeBlock(
+                level,
+                Block.TRIPWIRE_HOOK.withProperty("facing", "west").withProperty("attached", "true"),
+                4,
+                -3,
+                8,
+                chunkBB);
+        var tripwireEastWest =
+                Block.TRIPWIRE
+                        .withProperty("east", "true")
+                        .withProperty("west", "true")
+                        .withProperty("attached", "true");
         this.placeBlock(level, tripwireEastWest, 2, -3, 8, chunkBB);
         this.placeBlock(level, tripwireEastWest, 3, -3, 8, chunkBB);
 
-        var redstoneWireNS = Block.REDSTONE_WIRE.withProperty("north", "side").withProperty("south", "side");
+        var redstoneWireNS =
+                Block.REDSTONE_WIRE.withProperty("north", "side").withProperty("south", "side");
         this.placeBlock(level, redstoneWireNS, 5, -3, 7, chunkBB);
         this.placeBlock(level, redstoneWireNS, 5, -3, 6, chunkBB);
         this.placeBlock(level, redstoneWireNS, 5, -3, 5, chunkBB);
         this.placeBlock(level, redstoneWireNS, 5, -3, 4, chunkBB);
         this.placeBlock(level, redstoneWireNS, 5, -3, 3, chunkBB);
         this.placeBlock(level, redstoneWireNS, 5, -3, 2, chunkBB);
-        this.placeBlock(level, Block.REDSTONE_WIRE.withProperty("north", "side").withProperty("west", "side"),
-                5, -3, 1, chunkBB);
-        this.placeBlock(level, Block.REDSTONE_WIRE.withProperty("east", "side").withProperty("west", "side"),
-                4, -3, 1, chunkBB);
+        this.placeBlock(
+                level,
+                Block.REDSTONE_WIRE.withProperty("north", "side").withProperty("west", "side"),
+                5,
+                -3,
+                1,
+                chunkBB);
+        this.placeBlock(
+                level,
+                Block.REDSTONE_WIRE.withProperty("east", "side").withProperty("west", "side"),
+                4,
+                -3,
+                1,
+                chunkBB);
         this.placeBlock(level, Block.MOSSY_COBBLESTONE, 3, -3, 1, chunkBB);
         if (!this.placedTrap1) {
-            this.placedTrap1 = this.createDispenser(level, chunkBB, random, 3, -2, 1, Direction.NORTH);
+            this.placedTrap1 =
+                    this.createDispenser(level, chunkBB, random, 3, -2, 1, Direction.NORTH);
         }
 
         this.placeBlock(level, Block.VINE.withProperty("south", "true"), 3, -2, 2, chunkBB);
-        this.placeBlock(level, Block.TRIPWIRE_HOOK.withProperty("facing", "north").withProperty("attached", "true"),
-                7, -3, 1, chunkBB);
-        this.placeBlock(level, Block.TRIPWIRE_HOOK.withProperty("facing", "south").withProperty("attached", "true"),
-                7, -3, 5, chunkBB);
-        var tripwireNorthSouth = Block.TRIPWIRE.withProperty("north", "true").withProperty("south", "true")
-                .withProperty("attached", "true");
+        this.placeBlock(
+                level,
+                Block.TRIPWIRE_HOOK
+                        .withProperty("facing", "north")
+                        .withProperty("attached", "true"),
+                7,
+                -3,
+                1,
+                chunkBB);
+        this.placeBlock(
+                level,
+                Block.TRIPWIRE_HOOK
+                        .withProperty("facing", "south")
+                        .withProperty("attached", "true"),
+                7,
+                -3,
+                5,
+                chunkBB);
+        var tripwireNorthSouth =
+                Block.TRIPWIRE
+                        .withProperty("north", "true")
+                        .withProperty("south", "true")
+                        .withProperty("attached", "true");
         this.placeBlock(level, tripwireNorthSouth, 7, -3, 2, chunkBB);
         this.placeBlock(level, tripwireNorthSouth, 7, -3, 3, chunkBB);
         this.placeBlock(level, tripwireNorthSouth, 7, -3, 4, chunkBB);
-        this.placeBlock(level, Block.REDSTONE_WIRE.withProperty("east", "side").withProperty("west", "side"),
-                8, -3, 6, chunkBB);
-        this.placeBlock(level, Block.REDSTONE_WIRE.withProperty("west", "side").withProperty("south", "side"),
-                9, -3, 6, chunkBB);
-        this.placeBlock(level, Block.REDSTONE_WIRE.withProperty("north", "side").withProperty("south", "up"),
-                9, -3, 5, chunkBB);
+        this.placeBlock(
+                level,
+                Block.REDSTONE_WIRE.withProperty("east", "side").withProperty("west", "side"),
+                8,
+                -3,
+                6,
+                chunkBB);
+        this.placeBlock(
+                level,
+                Block.REDSTONE_WIRE.withProperty("west", "side").withProperty("south", "side"),
+                9,
+                -3,
+                6,
+                chunkBB);
+        this.placeBlock(
+                level,
+                Block.REDSTONE_WIRE.withProperty("north", "side").withProperty("south", "up"),
+                9,
+                -3,
+                5,
+                chunkBB);
         this.placeBlock(level, Block.MOSSY_COBBLESTONE, 9, -3, 4, chunkBB);
         this.placeBlock(level, redstoneWireNS, 9, -2, 4, chunkBB);
         if (!this.placedTrap2) {
-            this.placedTrap2 = this.createDispenser(level, chunkBB, random, 9, -2, 3, Direction.WEST);
+            this.placedTrap2 =
+                    this.createDispenser(level, chunkBB, random, 9, -2, 3, Direction.WEST);
         }
 
         this.placeBlock(level, Block.VINE.withProperty("east", "true"), 8, -1, 3, chunkBB);
@@ -207,12 +274,18 @@ final class JungleTemplePiece extends ScatteredFeaturePiece {
         this.placeBlock(level, Block.MOSSY_COBBLESTONE, 10, -2, 9, chunkBB);
         this.placeBlock(level, redstoneWireNS, 8, -2, 9, chunkBB);
         this.placeBlock(level, redstoneWireNS, 8, -2, 10, chunkBB);
-        var redstoneWireCross = Block.REDSTONE_WIRE.withProperty("north", "side").withProperty("south", "side")
-                .withProperty("east", "side").withProperty("west", "side");
+        var redstoneWireCross =
+                Block.REDSTONE_WIRE
+                        .withProperty("north", "side")
+                        .withProperty("south", "side")
+                        .withProperty("east", "side")
+                        .withProperty("west", "side");
         this.placeBlock(level, redstoneWireCross, 10, -1, 9, chunkBB);
         this.placeBlock(level, Block.STICKY_PISTON.withProperty("facing", "up"), 9, -2, 8, chunkBB);
-        this.placeBlock(level, Block.STICKY_PISTON.withProperty("facing", "west"), 10, -2, 8, chunkBB);
-        this.placeBlock(level, Block.STICKY_PISTON.withProperty("facing", "west"), 10, -1, 8, chunkBB);
+        this.placeBlock(
+                level, Block.STICKY_PISTON.withProperty("facing", "west"), 10, -2, 8, chunkBB);
+        this.placeBlock(
+                level, Block.STICKY_PISTON.withProperty("facing", "west"), 10, -1, 8, chunkBB);
         this.placeBlock(level, Block.REPEATER.withProperty("facing", "north"), 10, -2, 10, chunkBB);
         if (!this.placedHiddenChest) {
             this.placedHiddenChest = this.createChest(level, chunkBB, random, 9, -3, 10);
@@ -221,7 +294,8 @@ final class JungleTemplePiece extends ScatteredFeaturePiece {
 
     private static final class MossStoneSelector extends BlockSelector {
         @Override
-        protected void next(RandomSource random, int worldX, int worldY, int worldZ, boolean isEdge) {
+        protected void next(
+                RandomSource random, int worldX, int worldY, int worldZ, boolean isEdge) {
             this.next = random.nextFloat() < 0.4F ? Block.COBBLESTONE : Block.MOSSY_COBBLESTONE;
         }
     }

@@ -5,6 +5,9 @@ import io.github.togar2.pvp.feature.food.ExhaustionFeature;
 import io.github.togar2.pvp.feature.food.FoodFeature;
 import io.github.togar2.pvp.utils.CombatVersion;
 import io.github.togar2.pvp.utils.ViewUtil;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.minestom.server.color.AlphaColor;
@@ -13,7 +16,6 @@ import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.LivingEntity;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.attribute.Attribute;
-import net.minestom.server.entity.attribute.AttributeInstance;
 import net.minestom.server.entity.attribute.AttributeModifier;
 import net.minestom.server.entity.attribute.AttributeOperation;
 import net.minestom.server.entity.damage.Damage;
@@ -24,10 +26,6 @@ import net.minestom.server.potion.PotionEffect;
 import net.minestom.server.sound.SoundEvent;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Function;
-
 public class CombatPotionEffect {
     private final Map<Attribute, AttributeModifier> attributeModifiers = new HashMap<>();
     private Map<Attribute, AttributeModifier> legacyAttributeModifiers;
@@ -37,13 +35,16 @@ public class CombatPotionEffect {
 
     public CombatPotionEffect(PotionEffect potionEffect) {
         this.potionEffect = potionEffect;
-        this.particleSupplier = potion -> {
-            var alpha = potion.isAmbient() ? 38 : 255;
-            return Particle.ENTITY_EFFECT.withColor(new AlphaColor(alpha, new Color(potion.effect().color())));
-        };
+        this.particleSupplier =
+                potion -> {
+                    var alpha = potion.isAmbient() ? 38 : 255;
+                    return Particle.ENTITY_EFFECT.withColor(
+                            new AlphaColor(alpha, new Color(potion.effect().color())));
+                };
     }
 
-    public CombatPotionEffect(PotionEffect potionEffect, Function<Potion, Particle> particleSupplier) {
+    public CombatPotionEffect(
+            PotionEffect potionEffect, Function<Potion, Particle> particleSupplier) {
         this.potionEffect = potionEffect;
         this.particleSupplier = particleSupplier;
     }
@@ -56,16 +57,15 @@ public class CombatPotionEffect {
         return this.particleSupplier.apply(potion);
     }
 
-    public CombatPotionEffect addAttributeModifier(Attribute attribute, Key id,
-                                                   double amount, AttributeOperation operation) {
+    public CombatPotionEffect addAttributeModifier(
+            Attribute attribute, Key id, double amount, AttributeOperation operation) {
         this.attributeModifiers.put(attribute, new AttributeModifier(id, amount, operation));
         return this;
     }
 
-    public CombatPotionEffect addLegacyAttributeModifier(Attribute attribute, Key id,
-                                                         double amount, AttributeOperation operation) {
-        if (this.legacyAttributeModifiers == null)
-            this.legacyAttributeModifiers = new HashMap<>();
+    public CombatPotionEffect addLegacyAttributeModifier(
+            Attribute attribute, Key id, double amount, AttributeOperation operation) {
+        if (this.legacyAttributeModifiers == null) this.legacyAttributeModifiers = new HashMap<>();
         this.legacyAttributeModifiers.put(attribute, new AttributeModifier(id, amount, operation));
         return this;
     }
@@ -75,8 +75,11 @@ public class CombatPotionEffect {
         return this;
     }
 
-    public void applyUpdateEffect(LivingEntity entity, int amplifier,
-                                  ExhaustionFeature exhaustionFeature, FoodFeature foodFeature) {
+    public void applyUpdateEffect(
+            LivingEntity entity,
+            int amplifier,
+            ExhaustionFeature exhaustionFeature,
+            FoodFeature foodFeature) {
         if (this.potionEffect == PotionEffect.REGENERATION) {
             if (entity.getHealth() < entity.getAttributeValue(Attribute.MAX_HEALTH)) {
                 entity.setHealth(entity.getHealth() + 1);
@@ -102,7 +105,8 @@ public class CombatPotionEffect {
             }
         }
 
-        if (this.potionEffect == PotionEffect.INSTANT_DAMAGE || this.potionEffect == PotionEffect.INSTANT_HEALTH) {
+        if (this.potionEffect == PotionEffect.INSTANT_DAMAGE
+                || this.potionEffect == PotionEffect.INSTANT_HEALTH) {
             if (this.shouldHeal(entity)) {
                 entity.setHealth(entity.getHealth() + (float) Math.max(4 << amplifier, 0));
             } else {
@@ -111,9 +115,16 @@ public class CombatPotionEffect {
         }
     }
 
-    public void applyInstantEffect(@Nullable Entity source, @Nullable Entity attacker, LivingEntity target,
-                                   int amplifier, double proximity, ExhaustionFeature exhaustionFeature, FoodFeature foodFeature) {
-        if (this.potionEffect != PotionEffect.INSTANT_DAMAGE && this.potionEffect != PotionEffect.INSTANT_HEALTH) {
+    public void applyInstantEffect(
+            @Nullable Entity source,
+            @Nullable Entity attacker,
+            LivingEntity target,
+            int amplifier,
+            double proximity,
+            ExhaustionFeature exhaustionFeature,
+            FoodFeature foodFeature) {
+        if (this.potionEffect != PotionEffect.INSTANT_DAMAGE
+                && this.potionEffect != PotionEffect.INSTANT_HEALTH) {
             this.applyUpdateEffect(target, amplifier, exhaustionFeature, foodFeature);
             return;
         }
@@ -126,13 +137,18 @@ public class CombatPotionEffect {
             if (source == null) {
                 target.damage(DamageType.MAGIC, (float) amount);
             } else {
-                target.damage(new Damage(DamageType.INDIRECT_MAGIC, source, attacker, null, (float) amount));
+                target.damage(
+                        new Damage(
+                                DamageType.INDIRECT_MAGIC, source, attacker, null, (float) amount));
             }
         }
     }
 
     private boolean shouldHeal(LivingEntity entity) {
-        var healing = EntityGroup.hasInvertedHealingAndHarm(entity) ? PotionEffect.INSTANT_DAMAGE : PotionEffect.INSTANT_HEALTH;
+        var healing =
+                EntityGroup.hasInvertedHealingAndHarm(entity)
+                        ? PotionEffect.INSTANT_DAMAGE
+                        : PotionEffect.INSTANT_HEALTH;
 
         return this.potionEffect == healing;
     }
@@ -172,19 +188,28 @@ public class CombatPotionEffect {
             modifiers = this.attributeModifiers;
         }
 
-        modifiers.forEach((attribute, modifier) -> {
-            var instance = entity.getAttribute(attribute);
-            instance.removeModifier(modifier);
-            instance.addModifier(new AttributeModifier(modifier.id(), this.adjustModifierAmount(amplifier, modifier), modifier.operation()));
-        });
+        modifiers.forEach(
+                (attribute, modifier) -> {
+                    var instance = entity.getAttribute(attribute);
+                    instance.removeModifier(modifier);
+                    instance.addModifier(
+                            new AttributeModifier(
+                                    modifier.id(),
+                                    this.adjustModifierAmount(amplifier, modifier),
+                                    modifier.operation()));
+                });
 
         if (this.soundOnAdded != null) {
-            ViewUtil.viewersAndSelf(entity).playSound(Sound.sound(
-                    this.soundOnAdded,
-                    entity instanceof Player ? Sound.Source.PLAYER : Sound.Source.HOSTILE,
-                    1.0F,
-                    1.0F
-            ), entity);
+            ViewUtil.viewersAndSelf(entity)
+                    .playSound(
+                            Sound.sound(
+                                    this.soundOnAdded,
+                                    entity instanceof Player
+                                            ? Sound.Source.PLAYER
+                                            : Sound.Source.HOSTILE,
+                                    1.0F,
+                                    1.0F),
+                            entity);
         }
     }
 
@@ -196,8 +221,8 @@ public class CombatPotionEffect {
             modifiers = this.attributeModifiers;
         }
 
-        modifiers.forEach((attribute, modifier) ->
-                entity.getAttribute(attribute).removeModifier(modifier));
+        modifiers.forEach(
+                (attribute, modifier) -> entity.getAttribute(attribute).removeModifier(modifier));
     }
 
     private double adjustModifierAmount(int amplifier, AttributeModifier modifier) {

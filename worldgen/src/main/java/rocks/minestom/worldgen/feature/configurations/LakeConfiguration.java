@@ -12,8 +12,8 @@ public record LakeConfiguration(
         BlockStateProvider barrier,
         PlacementModifiers.BlockPredicate canPlaceFeature,
         PlacementModifiers.BlockPredicate canReplaceWithAirOrFluid,
-        PlacementModifiers.BlockPredicate canReplaceWithBarrier
-) implements FeatureConfiguration {
+        PlacementModifiers.BlockPredicate canReplaceWithBarrier)
+        implements FeatureConfiguration {
 
     public static LakeConfiguration fromJson(JsonElement json, BlockTagManager blockTags) {
         if (!json.isJsonObject()) {
@@ -24,8 +24,11 @@ public record LakeConfiguration(
         return new LakeConfiguration(
                 BlockStateProviders.fromJson(obj.get("fluid")),
                 BlockStateProviders.fromJson(obj.get("barrier")),
-                PlacementModifiers.parseBlockPredicate(obj.getAsJsonObject("can_place_feature"), blockTags),
-                PlacementModifiers.parseBlockPredicate(obj.getAsJsonObject("can_replace_with_air_or_fluid"), blockTags),
-                PlacementModifiers.parseBlockPredicate(obj.getAsJsonObject("can_replace_with_barrier"), blockTags));
+                PlacementModifiers.parseBlockPredicate(
+                        obj.getAsJsonObject("can_place_feature"), blockTags),
+                PlacementModifiers.parseBlockPredicate(
+                        obj.getAsJsonObject("can_replace_with_air_or_fluid"), blockTags),
+                PlacementModifiers.parseBlockPredicate(
+                        obj.getAsJsonObject("can_replace_with_barrier"), blockTags));
     }
 }

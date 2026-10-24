@@ -1,5 +1,8 @@
 package io.github.togar2.pvp.feature.cooldown;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.github.togar2.pvp.feature.CombatFeatures;
 import io.github.togar2.pvp.feature.FeatureType;
 import net.minestom.server.MinecraftServer;
@@ -9,16 +12,11 @@ import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 @EnvTest
 public final class VanillaItemCooldownFeatureTest {
     @Test
     public void cooldownsCountServerTicks(Env env) {
-        var featureSet = CombatFeatures.empty()
-                .add(CombatFeatures.VANILLA_ITEM_COOLDOWN)
-                .build();
+        var featureSet = CombatFeatures.empty().add(CombatFeatures.VANILLA_ITEM_COOLDOWN).build();
         var cooldownFeature = featureSet.get(FeatureType.ITEM_COOLDOWN);
         var node = featureSet.createNode();
         MinecraftServer.getGlobalEventHandler().addChild(node);

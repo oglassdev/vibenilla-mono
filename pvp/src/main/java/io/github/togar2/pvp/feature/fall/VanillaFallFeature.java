@@ -11,6 +11,8 @@ import io.github.togar2.pvp.utils.BlockUtil;
 import io.github.togar2.pvp.utils.ChunkBlockGetter;
 import io.github.togar2.pvp.utils.FluidUtil;
 import io.github.togar2.pvp.utils.RegistryTags;
+import java.util.ArrayList;
+import java.util.concurrent.ThreadLocalRandom;
 import net.kyori.adventure.sound.Sound;
 import net.minestom.server.ServerFlag;
 import net.minestom.server.component.DataComponents;
@@ -29,7 +31,6 @@ import net.minestom.server.event.player.PlayerMoveEvent;
 import net.minestom.server.event.player.PlayerStartFlyingWithElytraEvent;
 import net.minestom.server.event.player.PlayerTickEvent;
 import net.minestom.server.event.trait.EntityInstanceEvent;
-import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.network.packet.server.play.ParticlePacket;
@@ -40,24 +41,23 @@ import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.utils.block.BlockIterator;
 
-import java.util.ArrayList;
-import java.util.concurrent.ThreadLocalRandom;
-
-/**
- * Vanilla implementation of {@link FallFeature}
- */
+/** Vanilla implementation of {@link FallFeature} */
 public class VanillaFallFeature implements FallFeature, RegistrableFeature {
-    public static final DefinedFeature<VanillaFallFeature> DEFINED = new DefinedFeature<>(
-            FeatureType.FALL, VanillaFallFeature::new,
-            VanillaFallFeature::initPlayer,
-            FeatureType.PLAYER_STATE, FeatureType.ITEM_DAMAGE
-    );
+    public static final DefinedFeature<VanillaFallFeature> DEFINED =
+            new DefinedFeature<>(
+                    FeatureType.FALL,
+                    VanillaFallFeature::new,
+                    VanillaFallFeature::initPlayer,
+                    FeatureType.PLAYER_STATE,
+                    FeatureType.ITEM_DAMAGE);
 
     public static final Tag<Double> FALL_DISTANCE = Tag.Transient("fallDistance");
     public static final Tag<Boolean> EXTRA_FALL_PARTICLES = Tag.Transient("extraFallParticles");
     public static final Tag<Integer> FALL_FLYING_TICKS = Tag.Integer("fallFlyingTicks");
-    public static final Tag<Double> CURRENT_IMPULSE_IMPACT_Y = Tag.Transient("currentImpulseImpactY");
-    public static final Tag<Integer> CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME = Tag.Transient("currentImpulseContextResetGraceTime");
+    public static final Tag<Double> CURRENT_IMPULSE_IMPACT_Y =
+            Tag.Transient("currentImpulseImpactY");
+    public static final Tag<Integer> CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME =
+            Tag.Transient("currentImpulseContextResetGraceTime");
 
     private static final int CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TICKS = 40;
 
@@ -88,37 +88,51 @@ public class VanillaFallFeature implements FallFeature, RegistrableFeature {
 
     @Override
     public void init(EventNode<EntityInstanceEvent> node) {
-        node.addListener(PlayerStartFlyingWithElytraEvent.class, event -> {
-            var player = event.getPlayer();
+        node.addListener(
+                PlayerStartFlyingWithElytraEvent.class,
+                event -> {
+                    var player = event.getPlayer();
 
-            if (!this.canGlide(player)) {
-                player.setFlyingWithElytra(false);
-            }
-        });
+                    if (!this.canGlide(player)) {
+                        player.setFlyingWithElytra(false);
+                    }
+                });
 
-        node.addListener(PlayerTickEvent.class, event -> {
-            this.updateFallFlying(event.getPlayer());
-            this.tickCurrentImpulseContext(event.getPlayer());
-        });
+        node.addListener(
+                PlayerTickEvent.class,
+                event -> {
+                    this.updateFallFlying(event.getPlayer());
+                    this.tickCurrentImpulseContext(event.getPlayer());
+                });
 
-        node.addListener(EntityTickEvent.class, event -> {
-            if (!(event.getEntity() instanceof LivingEntity livingEntity)) return;
-            if (livingEntity instanceof Player) return;
+        node.addListener(
+                EntityTickEvent.class,
+                event -> {
+                    if (!(event.getEntity() instanceof LivingEntity livingEntity)) return;
+                    if (livingEntity instanceof Player) return;
 
-            var previousPosition = livingEntity.getPreviousPosition();
-            this.handleFallDamage(livingEntity, previousPosition, livingEntity.getPosition(), livingEntity.isOnGround());
-            this.tickCurrentImpulseContext(livingEntity);
-        });
+                    var previousPosition = livingEntity.getPreviousPosition();
+                    this.handleFallDamage(
+                            livingEntity,
+                            previousPosition,
+                            livingEntity.getPosition(),
+                            livingEntity.isOnGround());
+                    this.tickCurrentImpulseContext(livingEntity);
+                });
 
-        node.addListener(PlayerMoveEvent.class, event -> {
-            var player = event.getPlayer();
-            if (this.playerStateFeature.isClimbing(player)) player.setTag(FALL_DISTANCE, 0.0);
+        node.addListener(
+                PlayerMoveEvent.class,
+                event -> {
+                    var player = event.getPlayer();
+                    if (this.playerStateFeature.isClimbing(player))
+                        player.setTag(FALL_DISTANCE, 0.0);
 
-            this.handleFallDamage(
-                    player, player.getPosition(),
-                    event.getNewPosition(), event.isOnGround()
-            );
-        });
+                    this.handleFallDamage(
+                            player,
+                            player.getPosition(),
+                            event.getNewPosition(),
+                            event.isOnGround());
+                });
     }
 
     private boolean canGlide(Player player) {
@@ -225,7 +239,8 @@ public class VanillaFallFeature implements FallFeature, RegistrableFeature {
 
         if (this.isStuckInBlock(entity, newPos)) {
             entity.setTag(FALL_DISTANCE, 0.0);
-            if (entity instanceof Player && entity.getTag(CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME) <= 0) {
+            if (entity instanceof Player
+                    && entity.getTag(CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME) <= 0) {
                 this.resetCurrentImpulseContext(entity);
             }
             return;
@@ -269,18 +284,26 @@ public class VanillaFallFeature implements FallFeature, RegistrableFeature {
         var adjustedFallDistance = this.adjustFallDistance(block, fallDistance);
         var damageModifier = this.getDamageModifier(entity, block);
         var damageType = this.getDamageType(block);
-        var effectiveFallDistance = this.getEffectiveFallDistance(entity, adjustedFallDistance, newPos);
+        var effectiveFallDistance =
+                this.getEffectiveFallDistance(entity, adjustedFallDistance, newPos);
 
-        if (entity.hasTag(EXTRA_FALL_PARTICLES) && entity.getTag(EXTRA_FALL_PARTICLES) && fallDistance > 0.0) {
+        if (entity.hasTag(EXTRA_FALL_PARTICLES)
+                && entity.getTag(EXTRA_FALL_PARTICLES)
+                && fallDistance > 0.0) {
             var position = landingPos.asVec().apply(Vec.Operator.FLOOR).add(0.5, 1, 0.5);
             var particleCount = (int) Math.max(0, Math.min(200, 50 * fallDistance));
 
-            entity.sendPacketToViewersAndSelf(new ParticlePacket(
-                    Particle.BLOCK.withBlock(block),
-                    position.x(), position.y(), position.z(),
-                    0.3F, 0.3F, 0.3F,
-                    0.15F, particleCount
-            ));
+            entity.sendPacketToViewersAndSelf(
+                    new ParticlePacket(
+                            Particle.BLOCK.withBlock(block),
+                            position.x(),
+                            position.y(),
+                            position.z(),
+                            0.3F,
+                            0.3F,
+                            0.3F,
+                            0.15F,
+                            particleCount));
 
             entity.removeTag(EXTRA_FALL_PARTICLES);
         }
@@ -300,13 +323,19 @@ public class VanillaFallFeature implements FallFeature, RegistrableFeature {
                 var particleMultiplier = Math.min(0.2 + damageDistance / 15.0, 2.5);
                 var particleCount = (int) (150 * particleMultiplier);
 
-                entity.sendPacketToViewersAndSelf(new ParticlePacket(
-                        Particle.BLOCK.withBlock(block), false,
-                        false,
-                        newPos.x(), newPos.y(), newPos.z(),
-                        0, 0, 0,
-                        0.15F, particleCount
-                ));
+                entity.sendPacketToViewersAndSelf(
+                        new ParticlePacket(
+                                Particle.BLOCK.withBlock(block),
+                                false,
+                                false,
+                                newPos.x(),
+                                newPos.y(),
+                                newPos.z(),
+                                0,
+                                0,
+                                0,
+                                0.15F,
+                                particleCount));
             }
         }
 
@@ -315,7 +344,8 @@ public class VanillaFallFeature implements FallFeature, RegistrableFeature {
         if (entity instanceof Player player && player.getGameMode().invulnerable()) return;
         if (this.isFallDamageImmune(entity)) return;
 
-        this.propagateFallDamageToPassengers(entity, effectiveFallDistance, damageModifier, damageType);
+        this.propagateFallDamageToPassengers(
+                entity, effectiveFallDistance, damageModifier, damageType);
 
         var damage = this.getFallDamage(entity, effectiveFallDistance, damageModifier);
         if (damage > 0) {
@@ -331,7 +361,8 @@ public class VanillaFallFeature implements FallFeature, RegistrableFeature {
         }
     }
 
-    private boolean shouldResetFallDistanceAlongMovement(LivingEntity entity, Pos currentPosition, Pos newPosition, double fallDistance) {
+    private boolean shouldResetFallDistanceAlongMovement(
+            LivingEntity entity, Pos currentPosition, Pos newPosition, double fallDistance) {
         if (fallDistance == 0.0) return false;
 
         var instance = entity.getInstance();
@@ -358,7 +389,11 @@ public class VanillaFallFeature implements FallFeature, RegistrableFeature {
         return false;
     }
 
-    private void propagateFallDamageToPassengers(LivingEntity entity, double fallDistance, double damageModifier, RegistryKey<DamageType> damageType) {
+    private void propagateFallDamageToPassengers(
+            LivingEntity entity,
+            double fallDistance,
+            double damageModifier,
+            RegistryKey<DamageType> damageType) {
         for (var passenger : entity.getPassengers()) {
             if (passenger instanceof Player player && player.getGameMode().invulnerable()) {
                 continue;
@@ -368,7 +403,8 @@ public class VanillaFallFeature implements FallFeature, RegistrableFeature {
                 continue;
             }
 
-            this.propagateFallDamageToPassengers(livingPassenger, fallDistance, damageModifier, damageType);
+            this.propagateFallDamageToPassengers(
+                    livingPassenger, fallDistance, damageModifier, damageType);
 
             var damage = this.getFallDamage(livingPassenger, fallDistance, damageModifier);
 
@@ -384,33 +420,48 @@ public class VanillaFallFeature implements FallFeature, RegistrableFeature {
     public void playFallSound(LivingEntity entity, int damage) {
         var bigFall = damage > 4;
 
-        entity.getViewersAsAudience().playSound(Sound.sound(
-                bigFall ?
-                        SoundEvent.ENTITY_PLAYER_BIG_FALL :
-                        SoundEvent.ENTITY_PLAYER_SMALL_FALL,
-                entity instanceof Player ? Sound.Source.PLAYER : Sound.Source.HOSTILE,
-                1.0F, 1.0F
-        ), entity);
+        entity.getViewersAsAudience()
+                .playSound(
+                        Sound.sound(
+                                bigFall
+                                        ? SoundEvent.ENTITY_PLAYER_BIG_FALL
+                                        : SoundEvent.ENTITY_PLAYER_SMALL_FALL,
+                                entity instanceof Player
+                                        ? Sound.Source.PLAYER
+                                        : Sound.Source.HOSTILE,
+                                1.0F,
+                                1.0F),
+                        entity);
     }
 
     private void playPowderSnowFallSound(LivingEntity entity, double fallDistance) {
         var bigFall = fallDistance >= 7.0;
 
-        entity.getViewersAsAudience().playSound(Sound.sound(
-                bigFall ?
-                        SoundEvent.ENTITY_PLAYER_BIG_FALL :
-                        SoundEvent.ENTITY_PLAYER_SMALL_FALL,
-                entity instanceof Player ? Sound.Source.PLAYER : Sound.Source.HOSTILE,
-                1.0F, 1.0F
-        ), entity);
+        entity.getViewersAsAudience()
+                .playSound(
+                        Sound.sound(
+                                bigFall
+                                        ? SoundEvent.ENTITY_PLAYER_BIG_FALL
+                                        : SoundEvent.ENTITY_PLAYER_SMALL_FALL,
+                                entity instanceof Player
+                                        ? Sound.Source.PLAYER
+                                        : Sound.Source.HOSTILE,
+                                1.0F,
+                                1.0F),
+                        entity);
     }
 
     private void playHoneyBlockSlideEffects(LivingEntity entity) {
-        entity.getViewersAsAudience().playSound(Sound.sound(
-                SoundEvent.BLOCK_HONEY_BLOCK_SLIDE,
-                entity instanceof Player ? Sound.Source.PLAYER : Sound.Source.HOSTILE,
-                1.0F, 1.0F
-        ), entity);
+        entity.getViewersAsAudience()
+                .playSound(
+                        Sound.sound(
+                                SoundEvent.BLOCK_HONEY_BLOCK_SLIDE,
+                                entity instanceof Player
+                                        ? Sound.Source.PLAYER
+                                        : Sound.Source.HOSTILE,
+                                1.0F,
+                                1.0F),
+                        entity);
         entity.triggerStatus((byte) 54);
     }
 
@@ -420,19 +471,29 @@ public class VanillaFallFeature implements FallFeature, RegistrableFeature {
         var soundType = block.blockSoundType();
         if (soundType == null) return;
 
-        entity.getViewersAsAudience().playSound(Sound.sound(
-                soundType.fallSound(),
-                entity instanceof Player ? Sound.Source.PLAYER : Sound.Source.HOSTILE,
-                soundType.volume() * 0.5F, soundType.pitch() * 0.75F
-        ), entity);
+        entity.getViewersAsAudience()
+                .playSound(
+                        Sound.sound(
+                                soundType.fallSound(),
+                                entity instanceof Player
+                                        ? Sound.Source.PLAYER
+                                        : Sound.Source.HOSTILE,
+                                soundType.volume() * 0.5F,
+                                soundType.pitch() * 0.75F),
+                        entity);
     }
 
     private void playHoneyBlockFallSound(LivingEntity entity) {
-        entity.getViewersAsAudience().playSound(Sound.sound(
-                SoundEvent.BLOCK_HONEY_BLOCK_FALL,
-                entity instanceof Player ? Sound.Source.PLAYER : Sound.Source.HOSTILE,
-                0.5F, 0.75F
-        ), entity);
+        entity.getViewersAsAudience()
+                .playSound(
+                        Sound.sound(
+                                SoundEvent.BLOCK_HONEY_BLOCK_FALL,
+                                entity instanceof Player
+                                        ? Sound.Source.PLAYER
+                                        : Sound.Source.HOSTILE,
+                                0.5F,
+                                0.75F),
+                        entity);
     }
 
     @Override
@@ -445,9 +506,13 @@ public class VanillaFallFeature implements FallFeature, RegistrableFeature {
         if (this.isLlama(entity) && fallDistance < 6.0) return 0;
 
         var safeFallDistance = entity.getAttributeValue(Attribute.SAFE_FALL_DISTANCE);
-        var damage = (int) Math.floor((fallDistance + 1.0E-6 - safeFallDistance)
-                * damageModifier
-                * entity.getAttributeValue(Attribute.FALL_DAMAGE_MULTIPLIER));
+        var damage =
+                (int)
+                        Math.floor(
+                                (fallDistance + 1.0E-6 - safeFallDistance)
+                                        * damageModifier
+                                        * entity.getAttributeValue(
+                                                Attribute.FALL_DAMAGE_MULTIPLIER));
 
         if (entity.getEntityType() == EntityType.GOAT) return damage - 10;
         if (entity.getEntityType() == EntityType.FROG) return damage - 5;
@@ -482,7 +547,8 @@ public class VanillaFallFeature implements FallFeature, RegistrableFeature {
 
     @Override
     public void setIgnoreFallDamageFromCurrentImpulse(LivingEntity entity) {
-        this.setIgnoreFallDamageFromCurrentImpulse(entity, this.calculateCurrentImpulseImpactY(entity));
+        this.setIgnoreFallDamageFromCurrentImpulse(
+                entity, this.calculateCurrentImpulseImpactY(entity));
     }
 
     @Override
@@ -503,14 +569,18 @@ public class VanillaFallFeature implements FallFeature, RegistrableFeature {
 
     @Override
     public void applyPostImpulseGraceTime(LivingEntity entity, int ticks) {
-        entity.setTag(CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME, Math.max(
-                entity.hasTag(CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME) ? entity.getTag(CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME) : 0,
-                ticks
-        ));
+        entity.setTag(
+                CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME,
+                Math.max(
+                        entity.hasTag(CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME)
+                                ? entity.getTag(CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME)
+                                : 0,
+                        ticks));
     }
 
     private double calculateCurrentImpulseImpactY(LivingEntity entity) {
-        if (entity.hasTag(CURRENT_IMPULSE_IMPACT_Y) && entity.getTag(CURRENT_IMPULSE_IMPACT_Y) <= entity.getPosition().y()) {
+        if (entity.hasTag(CURRENT_IMPULSE_IMPACT_Y)
+                && entity.getTag(CURRENT_IMPULSE_IMPACT_Y) <= entity.getPosition().y()) {
             return entity.getTag(CURRENT_IMPULSE_IMPACT_Y);
         }
 
@@ -526,17 +596,22 @@ public class VanillaFallFeature implements FallFeature, RegistrableFeature {
         entity.setTag(CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME, graceTime - 1);
     }
 
-    private double getEffectiveFallDistance(LivingEntity entity, double fallDistance, Pos position) {
+    private double getEffectiveFallDistance(
+            LivingEntity entity, double fallDistance, Pos position) {
         if (!entity.hasTag(CURRENT_IMPULSE_IMPACT_Y)) return fallDistance;
 
-        var effectiveFallDistance = Math.min(fallDistance, entity.getTag(CURRENT_IMPULSE_IMPACT_Y) - position.y());
+        var effectiveFallDistance =
+                Math.min(fallDistance, entity.getTag(CURRENT_IMPULSE_IMPACT_Y) - position.y());
 
         if (effectiveFallDistance <= 0.0) {
             this.resetCurrentImpulseContext(entity);
             return effectiveFallDistance;
         }
 
-        var graceTime = entity.hasTag(CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME) ? entity.getTag(CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME) : 0;
+        var graceTime =
+                entity.hasTag(CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME)
+                        ? entity.getTag(CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME)
+                        : 0;
         if (graceTime <= 0) {
             this.resetCurrentImpulseContext(entity);
         }
@@ -620,7 +695,9 @@ public class VanillaFallFeature implements FallFeature, RegistrableFeature {
 
         var blockGetter = new ChunkBlockGetter(instance, null, Block.AIR);
 
-        return !BlockUtil.getStuckSpeedMultiplier(blockGetter, position, entity.getBoundingBox(), false).isZero();
+        return !BlockUtil.getStuckSpeedMultiplier(
+                        blockGetter, position, entity.getBoundingBox(), false)
+                .isZero();
     }
 
     private boolean isFallDamageResetting(Block block) {

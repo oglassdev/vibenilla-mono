@@ -15,17 +15,17 @@ import net.minestom.server.event.trait.EntityInstanceEvent;
 import net.minestom.server.item.Material;
 import net.minestom.server.tag.Tag;
 
-/**
- * Vanilla implementation of {@link AttackCooldownFeature}
- */
+/** Vanilla implementation of {@link AttackCooldownFeature} */
 public class VanillaAttackCooldownFeature implements AttackCooldownFeature, RegistrableFeature {
-    public static final DefinedFeature<VanillaAttackCooldownFeature> DEFINED = new DefinedFeature<>(
-            FeatureType.ATTACK_COOLDOWN, VanillaAttackCooldownFeature::new,
-            FeatureType.VERSION
-    );
+    public static final DefinedFeature<VanillaAttackCooldownFeature> DEFINED =
+            new DefinedFeature<>(
+                    FeatureType.ATTACK_COOLDOWN,
+                    VanillaAttackCooldownFeature::new,
+                    FeatureType.VERSION);
 
     public static final Tag<Long> LAST_ATTACKED_TICKS = Tag.Long("lastAttackedTicks");
-    public static final Tag<Material> LAST_MAIN_HAND_MATERIAL = Tag.Transient("lastMainHandMaterial");
+    public static final Tag<Material> LAST_MAIN_HAND_MATERIAL =
+            Tag.Transient("lastMainHandMaterial");
 
     private final FeatureConfiguration configuration;
     private CombatVersion version;
@@ -41,20 +41,24 @@ public class VanillaAttackCooldownFeature implements AttackCooldownFeature, Regi
 
     @Override
     public void init(EventNode<EntityInstanceEvent> node) {
-        node.addListener(EventListener.builder(PlayerHandAnimationEvent.class).handler(event ->
-                this.resetCooldownProgress(event.getPlayer())).build());
+        node.addListener(
+                EventListener.builder(PlayerHandAnimationEvent.class)
+                        .handler(event -> this.resetCooldownProgress(event.getPlayer()))
+                        .build());
 
-        node.addListener(PlayerTickEvent.class, event -> {
-            var player = event.getPlayer();
-            var material = player.getItemInMainHand().material();
-            var lastMaterial = player.getTag(LAST_MAIN_HAND_MATERIAL);
+        node.addListener(
+                PlayerTickEvent.class,
+                event -> {
+                    var player = event.getPlayer();
+                    var material = player.getItemInMainHand().material();
+                    var lastMaterial = player.getTag(LAST_MAIN_HAND_MATERIAL);
 
-            if (lastMaterial != null && lastMaterial != material) {
-                this.resetCooldownProgress(player);
-            }
+                    if (lastMaterial != null && lastMaterial != material) {
+                        this.resetCooldownProgress(player);
+                    }
 
-            player.setTag(LAST_MAIN_HAND_MATERIAL, material);
-        });
+                    player.setTag(LAST_MAIN_HAND_MATERIAL, material);
+                });
     }
 
     @Override
@@ -76,9 +80,10 @@ public class VanillaAttackCooldownFeature implements AttackCooldownFeature, Regi
 
         var timeSinceLastAttacked = player.getAliveTicks() - lastAttacked;
         return Math.clamp(
-                (timeSinceLastAttacked + adjustTicks) / this.getAttackCooldownProgressPerTick(player),
-                0, 1
-        );
+                (timeSinceLastAttacked + adjustTicks)
+                        / this.getAttackCooldownProgressPerTick(player),
+                0,
+                1);
     }
 
     protected double getAttackCooldownProgressPerTick(Player player) {

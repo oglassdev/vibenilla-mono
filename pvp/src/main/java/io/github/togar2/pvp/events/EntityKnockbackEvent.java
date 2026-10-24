@@ -7,16 +7,15 @@ import net.minestom.server.event.trait.EntityInstanceEvent;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Called when an entity gets knocked back by another entity.
- * This event does not apply simply when {@code Entity.takeKnockback()} is called,
- * but only when an entity is attacked by another entity which causes the knockback.
- * <br><br>
- * You should be aware that when the attacker has a knockback weapon, this event will be called twice:
- * once for the default damage knockback, once for the extra knockback.
+ * Called when an entity gets knocked back by another entity. This event does not apply simply when
+ * {@code Entity.takeKnockback()} is called, but only when an entity is attacked by another entity
+ * which causes the knockback. <br>
  * <br>
+ * You should be aware that when the attacker has a knockback weapon, this event will be called
+ * twice: once for the default damage knockback, once for the extra knockback. <br>
  * When the attack was a sweeping attack, this event is also called twice for the affected entities:
- * once for the extra sweeping knockback, once for the default knockback.
- * <br><br>
+ * once for the extra sweeping knockback, once for the default knockback. <br>
+ * <br>
  * You can determine which type of knockback this is by using {@link #getKnockbackType()}.
  */
 public class EntityKnockbackEvent implements EntityInstanceEvent, CancellableEvent {
@@ -29,8 +28,11 @@ public class EntityKnockbackEvent implements EntityInstanceEvent, CancellableEve
 
     private boolean cancelled;
 
-    public EntityKnockbackEvent(@NotNull Entity entity, @NotNull Entity attacker,
-                                @NotNull KnockbackType knockbackType, @NotNull AnimationType animationType) {
+    public EntityKnockbackEvent(
+            @NotNull Entity entity,
+            @NotNull Entity attacker,
+            @NotNull KnockbackType knockbackType,
+            @NotNull AnimationType animationType) {
         this.entity = entity;
         this.attacker = attacker;
         this.knockbackType = knockbackType;

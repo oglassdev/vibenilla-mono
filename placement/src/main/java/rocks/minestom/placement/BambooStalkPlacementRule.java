@@ -27,7 +27,8 @@ public final class BambooStalkPlacementRule extends BlockPlacementRule {
         }
 
         if (belowBlock.compare(Block.BAMBOO_SAPLING)) {
-            return placementState.block()
+            return placementState
+                    .block()
                     .withProperty("age", "0")
                     .withProperty("leaves", "none")
                     .withProperty("stage", "0");
@@ -35,10 +36,12 @@ public final class BambooStalkPlacementRule extends BlockPlacementRule {
 
         if (belowBlock.compare(Block.BAMBOO)) {
             var existingAgeProperty = belowBlock.getProperty("age");
-            var existingAge = existingAgeProperty == null ? 0 : Integer.parseInt(existingAgeProperty);
+            var existingAge =
+                    existingAgeProperty == null ? 0 : Integer.parseInt(existingAgeProperty);
             var newAge = existingAge > 0 ? 1 : 0;
 
-            return placementState.block()
+            return placementState
+                    .block()
                     .withProperty("age", Integer.toString(newAge))
                     .withProperty("leaves", "none")
                     .withProperty("stage", "0");
@@ -50,7 +53,8 @@ public final class BambooStalkPlacementRule extends BlockPlacementRule {
             var aboveAgeProperty = aboveBlock.getProperty("age");
             var aboveAge = aboveAgeProperty == null ? 0 : Integer.parseInt(aboveAgeProperty);
 
-            return placementState.block()
+            return placementState
+                    .block()
                     .withProperty("age", Integer.toString(aboveAge))
                     .withProperty("leaves", "none")
                     .withProperty("stage", "0");
@@ -65,12 +69,16 @@ public final class BambooStalkPlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+        var below =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
         return supports(below) ? updateState.currentBlock() : Block.AIR;
     }
 
     private static boolean supports(Block block) {
-        var supportsBambooTag = MinecraftServer.process().blocks().getTag(Key.key("minecraft:supports_bamboo"));
+        var supportsBambooTag =
+                MinecraftServer.process().blocks().getTag(Key.key("minecraft:supports_bamboo"));
         return supportsBambooTag != null && supportsBambooTag.contains(block);
     }
 }

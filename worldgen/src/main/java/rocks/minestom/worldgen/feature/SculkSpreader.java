@@ -1,24 +1,22 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import rocks.minestom.worldgen.feature.treedecorators.TreeDecorator;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
-
 /**
- * Port of vanilla's {@code net.minecraft.world.level.block.SculkSpreader}
- * (world generation configuration only, i.e. {@code createWorldGenSpreader}),
- * together with the world-generation-relevant parts of {@code SculkBehaviour},
- * {@code SculkBlock}, {@code SculkVeinBlock} and {@code MultifaceSpreader}
- * that its charge cursors depend on. Non-worldgen behaviour (tick scheduling,
- * particle events, saving/loading) is omitted since it has no effect on the
- * blocks a sculk patch feature writes.
+ * Port of vanilla's {@code net.minecraft.world.level.block.SculkSpreader} (world generation
+ * configuration only, i.e. {@code createWorldGenSpreader}), together with the
+ * world-generation-relevant parts of {@code SculkBehaviour}, {@code SculkBlock}, {@code
+ * SculkVeinBlock} and {@code MultifaceSpreader} that its charge cursors depend on. Non-worldgen
+ * behaviour (tick scheduling, particle events, saving/loading) is omitted since it has no effect on
+ * the blocks a sculk patch feature writes.
  */
 public final class SculkSpreader {
     private static final int MAX_CURSORS = 32;
@@ -30,42 +28,90 @@ public final class SculkSpreader {
     private static final int ADDITIONAL_DECAY_RATE = 10;
 
     /**
-     * Vanilla's {@code SculkVeinBlock.NON_CORNER_NEIGHBOURS}: every offset in
-     * [-1,1]^3 with at least one zero coordinate, excluding the origin, in the
-     * exact order {@code BlockPos.betweenClosedStream} produces them (x
-     * fastest, then y, then z).
+     * Vanilla's {@code SculkVeinBlock.NON_CORNER_NEIGHBOURS}: every offset in [-1,1]^3 with at
+     * least one zero coordinate, excluding the origin, in the exact order {@code
+     * BlockPos.betweenClosedStream} produces them (x fastest, then y, then z).
      */
     private static final int[][] NON_CORNER_NEIGHBOURS = {
-            {0, -1, -1}, {-1, 0, -1}, {0, 0, -1}, {1, 0, -1}, {0, 1, -1},
-            {-1, -1, 0}, {0, -1, 0}, {1, -1, 0}, {-1, 0, 0}, {1, 0, 0},
-            {-1, 1, 0}, {0, 1, 0}, {1, 1, 0},
-            {0, -1, 1}, {-1, 0, 1}, {0, 0, 1}, {1, 0, 1}, {0, 1, 1}
+        {0, -1, -1},
+        {-1, 0, -1},
+        {0, 0, -1},
+        {1, 0, -1},
+        {0, 1, -1},
+        {-1, -1, 0},
+        {0, -1, 0},
+        {1, -1, 0},
+        {-1, 0, 0},
+        {1, 0, 0},
+        {-1, 1, 0},
+        {0, 1, 0},
+        {1, 1, 0},
+        {0, -1, 1},
+        {-1, 0, 1},
+        {0, 0, 1},
+        {1, 0, 1},
+        {0, 1, 1}
     };
 
     /** Vanilla's {@code #minecraft:sculk_replaceable} block tag (26.2 contents). */
-    private static final Set<String> SCULK_REPLACEABLE = Set.of(
-            "minecraft:stone", "minecraft:granite", "minecraft:diorite", "minecraft:andesite",
-            "minecraft:tuff", "minecraft:deepslate",
-            "minecraft:dirt", "minecraft:coarse_dirt", "minecraft:rooted_dirt",
-            "minecraft:mud", "minecraft:muddy_mangrove_roots",
-            "minecraft:moss_block", "minecraft:pale_moss_block",
-            "minecraft:grass_block", "minecraft:podzol", "minecraft:mycelium",
-            "minecraft:terracotta", "minecraft:white_terracotta", "minecraft:orange_terracotta",
-            "minecraft:magenta_terracotta", "minecraft:light_blue_terracotta", "minecraft:yellow_terracotta",
-            "minecraft:lime_terracotta", "minecraft:pink_terracotta", "minecraft:gray_terracotta",
-            "minecraft:light_gray_terracotta", "minecraft:cyan_terracotta", "minecraft:purple_terracotta",
-            "minecraft:blue_terracotta", "minecraft:brown_terracotta", "minecraft:green_terracotta",
-            "minecraft:red_terracotta", "minecraft:black_terracotta",
-            "minecraft:crimson_nylium", "minecraft:warped_nylium",
-            "minecraft:netherrack", "minecraft:basalt", "minecraft:blackstone",
-            "minecraft:sand", "minecraft:red_sand", "minecraft:gravel", "minecraft:soul_sand",
-            "minecraft:soul_soil", "minecraft:calcite", "minecraft:smooth_basalt", "minecraft:clay",
-            "minecraft:dripstone_block", "minecraft:end_stone", "minecraft:red_sandstone",
-            "minecraft:sandstone", "minecraft:sulfur", "minecraft:cinnabar");
+    private static final Set<String> SCULK_REPLACEABLE =
+            Set.of(
+                    "minecraft:stone",
+                    "minecraft:granite",
+                    "minecraft:diorite",
+                    "minecraft:andesite",
+                    "minecraft:tuff",
+                    "minecraft:deepslate",
+                    "minecraft:dirt",
+                    "minecraft:coarse_dirt",
+                    "minecraft:rooted_dirt",
+                    "minecraft:mud",
+                    "minecraft:muddy_mangrove_roots",
+                    "minecraft:moss_block",
+                    "minecraft:pale_moss_block",
+                    "minecraft:grass_block",
+                    "minecraft:podzol",
+                    "minecraft:mycelium",
+                    "minecraft:terracotta",
+                    "minecraft:white_terracotta",
+                    "minecraft:orange_terracotta",
+                    "minecraft:magenta_terracotta",
+                    "minecraft:light_blue_terracotta",
+                    "minecraft:yellow_terracotta",
+                    "minecraft:lime_terracotta",
+                    "minecraft:pink_terracotta",
+                    "minecraft:gray_terracotta",
+                    "minecraft:light_gray_terracotta",
+                    "minecraft:cyan_terracotta",
+                    "minecraft:purple_terracotta",
+                    "minecraft:blue_terracotta",
+                    "minecraft:brown_terracotta",
+                    "minecraft:green_terracotta",
+                    "minecraft:red_terracotta",
+                    "minecraft:black_terracotta",
+                    "minecraft:crimson_nylium",
+                    "minecraft:warped_nylium",
+                    "minecraft:netherrack",
+                    "minecraft:basalt",
+                    "minecraft:blackstone",
+                    "minecraft:sand",
+                    "minecraft:red_sand",
+                    "minecraft:gravel",
+                    "minecraft:soul_sand",
+                    "minecraft:soul_soil",
+                    "minecraft:calcite",
+                    "minecraft:smooth_basalt",
+                    "minecraft:clay",
+                    "minecraft:dripstone_block",
+                    "minecraft:end_stone",
+                    "minecraft:red_sandstone",
+                    "minecraft:sandstone",
+                    "minecraft:sulfur",
+                    "minecraft:cinnabar");
 
     /**
-     * Vanilla's {@code #minecraft:sculk_replaceable_world_gen} block tag
-     * (26.2 contents): {@link #SCULK_REPLACEABLE} plus deepslate building blocks.
+     * Vanilla's {@code #minecraft:sculk_replaceable_world_gen} block tag (26.2 contents): {@link
+     * #SCULK_REPLACEABLE} plus deepslate building blocks.
      */
     private static final Set<String> SCULK_REPLACEABLE_WORLD_GEN;
 
@@ -81,12 +127,15 @@ public final class SculkSpreader {
     }
 
     private enum SpreadType {
-        SAME_POSITION, SAME_PLANE, WRAP_AROUND
+        SAME_POSITION,
+        SAME_PLANE,
+        WRAP_AROUND
     }
 
     private static final SpreadType[] SAME_POSITION_ONLY = {SpreadType.SAME_POSITION};
-    private static final SpreadType[] DEFAULT_SPREAD_ORDER =
-            {SpreadType.SAME_POSITION, SpreadType.SAME_PLANE, SpreadType.WRAP_AROUND};
+    private static final SpreadType[] DEFAULT_SPREAD_ORDER = {
+        SpreadType.SAME_POSITION, SpreadType.SAME_PLANE, SpreadType.WRAP_AROUND
+    };
 
     private List<ChargeCursor> cursors = new ArrayList<>();
 
@@ -130,14 +179,18 @@ public final class SculkSpreader {
     // --- static block/face helpers -----------------------------------------
 
     private static final BlockFace[] BLOCK_FACES = {
-            BlockFace.BOTTOM, BlockFace.TOP, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.WEST, BlockFace.EAST
+        BlockFace.BOTTOM,
+        BlockFace.TOP,
+        BlockFace.NORTH,
+        BlockFace.SOUTH,
+        BlockFace.WEST,
+        BlockFace.EAST
     };
 
     /**
-     * Vanilla's {@code MultifaceBlock.canAttachTo} / {@code SupportType.FULL},
-     * approximated with the block's collision shape rather than a coarse
-     * solidity flag, since e.g. slabs and stairs are solid but not full on
-     * every face.
+     * Vanilla's {@code MultifaceBlock.canAttachTo} / {@code SupportType.FULL}, approximated with
+     * the block's collision shape rather than a coarse solidity flag, since e.g. slabs and stairs
+     * are solid but not full on every face.
      */
     private static boolean hasFullFace(Block block, Direction direction) {
         return block.collisionShape().isFaceFull(BLOCK_FACES[direction.ordinal()]);
@@ -164,10 +217,9 @@ public final class SculkSpreader {
     }
 
     /**
-     * Vanilla's {@code state.getFluidState().isEmpty()} negation: true for
-     * actual liquid blocks and for waterlogged blocks alike. Unlike
-     * {@code Block#isLiquid()}, which only reflects whether the block itself
-     * is a fluid block (e.g. always false for a waterlogged sculk vein).
+     * Vanilla's {@code state.getFluidState().isEmpty()} negation: true for actual liquid blocks and
+     * for waterlogged blocks alike. Unlike {@code Block#isLiquid()}, which only reflects whether
+     * the block itself is a fluid block (e.g. always false for a waterlogged sculk vein).
      */
     private static boolean hasFluid(Block block) {
         return block.liquid() || "true".equals(block.getProperty("waterlogged"));
@@ -196,14 +248,17 @@ public final class SculkSpreader {
 
     // --- multiface-style vein spreading --------------------------------------
 
-    private record SpreadPos(BlockVec pos, Direction face) {
-    }
+    private record SpreadPos(BlockVec pos, Direction face) {}
 
-    private static SpreadPos spreadPositionFor(SpreadType type, BlockVec pos, Direction spreadDirection, Direction fromFace) {
+    private static SpreadPos spreadPositionFor(
+            SpreadType type, BlockVec pos, Direction spreadDirection, Direction fromFace) {
         return switch (type) {
             case SAME_POSITION -> new SpreadPos(pos, spreadDirection);
             case SAME_PLANE -> new SpreadPos(spreadDirection.relative(pos), fromFace);
-            case WRAP_AROUND -> new SpreadPos(fromFace.relative(spreadDirection.relative(pos)), spreadDirection.opposite());
+            case WRAP_AROUND ->
+                    new SpreadPos(
+                            fromFace.relative(spreadDirection.relative(pos)),
+                            spreadDirection.opposite());
         };
     }
 
@@ -218,9 +273,15 @@ public final class SculkSpreader {
     }
 
     private static <T extends Block.Getter & Block.Setter> boolean stateCanBeReplaced(
-            T level, BlockVec sourcePos, BlockVec placementPos, Direction placementDirection, Block existingState) {
+            T level,
+            BlockVec sourcePos,
+            BlockVec placementPos,
+            Direction placementDirection,
+            Block existingState) {
         var against = level.getBlock(placementDirection.relative(placementPos));
-        if (against.compare(Block.SCULK) || against.compare(Block.SCULK_CATALYST) || against.compare(Block.MOVING_PISTON)) {
+        if (against.compare(Block.SCULK)
+                || against.compare(Block.SCULK_CATALYST)
+                || against.compare(Block.MOVING_PISTON)) {
             return false;
         }
 
@@ -239,13 +300,19 @@ public final class SculkSpreader {
             return false;
         }
 
-        return isReplaceable(existingState) || existingState.air() || existingState.compare(Block.SCULK_VEIN) || isWaterSource(existingState);
+        return isReplaceable(existingState)
+                || existingState.air()
+                || existingState.compare(Block.SCULK_VEIN)
+                || isWaterSource(existingState);
     }
 
-    private static <T extends Block.Getter & Block.Setter> boolean canSpreadInto(T level, BlockVec sourcePos, SpreadPos spreadPos) {
+    private static <T extends Block.Getter & Block.Setter> boolean canSpreadInto(
+            T level, BlockVec sourcePos, SpreadPos spreadPos) {
         var existingState = level.getBlock(spreadPos.pos());
-        return stateCanBeReplaced(level, sourcePos, spreadPos.pos(), spreadPos.face(), existingState)
-                && isValidStateForPlacement(level, existingState, spreadPos.pos(), spreadPos.face());
+        return stateCanBeReplaced(
+                        level, sourcePos, spreadPos.pos(), spreadPos.face(), existingState)
+                && isValidStateForPlacement(
+                        level, existingState, spreadPos.pos(), spreadPos.face());
     }
 
     private static Block stateForPlacement(Block oldState, Direction placementDirection) {
@@ -261,23 +328,26 @@ public final class SculkSpreader {
         return newState.withProperty(placementDirection.serializedName(), "true");
     }
 
-    private static <T extends Block.Getter & Block.Setter> boolean spreadToFace(T level, SpreadPos spreadPos) {
+    private static <T extends Block.Getter & Block.Setter> boolean spreadToFace(
+            T level, SpreadPos spreadPos) {
         var oldState = level.getBlock(spreadPos.pos());
         if (!isValidStateForPlacement(level, oldState, spreadPos.pos(), spreadPos.face())) {
             return false;
         }
 
-        level.setBlock(spreadPos.pos().blockX(), spreadPos.pos().blockY(), spreadPos.pos().blockZ(),
+        level.setBlock(
+                spreadPos.pos().blockX(),
+                spreadPos.pos().blockY(),
+                spreadPos.pos().blockZ(),
                 stateForPlacement(oldState, spreadPos.face()));
         return true;
     }
 
     /**
-     * Vanilla {@code MultifaceSpreader.spreadAll}. {@code sourceState} is the
-     * block the spread originates from (a fresh non-vein block, or the vein
-     * itself when a charge cursor sitting on vein re-spreads); when it is not
-     * itself vein, {@code isOtherBlockValidAsSource} is unconditionally true
-     * and every (startingFace, spreadDirection) pair of differing axis is
+     * Vanilla {@code MultifaceSpreader.spreadAll}. {@code sourceState} is the block the spread
+     * originates from (a fresh non-vein block, or the vein itself when a charge cursor sitting on
+     * vein re-spreads); when it is not itself vein, {@code isOtherBlockValidAsSource} is
+     * unconditionally true and every (startingFace, spreadDirection) pair of differing axis is
      * attempted, otherwise only faces the vein already has feed further faces.
      */
     private static <T extends Block.Getter & Block.Setter> long spreadAll(
@@ -294,12 +364,15 @@ public final class SculkSpreader {
                     continue;
                 }
 
-                if (!isOtherBlockValidAsSource && !(hasFace(sourceState, startingFace) && !hasFace(sourceState, spreadDirection))) {
+                if (!isOtherBlockValidAsSource
+                        && !(hasFace(sourceState, startingFace)
+                                && !hasFace(sourceState, spreadDirection))) {
                     continue;
                 }
 
                 for (var spreadType : spreadTypes) {
-                    var spreadPos = spreadPositionFor(spreadType, pos, spreadDirection, startingFace);
+                    var spreadPos =
+                            spreadPositionFor(spreadType, pos, spreadDirection, startingFace);
                     if (canSpreadInto(level, pos, spreadPos)) {
                         if (spreadToFace(level, spreadPos)) {
                             placedCount++;
@@ -313,7 +386,8 @@ public final class SculkSpreader {
         return placedCount;
     }
 
-    private static <T extends Block.Getter & Block.Setter> boolean regrow(T level, BlockVec pos, Block existing, Set<Direction> faces) {
+    private static <T extends Block.Getter & Block.Setter> boolean regrow(
+            T level, BlockVec pos, Block existing, Set<Direction> faces) {
         var hasAtLeastOneFace = false;
         var newState = Block.SCULK_VEIN;
 
@@ -338,8 +412,8 @@ public final class SculkSpreader {
     }
 
     /**
-     * Vanilla {@code SculkBehaviour.DEFAULT.attemptSpreadVein}, used only when
-     * the cursor sits on a block that is neither sculk nor sculk vein.
+     * Vanilla {@code SculkBehaviour.DEFAULT.attemptSpreadVein}, used only when the cursor sits on a
+     * block that is neither sculk nor sculk vein.
      */
     private static <T extends Block.Getter & Block.Setter> boolean defaultAttemptSpreadVein(
             T level, BlockVec pos, Block currentState, Set<Direction> facings) {
@@ -356,10 +430,11 @@ public final class SculkSpreader {
     }
 
     /**
-     * Vanilla {@code SculkVeinBlock.attemptPlaceSculk}: pushes a charge into a
-     * replaceable neighbour, turning it into sculk and spreading vein around it.
+     * Vanilla {@code SculkVeinBlock.attemptPlaceSculk}: pushes a charge into a replaceable
+     * neighbour, turning it into sculk and spreading vein around it.
      */
-    private static <T extends Block.Getter & Block.Setter> boolean attemptPlaceSculk(T level, BlockVec pos, RandomSource random) {
+    private static <T extends Block.Getter & Block.Setter> boolean attemptPlaceSculk(
+            T level, BlockVec pos, RandomSource random) {
         var state = level.getBlock(pos);
         var supports = new ArrayList<>(List.of(Direction.values()));
         TreeDecorator.shuffle(supports, random);
@@ -375,7 +450,8 @@ public final class SculkSpreader {
                 continue;
             }
 
-            level.setBlock(supportPos.blockX(), supportPos.blockY(), supportPos.blockZ(), Block.SCULK);
+            level.setBlock(
+                    supportPos.blockX(), supportPos.blockY(), supportPos.blockZ(), Block.SCULK);
             spreadAll(level, supportPos, Block.SCULK, DEFAULT_SPREAD_ORDER);
 
             var skip = support.opposite();
@@ -397,8 +473,12 @@ public final class SculkSpreader {
         return false;
     }
 
-    /** Vanilla {@code SculkVeinBlock.hasSubstrateAccess}, always against the plain (non-worldgen) replaceable tag. */
-    private static <T extends Block.Getter & Block.Setter> boolean hasSubstrateAccess(T level, Block state, BlockVec pos) {
+    /**
+     * Vanilla {@code SculkVeinBlock.hasSubstrateAccess}, always against the plain (non-worldgen)
+     * replaceable tag.
+     */
+    private static <T extends Block.Getter & Block.Setter> boolean hasSubstrateAccess(
+            T level, Block state, BlockVec pos) {
         if (!state.compare(Block.SCULK_VEIN)) {
             return false;
         }
@@ -415,15 +495,19 @@ public final class SculkSpreader {
         return false;
     }
 
-    /** Vanilla {@code SculkVeinBlock.onDischarged}: prunes faces that face already-sculk neighbours. */
-    private static <T extends Block.Getter & Block.Setter> void dischargeVein(T level, Block state, BlockVec pos) {
+    /**
+     * Vanilla {@code SculkVeinBlock.onDischarged}: prunes faces that face already-sculk neighbours.
+     */
+    private static <T extends Block.Getter & Block.Setter> void dischargeVein(
+            T level, Block state, BlockVec pos) {
         if (!state.compare(Block.SCULK_VEIN)) {
             return;
         }
 
         var newState = state;
         for (var direction : Direction.values()) {
-            if (hasFace(newState, direction) && level.getBlock(direction.relative(pos)).compare(Block.SCULK)) {
+            if (hasFace(newState, direction)
+                    && level.getBlock(direction.relative(pos)).compare(Block.SCULK)) {
                 newState = newState.withProperty(direction.serializedName(), "false");
             }
         }
@@ -446,7 +530,9 @@ public final class SculkSpreader {
     }
 
     private static int manhattanDistance(BlockVec a, BlockVec b) {
-        return Math.abs(a.blockX() - b.blockX()) + Math.abs(a.blockY() - b.blockY()) + Math.abs(a.blockZ() - b.blockZ());
+        return Math.abs(a.blockX() - b.blockX())
+                + Math.abs(a.blockY() - b.blockY())
+                + Math.abs(a.blockZ() - b.blockZ());
     }
 
     private static boolean closerThanHorizontally(BlockVec origin, BlockVec pos, double distance) {
@@ -480,10 +566,12 @@ public final class SculkSpreader {
             var dx = this.pos.blockX() - originPos.blockX();
             var dy = this.pos.blockY() - originPos.blockY();
             var dz = this.pos.blockZ() - originPos.blockZ();
-            return Math.max(Math.abs(dx), Math.max(Math.abs(dy), Math.abs(dz))) > MAX_CURSOR_DISTANCE;
+            return Math.max(Math.abs(dx), Math.max(Math.abs(dy), Math.abs(dz)))
+                    > MAX_CURSOR_DISTANCE;
         }
 
-        <T extends Block.Getter & Block.Setter> void update(T level, BlockVec originPos, RandomSource random, boolean spreadVeins) {
+        <T extends Block.Getter & Block.Setter> void update(
+                T level, BlockVec originPos, RandomSource random, boolean spreadVeins) {
             if (this.charge <= 0) {
                 return;
             }
@@ -500,7 +588,8 @@ public final class SculkSpreader {
                 }
             }
 
-            this.charge = this.attemptUseCharge(level, currentState, originPos, random, spreadVeins);
+            this.charge =
+                    this.attemptUseCharge(level, currentState, originPos, random, spreadVeins);
             if (this.charge <= 0) {
                 this.onDischarged(level, currentState);
                 return;
@@ -522,13 +611,15 @@ public final class SculkSpreader {
                 this.facings = availableFaces(currentState);
             }
 
-            this.decayDelay = currentState.compare(Block.SCULK) || currentState.compare(Block.SCULK_VEIN)
-                    ? 1
-                    : Math.max(this.decayDelay - 1, 0);
+            this.decayDelay =
+                    currentState.compare(Block.SCULK) || currentState.compare(Block.SCULK_VEIN)
+                            ? 1
+                            : Math.max(this.decayDelay - 1, 0);
             this.updateDelay = 1;
         }
 
-        private <T extends Block.Getter & Block.Setter> boolean attemptSpreadVein(T level, Block currentState) {
+        private <T extends Block.Getter & Block.Setter> boolean attemptSpreadVein(
+                T level, Block currentState) {
             if (currentState.compare(Block.SCULK) || currentState.compare(Block.SCULK_VEIN)) {
                 return spreadAll(level, this.pos, currentState, DEFAULT_SPREAD_ORDER) > 0;
             }
@@ -537,7 +628,11 @@ public final class SculkSpreader {
         }
 
         private <T extends Block.Getter & Block.Setter> int attemptUseCharge(
-                T level, Block currentState, BlockVec originPos, RandomSource random, boolean spreadVeins) {
+                T level,
+                Block currentState,
+                BlockVec originPos,
+                RandomSource random,
+                boolean spreadVeins) {
             if (currentState.compare(Block.SCULK)) {
                 return this.sculkAttemptUseCharge(level, originPos, random);
             } else if (currentState.compare(Block.SCULK_VEIN)) {
@@ -547,7 +642,8 @@ public final class SculkSpreader {
             }
         }
 
-        private int sculkAttemptUseCharge(Block.Getter level, BlockVec originPos, RandomSource random) {
+        private int sculkAttemptUseCharge(
+                Block.Getter level, BlockVec originPos, RandomSource random) {
             if (this.charge == 0 || random.nextInt(CHARGE_DECAY_RATE) != 0) {
                 return this.charge;
             }
@@ -557,7 +653,12 @@ public final class SculkSpreader {
                 if (random.nextInt(GROWTH_SPAWN_COST) < this.charge) {
                     var growthPos = this.pos.add(0, 1, 0);
                     var growthState = randomGrowthState(level, growthPos, random);
-                    ((Block.Setter) level).setBlock(growthPos.blockX(), growthPos.blockY(), growthPos.blockZ(), growthState);
+                    ((Block.Setter) level)
+                            .setBlock(
+                                    growthPos.blockX(),
+                                    growthPos.blockY(),
+                                    growthPos.blockZ(),
+                                    growthState);
                 }
 
                 return Math.max(0, this.charge - GROWTH_SPAWN_COST);
@@ -566,19 +667,24 @@ public final class SculkSpreader {
                     return this.charge;
                 }
 
-                return this.charge - (isCloseToCatalyst ? 1 : decayPenalty(this.pos, originPos, this.charge));
+                return this.charge
+                        - (isCloseToCatalyst ? 1 : decayPenalty(this.pos, originPos, this.charge));
             }
         }
 
-        private <T extends Block.Getter & Block.Setter> int veinAttemptUseCharge(T level, RandomSource random, boolean spreadVeins) {
+        private <T extends Block.Getter & Block.Setter> int veinAttemptUseCharge(
+                T level, RandomSource random, boolean spreadVeins) {
             if (spreadVeins && attemptPlaceSculk(level, this.pos, random)) {
                 return this.charge - 1;
             }
 
-            return random.nextInt(CHARGE_DECAY_RATE) == 0 ? (int) Math.floor(this.charge * 0.5F) : this.charge;
+            return random.nextInt(CHARGE_DECAY_RATE) == 0
+                    ? (int) Math.floor(this.charge * 0.5F)
+                    : this.charge;
         }
 
-        private <T extends Block.Getter & Block.Setter> void onDischarged(T level, Block currentState) {
+        private <T extends Block.Getter & Block.Setter> void onDischarged(
+                T level, Block currentState) {
             if (currentState.compare(Block.SCULK_VEIN)) {
                 dischargeVein(level, currentState, this.pos);
             }
@@ -596,8 +702,10 @@ public final class SculkSpreader {
         for (var dx = -4; dx <= 4; dx++) {
             for (var dy = 0; dy <= 2; dy++) {
                 for (var dz = -4; dz <= 4; dz++) {
-                    var candidate = level.getBlock(pos.blockX() + dx, pos.blockY() + dy, pos.blockZ() + dz);
-                    if (candidate.compare(Block.SCULK_SENSOR) || candidate.compare(Block.SCULK_SHRIEKER)) {
+                    var candidate =
+                            level.getBlock(pos.blockX() + dx, pos.blockY() + dy, pos.blockZ() + dz);
+                    if (candidate.compare(Block.SCULK_SENSOR)
+                            || candidate.compare(Block.SCULK_SHRIEKER)) {
                         growthCount++;
                         if (growthCount > 2) {
                             return false;
@@ -638,7 +746,8 @@ public final class SculkSpreader {
         return Math.max(1, (int) (charge * distanceFactor * 0.5F));
     }
 
-    private static <T extends Block.Getter & Block.Setter> BlockVec getValidMovementPos(T level, BlockVec pos, RandomSource random) {
+    private static <T extends Block.Getter & Block.Setter> BlockVec getValidMovementPos(
+            T level, BlockVec pos, RandomSource random) {
         var offsets = new ArrayList<int[]>(List.of(NON_CORNER_NEIGHBOURS));
         TreeDecorator.shuffle(offsets, random);
 
@@ -658,7 +767,8 @@ public final class SculkSpreader {
         return result.equals(pos) ? null : result;
     }
 
-    private static <T extends Block.Getter & Block.Setter> boolean isMovementUnobstructed(T level, BlockVec from, BlockVec to) {
+    private static <T extends Block.Getter & Block.Setter> boolean isMovementUnobstructed(
+            T level, BlockVec from, BlockVec to) {
         if (manhattanDistance(from, to) == 1) {
             return true;
         }
@@ -671,11 +781,14 @@ public final class SculkSpreader {
         var directionZ = dz < 0 ? Direction.NORTH : Direction.SOUTH;
 
         if (dx == 0) {
-            return isUnobstructed(level, from, directionY) || isUnobstructed(level, from, directionZ);
+            return isUnobstructed(level, from, directionY)
+                    || isUnobstructed(level, from, directionZ);
         } else if (dy == 0) {
-            return isUnobstructed(level, from, directionX) || isUnobstructed(level, from, directionZ);
+            return isUnobstructed(level, from, directionX)
+                    || isUnobstructed(level, from, directionZ);
         } else {
-            return isUnobstructed(level, from, directionX) || isUnobstructed(level, from, directionY);
+            return isUnobstructed(level, from, directionX)
+                    || isUnobstructed(level, from, directionY);
         }
     }
 

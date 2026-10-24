@@ -1,10 +1,9 @@
 package rocks.minestom.worldgen.biome;
 
-import net.kyori.adventure.key.Key;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.security.MessageDigest;
+import net.kyori.adventure.key.Key;
 
 public final class BiomeZoomer {
     private static final long LCG_MULTIPLIER = 6364136223846793005L;
@@ -19,8 +18,8 @@ public final class BiomeZoomer {
     }
 
     /**
-     * The unzoomed quart-resolution biome source backing this zoomer, used by
-     * structure placement which samples noise biomes without the zoom offset.
+     * The unzoomed quart-resolution biome source backing this zoomer, used by structure placement
+     * which samples noise biomes without the zoom offset.
      */
     public BiomeSource source() {
         return this.source;
@@ -29,7 +28,11 @@ public final class BiomeZoomer {
     public static long obfuscateSeed(long seed) {
         try {
             var digest = MessageDigest.getInstance("SHA-256");
-            var bytes = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.LITTLE_ENDIAN).putLong(seed).array();
+            var bytes =
+                    ByteBuffer.allocate(Long.BYTES)
+                            .order(ByteOrder.LITTLE_ENDIAN)
+                            .putLong(seed)
+                            .array();
             var hash = digest.digest(bytes);
             return toLittleEndianLong(hash);
         } catch (Exception exception) {
@@ -61,7 +64,9 @@ public final class BiomeZoomer {
             var dx = xCorner ? localX : localX - 1.0D;
             var dy = yCorner ? localY : localY - 1.0D;
             var dz = zCorner ? localZ : localZ - 1.0D;
-            var distance = fiddledDistance(this.zoomSeed, sampleQuartX, sampleQuartY, sampleQuartZ, dx, dy, dz);
+            var distance =
+                    fiddledDistance(
+                            this.zoomSeed, sampleQuartX, sampleQuartY, sampleQuartZ, dx, dy, dz);
             if (distance < bestDistance) {
                 bestCorner = corner;
                 bestDistance = distance;
@@ -74,7 +79,8 @@ public final class BiomeZoomer {
         return this.source.biome(finalQuartX, finalQuartY, finalQuartZ);
     }
 
-    private static double fiddledDistance(long seed, int quartX, int quartY, int quartZ, double dx, double dy, double dz) {
+    private static double fiddledDistance(
+            long seed, int quartX, int quartY, int quartZ, double dx, double dy, double dz) {
         var state = lcgNext(seed, quartX);
         state = lcgNext(state, quartY);
         state = lcgNext(state, quartZ);
@@ -120,4 +126,3 @@ public final class BiomeZoomer {
         return result;
     }
 }
-

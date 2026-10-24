@@ -1,5 +1,7 @@
 package rocks.minestom.worldgen;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.codec.Transcoder;
 import rocks.minestom.worldgen.datapack.DataPack;
@@ -9,13 +11,10 @@ import rocks.minestom.worldgen.random.PositionalRandomFactory;
 import rocks.minestom.worldgen.random.RandomSource;
 import rocks.minestom.worldgen.random.XoroshiroRandomSource;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
- * Represents the per-world random and noise state derived from the seed.
- * This provides shared, deterministic noise and positional randomness so every system
- * samples the same values for the same coordinates without re-creating generators.
+ * Represents the per-world random and noise state derived from the seed. This provides shared,
+ * deterministic noise and positional randomness so every system samples the same values for the
+ * same coordinates without re-creating generators.
  */
 public final class RandomState {
     private final DataPack dataPack;
@@ -30,7 +29,10 @@ public final class RandomState {
         this.dataPack = dataPack;
         this.seed = seed;
         this.legacyRandomSource = legacyRandomSource;
-        this.positionalRandomFactory = legacyRandomSource ? new LegacyRandomSource(seed).forkPositional() : new XoroshiroRandomSource(seed).forkPositional();
+        this.positionalRandomFactory =
+                legacyRandomSource
+                        ? new LegacyRandomSource(seed).forkPositional()
+                        : new XoroshiroRandomSource(seed).forkPositional();
         this.parametersCache = new ConcurrentHashMap<>();
         this.noiseCache = new ConcurrentHashMap<>();
         this.randomFactoryCache = new ConcurrentHashMap<>();
@@ -49,28 +51,29 @@ public final class RandomState {
     }
 
     public PositionalRandomFactory getOrCreateRandomFactory(Key id) {
-        return this.randomFactoryCache.computeIfAbsent(id, key -> this.positionalRandomFactory.fromHashOf(key.asString()).forkPositional());
+        return this.randomFactoryCache.computeIfAbsent(
+                id,
+                key -> this.positionalRandomFactory.fromHashOf(key.asString()).forkPositional());
     }
 
     /**
-     * Root positional random of the world seed; vanilla hands this directly to
-     * the surface system.
+     * Root positional random of the world seed; vanilla hands this directly to the surface system.
      */
     public PositionalRandomFactory random() {
         return this.positionalRandomFactory;
     }
 
     /**
-     * Positional random used for aquifer cell placement, forked from
-     * {@code minecraft:aquifer} like vanilla {@code RandomState.aquiferRandom}.
+     * Positional random used for aquifer cell placement, forked from {@code minecraft:aquifer} like
+     * vanilla {@code RandomState.aquiferRandom}.
      */
     public PositionalRandomFactory aquiferRandom() {
         return this.getOrCreateRandomFactory(Key.key("minecraft:aquifer"));
     }
 
     /**
-     * Positional random used for ore vein placement, forked from
-     * {@code minecraft:ore} like vanilla {@code RandomState.oreRandom}.
+     * Positional random used for ore vein placement, forked from {@code minecraft:ore} like vanilla
+     * {@code RandomState.oreRandom}.
      */
     public PositionalRandomFactory oreRandom() {
         return this.getOrCreateRandomFactory(Key.key("minecraft:ore"));
@@ -87,13 +90,16 @@ public final class RandomState {
         var parameters = this.parametersCache.computeIfAbsent(id, this::readNoiseParameters);
 
         if (id.asString().equals("minecraft:nether/temperature")) {
-            return NormalNoise.createLegacyNetherBiome(new LegacyRandomSource(this.seed), parameters);
+            return NormalNoise.createLegacyNetherBiome(
+                    new LegacyRandomSource(this.seed), parameters);
         }
         if (id.asString().equals("minecraft:nether/vegetation")) {
-            return NormalNoise.createLegacyNetherBiome(new LegacyRandomSource(this.seed + 1L), parameters);
+            return NormalNoise.createLegacyNetherBiome(
+                    new LegacyRandomSource(this.seed + 1L), parameters);
         }
 
-        return NormalNoise.create(this.positionalRandomFactory.fromHashOf(id.asString()), parameters);
+        return NormalNoise.create(
+                this.positionalRandomFactory.fromHashOf(id.asString()), parameters);
     }
 
     private NormalNoise.NoiseParameters readNoiseParameters(Key id) {

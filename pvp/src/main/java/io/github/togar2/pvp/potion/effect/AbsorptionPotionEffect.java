@@ -14,14 +14,18 @@ public class AbsorptionPotionEffect extends CombatPotionEffect {
 
     public AbsorptionPotionEffect() {
         super(PotionEffect.ABSORPTION);
-        this.addAttributeModifier(Attribute.MAX_ABSORPTION, Key.key("minecraft:effect.absorption"),
-                ABSORPTION_PER_LEVEL, AttributeOperation.ADD_VALUE);
+        this.addAttributeModifier(
+                Attribute.MAX_ABSORPTION,
+                Key.key("minecraft:effect.absorption"),
+                ABSORPTION_PER_LEVEL,
+                AttributeOperation.ADD_VALUE);
     }
 
     @Override
     public void onStarted(LivingEntity entity, int amplifier) {
         if (entity instanceof Player player) {
-            player.setAdditionalHearts(Math.max(player.getAdditionalHearts(), getAbsorption(amplifier)));
+            player.setAdditionalHearts(
+                    Math.max(player.getAdditionalHearts(), getAbsorption(amplifier)));
         }
     }
 
@@ -30,7 +34,8 @@ public class AbsorptionPotionEffect extends CombatPotionEffect {
         super.onRemoved(entity, amplifier, version);
 
         if (entity instanceof Player player) {
-            var hiddenAmplifier = VanillaEffectFeature.getHiddenAmplifier(entity, PotionEffect.ABSORPTION);
+            var hiddenAmplifier =
+                    VanillaEffectFeature.getHiddenAmplifier(entity, PotionEffect.ABSORPTION);
             var cap = hiddenAmplifier < 0 ? 0.0F : getAbsorption(hiddenAmplifier);
             player.setAdditionalHearts(Math.min(player.getAdditionalHearts(), cap));
         }

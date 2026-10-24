@@ -33,7 +33,8 @@ public final class SeaPicklePlacementRule extends BlockPlacementRule {
 
         var waterlogged = existingBlock.compare(Block.WATER);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withProperty("pickles", "1")
                 .withProperty("waterlogged", waterlogged ? "true" : "false");
     }
@@ -44,7 +45,10 @@ public final class SeaPicklePlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+        var below =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
 
         if (!Utility.canSupportCenter(below, BlockFace.TOP)) {
             return Block.AIR;

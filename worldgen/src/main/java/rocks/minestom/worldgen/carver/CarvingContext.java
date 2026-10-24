@@ -1,17 +1,16 @@
 package rocks.minestom.worldgen.carver;
 
+import java.util.BitSet;
 import net.minestom.server.instance.block.Block;
 import org.jetbrains.annotations.Nullable;
 import rocks.minestom.worldgen.terrain.Aquifer;
 import rocks.minestom.worldgen.terrain.TerrainData;
 
-import java.util.BitSet;
-
 /**
- * Per-target-chunk carving state: the terrain buffer being carved, the carving
- * aquifer (the same instance the noise fill used, mirroring vanilla's shared
- * {@code NoiseChunk} aquifer), the carving mask that prevents double-carving,
- * and the surface-rule hook used to restore grass/mycelium on exposed floors.
+ * Per-target-chunk carving state: the terrain buffer being carved, the carving aquifer (the same
+ * instance the noise fill used, mirroring vanilla's shared {@code NoiseChunk} aquifer), the carving
+ * mask that prevents double-carving, and the surface-rule hook used to restore grass/mycelium on
+ * exposed floors.
  */
 public final class CarvingContext {
     private final TerrainData data;
@@ -23,8 +22,14 @@ public final class CarvingContext {
     private final BitSet mask;
     private final TopMaterial topMaterial;
 
-    public CarvingContext(TerrainData data, int chunkX, int chunkZ, int minGenY, int genDepth,
-            Aquifer aquifer, TopMaterial topMaterial) {
+    public CarvingContext(
+            TerrainData data,
+            int chunkX,
+            int chunkZ,
+            int minGenY,
+            int genDepth,
+            Aquifer aquifer,
+            TopMaterial topMaterial) {
         this.data = data;
         this.chunkX = chunkX;
         this.chunkZ = chunkZ;
@@ -72,11 +77,13 @@ public final class CarvingContext {
     }
 
     /**
-     * Mirror of vanilla marking a carver-placed fluid for a post-generation
-     * scheduled fluid tick when the aquifer requested one.
+     * Mirror of vanilla marking a carver-placed fluid for a post-generation scheduled fluid tick
+     * when the aquifer requested one.
      */
     public void recordFluidTick(int blockX, int blockY, int blockZ) {
-        this.data.fluidTicks().add(new net.minestom.server.coordinate.BlockVec(blockX, blockY, blockZ));
+        this.data
+                .fluidTicks()
+                .add(new net.minestom.server.coordinate.BlockVec(blockX, blockY, blockZ));
     }
 
     public Aquifer aquifer() {
@@ -101,8 +108,7 @@ public final class CarvingContext {
     }
 
     /**
-     * Writes a carved state (air, water or lava) into the buffer and keeps the
-     * stone mask in sync.
+     * Writes a carved state (air, water or lava) into the buffer and keeps the stone mask in sync.
      */
     public void setCarved(int blockX, int blockY, int blockZ, Block state) {
         var index = this.blockIndex(blockX, blockY, blockZ);
@@ -119,8 +125,8 @@ public final class CarvingContext {
     }
 
     /**
-     * Replaces a solid block (the dirt under a carved-away grass/mycelium block)
-     * without changing the stone mask.
+     * Replaces a solid block (the dirt under a carved-away grass/mycelium block) without changing
+     * the stone mask.
      */
     public void setSolid(int blockX, int blockY, int blockZ, Block block) {
         this.data.blocks()[this.blockIndex(blockX, blockY, blockZ)] = block;
@@ -128,7 +134,9 @@ public final class CarvingContext {
 
     @Nullable
     public Block topMaterial(int blockX, int blockY, int blockZ, boolean underFluid) {
-        return this.topMaterial != null ? this.topMaterial.apply(blockX, blockY, blockZ, underFluid) : null;
+        return this.topMaterial != null
+                ? this.topMaterial.apply(blockX, blockY, blockZ, underFluid)
+                : null;
     }
 
     private int blockIndex(int blockX, int blockY, int blockZ) {
@@ -136,8 +144,8 @@ public final class CarvingContext {
     }
 
     /**
-     * Vanilla {@code CarvingContext.topMaterial}: evaluates the dimension's
-     * surface rule at a single exposed-floor position.
+     * Vanilla {@code CarvingContext.topMaterial}: evaluates the dimension's surface rule at a
+     * single exposed-floor position.
      */
     public interface TopMaterial {
         @Nullable

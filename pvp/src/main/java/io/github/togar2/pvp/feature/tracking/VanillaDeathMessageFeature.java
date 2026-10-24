@@ -19,15 +19,15 @@ import net.minestom.server.event.trait.EntityInstanceEvent;
 import net.minestom.server.tag.Tag;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Vanilla implementation of {@link TrackingFeature}
- */
+/** Vanilla implementation of {@link TrackingFeature} */
 public class VanillaDeathMessageFeature implements TrackingFeature, RegistrableFeature {
-    public static final DefinedFeature<VanillaDeathMessageFeature> DEFINED = new DefinedFeature<>(
-            FeatureType.TRACKING, VanillaDeathMessageFeature::new,
-            VanillaDeathMessageFeature::initPlayer,
-            FeatureType.FALL, FeatureType.PLAYER_STATE
-    );
+    public static final DefinedFeature<VanillaDeathMessageFeature> DEFINED =
+            new DefinedFeature<>(
+                    FeatureType.TRACKING,
+                    VanillaDeathMessageFeature::new,
+                    VanillaDeathMessageFeature::initPlayer,
+                    FeatureType.FALL,
+                    FeatureType.PLAYER_STATE);
 
     public static final Tag<CombatManager> COMBAT_MANAGER = Tag.Transient("combatManager");
 
@@ -56,19 +56,23 @@ public class VanillaDeathMessageFeature implements TrackingFeature, RegistrableF
 
     @Override
     public void init(EventNode<EntityInstanceEvent> node) {
-        node.addListener(PlayerTickEvent.class, event -> event.getPlayer().getTag(COMBAT_MANAGER).tick());
+        node.addListener(
+                PlayerTickEvent.class, event -> event.getPlayer().getTag(COMBAT_MANAGER).tick());
 
-        node.addListener(PlayerDeathEvent.class, event -> {
-            var message = this.getDeathMessage(event.getPlayer());
-            event.setChatMessage(message);
-            event.setDeathText(message);
-        });
+        node.addListener(
+                PlayerDeathEvent.class,
+                event -> {
+                    var message = this.getDeathMessage(event.getPlayer());
+                    event.setChatMessage(message);
+                    event.setDeathText(message);
+                });
     }
 
     @Override
     public void recordDamage(Player player, @Nullable Entity attacker, Damage damage) {
         var id = attacker == null ? -1 : attacker.getEntityId();
-        player.getTag(COMBAT_MANAGER).recordDamage(id, damage, this.fallFeature, this.playerStateFeature);
+        player.getTag(COMBAT_MANAGER)
+                .recordDamage(id, damage, this.fallFeature, this.playerStateFeature);
     }
 
     @Override

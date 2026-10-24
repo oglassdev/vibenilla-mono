@@ -1,10 +1,10 @@
 package io.github.togar2.pvp.feature.knockback;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import net.minestom.server.ServerFlag;
 import net.minestom.server.collision.Aerodynamics;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public final class FairKnockbackFeatureTest {
     @Test
@@ -14,6 +14,9 @@ public final class FairKnockbackFeatureTest {
         var expected = 0.0;
         for (var tick = 0; tick < 3; tick++) expected = (expected - gravity) * 0.98;
 
-        assertEquals(expected, FairKnockbackFeature.getCompensatedVerticalVelocity(aerodynamics, 0.0, 3), 1.0E-9);
+        assertEquals(
+                expected,
+                FairKnockbackFeature.getCompensatedVerticalVelocity(aerodynamics, 0.0, 3),
+                1.0E-9);
     }
 }

@@ -1,5 +1,9 @@
 package net.goldenstack.loot.util;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import net.goldenstack.loot.LootContext;
 import net.goldenstack.loot.LootFunction;
 import net.goldenstack.loot.LootPredicate;
@@ -15,8 +19,8 @@ import net.minestom.server.coordinate.Point;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EquipmentSlot;
 import net.minestom.server.entity.Player;
-import net.minestom.server.inventory.EquipmentHandler;
 import net.minestom.server.instance.Instance;
+import net.minestom.server.inventory.EquipmentHandler;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.item.enchant.Enchantment;
@@ -25,11 +29,6 @@ import net.minestom.server.registry.TagKey;
 import net.minestom.server.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
 
 public interface VanillaInterface {
 
@@ -51,7 +50,11 @@ public interface VanillaInterface {
             }
 
             @Override
-            public @NotNull ItemStack enchant(@NotNull Random random, @NotNull ItemStack item, int levels, @Nullable RegistryTag<Enchantment> enchantments) {
+            public @NotNull ItemStack enchant(
+                    @NotNull Random random,
+                    @NotNull ItemStack item,
+                    int levels,
+                    @Nullable RegistryTag<Enchantment> enchantments) {
                 return item;
             }
 
@@ -84,20 +87,28 @@ public interface VanillaInterface {
 
     @NotNull Tag<Component> CUSTOM_NAME = Tag.Component("CustomName");
 
-    @NotNull Tag<List<Material>> DECORATED_POT_SHERDS = Tag.String("sherds")
-            .map(Key::key, Key::asString)
-            .map(Material::fromKey, Material::key)
-            .list().defaultValue(List::of);
+    @NotNull
+    Tag<List<Material>> DECORATED_POT_SHERDS =
+            Tag.String("sherds")
+                    .map(Key::key, Key::asString)
+                    .map(Material::fromKey, Material::key)
+                    .list()
+                    .defaultValue(List::of);
 
-    @NotNull Tag<List<ItemStack>> CONTAINER_ITEMS = Tag.ItemStack("Items").list().defaultValue(List::of);
+    @NotNull
+    Tag<List<ItemStack>> CONTAINER_ITEMS = Tag.ItemStack("Items").list().defaultValue(List::of);
 
-    @Nullable Integer score(@NotNull Entity entity, @NotNull String objective);
+    @Nullable
+    Integer score(@NotNull Entity entity, @NotNull String objective);
 
-    @Nullable Integer score(@NotNull String name, @NotNull String objective);
+    @Nullable
+    Integer score(@NotNull String name, @NotNull String objective);
 
-    @NotNull BinaryTag serializeEntity(@NotNull Entity entity);
+    @NotNull
+    BinaryTag serializeEntity(@NotNull Entity entity);
 
-    default @NotNull Component resolveComponent(@NotNull Component component, @Nullable Entity entity) {
+    default @NotNull Component resolveComponent(
+            @NotNull Component component, @Nullable Entity entity) {
         return component;
     }
 
@@ -121,9 +132,8 @@ public interface VanillaInterface {
         return null;
     }
 
-    default @Nullable Boolean locationStructure(@NotNull Key structure,
-                                                @NotNull Instance instance,
-                                                @NotNull Point point) {
+    default @Nullable Boolean locationStructure(
+            @NotNull Key structure, @NotNull Instance instance, @NotNull Point point) {
         return null;
     }
 
@@ -131,9 +141,8 @@ public interface VanillaInterface {
         return null;
     }
 
-    default @Nullable Boolean locationFluid(@NotNull FluidPredicate predicate,
-                                             @NotNull Instance instance,
-                                             @NotNull Point point) {
+    default @Nullable Boolean locationFluid(
+            @NotNull FluidPredicate predicate, @NotNull Instance instance, @NotNull Point point) {
         return null;
     }
 
@@ -141,14 +150,15 @@ public interface VanillaInterface {
         return null;
     }
 
-    default @NotNull ItemStack explorationMap(@NotNull ItemStack input,
-                                               @NotNull Instance world,
-                                               @NotNull Point origin,
-                                               @NotNull TagKey<?> destination,
-                                               @NotNull Key decoration,
-                                               byte zoom,
-                                               int searchRadius,
-                                               boolean skipExistingChunks) {
+    default @NotNull ItemStack explorationMap(
+            @NotNull ItemStack input,
+            @NotNull Instance world,
+            @NotNull Point origin,
+            @NotNull TagKey<?> destination,
+            @NotNull Key decoration,
+            byte zoom,
+            int searchRadius,
+            boolean skipExistingChunks) {
         return input;
     }
 
@@ -156,7 +166,8 @@ public interface VanillaInterface {
         return fallback;
     }
 
-    default @Nullable BinaryTag environmentAttribute(@NotNull Key attribute, @NotNull LootContext context) {
+    default @Nullable BinaryTag environmentAttribute(
+            @NotNull Key attribute, @NotNull LootContext context) {
         return null;
     }
 
@@ -164,31 +175,34 @@ public interface VanillaInterface {
         return null;
     }
 
-    default @Nullable List<ItemStack> dynamicDrops(@NotNull Key name, @NotNull LootContext context) {
+    default @Nullable List<ItemStack> dynamicDrops(
+            @NotNull Key name, @NotNull LootContext context) {
         return null;
     }
 
-    default boolean matchesPlayerStats(@NotNull Player player,
-                                       @NotNull List<Codec.RawValue> stats,
-                                       @NotNull LootContext context) {
+    default boolean matchesPlayerStats(
+            @NotNull Player player,
+            @NotNull List<Codec.RawValue> stats,
+            @NotNull LootContext context) {
         return stats.isEmpty();
     }
 
-    default boolean matchesPlayerRecipes(@NotNull Player player,
-                                         @NotNull Map<String, Boolean> recipes,
-                                         @NotNull LootContext context) {
+    default boolean matchesPlayerRecipes(
+            @NotNull Player player,
+            @NotNull Map<String, Boolean> recipes,
+            @NotNull LootContext context) {
         return recipes.isEmpty();
     }
 
-    default boolean matchesPlayerAdvancements(@NotNull Player player,
-                                              @NotNull Map<String, Codec.RawValue> advancements,
-                                              @NotNull LootContext context) {
+    default boolean matchesPlayerAdvancements(
+            @NotNull Player player,
+            @NotNull Map<String, Codec.RawValue> advancements,
+            @NotNull LootContext context) {
         return advancements.isEmpty();
     }
 
-    default @NotNull List<ItemStack> slotRange(@NotNull String source,
-                                               @NotNull List<Integer> slots,
-                                               @NotNull LootContext context) {
+    default @NotNull List<ItemStack> slotRange(
+            @NotNull String source, @NotNull List<Integer> slots, @NotNull LootContext context) {
         if (source.equals("container")) {
             var container = context.get(LootContext.CONTAINER);
             if (container == null) {
@@ -205,15 +219,16 @@ public interface VanillaInterface {
             return items;
         }
 
-        var entity = switch (source) {
-            case "this" -> context.get(LootContext.THIS_ENTITY);
-            case "attacker" -> context.get(LootContext.ATTACKING_ENTITY);
-            case "direct_attacker" -> context.get(LootContext.DIRECT_ATTACKING_ENTITY);
-            case "attacking_player" -> context.get(LootContext.LAST_DAMAGE_PLAYER);
-            case "target_entity" -> context.get(LootContext.TARGET_ENTITY);
-            case "interacting_entity" -> context.get(LootContext.INTERACTING_ENTITY);
-            default -> null;
-        };
+        var entity =
+                switch (source) {
+                    case "this" -> context.get(LootContext.THIS_ENTITY);
+                    case "attacker" -> context.get(LootContext.ATTACKING_ENTITY);
+                    case "direct_attacker" -> context.get(LootContext.DIRECT_ATTACKING_ENTITY);
+                    case "attacking_player" -> context.get(LootContext.LAST_DAMAGE_PLAYER);
+                    case "target_entity" -> context.get(LootContext.TARGET_ENTITY);
+                    case "interacting_entity" -> context.get(LootContext.INTERACTING_ENTITY);
+                    default -> null;
+                };
 
         if (entity instanceof Player player) {
             return playerSlots(player, slots);
@@ -235,7 +250,8 @@ public interface VanillaInterface {
         return List.of();
     }
 
-    private static @NotNull List<ItemStack> playerSlots(@NotNull Player player, @NotNull List<Integer> slots) {
+    private static @NotNull List<ItemStack> playerSlots(
+            @NotNull Player player, @NotNull List<Integer> slots) {
         var items = new ArrayList<ItemStack>();
         for (var slot : slots) {
             if (slot >= 0 && slot < 36) {
@@ -262,8 +278,8 @@ public interface VanillaInterface {
         return items;
     }
 
-    private static @NotNull List<ItemStack> equipmentSlots(@NotNull EquipmentHandler equipment,
-                                                           @NotNull List<Integer> slots) {
+    private static @NotNull List<ItemStack> equipmentSlots(
+            @NotNull EquipmentHandler equipment, @NotNull List<Integer> slots) {
         var items = new ArrayList<ItemStack>();
         for (var slot : slots) {
             var equipmentSlot = equipmentSlot(slot);
@@ -289,8 +305,8 @@ public interface VanillaInterface {
         };
     }
 
-    private static @NotNull List<ItemStack> indexedSlots(@NotNull List<ItemStack> source,
-                                                         @NotNull List<Integer> slots) {
+    private static @NotNull List<ItemStack> indexedSlots(
+            @NotNull List<ItemStack> source, @NotNull List<Integer> slots) {
         var items = new ArrayList<ItemStack>();
         for (var slot : slots) {
             if (slot >= 0 && slot < source.size()) {
@@ -301,16 +317,25 @@ public interface VanillaInterface {
         return items;
     }
 
-    @NotNull ItemStack enchant(@NotNull Random random, @NotNull ItemStack item, int levels, @Nullable RegistryTag<Enchantment> enchantments);
+    @NotNull
+    ItemStack enchant(
+            @NotNull Random random,
+            @NotNull ItemStack item,
+            int levels,
+            @Nullable RegistryTag<Enchantment> enchantments);
 
-    @Nullable ItemStack smelt(@NotNull ItemStack input);
+    @Nullable
+    ItemStack smelt(@NotNull ItemStack input);
 
-    @Nullable LootTable tableRegistry(@NotNull Key key);
+    @Nullable
+    LootTable tableRegistry(@NotNull Key key);
 
-    @Nullable LootPredicate predicateRegistry(@NotNull Key key);
+    @Nullable
+    LootPredicate predicateRegistry(@NotNull Key key);
 
-    @Nullable LootFunction functionRegistry(@NotNull Key key);
+    @Nullable
+    LootFunction functionRegistry(@NotNull Key key);
 
-    @Nullable CompoundBinaryTag commandStorage(@NotNull Key key);
-
+    @Nullable
+    CompoundBinaryTag commandStorage(@NotNull Key key);
 }

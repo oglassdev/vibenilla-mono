@@ -1,29 +1,35 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.Set;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.NoneFeatureConfiguration;
-import rocks.minestom.worldgen.random.RandomSource;
-
-import java.util.Set;
 
 /**
- * Port of vanilla {@code MonsterRoomFeature} (dungeons): a small
- * cobblestone/mossy-cobblestone room with a spawner and up to two chests.
- * Loot and spawner NBT are not written, but every vanilla random call is kept
- * so block placement matches vanilla exactly.
+ * Port of vanilla {@code MonsterRoomFeature} (dungeons): a small cobblestone/mossy-cobblestone room
+ * with a spawner and up to two chests. Loot and spawner NBT are not written, but every vanilla
+ * random call is kept so block placement matches vanilla exactly.
  */
 public final class MonsterRoomFeature implements Feature<NoneFeatureConfiguration> {
     private static final Block AIR = Block.CAVE_AIR;
+
     /** Number of entries in vanilla's MOBS array (skeleton, zombie, zombie, spider). */
     private static final int MOB_COUNT = 4;
+
     /** #minecraft:features_cannot_replace */
-    private static final Set<String> CANNOT_REPLACE = Set.of(
-            "minecraft:bedrock", "minecraft:spawner", "minecraft:chest", "minecraft:end_portal_frame",
-            "minecraft:reinforced_deepslate", "minecraft:trial_spawner", "minecraft:vault");
+    private static final Set<String> CANNOT_REPLACE =
+            Set.of(
+                    "minecraft:bedrock",
+                    "minecraft:spawner",
+                    "minecraft:chest",
+                    "minecraft:end_portal_frame",
+                    "minecraft:reinforced_deepslate",
+                    "minecraft:trial_spawner",
+                    "minecraft:vault");
 
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<NoneFeatureConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<NoneFeatureConfiguration, T> context) {
         var origin = context.origin();
         var random = context.random();
         var level = context.accessor();
@@ -48,8 +54,10 @@ public final class MonsterRoomFeature implements Feature<NoneFeatureConfiguratio
                         return false;
                     }
 
-                    if ((dx == minX || dx == maxX || dz == minZ || dz == maxZ) && dy == 0
-                            && level.getBlock(pos).air() && level.getBlock(pos.add(0, 1, 0)).air()) {
+                    if ((dx == minX || dx == maxX || dz == minZ || dz == maxZ)
+                            && dy == 0
+                            && level.getBlock(pos).air()
+                            && level.getBlock(pos.add(0, 1, 0)).air()) {
                         holeCount++;
                     }
                 }
@@ -65,8 +73,14 @@ public final class MonsterRoomFeature implements Feature<NoneFeatureConfiguratio
                 for (var dz = minZ; dz <= maxZ; dz++) {
                     var pos = origin.add(dx, dy, dz);
                     var state = level.getBlock(pos);
-                    if (dx == minX || dy == -1 || dz == minZ || dx == maxX || dy == 4 || dz == maxZ) {
-                        if (pos.blockY() >= context.minY() && !level.getBlock(pos.add(0, -1, 0)).solid()) {
+                    if (dx == minX
+                            || dy == -1
+                            || dz == minZ
+                            || dx == maxX
+                            || dy == 4
+                            || dz == maxZ) {
+                        if (pos.blockY() >= context.minY()
+                                && !level.getBlock(pos.add(0, -1, 0)).solid()) {
                             level.setBlock(pos, AIR);
                         } else if (state.solid() && !state.compare(Block.CHEST)) {
                             if (dy == -1 && random.nextInt(4) != 0) {
@@ -115,8 +129,8 @@ public final class MonsterRoomFeature implements Feature<NoneFeatureConfiguratio
     }
 
     /**
-     * Port of {@code StructurePiece.reorient}: faces the chest away from its
-     * single solid neighbor, or towards an open side otherwise.
+     * Port of {@code StructurePiece.reorient}: faces the chest away from its single solid neighbor,
+     * or towards an open side otherwise.
      */
     static Block reorient(Block.Getter level, BlockVec pos, Block chest) {
         Direction solidNeighbor = null;
@@ -168,14 +182,15 @@ public final class MonsterRoomFeature implements Feature<NoneFeatureConfiguratio
     }
 
     /**
-     * Approximation of vanilla {@code isSolidRender()} for the blocks around
-     * a dungeon: any solid full block except spawners and chests.
+     * Approximation of vanilla {@code isSolidRender()} for the blocks around a dungeon: any solid
+     * full block except spawners and chests.
      */
     private static boolean isSolidRender(Block block) {
         return block.solid() && !block.compare(Block.SPAWNER) && !block.compare(Block.CHEST);
     }
 
-    private <T extends Block.Getter & Block.Setter> void safeSetBlock(T level, BlockVec pos, Block block) {
+    private <T extends Block.Getter & Block.Setter> void safeSetBlock(
+            T level, BlockVec pos, Block block) {
         if (!CANNOT_REPLACE.contains(level.getBlock(pos).key().asString())) {
             level.setBlock(pos, block);
         }

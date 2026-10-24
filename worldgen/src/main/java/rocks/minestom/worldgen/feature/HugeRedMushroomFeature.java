@@ -13,8 +13,7 @@ public final class HugeRedMushroomFeature extends AbstractHugeMushroomFeature {
             RandomSource random,
             BlockVec origin,
             int treeHeight,
-            HugeMushroomFeatureConfiguration config
-    ) {
+            HugeMushroomFeatureConfiguration config) {
         for (var dy = treeHeight - 3; dy <= treeHeight; dy++) {
             var radius = dy < treeHeight ? config.foliageRadius() : config.foliageRadius() - 1;
             var center = config.foliageRadius() - 2;
@@ -33,14 +32,17 @@ public final class HugeRedMushroomFeature extends AbstractHugeMushroomFeature {
 
                     var position = origin.add(dx, dy, dz);
                     var state = config.capProvider().getState(level, random, origin);
-                    if (state.getProperty("west") != null && state.getProperty("east") != null
-                            && state.getProperty("north") != null && state.getProperty("south") != null
+                    if (state.getProperty("west") != null
+                            && state.getProperty("east") != null
+                            && state.getProperty("north") != null
+                            && state.getProperty("south") != null
                             && state.getProperty("up") != null) {
-                        state = state.withProperty("up", Boolean.toString(dy >= treeHeight - 1))
-                                .withProperty("west", Boolean.toString(dx < -center))
-                                .withProperty("east", Boolean.toString(dx > center))
-                                .withProperty("north", Boolean.toString(dz < -center))
-                                .withProperty("south", Boolean.toString(dz > center));
+                        state =
+                                state.withProperty("up", Boolean.toString(dy >= treeHeight - 1))
+                                        .withProperty("west", Boolean.toString(dx < -center))
+                                        .withProperty("east", Boolean.toString(dx > center))
+                                        .withProperty("north", Boolean.toString(dz < -center))
+                                        .withProperty("south", Boolean.toString(dz > center));
                     }
 
                     this.placeMushroomBlock(level, position, state);

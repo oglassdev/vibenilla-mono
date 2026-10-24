@@ -1,5 +1,9 @@
 package io.github.togar2.pvp.feature.effect;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.github.togar2.pvp.feature.CombatFeatures;
 import io.github.togar2.pvp.potion.effect.CombatPotionEffects;
 import io.github.togar2.pvp.utils.PotionFlags;
@@ -20,10 +24,6 @@ import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 @EnvTest
 public final class VanillaEffectFeatureTest {
     @Test
@@ -35,7 +35,8 @@ public final class VanillaEffectFeatureTest {
             var entity = this.createLivingEntity(instance);
             var item = new ItemEntity(ItemStack.of(Material.STONE));
             item.setInstance(instance, new Pos(1.0, 40.0, 0.0)).join();
-            entity.addEffect(new Potion(PotionEffect.WIND_CHARGED, 0, 100, PotionFlags.defaultFlags()));
+            entity.addEffect(
+                    new Potion(PotionEffect.WIND_CHARGED, 0, 100, PotionFlags.defaultFlags()));
 
             entity.kill();
 
@@ -76,16 +77,19 @@ public final class VanillaEffectFeatureTest {
             var instance = env.createFlatInstance();
             var player = env.createPlayer(instance, new Pos(0.0, 40.0, 0.0));
 
-            player.addEffect(new Potion(PotionEffect.ABSORPTION, 0, 100, PotionFlags.defaultFlags()));
+            player.addEffect(
+                    new Potion(PotionEffect.ABSORPTION, 0, 100, PotionFlags.defaultFlags()));
             env.tick();
             assertEquals(4.0F, player.getAdditionalHearts());
 
-            player.addEffect(new Potion(PotionEffect.ABSORPTION, 0, 200, PotionFlags.defaultFlags()));
+            player.addEffect(
+                    new Potion(PotionEffect.ABSORPTION, 0, 200, PotionFlags.defaultFlags()));
             env.tick();
             assertEquals(4.0F, player.getAdditionalHearts());
 
             player.setAdditionalHearts(2.0F);
-            player.addEffect(new Potion(PotionEffect.ABSORPTION, 0, 300, PotionFlags.defaultFlags()));
+            player.addEffect(
+                    new Potion(PotionEffect.ABSORPTION, 0, 300, PotionFlags.defaultFlags()));
             env.tick();
             assertEquals(4.0F, player.getAdditionalHearts());
         } finally {
@@ -101,12 +105,17 @@ public final class VanillaEffectFeatureTest {
             var instance = env.createFlatInstance();
             var player = env.createPlayer(instance, new Pos(0.0, 40.0, 0.0));
 
-            player.addEffect(new Potion(PotionEffect.ABSORPTION, 1, 40, PotionFlags.defaultFlags()));
+            player.addEffect(
+                    new Potion(PotionEffect.ABSORPTION, 1, 40, PotionFlags.defaultFlags()));
             env.tick();
-            player.addEffect(new Potion(PotionEffect.ABSORPTION, 0, 400, PotionFlags.defaultFlags()));
+            player.addEffect(
+                    new Potion(PotionEffect.ABSORPTION, 0, 400, PotionFlags.defaultFlags()));
             env.tick();
             assertEquals(8.0F, player.getAdditionalHearts());
-            assertEquals(8.0, player.getAttributeValue(net.minestom.server.entity.attribute.Attribute.MAX_ABSORPTION));
+            assertEquals(
+                    8.0,
+                    player.getAttributeValue(
+                            net.minestom.server.entity.attribute.Attribute.MAX_ABSORPTION));
 
             for (var tick = 0; tick < 60; tick++) env.tick();
 
@@ -150,7 +159,8 @@ public final class VanillaEffectFeatureTest {
             var instance = env.createFlatInstance();
             var player = env.createPlayer(instance, new Pos(0.0, 40.0, 0.0));
 
-            player.addEffect(new Potion(PotionEffect.INVISIBILITY, 0, 100, PotionFlags.defaultFlags()));
+            player.addEffect(
+                    new Potion(PotionEffect.INVISIBILITY, 0, 100, PotionFlags.defaultFlags()));
             env.tick();
 
             assertEquals(0.0, player.getAttributeValue(Attribute.WAYPOINT_TRANSMIT_RANGE), 1.0E-6);
@@ -162,10 +172,7 @@ public final class VanillaEffectFeatureTest {
     private EventNode<?> addEffectFeature() {
         CombatPotionEffects.registerAll();
 
-        var node = CombatFeatures.empty()
-                .add(CombatFeatures.VANILLA_EFFECT)
-                .build()
-                .createNode();
+        var node = CombatFeatures.empty().add(CombatFeatures.VANILLA_EFFECT).build().createNode();
         MinecraftServer.getGlobalEventHandler().addChild(node);
         return node;
     }

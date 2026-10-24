@@ -1,5 +1,6 @@
 package io.github.togar2.pvp.player;
 
+import java.util.function.Function;
 import net.minestom.server.ServerFlag;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
@@ -12,18 +13,21 @@ import net.minestom.server.event.player.PlayerMoveEvent;
 import net.minestom.server.potion.PotionEffect;
 import net.minestom.server.potion.TimedPotion;
 
-import java.util.function.Function;
-
 public interface CombatPlayer {
     // Minestom methods
     TimedPotion getEffect(PotionEffect effect);
+
     AttributeInstance getAttribute(Attribute attribute);
+
     boolean isSprinting();
+
     Pos getPosition();
 
     /**
-     * Does not guarantee anything, the implementation uses Minestom physics logic which does not take into account many edge cases.
-     * It is also quite performance intensive, not suitable for calling often.
+     * Does not guarantee anything, the implementation uses Minestom physics logic which does not
+     * take into account many edge cases. It is also quite performance intensive, not suitable for
+     * calling often.
+     *
      * @param ticks the amount of ticks to test for
      * @return true if the player will likely be on the ground in the given amount of ticks
      */
@@ -35,8 +39,7 @@ public interface CombatPlayer {
 
     default double getJumpBoostVelocityModifier() {
         TimedPotion effect = this.getEffect(PotionEffect.JUMP_BOOST);
-        return effect != null ?
-                (0.1 * (effect.potion().amplifier() + 1)) : 0.0;
+        return effect != null ? (0.1 * (effect.potion().amplifier() + 1)) : 0.0;
     }
 
     default void jump() {
@@ -45,7 +48,10 @@ public interface CombatPlayer {
         this.setVelocityNoUpdate(velocity -> velocity.withY(Math.max(velocity.y(), yVel * tps)));
         if (this.isSprinting()) {
             double angle = this.getPosition().yaw() * (Math.PI / 180);
-            this.setVelocityNoUpdate(velocity -> velocity.add(-Math.sin(angle) * 0.2 * tps, 0, Math.cos(angle) * 0.2 * tps));
+            this.setVelocityNoUpdate(
+                    velocity ->
+                            velocity.add(
+                                    -Math.sin(angle) * 0.2 * tps, 0, Math.cos(angle) * 0.2 * tps));
         }
     }
 
@@ -62,13 +68,16 @@ public interface CombatPlayer {
     }
 
     static void init(EventNode<Event> node) {
-        node.addListener(PlayerMoveEvent.class, event -> {
-            Player player = event.getPlayer();
-            if (player.isOnGround() && !event.isOnGround()
-                    && event.getNewPosition().y() > player.getPosition().y()
-                    && player instanceof CombatPlayer combatPlayer) {
-                combatPlayer.jump();
-            }
-        });
+        node.addListener(
+                PlayerMoveEvent.class,
+                event -> {
+                    Player player = event.getPlayer();
+                    if (player.isOnGround()
+                            && !event.isOnGround()
+                            && event.getNewPosition().y() > player.getPosition().y()
+                            && player instanceof CombatPlayer combatPlayer) {
+                        combatPlayer.jump();
+                    }
+                });
     }
 }

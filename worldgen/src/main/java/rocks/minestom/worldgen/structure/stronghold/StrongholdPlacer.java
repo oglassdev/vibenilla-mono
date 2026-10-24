@@ -1,5 +1,10 @@
 package rocks.minestom.worldgen.structure.stronghold;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.generator.GenerationUnit;
@@ -18,27 +23,21 @@ import rocks.minestom.worldgen.structure.template.StructureShapeUpdater;
 import rocks.minestom.worldgen.terrain.Beardifier;
 import rocks.minestom.worldgen.terrain.TerrainGenerator;
 
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
- * Places the single procedural stronghold with vanilla-exact seeding,
- * mirroring {@link rocks.minestom.worldgen.structure.mineshaft.MineshaftPlacer}.
+ * Places the single procedural stronghold with vanilla-exact seeding, mirroring {@link
+ * rocks.minestom.worldgen.structure.mineshaft.MineshaftPlacer}.
  *
- * <p>Unlike the mineshaft, a stronghold start retries its whole layout
- * (vanilla {@code StrongholdStructure.generatePieces}) until it both places
- * at least one piece and contains a portal room, reseeding the piece random
- * with {@code seed + attempt} on every retry.
+ * <p>Unlike the mineshaft, a stronghold start retries its whole layout (vanilla {@code
+ * StrongholdStructure.generatePieces}) until it both places at least one piece and contains a
+ * portal room, reseeding the piece random with {@code seed + attempt} on every retry.
  */
 public final class StrongholdPlacer {
     /** Vanilla structure reference radius: starts up to 8 chunks away can reach this chunk. */
     private static final int REFERENCE_RADIUS = 8;
+
     /** GenerationStep.Decoration.SURFACE_STRUCTURES ordinal. */
     private static final int SURFACE_STRUCTURES_STEP = 4;
+
     /** Vanilla StructurePiece.isCloseToChunk / beard kernel radius. */
     private static final int BEARD_CLOSE_DISTANCE = 12;
 
@@ -53,28 +52,37 @@ public final class StrongholdPlacer {
     }
 
     /**
-     * Whether the given structure set contains the procedural stronghold
-     * structure and should be routed through this placer.
+     * Whether the given structure set contains the procedural stronghold structure and should be
+     * routed through this placer.
      */
     public boolean isStrongholdSet(StructureSet structureSet) {
         for (var entry : structureSet.structures()) {
-            if (this.structureLoader.getStructure(entry.structure()) instanceof StrongholdStructure) {
+            if (this.structureLoader.getStructure(entry.structure())
+                    instanceof StrongholdStructure) {
                 return true;
             }
         }
         return false;
     }
 
-    public void place(GenerationUnit unit, BiomeZoomer biomeZoomer,
-            NoiseGeneratorSettingsRuntime settings, StructureSet structureSet, int[] surfaceHeights) {
+    public void place(
+            GenerationUnit unit,
+            BiomeZoomer biomeZoomer,
+            NoiseGeneratorSettingsRuntime settings,
+            StructureSet structureSet,
+            int[] surfaceHeights) {
         var startX = unit.absoluteStart().blockX();
         var startZ = unit.absoluteStart().blockZ();
         var chunkX = Math.floorDiv(startX, 16);
         var chunkZ = Math.floorDiv(startZ, 16);
 
         var intersecting = new ArrayList<Reference>();
-        for (var sourceX = chunkX - REFERENCE_RADIUS; sourceX <= chunkX + REFERENCE_RADIUS; sourceX++) {
-            for (var sourceZ = chunkZ - REFERENCE_RADIUS; sourceZ <= chunkZ + REFERENCE_RADIUS; sourceZ++) {
+        for (var sourceX = chunkX - REFERENCE_RADIUS;
+                sourceX <= chunkX + REFERENCE_RADIUS;
+                sourceX++) {
+            for (var sourceZ = chunkZ - REFERENCE_RADIUS;
+                    sourceZ <= chunkZ + REFERENCE_RADIUS;
+                    sourceZ++) {
                 var start = this.startAt(sourceX, sourceZ, structureSet, settings, biomeZoomer);
                 if (start != null && intersectsColumn(start.bounds(), startX, startZ)) {
                     intersecting.add(new Reference(start, packChunk(sourceX, sourceZ)));
@@ -92,25 +100,50 @@ public final class StrongholdPlacer {
             chunkBlocks = new TerrainGenerator(settings).generate(chunkX, chunkZ).blocks();
         }
 
-        var forkUnit = unit.fork(
-                new BlockVec(startX, settings.minY(), startZ),
-                new BlockVec(startX + 16, settings.maxYInclusive() + 1, startZ + 16));
+        var forkUnit =
+                unit.fork(
+                        new BlockVec(startX, settings.minY(), startZ),
+                        new BlockVec(startX + 16, settings.maxYInclusive() + 1, startZ + 16));
         // The connection shape pass (fences, iron bars) reads neighbors
         // across chunk boundaries, so the adapter needs the same live
         // cross-chunk terrain access as regular feature decoration, not
         // just an unbacked getter that always reads air.
-        var forkAdapter = new GenerationUnitAdapter(forkUnit, startX, startZ, 16, 16, settings.minY(),
-                chunkBlocks, settings.height(), StructureWrites.terrainLookup());
+        var forkAdapter =
+                new GenerationUnitAdapter(
+                        forkUnit,
+                        startX,
+                        startZ,
+                        16,
+                        16,
+                        settings.minY(),
+                        chunkBlocks,
+                        settings.height(),
+                        StructureWrites.terrainLookup());
 
         var replayHandle = usingLiveBuffer ? null : surfaceHeights;
         var shapeUpdatePositions = new ArrayList<BlockVec>();
-        var level = new StrongholdLevel(forkAdapter, chunkBlocks, startX, startZ,
-                settings.minY(), settings.maxYInclusive(), replayHandle, shapeUpdatePositions);
-        var chunkBB = new BoundingBox(startX, settings.minY() + 1, startZ,
-                startX + 15, settings.maxYInclusive(), startZ + 15);
+        var level =
+                new StrongholdLevel(
+                        forkAdapter,
+                        chunkBlocks,
+                        startX,
+                        startZ,
+                        settings.minY(),
+                        settings.maxYInclusive(),
+                        replayHandle,
+                        shapeUpdatePositions);
+        var chunkBB =
+                new BoundingBox(
+                        startX,
+                        settings.minY() + 1,
+                        startZ,
+                        startX + 15,
+                        settings.maxYInclusive(),
+                        startZ + 15);
 
         var random = new WorldgenRandom(new XoroshiroRandomSource(0L));
-        var decorationSeed = random.setDecorationSeed(settings.randomState().seed(), startX, startZ);
+        var decorationSeed =
+                random.setDecorationSeed(settings.randomState().seed(), startX, startZ);
 
         for (var structureKey : this.surfaceStructuresStructures()) {
             var references = new ArrayList<Reference>();
@@ -137,57 +170,80 @@ public final class StrongholdPlacer {
         }
 
         if (!shapeUpdatePositions.isEmpty()) {
-            StructureShapeUpdater.update(forkAdapter, this.structureLoader.blockTags(), shapeUpdatePositions);
+            StructureShapeUpdater.update(
+                    forkAdapter, this.structureLoader.blockTags(), shapeUpdatePositions);
         }
     }
 
     /**
-     * Contributes the beard-adaptation rigid boxes for stronghold pieces
-     * close to the given chunk, mirroring vanilla {@code
-     * Beardifier.forStructuresInChunk} for a plain (non pool-element)
-     * structure piece: every piece within {@link #BEARD_CLOSE_DISTANCE}
-     * blocks of the chunk contributes its whole bounding box with no ground
-     * level delta.
+     * Contributes the beard-adaptation rigid boxes for stronghold pieces close to the given chunk,
+     * mirroring vanilla {@code Beardifier.forStructuresInChunk} for a plain (non pool-element)
+     * structure piece: every piece within {@link #BEARD_CLOSE_DISTANCE} blocks of the chunk
+     * contributes its whole bounding box with no ground level delta.
      */
-    public void contributeBeard(int chunkX, int chunkZ, StructureSet structureSet,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer, List<Beardifier.Rigid> rigids) {
+    public void contributeBeard(
+            int chunkX,
+            int chunkZ,
+            StructureSet structureSet,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer,
+            List<Beardifier.Rigid> rigids) {
         var chunkStartBlockX = chunkX << 4;
         var chunkStartBlockZ = chunkZ << 4;
 
-        for (var sourceX = chunkX - REFERENCE_RADIUS; sourceX <= chunkX + REFERENCE_RADIUS; sourceX++) {
-            for (var sourceZ = chunkZ - REFERENCE_RADIUS; sourceZ <= chunkZ + REFERENCE_RADIUS; sourceZ++) {
+        for (var sourceX = chunkX - REFERENCE_RADIUS;
+                sourceX <= chunkX + REFERENCE_RADIUS;
+                sourceX++) {
+            for (var sourceZ = chunkZ - REFERENCE_RADIUS;
+                    sourceZ <= chunkZ + REFERENCE_RADIUS;
+                    sourceZ++) {
                 var start = this.startAt(sourceX, sourceZ, structureSet, settings, biomeZoomer);
                 // Vanilla StructureStart.getBoundingBox is inflated by 12 for
                 // terrain-adapting structures, so the reference test reaches
                 // 12 blocks beyond the raw bounds
-                if (start == null || !intersectsXZ(start.bounds(),
-                        chunkStartBlockX - BEARD_CLOSE_DISTANCE, chunkStartBlockZ - BEARD_CLOSE_DISTANCE,
-                        chunkStartBlockX + 15 + BEARD_CLOSE_DISTANCE, chunkStartBlockZ + 15 + BEARD_CLOSE_DISTANCE)) {
+                if (start == null
+                        || !intersectsXZ(
+                                start.bounds(),
+                                chunkStartBlockX - BEARD_CLOSE_DISTANCE,
+                                chunkStartBlockZ - BEARD_CLOSE_DISTANCE,
+                                chunkStartBlockX + 15 + BEARD_CLOSE_DISTANCE,
+                                chunkStartBlockZ + 15 + BEARD_CLOSE_DISTANCE)) {
                     continue;
                 }
 
                 for (var piece : start.pieces()) {
-                    if (intersectsXZ(piece.boundingBox(), chunkStartBlockX - BEARD_CLOSE_DISTANCE,
+                    if (intersectsXZ(
+                            piece.boundingBox(),
+                            chunkStartBlockX - BEARD_CLOSE_DISTANCE,
                             chunkStartBlockZ - BEARD_CLOSE_DISTANCE,
-                            chunkStartBlockX + 15 + BEARD_CLOSE_DISTANCE, chunkStartBlockZ + 15 + BEARD_CLOSE_DISTANCE)) {
-                        rigids.add(new Beardifier.Rigid(piece.boundingBox(), TerrainAdjustment.BURY, 0));
+                            chunkStartBlockX + 15 + BEARD_CLOSE_DISTANCE,
+                            chunkStartBlockZ + 15 + BEARD_CLOSE_DISTANCE)) {
+                        rigids.add(
+                                new Beardifier.Rigid(
+                                        piece.boundingBox(), TerrainAdjustment.BURY, 0));
                     }
                 }
             }
         }
     }
 
-    private static boolean intersectsXZ(BoundingBox bounds, int minX, int minZ, int maxX, int maxZ) {
-        return bounds.maxX() >= minX && bounds.minX() <= maxX
-                && bounds.maxZ() >= minZ && bounds.minZ() <= maxZ;
+    private static boolean intersectsXZ(
+            BoundingBox bounds, int minX, int minZ, int maxX, int maxZ) {
+        return bounds.maxX() >= minX
+                && bounds.minX() <= maxX
+                && bounds.maxZ() >= minZ
+                && bounds.minZ() <= maxZ;
     }
 
     private static boolean intersectsColumn(BoundingBox bounds, int blockX, int blockZ) {
-        return bounds.maxX() >= blockX && bounds.minX() <= blockX + 15
-                && bounds.maxZ() >= blockZ && bounds.minZ() <= blockZ + 15;
+        return bounds.maxX() >= blockX
+                && bounds.minX() <= blockX + 15
+                && bounds.maxZ() >= blockZ
+                && bounds.minZ() <= blockZ + 15;
     }
 
-    private net.minestom.server.instance.block.Block[] liveChunkBlocks(int chunkX, int chunkZ, int[] surfaceHeights) {
+    private net.minestom.server.instance.block.Block[] liveChunkBlocks(
+            int chunkX, int chunkZ, int[] surfaceHeights) {
         var lookup = StructureWrites.terrainLookup();
         if (lookup == null || surfaceHeights == null) {
             return null;
@@ -204,7 +260,10 @@ public final class StrongholdPlacer {
         return (long) chunkX & 0xFFFFFFFFL | ((long) chunkZ & 0xFFFFFFFFL) << 32;
     }
 
-    /** See {@code MineshaftPlacer.referenceIterationOrder}: emulates fastutil LongOpenHashSet iteration order. */
+    /**
+     * See {@code MineshaftPlacer.referenceIterationOrder}: emulates fastutil LongOpenHashSet
+     * iteration order.
+     */
     private static List<Reference> referenceIterationOrder(List<Reference> insertionOrder) {
         if (insertionOrder.size() <= 1) {
             return insertionOrder;
@@ -249,31 +308,54 @@ public final class StrongholdPlacer {
         return hash ^ hash >>> 16;
     }
 
-    private StrongholdStart startAt(int chunkX, int chunkZ, StructureSet structureSet,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer) {
+    private StrongholdStart startAt(
+            int chunkX,
+            int chunkZ,
+            StructureSet structureSet,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer) {
         var key = (long) chunkX << 32 ^ (chunkZ & 0xFFFFFFFFL);
-        return this.starts.computeIfAbsent(key,
-                unused -> Optional.ofNullable(this.computeStart(chunkX, chunkZ, structureSet, settings, biomeZoomer))).orElse(null);
+        return this.starts
+                .computeIfAbsent(
+                        key,
+                        unused ->
+                                Optional.ofNullable(
+                                        this.computeStart(
+                                                chunkX,
+                                                chunkZ,
+                                                structureSet,
+                                                settings,
+                                                biomeZoomer)))
+                .orElse(null);
     }
 
     /**
-     * Vanilla {@code StrongholdStructure.generatePieces}: a single-entry
-     * structure set (no weighted draw), a fixed-position biome check that
-     * consumes no randomness, and then a retry loop that reseeds the piece
-     * random with {@code seed + attempt} until the layout both places at
-     * least one piece and contains a portal room.
+     * Vanilla {@code StrongholdStructure.generatePieces}: a single-entry structure set (no weighted
+     * draw), a fixed-position biome check that consumes no randomness, and then a retry loop that
+     * reseeds the piece random with {@code seed + attempt} until the layout both places at least
+     * one piece and contains a portal room.
      */
-    private StrongholdStart computeStart(int chunkX, int chunkZ, StructureSet structureSet,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer) {
+    private StrongholdStart computeStart(
+            int chunkX,
+            int chunkZ,
+            StructureSet structureSet,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer) {
         var seed = settings.randomState().seed();
         var placement = structureSet.placement();
-        if (!placement.isStartChunk(chunkX, chunkZ, seed, settings.randomState().legacyRandomSource(),
-                biomeZoomer.source(), this.structureLoader.biomeTags())) {
+        if (!placement.isStartChunk(
+                chunkX,
+                chunkZ,
+                seed,
+                settings.randomState().legacyRandomSource(),
+                biomeZoomer.source(),
+                this.structureLoader.biomeTags())) {
             return null;
         }
 
         var structureKey = structureSet.structures().getFirst().structure();
-        if (!(this.structureLoader.getStructure(structureKey) instanceof StrongholdStructure stronghold)) {
+        if (!(this.structureLoader.getStructure(structureKey)
+                instanceof StrongholdStructure stronghold)) {
             return null;
         }
 
@@ -284,8 +366,11 @@ public final class StrongholdPlacer {
             return null;
         }
 
-        var pieces = StrongholdPieces.generatePieces(seed, chunkX, chunkZ, settings.seaLevel(), settings.minY());
-        return new StrongholdStart(structureKey, List.copyOf(pieces), StrongholdPieces.boundsOf(pieces));
+        var pieces =
+                StrongholdPieces.generatePieces(
+                        seed, chunkX, chunkZ, settings.seaLevel(), settings.minY());
+        return new StrongholdStart(
+                structureKey, List.copyOf(pieces), StrongholdPieces.boundsOf(pieces));
     }
 
     private List<Key> surfaceStructuresStructures() {
@@ -302,9 +387,9 @@ public final class StrongholdPlacer {
     }
 
     /**
-     * The {@code surface_structures}-step structures in registry order
-     * (vanilla loads worldgen registries sorted by resource path), which
-     * determines each structure's feature-seed index for the step.
+     * The {@code surface_structures}-step structures in registry order (vanilla loads worldgen
+     * registries sorted by resource path), which determines each structure's feature-seed index for
+     * the step.
      */
     private List<Key> loadSurfaceStructuresStructures() {
         return this.structureLoader.structuresAtStep("surface_structures");
@@ -315,15 +400,17 @@ public final class StrongholdPlacer {
             var json = this.featureLoader.dataPack().readStructure(key);
             return json.isJsonObject()
                     && json.getAsJsonObject().has("step")
-                    && json.getAsJsonObject().get("step").getAsString().equals("surface_structures");
+                    && json.getAsJsonObject()
+                            .get("step")
+                            .getAsString()
+                            .equals("surface_structures");
         } catch (Exception exception) {
             return false;
         }
     }
 
-    private record StrongholdStart(Key structureKey, List<StrongholdPieces.StrongholdPiece> pieces, BoundingBox bounds) {
-    }
+    private record StrongholdStart(
+            Key structureKey, List<StrongholdPieces.StrongholdPiece> pieces, BoundingBox bounds) {}
 
-    private record Reference(StrongholdStart start, long packedChunk) {
-    }
+    private record Reference(StrongholdStart start, long packedChunk) {}
 }

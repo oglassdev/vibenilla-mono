@@ -6,14 +6,15 @@ import net.minestom.server.coordinate.BlockVec;
  * An axis-aligned bounding box defined by minimum and maximum coordinates.
  *
  * <p>Used extensively in structure generation for:
+ *
  * <ul>
  *   <li>Collision detection between structure pieces
  *   <li>Determining which chunks a structure overlaps
  *   <li>Enforcing maximum distance constraints
  * </ul>
  *
- * <p>The bounding box is mutable - use {@link #encapsulate} to grow it
- * to include additional positions or boxes.
+ * <p>The bounding box is mutable - use {@link #encapsulate} to grow it to include additional
+ * positions or boxes.
  */
 public final class BoundingBox {
     private int minX;
@@ -43,8 +44,7 @@ public final class BoundingBox {
                 Math.min(corner1.blockZ(), corner2.blockZ()),
                 Math.max(corner1.blockX(), corner2.blockX()),
                 Math.max(corner1.blockY(), corner2.blockY()),
-                Math.max(corner1.blockZ(), corner2.blockZ())
-        );
+                Math.max(corner1.blockZ(), corner2.blockZ()));
     }
 
     public static BoundingBox fromOriginAndSize(BlockVec origin, BlockVec size) {
@@ -54,13 +54,14 @@ public final class BoundingBox {
                 origin.blockZ(),
                 origin.blockX() + size.blockX() - 1,
                 origin.blockY() + size.blockY() - 1,
-                origin.blockZ() + size.blockZ() - 1
-        );
+                origin.blockZ() + size.blockZ() - 1);
     }
 
     public boolean intersects(int otherMinX, int otherMinZ, int otherMaxX, int otherMaxZ) {
-        return this.maxX >= otherMinX && this.minX <= otherMaxX
-                && this.maxZ >= otherMinZ && this.minZ <= otherMaxZ;
+        return this.maxX >= otherMinX
+                && this.minX <= otherMaxX
+                && this.maxZ >= otherMinZ
+                && this.minZ <= otherMaxZ;
     }
 
     public boolean intersects(BoundingBox other) {
@@ -73,9 +74,12 @@ public final class BoundingBox {
     }
 
     public boolean isInside(BlockVec pos) {
-        return pos.blockX() >= this.minX && pos.blockX() <= this.maxX
-                && pos.blockY() >= this.minY && pos.blockY() <= this.maxY
-                && pos.blockZ() >= this.minZ && pos.blockZ() <= this.maxZ;
+        return pos.blockX() >= this.minX
+                && pos.blockX() <= this.maxX
+                && pos.blockY() >= this.minY
+                && pos.blockY() <= this.maxY
+                && pos.blockZ() >= this.minZ
+                && pos.blockZ() <= this.maxZ;
     }
 
     public BoundingBox moved(int dx, int dy, int dz) {
@@ -85,8 +89,7 @@ public final class BoundingBox {
                 this.minZ + dz,
                 this.maxX + dx,
                 this.maxY + dy,
-                this.maxZ + dz
-        );
+                this.maxZ + dz);
     }
 
     public void move(int dx, int dy, int dz) {
@@ -160,12 +163,23 @@ public final class BoundingBox {
         return new BlockVec(
                 this.minX + (this.maxX - this.minX + 1) / 2,
                 this.minY + (this.maxY - this.minY + 1) / 2,
-                this.minZ + (this.maxZ - this.minZ + 1) / 2
-        );
+                this.minZ + (this.maxZ - this.minZ + 1) / 2);
     }
 
     @Override
     public String toString() {
-        return "BoundingBox[(" + this.minX + ", " + this.minY + ", " + this.minZ + ") -> (" + this.maxX + ", " + this.maxY + ", " + this.maxZ + ")]";
+        return "BoundingBox[("
+                + this.minX
+                + ", "
+                + this.minY
+                + ", "
+                + this.minZ
+                + ") -> ("
+                + this.maxX
+                + ", "
+                + this.maxY
+                + ", "
+                + this.maxZ
+                + ")]";
     }
 }

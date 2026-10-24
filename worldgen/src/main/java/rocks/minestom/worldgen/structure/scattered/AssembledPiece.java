@@ -4,14 +4,14 @@ import rocks.minestom.worldgen.random.RandomSource;
 import rocks.minestom.worldgen.structure.template.BoundingBox;
 
 /**
- * Uniform view over the four scattered feature piece types so
- * {@link ScatteredFeaturePlacer} can treat a chunk's structure start
- * generically regardless of which vanilla piece it wraps.
+ * Uniform view over the four scattered feature piece types so {@link ScatteredFeaturePlacer} can
+ * treat a chunk's structure start generically regardless of which vanilla piece it wraps.
  */
 sealed interface AssembledPiece {
     BoundingBox boundingBox();
 
-    void postProcess(ScatteredFeatureLevel level, RandomSource random, BoundingBox chunkBB, long levelSeed);
+    void postProcess(
+            ScatteredFeatureLevel level, RandomSource random, BoundingBox chunkBB, long levelSeed);
 
     record OfDesertPyramid(DesertPyramidPiece piece) implements AssembledPiece {
         @Override
@@ -20,7 +20,11 @@ sealed interface AssembledPiece {
         }
 
         @Override
-        public void postProcess(ScatteredFeatureLevel level, RandomSource random, BoundingBox chunkBB, long levelSeed) {
+        public void postProcess(
+                ScatteredFeatureLevel level,
+                RandomSource random,
+                BoundingBox chunkBB,
+                long levelSeed) {
             this.piece.postProcess(level, random, chunkBB, levelSeed);
             DesertPyramidPiece.afterPlace(level, chunkBB, levelSeed, this.piece);
         }
@@ -33,7 +37,11 @@ sealed interface AssembledPiece {
         }
 
         @Override
-        public void postProcess(ScatteredFeatureLevel level, RandomSource random, BoundingBox chunkBB, long levelSeed) {
+        public void postProcess(
+                ScatteredFeatureLevel level,
+                RandomSource random,
+                BoundingBox chunkBB,
+                long levelSeed) {
             this.piece.postProcess(level, random, chunkBB);
         }
     }
@@ -45,7 +53,11 @@ sealed interface AssembledPiece {
         }
 
         @Override
-        public void postProcess(ScatteredFeatureLevel level, RandomSource random, BoundingBox chunkBB, long levelSeed) {
+        public void postProcess(
+                ScatteredFeatureLevel level,
+                RandomSource random,
+                BoundingBox chunkBB,
+                long levelSeed) {
             this.piece.postProcess(level, chunkBB);
         }
     }
@@ -57,7 +69,11 @@ sealed interface AssembledPiece {
         }
 
         @Override
-        public void postProcess(ScatteredFeatureLevel level, RandomSource random, BoundingBox chunkBB, long levelSeed) {
+        public void postProcess(
+                ScatteredFeatureLevel level,
+                RandomSource random,
+                BoundingBox chunkBB,
+                long levelSeed) {
             this.piece.postProcess(level, random);
         }
     }

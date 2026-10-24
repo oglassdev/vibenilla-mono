@@ -28,7 +28,10 @@ public final class LilyPadPlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+        var below =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
         return supports(below) ? updateState.currentBlock() : Block.AIR;
     }
 

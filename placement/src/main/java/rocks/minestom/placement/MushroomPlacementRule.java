@@ -19,11 +19,12 @@ public final class MushroomPlacementRule extends BlockPlacementRule {
         var instance = placementState.instance();
         var supportPosition = placementState.placePosition().relative(BlockFace.BOTTOM);
         var supportBlock = instance.getBlock(supportPosition);
-        var growTag = MinecraftServer.process().blocks().getTag(Key.key("minecraft:mushroom_grow_block"));
+        var growTag =
+                MinecraftServer.process().blocks().getTag(Key.key("minecraft:mushroom_grow_block"));
 
         if (supportsSpecialBlock(supportBlock, growTag)
                 || hasLowLight(instance, placementState.placePosition())
-                && supportBlock.registry().collisionShape().isFaceFull(BlockFace.TOP)) {
+                        && supportBlock.registry().collisionShape().isFaceFull(BlockFace.TOP)) {
             return placementState.block();
         }
 
@@ -36,11 +37,16 @@ public final class MushroomPlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
-        var growTag = MinecraftServer.process().blocks().getTag(Key.key("minecraft:mushroom_grow_block"));
-        var supported = supportsSpecialBlock(below, growTag)
-                || hasLowLight(updateState.instance(), updateState.blockPosition())
-                && below.registry().collisionShape().isFaceFull(BlockFace.TOP);
+        var below =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+        var growTag =
+                MinecraftServer.process().blocks().getTag(Key.key("minecraft:mushroom_grow_block"));
+        var supported =
+                supportsSpecialBlock(below, growTag)
+                        || hasLowLight(updateState.instance(), updateState.blockPosition())
+                                && below.registry().collisionShape().isFaceFull(BlockFace.TOP);
         return supported ? updateState.currentBlock() : Block.AIR;
     }
 

@@ -1,5 +1,6 @@
 package io.github.togar2.pvp.utils;
 
+import java.util.Objects;
 import java.util.function.BiPredicate;
 import net.minestom.server.collision.BoundingBox;
 import net.minestom.server.coordinate.Point;
@@ -8,10 +9,9 @@ import net.minestom.server.coordinate.Vec;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockTags;
 
-import java.util.Objects;
-
 public class BlockUtil {
-    public static boolean isClimbable(Block.Getter blockGetter, int blockX, int blockY, int blockZ, Block block) {
+    public static boolean isClimbable(
+            Block.Getter blockGetter, int blockX, int blockY, int blockZ, Block block) {
         var climbable = Block.staticRegistry().getTag(BlockTags.CLIMBABLE);
 
         if (climbable != null && climbable.contains(block)) return true;
@@ -28,11 +28,16 @@ public class BlockUtil {
     }
 
     public static boolean isClimbable(Block.Getter blockGetter, Point position) {
-        return isClimbable(blockGetter, position.blockX(), position.blockY(), position.blockZ(),
+        return isClimbable(
+                blockGetter,
+                position.blockX(),
+                position.blockY(),
+                position.blockZ(),
                 blockGetter.getBlock(position));
     }
 
-    public static Vec getStuckSpeedMultiplier(Block.Getter blockGetter, Pos position, BoundingBox boundingBox, boolean weaving) {
+    public static Vec getStuckSpeedMultiplier(
+            Block.Getter blockGetter, Pos position, BoundingBox boundingBox, boolean weaving) {
         var startX = (int) Math.floor(position.x() + boundingBox.minX() + 1.0E-5);
         var startY = (int) Math.floor(position.y() + boundingBox.minY() + 1.0E-5);
         var startZ = (int) Math.floor(position.z() + boundingBox.minZ() + 1.0E-5);
@@ -61,18 +66,33 @@ public class BlockUtil {
         return multiplier;
     }
 
-    public static boolean hasCollision(Block.Getter blockGetter, Pos position, BoundingBox boundingBox) {
-        return anyBlockInBox(blockGetter, position, boundingBox, (block, blockPosition) ->
-                !block.air() && block.collisionShape().intersectBox(position.sub(blockPosition), boundingBox));
+    public static boolean hasCollision(
+            Block.Getter blockGetter, Pos position, BoundingBox boundingBox) {
+        return anyBlockInBox(
+                blockGetter,
+                position,
+                boundingBox,
+                (block, blockPosition) ->
+                        !block.air()
+                                && block.collisionShape()
+                                        .intersectBox(position.sub(blockPosition), boundingBox));
     }
 
-    public static boolean containsLiquid(Block.Getter blockGetter, Pos position, BoundingBox boundingBox) {
-        return anyBlockInBox(blockGetter, position, boundingBox, (block, blockPosition) ->
-                block.liquid() || "true".equals(block.getProperty("waterlogged")));
+    public static boolean containsLiquid(
+            Block.Getter blockGetter, Pos position, BoundingBox boundingBox) {
+        return anyBlockInBox(
+                blockGetter,
+                position,
+                boundingBox,
+                (block, blockPosition) ->
+                        block.liquid() || "true".equals(block.getProperty("waterlogged")));
     }
 
-    private static boolean anyBlockInBox(Block.Getter blockGetter, Pos position, BoundingBox boundingBox,
-                                         BiPredicate<Block, Vec> predicate) {
+    private static boolean anyBlockInBox(
+            Block.Getter blockGetter,
+            Pos position,
+            BoundingBox boundingBox,
+            BiPredicate<Block, Vec> predicate) {
         var startX = (int) Math.floor(position.x() + boundingBox.minX());
         var startY = (int) Math.floor(position.y() + boundingBox.minY());
         var startZ = (int) Math.floor(position.z() + boundingBox.minZ());

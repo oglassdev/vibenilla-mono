@@ -1,5 +1,7 @@
 package io.github.togar2.pvp.feature.explosion;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import io.github.togar2.pvp.feature.CombatFeatures;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.component.DataComponents;
@@ -20,8 +22,6 @@ import net.minestom.server.item.Material;
 import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @EnvTest
 public final class VanillaExplosiveFeatureTest {
@@ -74,9 +74,13 @@ public final class VanillaExplosiveFeatureTest {
             var player = this.createPlayer(env, instance);
             var flintAndSteel = ItemStack.of(Material.FLINT_AND_STEEL);
             player.setItemInMainHand(flintAndSteel);
-            instance.setBlock(0, 40, 0, Block.CAMPFIRE
-                    .withProperty("lit", "false")
-                    .withProperty("waterlogged", "false"));
+            instance.setBlock(
+                    0,
+                    40,
+                    0,
+                    Block.CAMPFIRE
+                            .withProperty("lit", "false")
+                            .withProperty("waterlogged", "false"));
 
             this.useItemOnBlock(player, flintAndSteel, new BlockVec(0, 40, 0), BlockFace.TOP);
 
@@ -89,13 +93,14 @@ public final class VanillaExplosiveFeatureTest {
     }
 
     private EventNode<?> addExplosiveFeature() {
-        var node = CombatFeatures.empty()
-                .add(CombatFeatures.VANILLA_ENCHANTMENT)
-                .add(CombatFeatures.VANILLA_EXPLOSION)
-                .add(CombatFeatures.VANILLA_ITEM_DAMAGE)
-                .add(CombatFeatures.VANILLA_EXPLOSIVE)
-                .build()
-                .createNode();
+        var node =
+                CombatFeatures.empty()
+                        .add(CombatFeatures.VANILLA_ENCHANTMENT)
+                        .add(CombatFeatures.VANILLA_EXPLOSION)
+                        .add(CombatFeatures.VANILLA_ITEM_DAMAGE)
+                        .add(CombatFeatures.VANILLA_EXPLOSIVE)
+                        .build()
+                        .createNode();
         MinecraftServer.getGlobalEventHandler().addChild(node);
         return node;
     }
@@ -106,8 +111,11 @@ public final class VanillaExplosiveFeatureTest {
         return player;
     }
 
-    private void useItemOnBlock(Player player, ItemStack stack, BlockVec position, BlockFace blockFace) {
-        var event = new PlayerUseItemOnBlockEvent(player, PlayerHand.MAIN, stack, position, Vec.ZERO, blockFace);
+    private void useItemOnBlock(
+            Player player, ItemStack stack, BlockVec position, BlockFace blockFace) {
+        var event =
+                new PlayerUseItemOnBlockEvent(
+                        player, PlayerHand.MAIN, stack, position, Vec.ZERO, blockFace);
         EventDispatcher.call(event);
     }
 }

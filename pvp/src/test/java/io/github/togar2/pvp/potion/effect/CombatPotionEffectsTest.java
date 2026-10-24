@@ -1,9 +1,9 @@
 package io.github.togar2.pvp.potion.effect;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import net.minestom.server.potion.PotionEffect;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public final class CombatPotionEffectsTest {
     @Test

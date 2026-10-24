@@ -7,9 +7,7 @@ public final class RepeaterBlockHandler implements BlockHandler {
     public static final RepeaterBlockHandler INSTANCE = new RepeaterBlockHandler();
     private static final Key KEY = Key.key("placement:repeater");
 
-    private RepeaterBlockHandler() {
-
-    }
+    private RepeaterBlockHandler() {}
 
     @Override
     public Key getKey() {

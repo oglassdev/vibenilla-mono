@@ -1,12 +1,12 @@
 package io.github.togar2.pvp.utils;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 import net.minestom.server.coordinate.Pos;
 import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @EnvTest
 public final class FluidUtilTest {
@@ -21,7 +21,8 @@ public final class FluidUtilTest {
 
         assertFalse(instance.isChunkLoaded(unloadedPosition));
 
-        var touchingWater = assertDoesNotThrow(() -> FluidUtil.isTouchingWater(player, unloadedPosition));
+        var touchingWater =
+                assertDoesNotThrow(() -> FluidUtil.isTouchingWater(player, unloadedPosition));
 
         assertFalse(touchingWater);
     }

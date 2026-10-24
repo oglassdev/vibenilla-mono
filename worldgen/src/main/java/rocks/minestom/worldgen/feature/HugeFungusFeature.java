@@ -1,35 +1,52 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.Set;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.HugeFungusConfiguration;
 import rocks.minestom.worldgen.feature.placement.PlacementContext;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.Set;
-
 /**
- * Port of vanilla {@code HugeFungusFeature}: huge crimson/warped fungi (stem +
- * wart-block hat with shroomlight decor and hanging weeping vines).
+ * Port of vanilla {@code HugeFungusFeature}: huge crimson/warped fungi (stem + wart-block hat with
+ * shroomlight decor and hanging weeping vines).
  */
 public final class HugeFungusFeature implements Feature<HugeFungusConfiguration> {
     private static final float HUGE_PROBABILITY = 0.06F;
 
     /**
-     * Blocks whose state reports {@code canBeReplaced()} in vanilla 26.2 (the
-     * {@code replaceable} block property), excluding the air blocks which are
-     * covered by {@link Block#isAir()}.
+     * Blocks whose state reports {@code canBeReplaced()} in vanilla 26.2 (the {@code replaceable}
+     * block property), excluding the air blocks which are covered by {@link Block#isAir()}.
      */
-    static final Set<String> REPLACEABLE = Set.of(
-            "minecraft:water", "minecraft:lava", "minecraft:bubble_column",
-            "minecraft:fire", "minecraft:soul_fire", "minecraft:snow",
-            "minecraft:vine", "minecraft:glow_lichen", "minecraft:resin_clump",
-            "minecraft:light", "minecraft:structure_void",
-            "minecraft:short_grass", "minecraft:tall_grass", "minecraft:fern", "minecraft:large_fern",
-            "minecraft:dead_bush", "minecraft:bush", "minecraft:firefly_bush",
-            "minecraft:short_dry_grass", "minecraft:tall_dry_grass", "minecraft:leaf_litter",
-            "minecraft:seagrass", "minecraft:tall_seagrass", "minecraft:hanging_roots",
-            "minecraft:warped_roots", "minecraft:crimson_roots", "minecraft:nether_sprouts");
+    static final Set<String> REPLACEABLE =
+            Set.of(
+                    "minecraft:water",
+                    "minecraft:lava",
+                    "minecraft:bubble_column",
+                    "minecraft:fire",
+                    "minecraft:soul_fire",
+                    "minecraft:snow",
+                    "minecraft:vine",
+                    "minecraft:glow_lichen",
+                    "minecraft:resin_clump",
+                    "minecraft:light",
+                    "minecraft:structure_void",
+                    "minecraft:short_grass",
+                    "minecraft:tall_grass",
+                    "minecraft:fern",
+                    "minecraft:large_fern",
+                    "minecraft:dead_bush",
+                    "minecraft:bush",
+                    "minecraft:firefly_bush",
+                    "minecraft:short_dry_grass",
+                    "minecraft:tall_dry_grass",
+                    "minecraft:leaf_litter",
+                    "minecraft:seagrass",
+                    "minecraft:tall_seagrass",
+                    "minecraft:hanging_roots",
+                    "minecraft:warped_roots",
+                    "minecraft:crimson_roots",
+                    "minecraft:nether_sprouts");
 
     /** Vanilla {@code BlockStateBase.canBeReplaced()}. */
     static boolean canBeReplaced(Block block) {
@@ -37,7 +54,8 @@ public final class HugeFungusFeature implements Feature<HugeFungusConfiguration>
     }
 
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<HugeFungusConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<HugeFungusConfiguration, T> context) {
         var level = context.accessor();
         var origin = context.origin();
         var random = context.random();
@@ -71,8 +89,11 @@ public final class HugeFungusFeature implements Feature<HugeFungusConfiguration>
     }
 
     private static boolean isReplaceable(
-            Block.Getter level, PlacementContext predicateContext, BlockVec pos,
-            HugeFungusConfiguration config, boolean checkNonReplaceablePlants) {
+            Block.Getter level,
+            PlacementContext predicateContext,
+            BlockVec pos,
+            HugeFungusConfiguration config,
+            boolean checkNonReplaceablePlants) {
         if (canBeReplaced(level.getBlock(pos))) {
             return true;
         }
@@ -87,14 +108,14 @@ public final class HugeFungusFeature implements Feature<HugeFungusConfiguration>
             HugeFungusConfiguration config,
             BlockVec surfaceOrigin,
             int totalHeight,
-            boolean isHuge
-    ) {
+            boolean isHuge) {
         var stem = config.stemState();
         var stemRadius = isHuge ? 1 : 0;
 
         for (var dx = -stemRadius; dx <= stemRadius; dx++) {
             for (var dz = -stemRadius; dz <= stemRadius; dz++) {
-                var cornerOfHugeStem = isHuge && Math.abs(dx) == stemRadius && Math.abs(dz) == stemRadius;
+                var cornerOfHugeStem =
+                        isHuge && Math.abs(dx) == stemRadius && Math.abs(dz) == stemRadius;
 
                 for (var dy = 0; dy < totalHeight; dy++) {
                     var blockPos = surfaceOrigin.add(dx, dy, dz);
@@ -126,8 +147,7 @@ public final class HugeFungusFeature implements Feature<HugeFungusConfiguration>
             HugeFungusConfiguration config,
             BlockVec surfaceOrigin,
             int totalHeight,
-            boolean isHuge
-    ) {
+            boolean isHuge) {
         var placeVines = config.hatState().compare(Block.NETHER_WART_BLOCK);
         var hatHeight = Math.min(random.nextInt(1 + totalHeight / 3) + 5, totalHeight);
         var hatStartY = totalHeight - hatHeight;
@@ -158,14 +178,36 @@ public final class HugeFungusFeature implements Feature<HugeFungusConfiguration>
 
                         if (isHatBottom) {
                             if (!inside) {
-                                placeHatDropBlock(level, random, blockPos, config.hatState(), placeVines);
+                                placeHatDropBlock(
+                                        level, random, blockPos, config.hatState(), placeVines);
                             }
                         } else if (inside) {
-                            placeHatBlock(level, random, config, blockPos, 0.1F, 0.2F, placeVines ? 0.1F : 0.0F);
+                            placeHatBlock(
+                                    level,
+                                    random,
+                                    config,
+                                    blockPos,
+                                    0.1F,
+                                    0.2F,
+                                    placeVines ? 0.1F : 0.0F);
                         } else if (corner) {
-                            placeHatBlock(level, random, config, blockPos, 0.01F, 0.7F, placeVines ? 0.083F : 0.0F);
+                            placeHatBlock(
+                                    level,
+                                    random,
+                                    config,
+                                    blockPos,
+                                    0.01F,
+                                    0.7F,
+                                    placeVines ? 0.083F : 0.0F);
                         } else {
-                            placeHatBlock(level, random, config, blockPos, 5.0E-4F, 0.98F, placeVines ? 0.07F : 0.0F);
+                            placeHatBlock(
+                                    level,
+                                    random,
+                                    config,
+                                    blockPos,
+                                    5.0E-4F,
+                                    0.98F,
+                                    placeVines ? 0.07F : 0.0F);
                         }
                     }
                 }
@@ -180,8 +222,7 @@ public final class HugeFungusFeature implements Feature<HugeFungusConfiguration>
             BlockVec blockPos,
             float decorBlockProbability,
             float hatBlockProbability,
-            float vinesProbability
-    ) {
+            float vinesProbability) {
         if (random.nextFloat() < decorBlockProbability) {
             level.setBlock(blockPos, config.decorState());
         } else if (random.nextFloat() < hatBlockProbability) {
@@ -213,7 +254,8 @@ public final class HugeFungusFeature implements Feature<HugeFungusConfiguration>
                 goalVineHeight *= 2;
             }
 
-            WeepingVinesFeature.placeWeepingVinesColumn(level, random, placePos, goalVineHeight, 23, 25);
+            WeepingVinesFeature.placeWeepingVinesColumn(
+                    level, random, placePos, goalVineHeight, 23, 25);
         }
     }
 }

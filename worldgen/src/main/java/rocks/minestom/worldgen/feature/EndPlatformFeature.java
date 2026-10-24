@@ -10,10 +10,14 @@ public final class EndPlatformFeature implements Feature<NoneFeatureConfiguratio
     public static final int SPAWN_Z = 0;
 
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<NoneFeatureConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<NoneFeatureConfiguration, T> context) {
         var chunkStartX = context.origin().blockX() & ~15;
         var chunkStartZ = context.origin().blockZ() & ~15;
-        if (SPAWN_X < chunkStartX || SPAWN_X >= chunkStartX + 16 || SPAWN_Z < chunkStartZ || SPAWN_Z >= chunkStartZ + 16) {
+        if (SPAWN_X < chunkStartX
+                || SPAWN_X >= chunkStartX + 16
+                || SPAWN_Z < chunkStartZ
+                || SPAWN_Z >= chunkStartZ + 16) {
             return false;
         }
 
@@ -23,7 +27,8 @@ public final class EndPlatformFeature implements Feature<NoneFeatureConfiguratio
         return true;
     }
 
-    private static <T extends Block.Getter & Block.Setter> void createEndPlatform(T level, BlockVec origin) {
+    private static <T extends Block.Getter & Block.Setter> void createEndPlatform(
+            T level, BlockVec origin) {
         for (var offsetX = -2; offsetX <= 2; offsetX++) {
             for (var offsetZ = -2; offsetZ <= 2; offsetZ++) {
                 for (var offsetY = -1; offsetY < 3; offsetY++) {

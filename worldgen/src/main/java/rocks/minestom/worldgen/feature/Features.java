@@ -1,6 +1,8 @@
 package rocks.minestom.worldgen.feature;
 
 import com.google.gson.JsonElement;
+import java.util.ArrayList;
+import java.util.List;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
@@ -9,17 +11,14 @@ import rocks.minestom.worldgen.feature.configurations.*;
 import rocks.minestom.worldgen.feature.placement.PlacementModifiers;
 import rocks.minestom.worldgen.structure.context.BlockTagManager;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public final class Features {
-    private Features() {
-    }
+    private Features() {}
 
     public static final TreeFeature TREE = new TreeFeature();
     public static final FallenTreeFeature FALLEN_TREE = new FallenTreeFeature();
     public static final MultifaceGrowthFeature MULTIFACE_GROWTH = new MultifaceGrowthFeature();
-    public static final HugeBrownMushroomFeature HUGE_BROWN_MUSHROOM = new HugeBrownMushroomFeature();
+    public static final HugeBrownMushroomFeature HUGE_BROWN_MUSHROOM =
+            new HugeBrownMushroomFeature();
     public static final HugeRedMushroomFeature HUGE_RED_MUSHROOM = new HugeRedMushroomFeature();
     public static final BlockPileFeature BLOCK_PILE = new BlockPileFeature();
     public static final ChorusPlantFeature CHORUS_PLANT = new ChorusPlantFeature();
@@ -28,11 +27,13 @@ public final class Features {
     public static final FlowerFeature FLOWER = new FlowerFeature();
     public static final SimpleBlockFeature SIMPLE_BLOCK = new SimpleBlockFeature();
     public static final RandomPatchFeature RANDOM_PATCH = new RandomPatchFeature();
-    public static final SimpleRandomSelectorFeature SIMPLE_RANDOM_SELECTOR = new SimpleRandomSelectorFeature();
+    public static final SimpleRandomSelectorFeature SIMPLE_RANDOM_SELECTOR =
+            new SimpleRandomSelectorFeature();
     public static final DiskFeature DISK = new DiskFeature();
     public static final BlockColumnFeature BLOCK_COLUMN = new BlockColumnFeature();
     public static final VegetationPatchFeature VEGETATION_PATCH = new VegetationPatchFeature();
-    public static final WaterloggedVegetationPatchFeature WATERLOGGED_VEGETATION_PATCH = new WaterloggedVegetationPatchFeature();
+    public static final WaterloggedVegetationPatchFeature WATERLOGGED_VEGETATION_PATCH =
+            new WaterloggedVegetationPatchFeature();
     public static final KelpFeature KELP = new KelpFeature();
     public static final SeagrassFeature SEAGRASS = new SeagrassFeature();
     public static final OreFeature ORE = new OreFeature();
@@ -41,12 +42,14 @@ public final class Features {
     public static final BlockBlobFeature BLOCK_BLOB = new BlockBlobFeature();
     public static final SpikeFeature SPIKE = new SpikeFeature();
     public static final SpeleothemFeature SPELEOTHEM = new SpeleothemFeature();
-    public static final SpeleothemClusterFeature SPELEOTHEM_CLUSTER = new SpeleothemClusterFeature();
+    public static final SpeleothemClusterFeature SPELEOTHEM_CLUSTER =
+            new SpeleothemClusterFeature();
     public static final LargeDripstoneFeature LARGE_DRIPSTONE = new LargeDripstoneFeature();
     public static final LakeFeature LAKE = new LakeFeature();
     public static final MonsterRoomFeature MONSTER_ROOM = new MonsterRoomFeature();
     public static final HugeFungusFeature HUGE_FUNGUS = new HugeFungusFeature();
-    public static final NetherForestVegetationFeature NETHER_FOREST_VEGETATION = new NetherForestVegetationFeature();
+    public static final NetherForestVegetationFeature NETHER_FOREST_VEGETATION =
+            new NetherForestVegetationFeature();
     public static final TwistingVinesFeature TWISTING_VINES = new TwistingVinesFeature();
     public static final WeepingVinesFeature WEEPING_VINES = new WeepingVinesFeature();
     public static final VinesFeature VINES = new VinesFeature();
@@ -75,44 +78,69 @@ public final class Features {
     public static final RootSystemFeature ROOT_SYSTEM = new RootSystemFeature();
     public static final EndIslandFeature END_ISLAND = new EndIslandFeature();
     public static final EndGatewayFeature END_GATEWAY = new EndGatewayFeature();
-    public static final VoidStartPlatformFeature VOID_START_PLATFORM = new VoidStartPlatformFeature();
+    public static final VoidStartPlatformFeature VOID_START_PLATFORM =
+            new VoidStartPlatformFeature();
 
-    private static final Codec<TreeConfiguredFeature> TREE_CONFIGURED_FEATURE_CODEC = StructCodec.struct(
-            "config", TreeConfiguration.CODEC, TreeConfiguredFeature::config,
-            TreeConfiguredFeature::new);
+    private static final Codec<TreeConfiguredFeature> TREE_CONFIGURED_FEATURE_CODEC =
+            StructCodec.struct(
+                    "config",
+                    TreeConfiguration.CODEC,
+                    TreeConfiguredFeature::config,
+                    TreeConfiguredFeature::new);
 
-    private static final Codec<FallenTreeConfiguredFeature> FALLEN_TREE_CONFIGURED_FEATURE_CODEC = StructCodec.struct(
-            "config", FallenTreeConfiguration.CODEC, FallenTreeConfiguredFeature::config,
-            FallenTreeConfiguredFeature::new);
+    private static final Codec<FallenTreeConfiguredFeature> FALLEN_TREE_CONFIGURED_FEATURE_CODEC =
+            StructCodec.struct(
+                    "config",
+                    FallenTreeConfiguration.CODEC,
+                    FallenTreeConfiguredFeature::config,
+                    FallenTreeConfiguredFeature::new);
 
-    private static final Codec<NoneConfiguredFeature> NONE_CONFIGURED_FEATURE_CODEC = StructCodec.struct(
-            "config", NoneFeatureConfiguration.CODEC, NoneConfiguredFeature::config,
-            NoneConfiguredFeature::new);
+    private static final Codec<NoneConfiguredFeature> NONE_CONFIGURED_FEATURE_CODEC =
+            StructCodec.struct(
+                    "config",
+                    NoneFeatureConfiguration.CODEC,
+                    NoneConfiguredFeature::config,
+                    NoneConfiguredFeature::new);
 
-    private static final Codec<BlockPileConfiguredFeature> BLOCK_PILE_CONFIGURED_FEATURE_CODEC = StructCodec.struct(
-            "config", BlockPileConfiguration.CODEC, BlockPileConfiguredFeature::config,
-            BlockPileConfiguredFeature::new);
+    private static final Codec<BlockPileConfiguredFeature> BLOCK_PILE_CONFIGURED_FEATURE_CODEC =
+            StructCodec.struct(
+                    "config",
+                    BlockPileConfiguration.CODEC,
+                    BlockPileConfiguredFeature::config,
+                    BlockPileConfiguredFeature::new);
 
-    private static final Codec<EndSpikeConfiguredFeature> END_SPIKE_CONFIGURED_FEATURE_CODEC = StructCodec.struct(
-            "config", EndSpikeConfiguration.CODEC, EndSpikeConfiguredFeature::config,
-            EndSpikeConfiguredFeature::new);
+    private static final Codec<EndSpikeConfiguredFeature> END_SPIKE_CONFIGURED_FEATURE_CODEC =
+            StructCodec.struct(
+                    "config",
+                    EndSpikeConfiguration.CODEC,
+                    EndSpikeConfiguredFeature::config,
+                    EndSpikeConfiguredFeature::new);
 
-    private static final Codec<SimpleBlockConfiguredFeature> SIMPLE_BLOCK_CONFIGURED_FEATURE_CODEC = StructCodec.struct(
-            "config", SimpleBlockConfiguration.CODEC, SimpleBlockConfiguredFeature::config,
-            SimpleBlockConfiguredFeature::new);
+    private static final Codec<SimpleBlockConfiguredFeature> SIMPLE_BLOCK_CONFIGURED_FEATURE_CODEC =
+            StructCodec.struct(
+                    "config",
+                    SimpleBlockConfiguration.CODEC,
+                    SimpleBlockConfiguredFeature::config,
+                    SimpleBlockConfiguredFeature::new);
 
-    private static final Codec<RandomPatchConfiguredFeature> RANDOM_PATCH_CONFIGURED_FEATURE_CODEC = StructCodec.struct(
-            "config", RandomPatchConfiguration.CODEC, RandomPatchConfiguredFeature::config,
-            RandomPatchConfiguredFeature::new);
+    private static final Codec<RandomPatchConfiguredFeature> RANDOM_PATCH_CONFIGURED_FEATURE_CODEC =
+            StructCodec.struct(
+                    "config",
+                    RandomPatchConfiguration.CODEC,
+                    RandomPatchConfiguredFeature::config,
+                    RandomPatchConfiguredFeature::new);
 
-    private static final Codec<SimpleRandomSelectorConfiguredFeature> SIMPLE_RANDOM_SELECTOR_CONFIGURED_FEATURE_CODEC = StructCodec.struct(
-            "config", SimpleRandomSelectorConfiguration.CODEC, SimpleRandomSelectorConfiguredFeature::config,
-            SimpleRandomSelectorConfiguredFeature::new);
+    private static final Codec<SimpleRandomSelectorConfiguredFeature>
+            SIMPLE_RANDOM_SELECTOR_CONFIGURED_FEATURE_CODEC =
+                    StructCodec.struct(
+                            "config",
+                            SimpleRandomSelectorConfiguration.CODEC,
+                            SimpleRandomSelectorConfiguredFeature::config,
+                            SimpleRandomSelectorConfiguredFeature::new);
 
     /**
-     * Feature loader owning the parse currently in progress, so configurations
-     * holding by-reference placed features (vegetation patches) can resolve
-     * them at place time.
+     * Feature loader owning the parse currently in progress, so configurations holding by-reference
+     * placed features (vegetation patches) can resolve them at place time.
      */
     private static final ThreadLocal<FeatureLoader> CURRENT_LOADER = new ThreadLocal<>();
 
@@ -132,7 +160,8 @@ public final class Features {
         return parseConfiguredFeature(json, null);
     }
 
-    public static ConfiguredFeature<?> parseConfiguredFeature(JsonElement json, BlockTagManager blockTags) {
+    public static ConfiguredFeature<?> parseConfiguredFeature(
+            JsonElement json, BlockTagManager blockTags) {
         if (!json.isJsonObject()) {
             throw new IllegalArgumentException("ConfiguredFeature must be a JSON object");
         }
@@ -150,16 +179,25 @@ public final class Features {
         }
     }
 
-    private static ConfiguredFeature<?> parseConfiguredFeature(com.google.gson.JsonObject obj, BlockTagManager blockTags) {
+    private static ConfiguredFeature<?> parseConfiguredFeature(
+            com.google.gson.JsonObject obj, BlockTagManager blockTags) {
         var typeStr = obj.get("type").getAsString();
 
         return switch (typeStr) {
             case "minecraft:tree" -> {
-                var config = TREE_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        TREE_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(TREE, config);
             }
             case "minecraft:fallen_tree" -> {
-                var config = FALLEN_TREE_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        FALLEN_TREE_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(FALLEN_TREE, config);
             }
             case "minecraft:multiface_growth" -> {
@@ -167,11 +205,13 @@ public final class Features {
                 yield new ConfiguredFeature<>(MULTIFACE_GROWTH, config);
             }
             case "minecraft:huge_brown_mushroom" -> {
-                var config = HugeMushroomFeatureConfiguration.fromJson(obj.get("config"), blockTags);
+                var config =
+                        HugeMushroomFeatureConfiguration.fromJson(obj.get("config"), blockTags);
                 yield new ConfiguredFeature<>(HUGE_BROWN_MUSHROOM, config);
             }
             case "minecraft:huge_red_mushroom" -> {
-                var config = HugeMushroomFeatureConfiguration.fromJson(obj.get("config"), blockTags);
+                var config =
+                        HugeMushroomFeatureConfiguration.fromJson(obj.get("config"), blockTags);
                 yield new ConfiguredFeature<>(HUGE_RED_MUSHROOM, config);
             }
             case "minecraft:random_selector" -> {
@@ -179,48 +219,87 @@ public final class Features {
                 var features = new ArrayList<RandomSelectorFeature.WeightedFeature>();
                 for (var entryElement : configObj.getAsJsonArray("features")) {
                     var entry = entryElement.getAsJsonObject();
-                    features.add(new RandomSelectorFeature.WeightedFeature(
-                            entry.get("chance").getAsFloat(),
-                            parsePlacedFeature(entry.get("feature"))));
+                    features.add(
+                            new RandomSelectorFeature.WeightedFeature(
+                                    entry.get("chance").getAsFloat(),
+                                    parsePlacedFeature(entry.get("feature"))));
                 }
                 yield new ConfiguredFeature<>(
-                        new RandomSelectorFeature(parsePlacedFeature(configObj.get("default")), List.copyOf(features)),
+                        new RandomSelectorFeature(
+                                parsePlacedFeature(configObj.get("default")),
+                                List.copyOf(features)),
                         null);
             }
             case "minecraft:block_pile" -> {
-                var config = BLOCK_PILE_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        BLOCK_PILE_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(BLOCK_PILE, config);
             }
             case "minecraft:chorus_plant" -> {
-                var config = NONE_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        NONE_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(CHORUS_PLANT, config);
             }
             case "minecraft:end_platform" -> {
-                var config = NONE_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        NONE_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(END_PLATFORM, config);
             }
             case "minecraft:end_spike" -> {
-                var config = END_SPIKE_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        END_SPIKE_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(END_SPIKE, config);
             }
             case "minecraft:flower" -> {
-                var config = RANDOM_PATCH_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        RANDOM_PATCH_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(FLOWER, config);
             }
             case "minecraft:simple_block" -> {
-                var config = SIMPLE_BLOCK_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        SIMPLE_BLOCK_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(SIMPLE_BLOCK, config);
             }
             case "minecraft:random_patch", "minecraft:no_bonemeal_flower" -> {
-                var config = RANDOM_PATCH_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        RANDOM_PATCH_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(RANDOM_PATCH, config);
             }
             case "minecraft:simple_random_selector" -> {
-                var config = SIMPLE_RANDOM_SELECTOR_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        SIMPLE_RANDOM_SELECTOR_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(SIMPLE_RANDOM_SELECTOR, config);
             }
             case "minecraft:kelp" -> {
-                var config = NONE_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        NONE_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(KELP, config);
             }
             case "minecraft:seagrass" -> {
@@ -276,28 +355,37 @@ public final class Features {
                 yield new ConfiguredFeature<>(WATERLOGGED_VEGETATION_PATCH, config);
             }
             case "minecraft:monster_room" -> {
-                var config = NONE_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        NONE_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(MONSTER_ROOM, config);
             }
             case "minecraft:weighted_random_selector" -> {
                 var features = new ArrayList<WeightedRandomSelectorFeature.WeightedPlacedFeature>();
                 for (var entryElement : obj.getAsJsonObject("config").getAsJsonArray("features")) {
                     var entry = entryElement.getAsJsonObject();
-                    features.add(new WeightedRandomSelectorFeature.WeightedPlacedFeature(
-                            parsePlacedFeature(entry.get("data")),
-                            entry.get("weight").getAsInt()));
+                    features.add(
+                            new WeightedRandomSelectorFeature.WeightedPlacedFeature(
+                                    parsePlacedFeature(entry.get("data")),
+                                    entry.get("weight").getAsInt()));
                 }
-                yield new ConfiguredFeature<>(new WeightedRandomSelectorFeature(List.copyOf(features)), null);
+                yield new ConfiguredFeature<>(
+                        new WeightedRandomSelectorFeature(List.copyOf(features)), null);
             }
             case "minecraft:random_boolean_selector" -> {
                 var configObj = obj.getAsJsonObject("config");
-                yield new ConfiguredFeature<>(new RandomBooleanSelectorFeature(
-                        parsePlacedFeature(configObj.get("feature_true")),
-                        parsePlacedFeature(configObj.get("feature_false"))), null);
+                yield new ConfiguredFeature<>(
+                        new RandomBooleanSelectorFeature(
+                                parsePlacedFeature(configObj.get("feature_true")),
+                                parsePlacedFeature(configObj.get("feature_false"))),
+                        null);
             }
             case "minecraft:sequence" -> {
                 var features = new ArrayList<PlacedFeature>();
-                for (var featureElement : obj.getAsJsonObject("config").getAsJsonArray("features")) {
+                for (var featureElement :
+                        obj.getAsJsonObject("config").getAsJsonArray("features")) {
                     features.add(parsePlacedFeature(featureElement));
                 }
                 yield new ConfiguredFeature<>(new SequenceFeature(List.copyOf(features)), null);
@@ -307,19 +395,33 @@ public final class Features {
                 yield new ConfiguredFeature<>(HUGE_FUNGUS, config);
             }
             case "minecraft:nether_forest_vegetation" -> {
-                var config = NetherForestVegetationConfig.CODEC.decode(Transcoder.JSON, obj.get("config")).orElseThrow();
+                var config =
+                        NetherForestVegetationConfig.CODEC
+                                .decode(Transcoder.JSON, obj.get("config"))
+                                .orElseThrow();
                 yield new ConfiguredFeature<>(NETHER_FOREST_VEGETATION, config);
             }
             case "minecraft:twisting_vines" -> {
-                var config = TwistingVinesConfig.CODEC.decode(Transcoder.JSON, obj.get("config")).orElseThrow();
+                var config =
+                        TwistingVinesConfig.CODEC
+                                .decode(Transcoder.JSON, obj.get("config"))
+                                .orElseThrow();
                 yield new ConfiguredFeature<>(TWISTING_VINES, config);
             }
             case "minecraft:weeping_vines" -> {
-                var config = NONE_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        NONE_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(WEEPING_VINES, config);
             }
             case "minecraft:vines" -> {
-                var config = NONE_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        NONE_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(VINES, config);
             }
             case "minecraft:spring_feature" -> {
@@ -327,7 +429,11 @@ public final class Features {
                 yield new ConfiguredFeature<>(SPRING, config);
             }
             case "minecraft:glowstone_blob" -> {
-                var config = NONE_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        NONE_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(GLOWSTONE_BLOB, config);
             }
             case "minecraft:basalt_columns" -> {
@@ -335,7 +441,11 @@ public final class Features {
                 yield new ConfiguredFeature<>(BASALT_COLUMNS, config);
             }
             case "minecraft:basalt_pillar" -> {
-                var config = NONE_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        NONE_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(BASALT_PILLAR, config);
             }
             case "minecraft:delta_feature" -> {
@@ -358,21 +468,41 @@ public final class Features {
                 var config = FossilFeatureConfiguration.fromJson(obj.get("config"), blockTags);
                 yield new ConfiguredFeature<>(FOSSIL, config);
             }
-            case "minecraft:desert_well" -> new ConfiguredFeature<>(DESERT_WELL, new NoneFeatureConfiguration());
-            case "minecraft:sea_pickle" -> new ConfiguredFeature<>(SEA_PICKLE, CountConfiguration.fromJson(obj.get("config")));
-            case "minecraft:bamboo" -> new ConfiguredFeature<>(BAMBOO, ProbabilityConfiguration.fromJson(obj.get("config")));
-            case "minecraft:fill_layer" -> new ConfiguredFeature<>(FILL_LAYER, LayerConfiguration.fromJson(obj.get("config")));
-            case "minecraft:bonus_chest" -> new ConfiguredFeature<>(BONUS_CHEST, new NoneFeatureConfiguration());
+            case "minecraft:desert_well" ->
+                    new ConfiguredFeature<>(DESERT_WELL, new NoneFeatureConfiguration());
+            case "minecraft:sea_pickle" ->
+                    new ConfiguredFeature<>(
+                            SEA_PICKLE, CountConfiguration.fromJson(obj.get("config")));
+            case "minecraft:bamboo" ->
+                    new ConfiguredFeature<>(
+                            BAMBOO, ProbabilityConfiguration.fromJson(obj.get("config")));
+            case "minecraft:fill_layer" ->
+                    new ConfiguredFeature<>(
+                            FILL_LAYER, LayerConfiguration.fromJson(obj.get("config")));
+            case "minecraft:bonus_chest" ->
+                    new ConfiguredFeature<>(BONUS_CHEST, new NoneFeatureConfiguration());
             case "minecraft:coral_tree" -> {
-                var config = NONE_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        NONE_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(CORAL_TREE, config);
             }
             case "minecraft:coral_claw" -> {
-                var config = NONE_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        NONE_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(CORAL_CLAW, config);
             }
             case "minecraft:coral_mushroom" -> {
-                var config = NONE_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        NONE_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(CORAL_MUSHROOM, config);
             }
             case "minecraft:iceberg" -> {
@@ -390,7 +520,11 @@ public final class Features {
                 yield new ConfiguredFeature<>(GEODE, config);
             }
             case "minecraft:end_island" -> {
-                var config = NONE_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        NONE_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(END_ISLAND, config);
             }
             case "minecraft:end_gateway" -> {
@@ -398,11 +532,19 @@ public final class Features {
                 yield new ConfiguredFeature<>(END_GATEWAY, config);
             }
             case "minecraft:void_start_platform" -> {
-                var config = NONE_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        NONE_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(VOID_START_PLATFORM, config);
             }
             case "minecraft:freeze_top_layer" -> {
-                var config = NONE_CONFIGURED_FEATURE_CODEC.decode(Transcoder.JSON, obj).orElseThrow().config();
+                var config =
+                        NONE_CONFIGURED_FEATURE_CODEC
+                                .decode(Transcoder.JSON, obj)
+                                .orElseThrow()
+                                .config();
                 yield new ConfiguredFeature<>(FREEZE_TOP_LAYER, config);
             }
             case "minecraft:netherrack_replace_blobs" -> {
@@ -417,8 +559,8 @@ public final class Features {
     }
 
     /**
-     * Parses a nested placed feature entry: either an inline placed feature
-     * object or a registry reference string.
+     * Parses a nested placed feature entry: either an inline placed feature object or a registry
+     * reference string.
      */
     private static PlacedFeature parsePlacedFeature(JsonElement json) {
         if (json.isJsonPrimitive()) {
@@ -428,27 +570,20 @@ public final class Features {
         return PlacedFeature.fromJson(json);
     }
 
-    private record TreeConfiguredFeature(TreeConfiguration config) {
-    }
+    private record TreeConfiguredFeature(TreeConfiguration config) {}
 
-    private record FallenTreeConfiguredFeature(FallenTreeConfiguration config) {
-    }
+    private record FallenTreeConfiguredFeature(FallenTreeConfiguration config) {}
 
-    private record NoneConfiguredFeature(NoneFeatureConfiguration config) {
-    }
+    private record NoneConfiguredFeature(NoneFeatureConfiguration config) {}
 
-    private record BlockPileConfiguredFeature(BlockPileConfiguration config) {
-    }
+    private record BlockPileConfiguredFeature(BlockPileConfiguration config) {}
 
-    private record EndSpikeConfiguredFeature(EndSpikeConfiguration config) {
-    }
+    private record EndSpikeConfiguredFeature(EndSpikeConfiguration config) {}
 
-    private record SimpleBlockConfiguredFeature(SimpleBlockConfiguration config) {
-    }
+    private record SimpleBlockConfiguredFeature(SimpleBlockConfiguration config) {}
 
-    private record RandomPatchConfiguredFeature(RandomPatchConfiguration config) {
-    }
+    private record RandomPatchConfiguredFeature(RandomPatchConfiguration config) {}
 
-    private record SimpleRandomSelectorConfiguredFeature(SimpleRandomSelectorConfiguration config) {
-    }
+    private record SimpleRandomSelectorConfiguredFeature(
+            SimpleRandomSelectorConfiguration config) {}
 }

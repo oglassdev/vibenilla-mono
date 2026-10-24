@@ -6,6 +6,7 @@ import io.github.togar2.pvp.feature.RegistrableFeature;
 import io.github.togar2.pvp.feature.config.DefinedFeature;
 import io.github.togar2.pvp.feature.config.FeatureConfiguration;
 import io.github.togar2.pvp.utils.ViewUtil;
+import java.util.List;
 import net.kyori.adventure.sound.Sound;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.entity.EntityType;
@@ -24,29 +25,26 @@ import net.minestom.server.item.enchant.EffectComponent;
 import net.minestom.server.utils.inventory.PlayerInventoryUtils;
 import org.jspecify.annotations.Nullable;
 
-import java.util.List;
-
-/**
- * Vanilla implementation of {@link EquipmentFeature}
- */
+/** Vanilla implementation of {@link EquipmentFeature} */
 public class VanillaEquipmentFeature implements EquipmentFeature, RegistrableFeature {
-    public static final DefinedFeature<VanillaEquipmentFeature> DEFINED = new DefinedFeature<>(
-            FeatureType.EQUIPMENT, VanillaEquipmentFeature::new
-    );
+    public static final DefinedFeature<VanillaEquipmentFeature> DEFINED =
+            new DefinedFeature<>(FeatureType.EQUIPMENT, VanillaEquipmentFeature::new);
 
-    public VanillaEquipmentFeature(FeatureConfiguration configuration) {
-    }
+    public VanillaEquipmentFeature(FeatureConfiguration configuration) {}
 
     @Override
     public void init(EventNode<EntityInstanceEvent> node) {
         node.addListener(InventoryPreClickEvent.class, this::onInventoryPreClick);
         node.addListener(EntityEquipEvent.class, this::onEquip);
-        node.addListener(PlayerChangeHeldSlotEvent.class, event -> {
-            var entity = event.getPlayer();
-            var oldItem = entity.getEquipment(EquipmentSlot.MAIN_HAND);
-            var newItem = event.getPlayer().getInventory().getItemStack(event.getNewSlot());
-            EnchantmentAttributes.updateEquipmentAttributes(entity, oldItem, newItem, EquipmentSlot.MAIN_HAND);
-        });
+        node.addListener(
+                PlayerChangeHeldSlotEvent.class,
+                event -> {
+                    var entity = event.getPlayer();
+                    var oldItem = entity.getEquipment(EquipmentSlot.MAIN_HAND);
+                    var newItem = event.getPlayer().getInventory().getItemStack(event.getNewSlot());
+                    EnchantmentAttributes.updateEquipmentAttributes(
+                            entity, oldItem, newItem, EquipmentSlot.MAIN_HAND);
+                });
     }
 
     private void onInventoryPreClick(InventoryPreClickEvent event) {
@@ -69,8 +67,7 @@ public class VanillaEquipmentFeature implements EquipmentFeature, RegistrableFea
     private boolean shouldCancelInvalidArmorPlacement(Player player, Click click) {
         if (click instanceof Click.Left || click instanceof Click.Right) {
             return this.shouldCancelInvalidArmorSlotPlacement(
-                    click.slot(), player.getInventory().getCursorItem()
-            );
+                    click.slot(), player.getInventory().getCursorItem());
         }
 
         if (click instanceof Click.HotbarSwap hotbarSwap) {
@@ -79,7 +76,8 @@ public class VanillaEquipmentFeature implements EquipmentFeature, RegistrableFea
         }
 
         if (click instanceof Click.OffhandSwap offhandSwap) {
-            var incomingItem = player.getInventory().getItemStack(PlayerInventoryUtils.OFFHAND_SLOT);
+            var incomingItem =
+                    player.getInventory().getItemStack(PlayerInventoryUtils.OFFHAND_SLOT);
             return this.shouldCancelInvalidArmorSlotPlacement(offhandSwap.slot(), incomingItem);
         }
 
@@ -159,23 +157,26 @@ public class VanillaEquipmentFeature implements EquipmentFeature, RegistrableFea
         if (!(event.getEntity() instanceof LivingEntity entity)) return;
 
         var slot = event.getSlot();
-        EnchantmentAttributes.updateEquipmentAttributes(entity, entity.getEquipment(slot), event.getEquippedItem(), slot);
+        EnchantmentAttributes.updateEquipmentAttributes(
+                entity, entity.getEquipment(slot), event.getEquippedItem(), slot);
 
         this.playEquipSound(entity, entity.getEquipment(slot), event.getEquippedItem(), slot);
     }
 
-    private void playEquipSound(LivingEntity entity, ItemStack oldStack, ItemStack newStack, EquipmentSlot slot) {
+    private void playEquipSound(
+            LivingEntity entity, ItemStack oldStack, ItemStack newStack, EquipmentSlot slot) {
         if (entity.isSilent()) return;
         if (entity.getAliveTicks() <= 0) return;
-        if (newStack.without(DataComponents.DAMAGE).isSimilar(oldStack.without(DataComponents.DAMAGE))) return;
+        if (newStack.without(DataComponents.DAMAGE)
+                .isSimilar(oldStack.without(DataComponents.DAMAGE))) return;
 
         var equippable = newStack.get(DataComponents.EQUIPPABLE);
         if (equippable == null) return;
         if (equippable.slot() != slot) return;
 
-        ViewUtil.viewersAndSelf(entity).playSound(Sound.sound(
-                equippable.equipSound(), Sound.Source.PLAYER,
-                1.0F, 1.0F
-        ), entity);
+        ViewUtil.viewersAndSelf(entity)
+                .playSound(
+                        Sound.sound(equippable.equipSound(), Sound.Source.PLAYER, 1.0F, 1.0F),
+                        entity);
     }
 }

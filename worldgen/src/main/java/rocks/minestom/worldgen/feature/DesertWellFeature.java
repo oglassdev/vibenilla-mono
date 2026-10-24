@@ -1,21 +1,20 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.List;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.NoneFeatureConfiguration;
 
-import java.util.List;
-
 /**
- * Port of vanilla {@code DesertWellFeature}: a sandstone well built above the
- * first sand block found below the origin, with two suspicious sand blocks
- * scattered around the water column. Brushable-block loot table assignment is
- * out of scope for this library; the suspicious sand blocks are placed with
- * no attached loot.
+ * Port of vanilla {@code DesertWellFeature}: a sandstone well built above the first sand block
+ * found below the origin, with two suspicious sand blocks scattered around the water column.
+ * Brushable-block loot table assignment is out of scope for this library; the suspicious sand
+ * blocks are placed with no attached loot.
  */
 public final class DesertWellFeature implements Feature<NoneFeatureConfiguration> {
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<NoneFeatureConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<NoneFeatureConfiguration, T> context) {
         var level = context.accessor();
         var random = context.random();
         var origin = context.origin().add(0, 1, 0);
@@ -88,14 +87,22 @@ public final class DesertWellFeature implements Feature<NoneFeatureConfiguration
             level.setBlock(origin.add(1, offsetY, 1), Block.SANDSTONE);
         }
 
-        var waterPositions = List.of(origin, Direction.EAST.relative(origin), Direction.SOUTH.relative(origin),
-                Direction.WEST.relative(origin), Direction.NORTH.relative(origin));
-        placeSuspiciousSand(level, waterPositions.get(random.nextInt(waterPositions.size())).sub(0, 1, 0));
-        placeSuspiciousSand(level, waterPositions.get(random.nextInt(waterPositions.size())).sub(0, 2, 0));
+        var waterPositions =
+                List.of(
+                        origin,
+                        Direction.EAST.relative(origin),
+                        Direction.SOUTH.relative(origin),
+                        Direction.WEST.relative(origin),
+                        Direction.NORTH.relative(origin));
+        placeSuspiciousSand(
+                level, waterPositions.get(random.nextInt(waterPositions.size())).sub(0, 1, 0));
+        placeSuspiciousSand(
+                level, waterPositions.get(random.nextInt(waterPositions.size())).sub(0, 2, 0));
         return true;
     }
 
-    private static <T extends Block.Getter & Block.Setter> void placeSuspiciousSand(T level, BlockVec position) {
+    private static <T extends Block.Getter & Block.Setter> void placeSuspiciousSand(
+            T level, BlockVec position) {
         level.setBlock(position, Block.SUSPICIOUS_SAND);
     }
 }

@@ -45,13 +45,16 @@ public final class SmallDripleafPlacementRule extends BlockPlacementRule {
         var yaw = playerPosition == null ? 0.0F : playerPosition.yaw();
         var facing = BlockFace.fromYaw(yaw).getOppositeFace().name().toLowerCase();
         var upperWaterlogged = existingUpperBlock.compare(Block.WATER);
-        var upperBlock = placementState.block()
-                .withProperty("facing", facing)
-                .withProperty("half", "upper")
-                .withProperty("waterlogged", String.valueOf(upperWaterlogged));
+        var upperBlock =
+                placementState
+                        .block()
+                        .withProperty("facing", facing)
+                        .withProperty("half", "upper")
+                        .withProperty("waterlogged", String.valueOf(upperWaterlogged));
         instance.setBlock(upperPosition, upperBlock, false);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withProperty("facing", facing)
                 .withProperty("half", "lower")
                 .withProperty("waterlogged", String.valueOf(lowerWaterlogged));
@@ -71,13 +74,18 @@ public final class SmallDripleafPlacementRule extends BlockPlacementRule {
             }
 
             var belowBlock = instance.getBlock(blockPosition.relative(BlockFace.BOTTOM));
-            return belowBlock.compare(this.block) && "lower".equals(belowBlock.getProperty("half")) ? currentBlock : Block.AIR;
+            return belowBlock.compare(this.block) && "lower".equals(belowBlock.getProperty("half"))
+                    ? currentBlock
+                    : Block.AIR;
         }
 
         if ("lower".equals(half)) {
             if (fromFace == BlockFace.TOP) {
                 var aboveBlock = instance.getBlock(blockPosition.relative(BlockFace.TOP));
-                return aboveBlock.compare(this.block) && "upper".equals(aboveBlock.getProperty("half")) ? currentBlock : Block.AIR;
+                return aboveBlock.compare(this.block)
+                                && "upper".equals(aboveBlock.getProperty("half"))
+                        ? currentBlock
+                        : Block.AIR;
             }
 
             if (fromFace == BlockFace.BOTTOM) {

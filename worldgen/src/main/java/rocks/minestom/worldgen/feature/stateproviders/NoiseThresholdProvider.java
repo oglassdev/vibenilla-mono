@@ -1,5 +1,6 @@
 package rocks.minestom.worldgen.feature.stateproviders;
 
+import java.util.List;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.coordinate.BlockVec;
@@ -8,19 +9,34 @@ import rocks.minestom.worldgen.BlockCodec;
 import rocks.minestom.worldgen.NoiseParameters;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.List;
-
 public final class NoiseThresholdProvider extends NoiseProvider {
-    public static final Codec<NoiseThresholdProvider> CODEC = StructCodec.struct(
-            "seed", Codec.LONG, NoiseThresholdProvider::seed,
-            "noise", NoiseParameters.CODEC, NoiseThresholdProvider::noiseParameters,
-            "scale", Codec.FLOAT, NoiseThresholdProvider::scale,
-            "threshold", Codec.FLOAT, NoiseThresholdProvider::threshold,
-            "high_chance", Codec.FLOAT, NoiseThresholdProvider::highChance,
-            "default_state", BlockCodec.CODEC, NoiseThresholdProvider::defaultState,
-            "low_states", BlockCodec.CODEC.list(), NoiseThresholdProvider::lowStates,
-            "high_states", BlockCodec.CODEC.list(), NoiseThresholdProvider::highStates,
-            NoiseThresholdProvider::new);
+    public static final Codec<NoiseThresholdProvider> CODEC =
+            StructCodec.struct(
+                    "seed",
+                    Codec.LONG,
+                    NoiseThresholdProvider::seed,
+                    "noise",
+                    NoiseParameters.CODEC,
+                    NoiseThresholdProvider::noiseParameters,
+                    "scale",
+                    Codec.FLOAT,
+                    NoiseThresholdProvider::scale,
+                    "threshold",
+                    Codec.FLOAT,
+                    NoiseThresholdProvider::threshold,
+                    "high_chance",
+                    Codec.FLOAT,
+                    NoiseThresholdProvider::highChance,
+                    "default_state",
+                    BlockCodec.CODEC,
+                    NoiseThresholdProvider::defaultState,
+                    "low_states",
+                    BlockCodec.CODEC.list(),
+                    NoiseThresholdProvider::lowStates,
+                    "high_states",
+                    BlockCodec.CODEC.list(),
+                    NoiseThresholdProvider::highStates,
+                    NoiseThresholdProvider::new);
 
     private final float threshold;
     private final float highChance;
@@ -36,8 +52,7 @@ public final class NoiseThresholdProvider extends NoiseProvider {
             float highChance,
             Block defaultState,
             List<Block> lowStates,
-            List<Block> highStates
-    ) {
+            List<Block> highStates) {
         super(seed, noiseParameters, scale, List.of(defaultState));
         this.threshold = threshold;
         this.highChance = highChance;

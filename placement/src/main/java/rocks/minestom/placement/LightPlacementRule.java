@@ -11,7 +11,8 @@ public final class LightPlacementRule extends BlockPlacementRule {
     @Override
     public Block blockPlace(PlacementState placementState) {
         var replaced = placementState.instance().getBlock(placementState.placePosition());
-        return placementState.block()
+        return placementState
+                .block()
                 .withProperty("waterlogged", String.valueOf(replaced.compare(Block.WATER)))
                 .withHandler(LightBlockHandler.INSTANCE);
     }

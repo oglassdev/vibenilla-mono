@@ -1,25 +1,33 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.Set;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.ColumnFeatureConfiguration;
 
-import java.util.Set;
-
 /**
- * Port of vanilla {@code BasaltColumnsFeature}: clusters of basalt columns
- * rising out of the lava ocean in basalt deltas. The lava sea level comes from
- * the dimension's generator sea level (32 in the nether).
+ * Port of vanilla {@code BasaltColumnsFeature}: clusters of basalt columns rising out of the lava
+ * ocean in basalt deltas. The lava sea level comes from the dimension's generator sea level (32 in
+ * the nether).
  */
 public final class BasaltColumnsFeature implements Feature<ColumnFeatureConfiguration> {
     /** Vanilla {@code BasaltColumnsFeature.CANNOT_PLACE_ON} (26.2 contents). */
-    private static final Set<String> CANNOT_PLACE_ON = Set.of(
-            "minecraft:lava", "minecraft:bedrock", "minecraft:magma_block", "minecraft:soul_sand",
-            "minecraft:nether_bricks", "minecraft:nether_brick_fence", "minecraft:nether_brick_stairs",
-            "minecraft:nether_wart", "minecraft:chest", "minecraft:spawner");
+    private static final Set<String> CANNOT_PLACE_ON =
+            Set.of(
+                    "minecraft:lava",
+                    "minecraft:bedrock",
+                    "minecraft:magma_block",
+                    "minecraft:soul_sand",
+                    "minecraft:nether_bricks",
+                    "minecraft:nether_brick_fence",
+                    "minecraft:nether_brick_stairs",
+                    "minecraft:nether_wart",
+                    "minecraft:chest",
+                    "minecraft:spawner");
 
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<ColumnFeatureConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<ColumnFeatureConfiguration, T> context) {
         var lavaSeaLevel = context.seaLevel();
         var origin = context.origin();
         var level = context.accessor();
@@ -44,16 +52,29 @@ public final class BasaltColumnsFeature implements Feature<ColumnFeatureConfigur
             var pos = new BlockVec(x, y, z);
             var blocksToPlaceY = columnHeight - BlockPosIterators.distManhattan(pos, origin);
             if (blocksToPlaceY >= 0) {
-                placed |= this.placeColumn(level, lavaSeaLevel, pos, blocksToPlaceY, config.reach().sample(random),
-                        context.minY(), context.maxY());
+                placed |=
+                        this.placeColumn(
+                                level,
+                                lavaSeaLevel,
+                                pos,
+                                blocksToPlaceY,
+                                config.reach().sample(random),
+                                context.minY(),
+                                context.maxY());
             }
         }
 
         return placed;
     }
 
-    private <T extends Block.Getter & Block.Setter> boolean placeColumn(T level, int lavaSeaLevel, BlockVec origin,
-            int columnHeight, int reach, int minY, int maxY) {
+    private <T extends Block.Getter & Block.Setter> boolean placeColumn(
+            T level,
+            int lavaSeaLevel,
+            BlockVec origin,
+            int columnHeight,
+            int reach,
+            int minY,
+            int maxY) {
         var placedAny = false;
 
         // Vanilla BlockPos.betweenClosed over the y-plane: x varies fastest, then z.
@@ -61,9 +82,10 @@ public final class BasaltColumnsFeature implements Feature<ColumnFeatureConfigur
             for (var x = origin.blockX() - reach; x <= origin.blockX() + reach; x++) {
                 var pos = new BlockVec(x, origin.blockY(), z);
                 var stepLimit = BlockPosIterators.distManhattan(pos, origin);
-                var columnPos = isAirOrLavaOcean(level, lavaSeaLevel, pos)
-                        ? findSurface(level, lavaSeaLevel, pos, stepLimit, minY)
-                        : findAir(level, pos, stepLimit, maxY);
+                var columnPos =
+                        isAirOrLavaOcean(level, lavaSeaLevel, pos)
+                                ? findSurface(level, lavaSeaLevel, pos, stepLimit, minY)
+                                : findAir(level, pos, stepLimit, maxY);
                 if (columnPos == null) {
                     continue;
                 }
@@ -89,7 +111,8 @@ public final class BasaltColumnsFeature implements Feature<ColumnFeatureConfigur
         return placedAny;
     }
 
-    private static BlockVec findSurface(Block.Getter level, int lavaSeaLevel, BlockVec cursor, int limit, int minY) {
+    private static BlockVec findSurface(
+            Block.Getter level, int lavaSeaLevel, BlockVec cursor, int limit, int minY) {
         while (cursor.blockY() > minY + 1 && limit > 0) {
             limit--;
             if (canPlaceAt(level, lavaSeaLevel, cursor)) {

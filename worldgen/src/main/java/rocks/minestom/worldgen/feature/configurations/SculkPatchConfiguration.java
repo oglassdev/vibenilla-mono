@@ -12,8 +12,8 @@ public record SculkPatchConfiguration(
         int growthRounds,
         int spreadRounds,
         IntProvider extraRareGrowths,
-        float catalystChance
-) implements FeatureConfiguration {
+        float catalystChance)
+        implements FeatureConfiguration {
 
     public static SculkPatchConfiguration fromJson(JsonElement json) {
         var object = json.getAsJsonObject();

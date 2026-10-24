@@ -1,33 +1,40 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.Set;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.NoneFeatureConfiguration;
 
-import java.util.Set;
-
 /**
- * Port of vanilla's original {@code IceSpikeFeature}, superseded in later
- * vanilla versions by the generic {@code SpikeFeature} (see
- * {@link SpikeFeature}) but retained here for datapacks that still reference
- * the {@code minecraft:ice_spike} feature type. Behaves exactly like the
- * current {@code minecraft:ice_spike} configured feature, which configures
- * {@code minecraft:spike} with a packed ice state, a snow block placement
- * surface, and the {@code #minecraft:ice_spike_replaceable} block tag.
+ * Port of vanilla's original {@code IceSpikeFeature}, superseded in later vanilla versions by the
+ * generic {@code SpikeFeature} (see {@link SpikeFeature}) but retained here for datapacks that
+ * still reference the {@code minecraft:ice_spike} feature type. Behaves exactly like the current
+ * {@code minecraft:ice_spike} configured feature, which configures {@code minecraft:spike} with a
+ * packed ice state, a snow block placement surface, and the {@code
+ * #minecraft:ice_spike_replaceable} block tag.
  */
 public final class IceSpikeFeature implements Feature<NoneFeatureConfiguration> {
     /** Vanilla {@code #minecraft:ice_spike_replaceable} block tag (26.2 contents). */
-    private static final Set<String> REPLACEABLE = Set.of(
-            // #minecraft:substrate_overworld
-            "minecraft:dirt", "minecraft:coarse_dirt", "minecraft:rooted_dirt",
-            "minecraft:mud", "minecraft:muddy_mangrove_roots",
-            "minecraft:moss_block", "minecraft:pale_moss_block",
-            "minecraft:grass_block", "minecraft:podzol", "minecraft:mycelium",
-            // direct entries
-            "minecraft:snow_block", "minecraft:ice");
+    private static final Set<String> REPLACEABLE =
+            Set.of(
+                    // #minecraft:substrate_overworld
+                    "minecraft:dirt",
+                    "minecraft:coarse_dirt",
+                    "minecraft:rooted_dirt",
+                    "minecraft:mud",
+                    "minecraft:muddy_mangrove_roots",
+                    "minecraft:moss_block",
+                    "minecraft:pale_moss_block",
+                    "minecraft:grass_block",
+                    "minecraft:podzol",
+                    "minecraft:mycelium",
+                    // direct entries
+                    "minecraft:snow_block",
+                    "minecraft:ice");
 
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<NoneFeatureConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<NoneFeatureConfiguration, T> context) {
         var origin = context.origin();
         var random = context.random();
         var level = context.accessor();
@@ -57,7 +64,11 @@ public final class IceSpikeFeature implements Feature<NoneFeatureConfiguration> 
                 for (var zo = -newWidth; zo <= newWidth; zo++) {
                     var dz = Math.abs(zo) - 0.25F;
                     if ((xo == 0 && zo == 0 || !(dx * dx + dz * dz > scale * scale))
-                            && (xo != -newWidth && xo != newWidth && zo != -newWidth && zo != newWidth || !(random.nextFloat() > 0.75F))) {
+                            && (xo != -newWidth
+                                            && xo != newWidth
+                                            && zo != -newWidth
+                                            && zo != newWidth
+                                    || !(random.nextFloat() > 0.75F))) {
                         var positiveOffset = origin.add(xo, yOff, zo);
                         var state = level.getBlock(positiveOffset);
                         if (state.air() || isReplaceable(state)) {
@@ -85,7 +96,9 @@ public final class IceSpikeFeature implements Feature<NoneFeatureConfiguration> 
 
         for (var xo = -pillarWidth; xo <= pillarWidth; xo++) {
             for (var zo = -pillarWidth; zo <= pillarWidth; zo++) {
-                var cursor = new BlockVec(origin.blockX() + xo, origin.blockY() - 1, origin.blockZ() + zo);
+                var cursor =
+                        new BlockVec(
+                                origin.blockX() + xo, origin.blockY() - 1, origin.blockZ() + zo);
                 var runLength = 50;
                 if (Math.abs(xo) == 1 && Math.abs(zo) == 1) {
                     runLength = random.nextInt(5);
@@ -93,7 +106,9 @@ public final class IceSpikeFeature implements Feature<NoneFeatureConfiguration> 
 
                 while (cursor.blockY() > 50) {
                     var state = level.getBlock(cursor);
-                    if (!state.air() && !isReplaceable(state) && !state.compare(Block.PACKED_ICE, Block.Comparator.STATE)) {
+                    if (!state.air()
+                            && !isReplaceable(state)
+                            && !state.compare(Block.PACKED_ICE, Block.Comparator.STATE)) {
                         break;
                     }
 

@@ -1,5 +1,8 @@
 package rocks.minestom.worldgen.feature.trunkplacers;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiConsumer;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.coordinate.BlockVec;
@@ -8,17 +11,20 @@ import rocks.minestom.worldgen.feature.configurations.TreeConfiguration;
 import rocks.minestom.worldgen.feature.foliageplacers.FoliagePlacer;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.BiConsumer;
-
-public record ForkingTrunkPlacer(int baseHeight, int heightRandA, int heightRandB) implements TrunkPlacer {
-    public static final Codec<ForkingTrunkPlacer> CODEC = StructCodec.struct(
-            "base_height", Codec.INT, ForkingTrunkPlacer::baseHeight,
-            "height_rand_a", Codec.INT, ForkingTrunkPlacer::heightRandA,
-            "height_rand_b", Codec.INT, ForkingTrunkPlacer::heightRandB,
-            ForkingTrunkPlacer::new
-    );
+public record ForkingTrunkPlacer(int baseHeight, int heightRandA, int heightRandB)
+        implements TrunkPlacer {
+    public static final Codec<ForkingTrunkPlacer> CODEC =
+            StructCodec.struct(
+                    "base_height",
+                    Codec.INT,
+                    ForkingTrunkPlacer::baseHeight,
+                    "height_rand_a",
+                    Codec.INT,
+                    ForkingTrunkPlacer::heightRandA,
+                    "height_rand_b",
+                    Codec.INT,
+                    ForkingTrunkPlacer::heightRandB,
+                    ForkingTrunkPlacer::new);
 
     @Override
     public List<FoliagePlacer.FoliageAttachment> placeTrunk(
@@ -27,8 +33,7 @@ public record ForkingTrunkPlacer(int baseHeight, int heightRandA, int heightRand
             RandomSource random,
             int freeTreeHeight,
             BlockVec basePos,
-            TreeConfiguration config
-    ) {
+            TreeConfiguration config) {
         TrunkPlacer.setDirtAt(getter, logSetter, random, basePos.sub(0, 1, 0), config);
 
         var foliageAttachments = new ArrayList<FoliagePlacer.FoliageAttachment>();
@@ -49,13 +54,16 @@ public record ForkingTrunkPlacer(int baseHeight, int heightRandA, int heightRand
                 bendLength--;
             }
 
-            if (this.placeLog(getter, logSetter, random, new BlockVec(blockX, blockY, blockZ), config)) {
+            if (this.placeLog(
+                    getter, logSetter, random, new BlockVec(blockX, blockY, blockZ), config)) {
                 lastY = blockY + 1;
             }
         }
 
         if (lastY != null) {
-            foliageAttachments.add(new FoliagePlacer.FoliageAttachment(new BlockVec(blockX, lastY, blockZ), 1, false));
+            foliageAttachments.add(
+                    new FoliagePlacer.FoliageAttachment(
+                            new BlockVec(blockX, lastY, blockZ), 1, false));
         }
 
         blockX = basePos.blockX();
@@ -67,12 +75,19 @@ public record ForkingTrunkPlacer(int baseHeight, int heightRandA, int heightRand
             var branchSteps = 1 + random.nextInt(3);
             lastY = null;
 
-            for (var trunkIndex = branchStart; trunkIndex < freeTreeHeight && branchSteps > 0; trunkIndex++) {
+            for (var trunkIndex = branchStart;
+                    trunkIndex < freeTreeHeight && branchSteps > 0;
+                    trunkIndex++) {
                 if (trunkIndex >= 1) {
                     var blockY = basePos.blockY() + trunkIndex;
                     blockX += branchDirection.stepX;
                     blockZ += branchDirection.stepZ;
-                    if (this.placeLog(getter, logSetter, random, new BlockVec(blockX, blockY, blockZ), config)) {
+                    if (this.placeLog(
+                            getter,
+                            logSetter,
+                            random,
+                            new BlockVec(blockX, blockY, blockZ),
+                            config)) {
                         lastY = blockY + 1;
                     }
                 }
@@ -81,7 +96,9 @@ public record ForkingTrunkPlacer(int baseHeight, int heightRandA, int heightRand
             }
 
             if (lastY != null) {
-                foliageAttachments.add(new FoliagePlacer.FoliageAttachment(new BlockVec(blockX, lastY, blockZ), 0, false));
+                foliageAttachments.add(
+                        new FoliagePlacer.FoliageAttachment(
+                                new BlockVec(blockX, lastY, blockZ), 0, false));
             }
         }
 
@@ -90,24 +107,26 @@ public record ForkingTrunkPlacer(int baseHeight, int heightRandA, int heightRand
 
     @Override
     public int getTreeHeight(RandomSource random) {
-        return this.baseHeight + random.nextInt(this.heightRandA + 1) + random.nextInt(this.heightRandB + 1);
+        return this.baseHeight
+                + random.nextInt(this.heightRandA + 1)
+                + random.nextInt(this.heightRandB + 1);
     }
 
     /**
-     * Vanilla {@code Direction.Plane.HORIZONTAL.faces}: {@code {NORTH, EAST,
-     * SOUTH, WEST}}, so {@code random.nextInt(4)} selects the same direction.
+     * Vanilla {@code Direction.Plane.HORIZONTAL.faces}: {@code {NORTH, EAST, SOUTH, WEST}}, so
+     * {@code random.nextInt(4)} selects the same direction.
      */
     private record HorizontalDirection(int stepX, int stepZ) {
-        private static final HorizontalDirection[] VALUES = new HorizontalDirection[]{
-                new HorizontalDirection(0, -1),
-                new HorizontalDirection(1, 0),
-                new HorizontalDirection(0, 1),
-                new HorizontalDirection(-1, 0)
-        };
+        private static final HorizontalDirection[] VALUES =
+                new HorizontalDirection[] {
+                    new HorizontalDirection(0, -1),
+                    new HorizontalDirection(1, 0),
+                    new HorizontalDirection(0, 1),
+                    new HorizontalDirection(-1, 0)
+                };
 
         private static HorizontalDirection random(RandomSource random) {
             return VALUES[random.nextInt(VALUES.length)];
         }
     }
 }
-

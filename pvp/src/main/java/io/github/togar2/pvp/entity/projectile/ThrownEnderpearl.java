@@ -2,6 +2,7 @@ package io.github.togar2.pvp.entity.projectile;
 
 import io.github.togar2.pvp.feature.fall.FallFeature;
 import io.github.togar2.pvp.utils.ViewUtil;
+import java.util.concurrent.ThreadLocalRandom;
 import net.kyori.adventure.sound.Sound;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Entity;
@@ -19,8 +20,6 @@ import net.minestom.server.sound.SoundEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.concurrent.ThreadLocalRandom;
-
 public class ThrownEnderpearl extends CustomEntityProjectile implements ItemHoldingProjectile {
     private Pos prevPos = Pos.ZERO;
 
@@ -36,12 +35,19 @@ public class ThrownEnderpearl extends CustomEntityProjectile implements ItemHold
         var random = ThreadLocalRandom.current();
 
         for (var index = 0; index < 32; index++) {
-            this.sendPacketToViewersAndSelf(new ParticlePacket(
-                    Particle.PORTAL, false, false,
-                    position.x(), position.y() + random.nextDouble() * 2, position.z(),
-                    (float) random.nextGaussian(), 0.0F, (float) random.nextGaussian(),
-                    0, 1
-            ));
+            this.sendPacketToViewersAndSelf(
+                    new ParticlePacket(
+                            Particle.PORTAL,
+                            false,
+                            false,
+                            position.x(),
+                            position.y() + random.nextDouble() * 2,
+                            position.z(),
+                            (float) random.nextGaussian(),
+                            0.0F,
+                            (float) random.nextGaussian(),
+                            0,
+                            1));
         }
 
         if (this.isRemoved()) return;
@@ -53,7 +59,9 @@ public class ThrownEnderpearl extends CustomEntityProjectile implements ItemHold
         }
 
         if (shooter instanceof Player player) {
-            if (player.isOnline() && !player.isDead() && player.getInstance() == this.getInstance()
+            if (player.isOnline()
+                    && !player.isDead()
+                    && player.getInstance() == this.getInstance()
                     && player.getPlayerMeta().getBedInWhichSleepingPosition() == null) {
                 if (player.getVehicle() != null) {
                     player.getVehicle().removePassenger(player);
@@ -79,15 +87,19 @@ public class ThrownEnderpearl extends CustomEntityProjectile implements ItemHold
     }
 
     private void playTeleportSound(Pos position) {
-        ViewUtil.viewersAndSelf(this).playSound(Sound.sound(
-                SoundEvent.ENTITY_PLAYER_TELEPORT, Sound.Source.PLAYER,
-                1.0F, 1.0F
-        ), position.x(), position.y(), position.z());
+        ViewUtil.viewersAndSelf(this)
+                .playSound(
+                        Sound.sound(
+                                SoundEvent.ENTITY_PLAYER_TELEPORT, Sound.Source.PLAYER, 1.0F, 1.0F),
+                        position.x(),
+                        position.y(),
+                        position.z());
     }
 
     @Override
     public boolean onHit(Entity entity) {
-        ((LivingEntity) entity).damage(new Damage(DamageType.THROWN, this, this.getShooter(), null, 0));
+        ((LivingEntity) entity)
+                .damage(new Damage(DamageType.THROWN, this, this.getShooter(), null, 0));
 
         this.teleportOwner();
         return true;

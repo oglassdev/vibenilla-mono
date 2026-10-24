@@ -1,5 +1,6 @@
 package rocks.minestom.placement;
 
+import java.util.function.Function;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.collision.BoundingBox;
@@ -12,18 +13,15 @@ import net.minestom.server.instance.block.rule.BlockPlacementRule;
 import net.minestom.server.world.attribute.EnvironmentAttribute;
 import net.minestom.server.world.attribute.EnvironmentAttributeMap;
 
-import java.util.function.Function;
-
 public final class Utility {
-    private Utility() {
-
-    }
+    private Utility() {}
 
     /**
-     * Registers a single placement rule for blocks which share the same registry tag.
-     * Silently does nothing if the tag is missing from the loaded registry data.
+     * Registers a single placement rule for blocks which share the same registry tag. Silently does
+     * nothing if the tag is missing from the loaded registry data.
      */
-    public static void registerPlacementRules(Function<Block, BlockPlacementRule> function, Key key) {
+    public static void registerPlacementRules(
+            Function<Block, BlockPlacementRule> function, Key key) {
         var registry = MinecraftServer.process().blocks();
         var tag = registry.getTag(key);
 
@@ -38,15 +36,16 @@ public final class Utility {
         }
     }
 
-    public static void registerPlacementRules(Function<Block, BlockPlacementRule> function, Block... blocks) {
+    public static void registerPlacementRules(
+            Function<Block, BlockPlacementRule> function, Block... blocks) {
         for (var block : blocks) {
             MinecraftServer.getBlockManager().registerBlockPlacementRule(function.apply(block));
         }
     }
 
     /**
-     * Returns whether the block has the given registry tag (e.g. {@code minecraft:doors}).
-     * Returns {@code false} when the tag is missing from the loaded registry data.
+     * Returns whether the block has the given registry tag (e.g. {@code minecraft:doors}). Returns
+     * {@code false} when the tag is missing from the loaded registry data.
      */
     public static boolean hasTag(Block block, Key key) {
         var tag = MinecraftServer.process().blocks().getTag(key);
@@ -54,9 +53,9 @@ public final class Utility {
     }
 
     /**
-     * Mirrors vanilla's {@code Block.canSupportRigidBlock}: whether the given face is a full,
-     * solid surface (used by rails, pressure plates, etc.). Leaves have a full collision face
-     * but vanilla overrides their support shape to empty, so they fall through {@code isSolid}.
+     * Mirrors vanilla's {@code Block.canSupportRigidBlock}: whether the given face is a full, solid
+     * surface (used by rails, pressure plates, etc.). Leaves have a full collision face but vanilla
+     * overrides their support shape to empty, so they fall through {@code isSolid}.
      */
     public static boolean canSupportRigidBlock(Block block, BlockFace face) {
         var registry = block.registry();
@@ -66,8 +65,9 @@ public final class Utility {
     /**
      * Mirrors vanilla's {@code Block.canSupportCenter}: whether the given face of the block has
      * enough material at its centre to support a centred attachment (torch, redstone wire, etc.).
-     * Walls, fences and other "post" blocks fail {@link net.minestom.server.collision.Shape#isFaceFull}
-     * but still support a torch on top because their central column reaches the face.
+     * Walls, fences and other "post" blocks fail {@link
+     * net.minestom.server.collision.Shape#isFaceFull} but still support a torch on top because
+     * their central column reaches the face.
      */
     public static boolean canSupportCenter(Block block, BlockFace face) {
         var shape = block.registry().collisionShape();
@@ -128,7 +128,8 @@ public final class Utility {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private static Object applyEnvironmentEntry(EnvironmentAttribute attribute, EnvironmentAttributeMap.Entry entry) {
+    private static Object applyEnvironmentEntry(
+            EnvironmentAttribute attribute, EnvironmentAttributeMap.Entry entry) {
         return entry.modifier().modify(attribute.defaultValue(), entry.argument());
     }
 }

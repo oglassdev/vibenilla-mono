@@ -1,5 +1,8 @@
 package io.github.togar2.pvp.entity;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.github.togar2.pvp.feature.CombatFeatures;
 import io.github.togar2.pvp.feature.FeatureType;
 import net.minestom.server.MinecraftServer;
@@ -12,9 +15,6 @@ import net.minestom.server.potion.PotionType;
 import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @EnvTest
 public final class AreaEffectCloudTest {
@@ -34,7 +34,11 @@ public final class AreaEffectCloudTest {
             above.setNoGravity(true);
             above.setInstance(instance, new Pos(8.0, 43.5, 8.0)).join();
 
-            var cloud = new AreaEffectCloud(new PotionContents(PotionType.SLOWNESS), null, featureSet.get(FeatureType.EFFECT));
+            var cloud =
+                    new AreaEffectCloud(
+                            new PotionContents(PotionType.SLOWNESS),
+                            null,
+                            featureSet.get(FeatureType.EFFECT));
             cloud.setInstance(instance, new Pos(8.0, 41.0, 8.0)).join();
 
             for (var tick = 0; tick < 12; tick++) env.tick();

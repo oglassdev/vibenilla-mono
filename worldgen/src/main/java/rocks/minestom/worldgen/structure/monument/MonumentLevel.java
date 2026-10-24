@@ -4,10 +4,9 @@ import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.structure.StructureWrites;
 
 /**
- * Chunk-local world view for ocean monument piece placement, mirroring the
- * reads and writes vanilla pieces perform against the proto-chunk. All piece
- * reads and writes are clamped to the generating chunk, so a single chunk
- * column buffer is enough. See {@code FortressLevel} for the same pattern.
+ * Chunk-local world view for ocean monument piece placement, mirroring the reads and writes vanilla
+ * pieces perform against the proto-chunk. All piece reads and writes are clamped to the generating
+ * chunk, so a single chunk column buffer is enough. See {@code FortressLevel} for the same pattern.
  */
 final class MonumentLevel {
     private final Block.Setter adapter;
@@ -20,8 +19,15 @@ final class MonumentLevel {
     private final int seaLevel;
     private final int[] chunkHandle;
 
-    MonumentLevel(Block.Setter adapter, Block[] blocks, int startX, int startZ,
-            int minY, int maxY, int seaLevel, int[] chunkHandle) {
+    MonumentLevel(
+            Block.Setter adapter,
+            Block[] blocks,
+            int startX,
+            int startZ,
+            int minY,
+            int maxY,
+            int seaLevel,
+            int[] chunkHandle) {
         this.adapter = adapter;
         this.blocks = blocks;
         this.startX = startX;
@@ -64,7 +70,12 @@ final class MonumentLevel {
         var localX = x - this.startX;
         var localZ = z - this.startZ;
         var yIndex = y - this.minY;
-        if (localX < 0 || localX >= 16 || localZ < 0 || localZ >= 16 || yIndex < 0 || yIndex >= this.height) {
+        if (localX < 0
+                || localX >= 16
+                || localZ < 0
+                || localZ >= 16
+                || yIndex < 0
+                || yIndex >= this.height) {
             return -1;
         }
         return (localX * 16 + localZ) * this.height + yIndex;

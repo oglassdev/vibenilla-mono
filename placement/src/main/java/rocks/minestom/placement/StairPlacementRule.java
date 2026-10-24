@@ -21,13 +21,22 @@ public final class StairPlacementRule extends BlockPlacementRule {
         var clickedFace = placementState.blockFace();
         var cursorPosition = placementState.cursorPosition();
         var cursorY = cursorPosition == null ? 0.0D : cursorPosition.y();
-        var bottom = clickedFace != BlockFace.BOTTOM && (clickedFace == BlockFace.TOP || cursorY <= 0.5D);
+        var bottom =
+                clickedFace != BlockFace.BOTTOM
+                        && (clickedFace == BlockFace.TOP || cursorY <= 0.5D);
         var half = bottom ? "bottom" : "top";
         var replaced = placementState.instance().getBlock(placementState.placePosition());
         var waterlogged = replaced.compare(Block.WATER);
-        var shape = computeShape(placementState.instance(), placementState.placePosition(), facing, half, stairsTag());
+        var shape =
+                computeShape(
+                        placementState.instance(),
+                        placementState.placePosition(),
+                        facing,
+                        half,
+                        stairsTag());
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withProperty("facing", facing.name().toLowerCase())
                 .withProperty("half", half)
                 .withProperty("shape", shape)
@@ -51,11 +60,22 @@ public final class StairPlacementRule extends BlockPlacementRule {
         }
 
         var facing = BlockFace.valueOf(facingName.toUpperCase());
-        var shape = computeShape(updateState.instance(), updateState.blockPosition(), facing, half, stairsTag());
+        var shape =
+                computeShape(
+                        updateState.instance(),
+                        updateState.blockPosition(),
+                        facing,
+                        half,
+                        stairsTag());
         return currentBlock.withProperty("shape", shape);
     }
 
-    private static String computeShape(Block.Getter blockGetter, Point position, BlockFace facing, String half, RegistryTag<Block> stairsTag) {
+    private static String computeShape(
+            Block.Getter blockGetter,
+            Point position,
+            BlockFace facing,
+            String half,
+            RegistryTag<Block> stairsTag) {
         var behindBlock = blockGetter.getBlock(position.relative(facing));
 
         if (isStair(behindBlock, stairsTag) && half.equals(behindBlock.getProperty("half"))) {
@@ -64,7 +84,14 @@ public final class StairPlacementRule extends BlockPlacementRule {
             if (behindFacingName != null) {
                 var behindFacing = BlockFace.valueOf(behindFacingName.toUpperCase());
 
-                if (differentAxis(behindFacing, facing) && canTakeShape(blockGetter, position, facing, half, behindFacing.getOppositeFace(), stairsTag)) {
+                if (differentAxis(behindFacing, facing)
+                        && canTakeShape(
+                                blockGetter,
+                                position,
+                                facing,
+                                half,
+                                behindFacing.getOppositeFace(),
+                                stairsTag)) {
                     if (behindFacing == counterClockwise(facing)) {
                         return "outer_left";
                     }
@@ -82,7 +109,9 @@ public final class StairPlacementRule extends BlockPlacementRule {
             if (frontFacingName != null) {
                 var frontFacing = BlockFace.valueOf(frontFacingName.toUpperCase());
 
-                if (differentAxis(frontFacing, facing) && canTakeShape(blockGetter, position, facing, half, frontFacing, stairsTag)) {
+                if (differentAxis(frontFacing, facing)
+                        && canTakeShape(
+                                blockGetter, position, facing, half, frontFacing, stairsTag)) {
                     if (frontFacing == counterClockwise(facing)) {
                         return "inner_left";
                     }
@@ -95,7 +124,13 @@ public final class StairPlacementRule extends BlockPlacementRule {
         return "straight";
     }
 
-    private static boolean canTakeShape(Block.Getter blockGetter, Point position, BlockFace facing, String half, BlockFace neighborFace, RegistryTag<Block> stairsTag) {
+    private static boolean canTakeShape(
+            Block.Getter blockGetter,
+            Point position,
+            BlockFace facing,
+            String half,
+            BlockFace neighborFace,
+            RegistryTag<Block> stairsTag) {
         var neighborBlock = blockGetter.getBlock(position.relative(neighborFace));
 
         if (!isStair(neighborBlock, stairsTag)) {

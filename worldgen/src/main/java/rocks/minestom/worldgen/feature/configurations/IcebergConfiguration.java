@@ -7,9 +7,8 @@ import rocks.minestom.worldgen.BlockCodec;
 import rocks.minestom.worldgen.feature.FeatureConfiguration;
 
 /**
- * Configuration for {@code minecraft:iceberg}, mirroring vanilla's
- * {@code BlockStateConfiguration}: a single block state used for the bulk of
- * the iceberg.
+ * Configuration for {@code minecraft:iceberg}, mirroring vanilla's {@code BlockStateConfiguration}:
+ * a single block state used for the bulk of the iceberg.
  */
 public record IcebergConfiguration(Block state) implements FeatureConfiguration {
 

@@ -18,8 +18,9 @@ public final class WaterloggedDummyPlacementRule extends BlockPlacementRule {
     @Override
     public Block blockPlace(PlacementState placementState) {
         var replaced = placementState.instance().getBlock(placementState.placePosition());
-        var waterlogged = replaced.compare(Block.WATER)
-                && (!this.sourceOnly || "0".equals(replaced.getProperty("level")));
+        var waterlogged =
+                replaced.compare(Block.WATER)
+                        && (!this.sourceOnly || "0".equals(replaced.getProperty("level")));
 
         return this.block.withProperty("waterlogged", String.valueOf(waterlogged));
     }

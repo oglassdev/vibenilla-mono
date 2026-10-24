@@ -5,12 +5,13 @@ import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.SpikeConfiguration;
 
 /**
- * Port of vanilla's {@code SpikeFeature}, the generic version of the old ice
- * spike feature. Random call order matches vanilla exactly.
+ * Port of vanilla's {@code SpikeFeature}, the generic version of the old ice spike feature. Random
+ * call order matches vanilla exactly.
  */
 public final class SpikeFeature implements Feature<SpikeConfiguration> {
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<SpikeConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<SpikeConfiguration, T> context) {
         var origin = context.origin();
         var random = context.random();
         var level = context.accessor();
@@ -42,17 +43,23 @@ public final class SpikeFeature implements Feature<SpikeConfiguration> {
                 for (var zo = -newWidth; zo <= newWidth; zo++) {
                     var dz = Math.abs(zo) - 0.25F;
                     if ((xo == 0 && zo == 0 || !(dx * dx + dz * dz > scale * scale))
-                            && (xo != -newWidth && xo != newWidth && zo != -newWidth && zo != newWidth || !(random.nextFloat() > 0.75F))) {
+                            && (xo != -newWidth
+                                            && xo != newWidth
+                                            && zo != -newWidth
+                                            && zo != newWidth
+                                    || !(random.nextFloat() > 0.75F))) {
                         var positiveOffset = origin.add(xo, yOff, zo);
                         var state = level.getBlock(positiveOffset);
-                        if (state.air() || config.canReplace().test(predicateContext, positiveOffset)) {
+                        if (state.air()
+                                || config.canReplace().test(predicateContext, positiveOffset)) {
                             level.setBlock(positiveOffset, config.state());
                         }
 
                         if (yOff != 0 && newWidth > 1) {
                             var negativeOffset = origin.add(xo, -yOff, zo);
                             state = level.getBlock(negativeOffset);
-                            if (state.air() || config.canReplace().test(predicateContext, negativeOffset)) {
+                            if (state.air()
+                                    || config.canReplace().test(predicateContext, negativeOffset)) {
                                 level.setBlock(negativeOffset, config.state());
                             }
                         }
@@ -70,7 +77,9 @@ public final class SpikeFeature implements Feature<SpikeConfiguration> {
 
         for (var xo = -pillarWidth; xo <= pillarWidth; xo++) {
             for (var zo = -pillarWidth; zo <= pillarWidth; zo++) {
-                var cursor = new BlockVec(origin.blockX() + xo, origin.blockY() - 1, origin.blockZ() + zo);
+                var cursor =
+                        new BlockVec(
+                                origin.blockX() + xo, origin.blockY() - 1, origin.blockZ() + zo);
                 var runLength = 50;
                 if (Math.abs(xo) == 1 && Math.abs(zo) == 1) {
                     runLength = random.nextInt(5);

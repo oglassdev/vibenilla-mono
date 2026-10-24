@@ -1,14 +1,15 @@
 package rocks.minestom.placement;
 
+import java.util.Set;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
 
-import java.util.Set;
-
 public final class NoteBlockPlacementRule extends BlockPlacementRule {
-    private static final Set<String> BASE_DRUM_BLOCKS = blocks("""
+    private static final Set<String> BASE_DRUM_BLOCKS =
+            blocks(
+                    """
             stone granite polished_granite diorite polished_diorite andesite polished_andesite cobblestone bedrock
             gold_ore iron_ore coal_ore nether_gold_ore lapis_ore dispenser sandstone chiseled_sandstone cut_sandstone
             bricks mossy_cobblestone obsidian spawner creaking_heart diamond_ore furnace stone_pressure_plate
@@ -56,7 +57,9 @@ public final class NoteBlockPlacementRule extends BlockPlacementRule {
             deepslate_brick_slab deepslate_brick_wall chiseled_deepslate cracked_deepslate_bricks
             cracked_deepslate_tiles smooth_basalt
             """);
-    private static final Set<String> BASS_BLOCKS = blocks("""
+    private static final Set<String> BASS_BLOCKS =
+            blocks(
+                    """
             oak_planks spruce_planks birch_planks jungle_planks acacia_planks cherry_planks dark_oak_planks
             pale_oak_wood pale_oak_planks mangrove_planks bamboo_planks bamboo_mosaic oak_log spruce_log birch_log
             jungle_log acacia_log cherry_log dark_oak_log pale_oak_log mangrove_log mangrove_roots bamboo_block
@@ -95,10 +98,13 @@ public final class NoteBlockPlacementRule extends BlockPlacementRule {
             acacia_stairs cherry_stairs dark_oak_stairs pale_oak_stairs mangrove_stairs bamboo_stairs
             bamboo_mosaic_stairs crimson_stairs warped_stairs
             """);
-    private static final Set<String> HAT_BLOCKS = blocks("glass glass_pane beacon sea_lantern conduit tinted_glass");
-    private static final Set<String> SNARE_BLOCKS = blocks(
-            "sand suspicious_sand red_sand gravel suspicious_gravel heavy_core");
-    private static final Set<String> COPPER_INSTRUMENT_BLOCKS = blocks("""
+    private static final Set<String> HAT_BLOCKS =
+            blocks("glass glass_pane beacon sea_lantern conduit tinted_glass");
+    private static final Set<String> SNARE_BLOCKS =
+            blocks("sand suspicious_sand red_sand gravel suspicious_gravel heavy_core");
+    private static final Set<String> COPPER_INSTRUMENT_BLOCKS =
+            blocks(
+                    """
             copper_block cut_copper chiseled_copper cut_copper_stairs cut_copper_slab
             exposed_copper exposed_cut_copper exposed_chiseled_copper exposed_cut_copper_stairs exposed_cut_copper_slab
             weathered_copper weathered_cut_copper weathered_chiseled_copper weathered_cut_copper_stairs
@@ -111,7 +117,9 @@ public final class NoteBlockPlacementRule extends BlockPlacementRule {
             waxed_oxidized_copper waxed_oxidized_cut_copper waxed_oxidized_chiseled_copper
             waxed_oxidized_cut_copper_stairs waxed_oxidized_cut_copper_slab
             """);
-    private static final Set<String> COLORS = blocks("""
+    private static final Set<String> COLORS =
+            blocks(
+                    """
             white orange magenta light_blue yellow lime pink gray light_gray cyan purple blue brown green red black
             """);
 
@@ -137,9 +145,10 @@ public final class NoteBlockPlacementRule extends BlockPlacementRule {
 
     private Block setInstrument(Block noteBlock, Block.Getter blockGetter, Point position) {
         var aboveInstrument = instrumentFor(blockGetter.getBlock(position.relative(BlockFace.TOP)));
-        var instrument = isHeadInstrument(aboveInstrument)
-                ? aboveInstrument
-                : instrumentFor(blockGetter.getBlock(position.relative(BlockFace.BOTTOM)));
+        var instrument =
+                isHeadInstrument(aboveInstrument)
+                        ? aboveInstrument
+                        : instrumentFor(blockGetter.getBlock(position.relative(BlockFace.BOTTOM)));
 
         if (isHeadInstrument(instrument) && !isHeadInstrument(aboveInstrument)) {
             instrument = "harp";
@@ -173,7 +182,8 @@ public final class NoteBlockPlacementRule extends BlockPlacementRule {
             return "guitar";
         }
 
-        if (isColorVariant(path, "stained_glass") || isColorVariant(path, "stained_glass_pane")
+        if (isColorVariant(path, "stained_glass")
+                || isColorVariant(path, "stained_glass_pane")
                 || HAT_BLOCKS.contains(path)) {
             return "hat";
         }
@@ -182,12 +192,16 @@ public final class NoteBlockPlacementRule extends BlockPlacementRule {
             return "snare";
         }
 
-        if (isColorVariant(path, "terracotta") || isColorVariant(path, "glazed_terracotta")
-                || isColorVariant(path, "concrete") || BASE_DRUM_BLOCKS.contains(path)) {
+        if (isColorVariant(path, "terracotta")
+                || isColorVariant(path, "glazed_terracotta")
+                || isColorVariant(path, "concrete")
+                || BASE_DRUM_BLOCKS.contains(path)) {
             return "basedrum";
         }
 
-        if (isColorVariant(path, "banner") || isColorVariant(path, "wall_banner") || BASS_BLOCKS.contains(path)) {
+        if (isColorVariant(path, "banner")
+                || isColorVariant(path, "wall_banner")
+                || BASS_BLOCKS.contains(path)) {
             return "bass";
         }
 
@@ -215,7 +229,14 @@ public final class NoteBlockPlacementRule extends BlockPlacementRule {
 
     static boolean isHeadInstrument(String instrument) {
         return switch (instrument) {
-            case "skeleton", "wither_skeleton", "zombie", "custom_head", "creeper", "dragon", "piglin" -> true;
+            case "skeleton",
+                    "wither_skeleton",
+                    "zombie",
+                    "custom_head",
+                    "creeper",
+                    "dragon",
+                    "piglin" ->
+                    true;
             default -> false;
         };
     }

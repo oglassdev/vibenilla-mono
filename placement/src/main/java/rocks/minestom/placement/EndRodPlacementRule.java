@@ -1,10 +1,9 @@
 package rocks.minestom.placement;
 
+import java.util.Objects;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
-
-import java.util.Objects;
 
 public final class EndRodPlacementRule extends BlockPlacementRule {
     public EndRodPlacementRule(Block block) {
@@ -25,7 +24,8 @@ public final class EndRodPlacementRule extends BlockPlacementRule {
         var againstFacing = againstBlock.getProperty("facing");
         var facing = clickedFace;
 
-        if (againstBlock.compare(placementState.block()) && facingName(clickedFace).equals(againstFacing)) {
+        if (againstBlock.compare(placementState.block())
+                && facingName(clickedFace).equals(againstFacing)) {
             facing = clickedFace.getOppositeFace();
         }
 
@@ -41,8 +41,10 @@ public final class EndRodPlacementRule extends BlockPlacementRule {
             return currentBlock;
         }
 
-        var support = updateState.instance().getBlock(
-                updateState.blockPosition().relative(facing.getOppositeFace()));
+        var support =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(facing.getOppositeFace()));
         return Utility.canSupportCenter(support, facing) ? currentBlock : Block.AIR;
     }
 

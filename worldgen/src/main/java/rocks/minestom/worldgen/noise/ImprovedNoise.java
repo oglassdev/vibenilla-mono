@@ -51,10 +51,12 @@ public final class ImprovedNoise {
                 yToFloor = localY;
             }
 
-            yFloorOffset = (double) VMath.floor(yToFloor / yScale + (double) SHIFT_UP_EPSILON) * yScale;
+            yFloorOffset =
+                    (double) VMath.floor(yToFloor / yScale + (double) SHIFT_UP_EPSILON) * yScale;
         }
 
-        return this.sampleAndLerp(floorX, floorY, floorZ, localX, localY - yFloorOffset, localZ, localY);
+        return this.sampleAndLerp(
+                floorX, floorY, floorZ, localX, localY - yFloorOffset, localZ, localY);
     }
 
     private static double gradDot(int hash, double x, double y, double z) {
@@ -65,7 +67,8 @@ public final class ImprovedNoise {
         return this.permutations[value & 0xFF] & 0xFF;
     }
 
-    private double sampleAndLerp(int x, int y, int z, double localX, double localY, double localZ, double smoothY) {
+    private double sampleAndLerp(
+            int x, int y, int z, double localX, double localY, double localZ, double smoothY) {
         var permX0 = this.p(x);
         var permX1 = this.p(x + 1);
         var permX0Y0 = this.p(permX0 + y);
@@ -86,6 +89,8 @@ public final class ImprovedNoise {
         var smoothX = VMath.smoothstep(localX);
         var smoothZ = VMath.smoothstep(smoothY);
         var smoothW = VMath.smoothstep(localZ);
-        return VMath.lerp3(smoothX, smoothZ, smoothW, value000, value100, value010, value110, value001, value101, value011, value111);
+        return VMath.lerp3(
+                smoothX, smoothZ, smoothW, value000, value100, value010, value110, value001,
+                value101, value011, value111);
     }
 }

@@ -1,21 +1,20 @@
 package rocks.minestom.worldgen.feature.treedecorators;
 
-import net.minestom.server.coordinate.BlockVec;
-import net.minestom.server.instance.block.Block;
-import rocks.minestom.worldgen.random.RandomSource;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
+import net.minestom.server.coordinate.BlockVec;
+import net.minestom.server.instance.block.Block;
+import rocks.minestom.worldgen.random.RandomSource;
 
 public interface TreeDecorator {
     void place(Context context);
 
     /**
-     * Vanilla {@code Util.shuffle}: descending Fisher-Yates using
-     * {@code random.nextInt(i)}, matching the draw sequence exactly.
+     * Vanilla {@code Util.shuffle}: descending Fisher-Yates using {@code random.nextInt(i)},
+     * matching the draw sequence exactly.
      */
     static <T> void shuffle(List<T> list, RandomSource random) {
         for (var index = list.size(); index > 1; index--) {
@@ -32,9 +31,8 @@ public interface TreeDecorator {
         private final List<BlockVec> roots;
 
         /**
-         * Log/leaf/root collections must iterate in vanilla's hash order (see
-         * {@code VanillaPos}); the stable Y sort below then reproduces
-         * vanilla's list ordering exactly.
+         * Log/leaf/root collections must iterate in vanilla's hash order (see {@code VanillaPos});
+         * the stable Y sort below then reproduces vanilla's list ordering exactly.
          */
         public Context(
                 Block.Getter level,
@@ -42,8 +40,7 @@ public interface TreeDecorator {
                 RandomSource random,
                 List<BlockVec> logs,
                 List<BlockVec> leaves,
-                List<BlockVec> roots
-        ) {
+                List<BlockVec> roots) {
             this.level = level;
             this.decorationSetter = decorationSetter;
             this.random = random;

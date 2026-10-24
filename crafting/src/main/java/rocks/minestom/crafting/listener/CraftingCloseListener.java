@@ -23,7 +23,8 @@ public final class CraftingCloseListener implements EventListener<@NotNull Inven
     public @NotNull Result run(@NotNull InventoryCloseEvent event) {
         var closedInventory = event.getInventory();
 
-        if (!(closedInventory instanceof Inventory craftingInventory) || craftingInventory.getInventoryType() != InventoryType.CRAFTING) {
+        if (!(closedInventory instanceof Inventory craftingInventory)
+                || craftingInventory.getInventoryType() != InventoryType.CRAFTING) {
             return Result.SUCCESS;
         }
 

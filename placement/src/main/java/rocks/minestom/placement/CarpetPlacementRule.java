@@ -11,7 +11,10 @@ public final class CarpetPlacementRule extends BlockPlacementRule {
 
     @Override
     public Block blockPlace(PlacementState placementState) {
-        var below = placementState.instance().getBlock(placementState.placePosition().relative(BlockFace.BOTTOM));
+        var below =
+                placementState
+                        .instance()
+                        .getBlock(placementState.placePosition().relative(BlockFace.BOTTOM));
         return below.air() ? null : placementState.block();
     }
 
@@ -21,7 +24,10 @@ public final class CarpetPlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+        var below =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
         return below.air() ? Block.AIR : updateState.currentBlock();
     }
 }

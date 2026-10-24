@@ -13,6 +13,4 @@ public record StructurePlaceContext(
         StructureLoader structureLoader,
         FeatureLoader featureLoader,
         BlockVec start,
-        PositionalRandomFactory randomFactory
-) {
-}
+        PositionalRandomFactory randomFactory) {}

@@ -34,7 +34,10 @@ public class FishingBobber extends CustomEntityProjectile {
         this.customGravity = legacy ? 0.04 : 0.03;
         this.setAerodynamics(this.getAerodynamics().withGravity(0));
 
-        this.setAerodynamics(this.getAerodynamics().withHorizontalAirResistance(0.92).withVerticalAirResistance(0.92));
+        this.setAerodynamics(
+                this.getAerodynamics()
+                        .withHorizontalAirResistance(0.92)
+                        .withVerticalAirResistance(0.92));
     }
 
     @Override
@@ -53,7 +56,8 @@ public class FishingBobber extends CustomEntityProjectile {
         if (this.isRemoved()) return;
 
         var physicsResult = this.getPreviousPhysicsResult();
-        if (this.state == State.IN_AIR && physicsResult != null
+        if (this.state == State.IN_AIR
+                && physicsResult != null
                 && (this.onGround || physicsResult.collisionX() || physicsResult.collisionZ())) {
             this.velocity = Vec.ZERO;
         }
@@ -96,16 +100,27 @@ public class FishingBobber extends CustomEntityProjectile {
                         this.state = State.IN_AIR;
                     } else {
                         var hookedPos = this.hooked.getPosition();
-                        this.teleport(hookedPos.withY(hookedPos.y() + this.hooked.getBoundingBox().height() * 0.8));
+                        this.teleport(
+                                hookedPos.withY(
+                                        hookedPos.y()
+                                                + this.hooked.getBoundingBox().height() * 0.8));
                     }
                 }
             }
             case BOBBING -> {
-                var force = this.position.y() + movement.y() - Math.floor(this.position.y()) - liquidHeight;
+                var force =
+                        this.position.y()
+                                + movement.y()
+                                - Math.floor(this.position.y())
+                                - liquidHeight;
                 if (Math.abs(force) < 0.01) force += Math.signum(force) * 0.1;
 
-                movement = new Vec(movement.x() * 0.9,
-                        movement.y() - force * ThreadLocalRandom.current().nextFloat() * 0.2, movement.z() * 0.9);
+                movement =
+                        new Vec(
+                                movement.x() * 0.9,
+                                movement.y()
+                                        - force * ThreadLocalRandom.current().nextFloat() * 0.2,
+                                movement.z() * 0.9);
             }
         }
 
@@ -143,8 +158,10 @@ public class FishingBobber extends CustomEntityProjectile {
 
             var posNow = this.position;
             this.position = this.prevPos;
-            if (((LivingEntity) entity).damage(new Damage(DamageType.GENERIC, null, null, null, 0))) {
-                entity.setVelocity(this.calculateLegacyKnockback(entity.getVelocity(), entity.getPosition()));
+            if (((LivingEntity) entity)
+                    .damage(new Damage(DamageType.GENERIC, null, null, null, 0))) {
+                entity.setVelocity(
+                        this.calculateLegacyKnockback(entity.getVelocity(), entity.getPosition()));
             }
             this.position = posNow;
         }
@@ -164,7 +181,9 @@ public class FishingBobber extends CustomEntityProjectile {
     private boolean shouldStopFishing(Player player) {
         var main = player.getItemInMainHand().material() == Material.FISHING_ROD;
         var off = player.getItemInOffHand().material() == Material.FISHING_ROD;
-        if (player.isRemoved() || player.isDead() || (!main && !off)
+        if (player.isRemoved()
+                || player.isDead()
+                || (!main && !off)
                 || (!this.legacy && this.getDistanceSquared(player) > 1024)) {
             this.setOwnerEntity(null);
             this.remove();
@@ -198,13 +217,18 @@ public class FishingBobber extends CustomEntityProjectile {
 
         var shooterPosition = shooter.getPosition();
         var position = this.getPosition();
-        var velocity = new Vec(shooterPosition.x() - position.x(), shooterPosition.y() - position.y(),
-                shooterPosition.z() - position.z()).mul(0.1);
+        var velocity =
+                new Vec(
+                                shooterPosition.x() - position.x(),
+                                shooterPosition.y() - position.y(),
+                                shooterPosition.z() - position.z())
+                        .mul(0.1);
         velocity = velocity.mul(ServerFlag.SERVER_TICKS_PER_SECOND);
 
         if (entity instanceof Player) {
             var pullVelocity = velocity;
-            if (entity instanceof CombatPlayer custom) custom.setVelocityNoUpdate(current -> current.add(pullVelocity));
+            if (entity instanceof CombatPlayer custom)
+                custom.setVelocityNoUpdate(current -> current.add(pullVelocity));
             return;
         }
 
@@ -233,8 +257,7 @@ public class FishingBobber extends CustomEntityProjectile {
         y += 0.4;
         z -= dz / distance * 0.4;
 
-        if (y > 0.4)
-            y = 0.4;
+        if (y > 0.4) y = 0.4;
 
         return new Vec(x, y, z).mul(ServerFlag.SERVER_TICKS_PER_SECOND);
     }

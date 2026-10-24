@@ -14,9 +14,7 @@ public final class NoteBlockHandler implements BlockHandler {
     private static final Key KEY = Key.key("placement:note_block");
     private static final Key TOP_INSTRUMENTS = Key.key("minecraft:note_block_top_instruments");
 
-    private NoteBlockHandler() {
-
-    }
+    private NoteBlockHandler() {}
 
     @Override
     public Key getKey() {
@@ -61,9 +59,10 @@ public final class NoteBlockHandler implements BlockHandler {
             return false;
         }
 
-        var pitch = NoteBlockPlacementRule.isHeadInstrument(instrument)
-                ? 1.0F
-                : (float) Math.pow(2.0D, (nextNote - 12) / 12.0D);
+        var pitch =
+                NoteBlockPlacementRule.isHeadInstrument(instrument)
+                        ? 1.0F
+                        : (float) Math.pow(2.0D, (nextNote - 12) / 12.0D);
         var sound = Sound.sound(soundEvent, Sound.Source.RECORD, 3.0F, pitch);
         instance.playSound(sound, blockPosition.add(0.5D, 0.5D, 0.5D));
         return false;

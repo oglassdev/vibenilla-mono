@@ -4,8 +4,8 @@ import net.kyori.adventure.key.Key;
 import net.minestom.server.coordinate.BlockVec;
 
 /**
- * Vanilla {@code ProtectedBlockProcessor}: refuses to replace world blocks in
- * the given tag (e.g. {@code minecraft:features_cannot_replace}).
+ * Vanilla {@code ProtectedBlockProcessor}: refuses to replace world blocks in the given tag (e.g.
+ * {@code minecraft:features_cannot_replace}).
  */
 public final class ProtectedBlockProcessor implements StructureProcessor {
     private final Key cannotReplaceTag;

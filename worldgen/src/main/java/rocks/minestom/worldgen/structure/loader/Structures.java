@@ -2,11 +2,12 @@ package rocks.minestom.worldgen.structure.loader;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import java.util.ArrayList;
+import java.util.List;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.codec.Transcoder;
-import org.jetbrains.annotations.Nullable;
 import rocks.minestom.worldgen.structure.JigsawStructure;
 import rocks.minestom.worldgen.structure.SimpleStructure;
 import rocks.minestom.worldgen.structure.Structure;
@@ -14,39 +15,41 @@ import rocks.minestom.worldgen.structure.TerrainAdjustment;
 import rocks.minestom.worldgen.structure.endcity.EndCityStructure;
 import rocks.minestom.worldgen.structure.fortress.FortressStructure;
 import rocks.minestom.worldgen.structure.igloo.IglooStructure;
+import rocks.minestom.worldgen.structure.mansion.WoodlandMansionStructure;
 import rocks.minestom.worldgen.structure.mineshaft.MineshaftStructure;
 import rocks.minestom.worldgen.structure.mineshaft.MineshaftType;
-import rocks.minestom.worldgen.structure.pool.PoolAliasBinding;
-import rocks.minestom.worldgen.structure.mansion.WoodlandMansionStructure;
 import rocks.minestom.worldgen.structure.monument.OceanMonumentStructure;
 import rocks.minestom.worldgen.structure.netherfossil.NetherFossilStructure;
 import rocks.minestom.worldgen.structure.oceanruin.OceanRuinStructure;
+import rocks.minestom.worldgen.structure.pool.PoolAliasBinding;
 import rocks.minestom.worldgen.structure.ruinedportal.RuinedPortalStructure;
 import rocks.minestom.worldgen.structure.scattered.BuriedTreasureStructure;
-import rocks.minestom.worldgen.structure.shipwreck.ShipwreckStructure;
-import rocks.minestom.worldgen.structure.stronghold.StrongholdStructure;
 import rocks.minestom.worldgen.structure.scattered.ScatteredFeatureKind;
 import rocks.minestom.worldgen.structure.scattered.ScatteredFeatureStructure;
+import rocks.minestom.worldgen.structure.shipwreck.ShipwreckStructure;
+import rocks.minestom.worldgen.structure.stronghold.StrongholdStructure;
 import rocks.minestom.worldgen.structure.template.LiquidSettings;
 import rocks.minestom.worldgen.surface.VerticalAnchor;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public final class Structures {
-    private static final Codec<SimpleStructureData> SIMPLE_CODEC = StructCodec.struct(
-            "biomes", Codec.RAW_VALUE, SimpleStructureData::biomes,
-            SimpleStructureData::new
-    );
+    private static final Codec<SimpleStructureData> SIMPLE_CODEC =
+            StructCodec.struct(
+                    "biomes",
+                    Codec.RAW_VALUE,
+                    SimpleStructureData::biomes,
+                    SimpleStructureData::new);
 
-    private static final Codec<MineshaftStructureData> MINESHAFT_CODEC = StructCodec.struct(
-            "biomes", Codec.RAW_VALUE, MineshaftStructureData::biomes,
-            "mineshaft_type", Codec.STRING.optional("normal"), MineshaftStructureData::mineshaftType,
-            MineshaftStructureData::new
-    );
+    private static final Codec<MineshaftStructureData> MINESHAFT_CODEC =
+            StructCodec.struct(
+                    "biomes",
+                    Codec.RAW_VALUE,
+                    MineshaftStructureData::biomes,
+                    "mineshaft_type",
+                    Codec.STRING.optional("normal"),
+                    MineshaftStructureData::mineshaftType,
+                    MineshaftStructureData::new);
 
-    private Structures() {
-    }
+    private Structures() {}
 
     public static Structure parseStructure(JsonElement json) {
         if (!json.isJsonObject()) {
@@ -72,7 +75,8 @@ public final class Structures {
             return parseFortressStructure(json);
         }
 
-        if (typeStr.equals("minecraft:desert_pyramid") || typeStr.equals("minecraft:jungle_temple")
+        if (typeStr.equals("minecraft:desert_pyramid")
+                || typeStr.equals("minecraft:jungle_temple")
                 || typeStr.equals("minecraft:swamp_hut")) {
             return parseScatteredFeatureStructure(typeStr, json);
         }
@@ -121,20 +125,28 @@ public final class Structures {
         var biomes = parseBiomes(decoded.biomes().convertTo(Transcoder.JSON).orElseThrow());
         var obj = json.getAsJsonObject();
         var heightObj = obj.getAsJsonObject("height");
-        var minHeight = VerticalAnchor.CODEC.decode(Transcoder.JSON, heightObj.get("min_inclusive")).orElseThrow();
-        var maxHeight = VerticalAnchor.CODEC.decode(Transcoder.JSON, heightObj.get("max_inclusive")).orElseThrow();
+        var minHeight =
+                VerticalAnchor.CODEC
+                        .decode(Transcoder.JSON, heightObj.get("min_inclusive"))
+                        .orElseThrow();
+        var maxHeight =
+                VerticalAnchor.CODEC
+                        .decode(Transcoder.JSON, heightObj.get("max_inclusive"))
+                        .orElseThrow();
         var templates = getTemplatesForType("minecraft:nether_fossil");
         var terrainAdaptation = parseTerrainAdaptation(obj);
-        return new NetherFossilStructure(biomes, minHeight, maxHeight, templates, terrainAdaptation);
+        return new NetherFossilStructure(
+                biomes, minHeight, maxHeight, templates, terrainAdaptation);
     }
 
     private static Structure parseOceanRuinStructure(JsonElement json) {
         var decoded = SIMPLE_CODEC.decode(Transcoder.JSON, json).orElseThrow();
         var biomes = parseBiomes(decoded.biomes().convertTo(Transcoder.JSON).orElseThrow());
         var obj = json.getAsJsonObject();
-        var biomeTemp = obj.get("biome_temp").getAsString().equals("cold")
-                ? OceanRuinStructure.BiomeTemp.COLD
-                : OceanRuinStructure.BiomeTemp.WARM;
+        var biomeTemp =
+                obj.get("biome_temp").getAsString().equals("cold")
+                        ? OceanRuinStructure.BiomeTemp.COLD
+                        : OceanRuinStructure.BiomeTemp.WARM;
         var largeProbability = obj.get("large_probability").getAsFloat();
         var clusterProbability = obj.get("cluster_probability").getAsFloat();
         return new OceanRuinStructure(biomes, biomeTemp, largeProbability, clusterProbability);
@@ -147,15 +159,17 @@ public final class Structures {
         var setups = new ArrayList<RuinedPortalStructure.Setup>();
         for (var element : obj.getAsJsonArray("setups")) {
             var setup = element.getAsJsonObject();
-            setups.add(new RuinedPortalStructure.Setup(
-                    RuinedPortalStructure.VerticalPlacement.fromName(setup.get("placement").getAsString()),
-                    setup.get("air_pocket_probability").getAsFloat(),
-                    setup.get("mossiness").getAsFloat(),
-                    setup.get("overgrown").getAsBoolean(),
-                    setup.get("vines").getAsBoolean(),
-                    setup.get("can_be_cold").getAsBoolean(),
-                    setup.get("replace_with_blackstone").getAsBoolean(),
-                    setup.get("weight").getAsFloat()));
+            setups.add(
+                    new RuinedPortalStructure.Setup(
+                            RuinedPortalStructure.VerticalPlacement.fromName(
+                                    setup.get("placement").getAsString()),
+                            setup.get("air_pocket_probability").getAsFloat(),
+                            setup.get("mossiness").getAsFloat(),
+                            setup.get("overgrown").getAsBoolean(),
+                            setup.get("vines").getAsBoolean(),
+                            setup.get("can_be_cold").getAsBoolean(),
+                            setup.get("replace_with_blackstone").getAsBoolean(),
+                            setup.get("weight").getAsFloat()));
         }
         return new RuinedPortalStructure(biomes, List.copyOf(setups));
     }
@@ -183,12 +197,15 @@ public final class Structures {
     private static Structure parseScatteredFeatureStructure(String typeStr, JsonElement json) {
         var decoded = SIMPLE_CODEC.decode(Transcoder.JSON, json).orElseThrow();
         var biomes = parseBiomes(decoded.biomes().convertTo(Transcoder.JSON).orElseThrow());
-        var kind = switch (typeStr) {
-            case "minecraft:desert_pyramid" -> ScatteredFeatureKind.DESERT_PYRAMID;
-            case "minecraft:jungle_temple" -> ScatteredFeatureKind.JUNGLE_TEMPLE;
-            case "minecraft:swamp_hut" -> ScatteredFeatureKind.SWAMP_HUT;
-            default -> throw new IllegalArgumentException("unexpected scattered feature type " + typeStr);
-        };
+        var kind =
+                switch (typeStr) {
+                    case "minecraft:desert_pyramid" -> ScatteredFeatureKind.DESERT_PYRAMID;
+                    case "minecraft:jungle_temple" -> ScatteredFeatureKind.JUNGLE_TEMPLE;
+                    case "minecraft:swamp_hut" -> ScatteredFeatureKind.SWAMP_HUT;
+                    default ->
+                            throw new IllegalArgumentException(
+                                    "unexpected scattered feature type " + typeStr);
+                };
         return new ScatteredFeatureStructure(kind, biomes);
     }
 
@@ -233,17 +250,20 @@ public final class Structures {
         var obj = json.getAsJsonObject();
         var biomes = parseBiomes(obj.get("biomes"));
         var startPool = Key.key(obj.get("start_pool").getAsString());
-        var startJigsawName = obj.has("start_jigsaw_name")
-                ? Key.key(obj.get("start_jigsaw_name").getAsString())
-                : null;
+        var startJigsawName =
+                obj.has("start_jigsaw_name")
+                        ? Key.key(obj.get("start_jigsaw_name").getAsString())
+                        : null;
         var size = obj.get("size").getAsInt();
         var startHeight = parseStartHeight(obj.get("start_height"));
         var projectToHeightmap = obj.has("project_start_to_heightmap");
-        var useExpansionHack = obj.has("use_expansion_hack") && obj.get("use_expansion_hack").getAsBoolean();
+        var useExpansionHack =
+                obj.has("use_expansion_hack") && obj.get("use_expansion_hack").getAsBoolean();
         // Vanilla's builder default is 80 when the datapack omits the field.
-        var maxDistance = obj.has("max_distance_from_center")
-                ? parseMaxDistance(obj.get("max_distance_from_center"))
-                : 80;
+        var maxDistance =
+                obj.has("max_distance_from_center")
+                        ? parseMaxDistance(obj.get("max_distance_from_center"))
+                        : 80;
         var poolAliases = PoolAliasBinding.parseList(obj.get("pool_aliases"));
         var paddingBottom = 0;
         var paddingTop = 0;
@@ -258,15 +278,26 @@ public final class Structures {
                 paddingTop = paddingObj.has("top") ? paddingObj.get("top").getAsInt() : 0;
             }
         }
-        var liquidSettings = obj.has("liquid_settings")
-                ? LiquidSettings.fromName(obj.get("liquid_settings").getAsString())
-                : LiquidSettings.APPLY_WATERLOGGING;
+        var liquidSettings =
+                obj.has("liquid_settings")
+                        ? LiquidSettings.fromName(obj.get("liquid_settings").getAsString())
+                        : LiquidSettings.APPLY_WATERLOGGING;
         var terrainAdaptation = parseTerrainAdaptation(obj);
 
-        return new JigsawStructure(biomes, startPool, startJigsawName, size,
+        return new JigsawStructure(
+                biomes,
+                startPool,
+                startJigsawName,
+                size,
                 new JigsawStructure.StartHeight(startHeight.min(), startHeight.max()),
-                projectToHeightmap, useExpansionHack, maxDistance, poolAliases,
-                paddingBottom, paddingTop, liquidSettings, terrainAdaptation);
+                projectToHeightmap,
+                useExpansionHack,
+                maxDistance,
+                poolAliases,
+                paddingBottom,
+                paddingTop,
+                liquidSettings,
+                terrainAdaptation);
     }
 
     private static int parseMaxDistance(JsonElement json) {
@@ -296,22 +327,22 @@ public final class Structures {
 
     private static List<Key> getTemplatesForType(String type) {
         return switch (type) {
-            case "minecraft:nether_fossil" -> List.of(
-                    Key.key("minecraft:nether_fossils/fossil_1"),
-                    Key.key("minecraft:nether_fossils/fossil_2"),
-                    Key.key("minecraft:nether_fossils/fossil_3"),
-                    Key.key("minecraft:nether_fossils/fossil_4"),
-                    Key.key("minecraft:nether_fossils/fossil_5"),
-                    Key.key("minecraft:nether_fossils/fossil_6"),
-                    Key.key("minecraft:nether_fossils/fossil_7"),
-                    Key.key("minecraft:nether_fossils/fossil_8"),
-                    Key.key("minecraft:nether_fossils/fossil_9"),
-                    Key.key("minecraft:nether_fossils/fossil_10"),
-                    Key.key("minecraft:nether_fossils/fossil_11"),
-                    Key.key("minecraft:nether_fossils/fossil_12"),
-                    Key.key("minecraft:nether_fossils/fossil_13"),
-                    Key.key("minecraft:nether_fossils/fossil_14")
-            );
+            case "minecraft:nether_fossil" ->
+                    List.of(
+                            Key.key("minecraft:nether_fossils/fossil_1"),
+                            Key.key("minecraft:nether_fossils/fossil_2"),
+                            Key.key("minecraft:nether_fossils/fossil_3"),
+                            Key.key("minecraft:nether_fossils/fossil_4"),
+                            Key.key("minecraft:nether_fossils/fossil_5"),
+                            Key.key("minecraft:nether_fossils/fossil_6"),
+                            Key.key("minecraft:nether_fossils/fossil_7"),
+                            Key.key("minecraft:nether_fossils/fossil_8"),
+                            Key.key("minecraft:nether_fossils/fossil_9"),
+                            Key.key("minecraft:nether_fossils/fossil_10"),
+                            Key.key("minecraft:nether_fossils/fossil_11"),
+                            Key.key("minecraft:nether_fossils/fossil_12"),
+                            Key.key("minecraft:nether_fossils/fossil_13"),
+                            Key.key("minecraft:nether_fossils/fossil_14"));
             default -> List.of();
         };
     }
@@ -358,10 +389,14 @@ public final class Structures {
             if (type.equals("minecraft:uniform")) {
                 var minInclusive = obj.getAsJsonObject("min_inclusive");
                 var maxInclusive = obj.getAsJsonObject("max_inclusive");
-                var min = minInclusive != null && minInclusive.has("absolute")
-                        ? minInclusive.get("absolute").getAsInt() : 0;
-                var max = maxInclusive != null && maxInclusive.has("absolute")
-                        ? maxInclusive.get("absolute").getAsInt() : 0;
+                var min =
+                        minInclusive != null && minInclusive.has("absolute")
+                                ? minInclusive.get("absolute").getAsInt()
+                                : 0;
+                var max =
+                        maxInclusive != null && maxInclusive.has("absolute")
+                                ? maxInclusive.get("absolute").getAsInt()
+                                : 0;
                 return new HeightRange(min, max);
             }
         }
@@ -369,12 +404,9 @@ public final class Structures {
         return new HeightRange(0, 0);
     }
 
-    private record HeightRange(int min, int max) {
-    }
+    private record HeightRange(int min, int max) {}
 
-    private record SimpleStructureData(Codec.RawValue biomes) {
-    }
+    private record SimpleStructureData(Codec.RawValue biomes) {}
 
-    private record MineshaftStructureData(Codec.RawValue biomes, String mineshaftType) {
-    }
+    private record MineshaftStructureData(Codec.RawValue biomes, String mineshaftType) {}
 }

@@ -1,19 +1,18 @@
 package rocks.minestom.worldgen.density;
+
+import java.util.List;
 import rocks.minestom.worldgen.VMath;
 import rocks.minestom.worldgen.noise.BlendedNoise;
 import rocks.minestom.worldgen.noise.NormalNoise;
 import rocks.minestom.worldgen.noise.SimplexNoise;
 
-import java.util.List;
-
 /**
- * Collection of density function nodes used to compose terrain, cave, and climate fields.
- * These nodes are the vocabulary for shaping the world: combining noise, gradients,
- * clamps, splines, and caches to build a coherent density field from many influences.
+ * Collection of density function nodes used to compose terrain, cave, and climate fields. These
+ * nodes are the vocabulary for shaping the world: combining noise, gradients, clamps, splines, and
+ * caches to build a coherent density field from many influences.
  */
 public final class DensityFunctions {
-    private DensityFunctions() {
-    }
+    private DensityFunctions() {}
 
     public record Constant(double value) implements DensityFunction {
         @Override
@@ -22,28 +21,32 @@ public final class DensityFunctions {
         }
     }
 
-    public record Add(DensityFunction argument1, DensityFunction argument2) implements DensityFunction {
+    public record Add(DensityFunction argument1, DensityFunction argument2)
+            implements DensityFunction {
         @Override
         public double compute(Context context) {
             return this.argument1.compute(context) + this.argument2.compute(context);
         }
     }
 
-    public record Mul(DensityFunction argument1, DensityFunction argument2) implements DensityFunction {
+    public record Mul(DensityFunction argument1, DensityFunction argument2)
+            implements DensityFunction {
         @Override
         public double compute(Context context) {
             return this.argument1.compute(context) * this.argument2.compute(context);
         }
     }
 
-    public record Min(DensityFunction argument1, DensityFunction argument2) implements DensityFunction {
+    public record Min(DensityFunction argument1, DensityFunction argument2)
+            implements DensityFunction {
         @Override
         public double compute(Context context) {
             return Math.min(this.argument1.compute(context), this.argument2.compute(context));
         }
     }
 
-    public record Max(DensityFunction argument1, DensityFunction argument2) implements DensityFunction {
+    public record Max(DensityFunction argument1, DensityFunction argument2)
+            implements DensityFunction {
         @Override
         public double compute(Context context) {
             return Math.max(this.argument1.compute(context), this.argument2.compute(context));
@@ -112,10 +115,16 @@ public final class DensityFunctions {
         }
     }
 
-    public record YClampedGradient(int fromY, int toY, double fromValue, double toValue) implements DensityFunction {
+    public record YClampedGradient(int fromY, int toY, double fromValue, double toValue)
+            implements DensityFunction {
         @Override
         public double compute(Context context) {
-            return VMath.clampedMap((double) context.blockY(), (double) this.fromY, (double) this.toY, this.fromValue, this.toValue);
+            return VMath.clampedMap(
+                    (double) context.blockY(),
+                    (double) this.fromY,
+                    (double) this.toY,
+                    this.fromValue,
+                    this.toValue);
         }
     }
 
@@ -124,8 +133,8 @@ public final class DensityFunctions {
             double minInclusive,
             double maxExclusive,
             DensityFunction whenInRange,
-            DensityFunction whenOutOfRange
-    ) implements DensityFunction {
+            DensityFunction whenOutOfRange)
+            implements DensityFunction {
         @Override
         public double compute(Context context) {
             var value = this.input.compute(context);
@@ -136,10 +145,14 @@ public final class DensityFunctions {
         }
     }
 
-    public record Noise(NormalNoise noise, double xzScale, double yScale) implements DensityFunction {
+    public record Noise(NormalNoise noise, double xzScale, double yScale)
+            implements DensityFunction {
         @Override
         public double compute(Context context) {
-            return this.noise.getValue((double) context.blockX() * this.xzScale, (double) context.blockY() * this.yScale, (double) context.blockZ() * this.xzScale);
+            return this.noise.getValue(
+                    (double) context.blockX() * this.xzScale,
+                    (double) context.blockY() * this.yScale,
+                    (double) context.blockZ() * this.xzScale);
         }
     }
 
@@ -149,8 +162,8 @@ public final class DensityFunctions {
             DensityFunction shiftZ,
             double xzScale,
             double yScale,
-            NormalNoise noise
-    ) implements DensityFunction {
+            NormalNoise noise)
+            implements DensityFunction {
         @Override
         public double compute(Context context) {
             var x = (double) context.blockX() * this.xzScale + this.shiftX.compute(context);
@@ -163,14 +176,18 @@ public final class DensityFunctions {
     public record ShiftA(NormalNoise offsetNoise) implements DensityFunction {
         @Override
         public double compute(Context context) {
-            return this.offsetNoise.getValue((double) context.blockX() * 0.25, 0.0, (double) context.blockZ() * 0.25) * 4.0;
+            return this.offsetNoise.getValue(
+                            (double) context.blockX() * 0.25, 0.0, (double) context.blockZ() * 0.25)
+                    * 4.0;
         }
     }
 
     public record ShiftB(NormalNoise offsetNoise) implements DensityFunction {
         @Override
         public double compute(Context context) {
-            return this.offsetNoise.getValue((double) context.blockZ() * 0.25, (double) context.blockX() * 0.25, 0.0) * 4.0;
+            return this.offsetNoise.getValue(
+                            (double) context.blockZ() * 0.25, (double) context.blockX() * 0.25, 0.0)
+                    * 4.0;
         }
     }
 
@@ -261,7 +278,8 @@ public final class DensityFunctions {
     public record EndIslands(SimplexNoise islandNoise) implements DensityFunction {
         @Override
         public double compute(Context context) {
-            var height = getHeightValue(this.islandNoise, context.blockX() / 8, context.blockZ() / 8);
+            var height =
+                    getHeightValue(this.islandNoise, context.blockX() / 8, context.blockZ() / 8);
             return ((double) height - 8.0D) / 128.0D;
         }
 
@@ -270,18 +288,27 @@ public final class DensityFunctions {
             var halfZ = blockZ / 2;
             var offsetX = blockX % 2;
             var offsetZ = blockZ % 2;
-            var height = 100.0F - (float) Math.sqrt((float) (blockX * blockX + blockZ * blockZ)) * 8.0F;
+            var height =
+                    100.0F - (float) Math.sqrt((float) (blockX * blockX + blockZ * blockZ)) * 8.0F;
             height = (float) VMath.clamp((double) height, -100.0D, 80.0D);
 
             for (var localX = -12; localX <= 12; localX++) {
                 for (var localZ = -12; localZ <= 12; localZ++) {
                     var centerX = (long) (halfX + localX);
                     var centerZ = (long) (halfZ + localZ);
-                    if (centerX * centerX + centerZ * centerZ > 4096L && simplexNoise.getValue((double) centerX, (double) centerZ) < -0.9D) {
-                        var scale = (Math.abs((float) centerX) * 3439.0F + Math.abs((float) centerZ) * 147.0F) % 13.0F + 9.0F;
+                    if (centerX * centerX + centerZ * centerZ > 4096L
+                            && simplexNoise.getValue((double) centerX, (double) centerZ) < -0.9D) {
+                        var scale =
+                                (Math.abs((float) centerX) * 3439.0F
+                                                        + Math.abs((float) centerZ) * 147.0F)
+                                                % 13.0F
+                                        + 9.0F;
                         var deltaX = (float) (offsetX - localX * 2);
                         var deltaZ = (float) (offsetZ - localZ * 2);
-                        var candidate = 100.0F - (float) Math.sqrt(deltaX * deltaX + deltaZ * deltaZ) * scale;
+                        var candidate =
+                                100.0F
+                                        - (float) Math.sqrt(deltaX * deltaX + deltaZ * deltaZ)
+                                                * scale;
                         candidate = (float) VMath.clamp((double) candidate, -100.0D, 80.0D);
                         height = Math.max(height, candidate);
                     }
@@ -292,13 +319,19 @@ public final class DensityFunctions {
         }
     }
 
-    public record WeirdScaledSampler(DensityFunction input, NormalNoise noise, RarityValueMapper rarityValueMapper)
+    public record WeirdScaledSampler(
+            DensityFunction input, NormalNoise noise, RarityValueMapper rarityValueMapper)
             implements DensityFunction {
         @Override
         public double compute(Context context) {
             var value = this.input.compute(context);
             var rarity = this.rarityValueMapper.map(value);
-            return rarity * Math.abs(this.noise.getValue((double) context.blockX() / rarity, (double) context.blockY() / rarity, (double) context.blockZ() / rarity));
+            return rarity
+                    * Math.abs(
+                            this.noise.getValue(
+                                    (double) context.blockX() / rarity,
+                                    (double) context.blockY() / rarity,
+                                    (double) context.blockZ() / rarity));
         }
 
         public enum RarityValueMapper {
@@ -334,17 +367,23 @@ public final class DensityFunctions {
         }
     }
 
-    public record FindTopSurface(DensityFunction density, DensityFunction upperBound, int lowerBound, int cellHeight)
+    public record FindTopSurface(
+            DensityFunction density, DensityFunction upperBound, int lowerBound, int cellHeight)
             implements DensityFunction {
         @Override
         public double compute(Context context) {
-            var topY = (int) Math.floor(this.upperBound.compute(context) / this.cellHeight) * this.cellHeight;
+            var topY =
+                    (int) Math.floor(this.upperBound.compute(context) / this.cellHeight)
+                            * this.cellHeight;
             if (topY <= this.lowerBound) {
                 return this.lowerBound;
             }
 
             for (var blockY = topY; blockY >= this.lowerBound; blockY -= this.cellHeight) {
-                if (this.density.compute(new DensityFunction.SinglePointContext(context.blockX(), blockY, context.blockZ())) > 0.0) {
+                if (this.density.compute(
+                                new DensityFunction.SinglePointContext(
+                                        context.blockX(), blockY, context.blockZ()))
+                        > 0.0) {
                     return blockY;
                 }
             }
@@ -352,7 +391,8 @@ public final class DensityFunctions {
         }
     }
 
-    public record IntervalSelect(DensityFunction input, double[] thresholds, List<DensityFunction> functions)
+    public record IntervalSelect(
+            DensityFunction input, double[] thresholds, List<DensityFunction> functions)
             implements DensityFunction {
         @Override
         public double compute(Context context) {
@@ -381,18 +421,28 @@ public final class DensityFunctions {
             DensityFunction coordinate,
             float[] locations,
             List<SplineNode> values,
-            float[] derivatives
-    ) implements SplineNode {
+            float[] derivatives)
+            implements SplineNode {
         @Override
         public float compute(DensityFunction.Context context) {
             var coordinateValue = (float) this.coordinate.compute(context);
             var intervalStart = findIntervalStart(this.locations, coordinateValue);
             var lastIndex = this.locations.length - 1;
             if (intervalStart < 0) {
-                return linearExtend(coordinateValue, this.locations, this.values.getFirst().compute(context), this.derivatives, 0);
+                return linearExtend(
+                        coordinateValue,
+                        this.locations,
+                        this.values.getFirst().compute(context),
+                        this.derivatives,
+                        0);
             }
             if (intervalStart == lastIndex) {
-                return linearExtend(coordinateValue, this.locations, this.values.get(lastIndex).compute(context), this.derivatives, lastIndex);
+                return linearExtend(
+                        coordinateValue,
+                        this.locations,
+                        this.values.get(lastIndex).compute(context),
+                        this.derivatives,
+                        lastIndex);
             }
 
             var startLocation = this.locations[intervalStart];
@@ -412,7 +462,8 @@ public final class DensityFunctions {
             return start + delta * (end - start);
         }
 
-        private static float linearExtend(float coordinate, float[] locations, float value, float[] derivatives, int index) {
+        private static float linearExtend(
+                float coordinate, float[] locations, float value, float[] derivatives, int index) {
             var derivative = derivatives[index];
             if (derivative == 0.0F) {
                 return value;
@@ -421,7 +472,8 @@ public final class DensityFunctions {
         }
 
         private static int findIntervalStart(float[] locations, float coordinate) {
-            return VMath.binarySearch(0, locations.length, index -> coordinate < locations[index]) - 1;
+            return VMath.binarySearch(0, locations.length, index -> coordinate < locations[index])
+                    - 1;
         }
     }
 

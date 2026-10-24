@@ -1,8 +1,7 @@
 package io.github.togar2.pvp.feature.effect;
 
-import net.minestom.server.potion.Potion;
-
 import java.util.Collection;
+import net.minestom.server.potion.Potion;
 
 class PotionColorUtils {
     public static int getPotionColor(Collection<Potion> effects) {

@@ -5,14 +5,16 @@ import net.minestom.server.codec.StructCodec;
 import net.minestom.server.coordinate.BlockVec;
 
 /**
- * Vanilla's {@code LeaveVineDecorator}: leaves sprout hanging vines on their
- * horizontal sides with the configured probability.
+ * Vanilla's {@code LeaveVineDecorator}: leaves sprout hanging vines on their horizontal sides with
+ * the configured probability.
  */
 public record LeaveVineDecorator(float probability) implements TreeDecorator {
-    public static final Codec<LeaveVineDecorator> CODEC = StructCodec.struct(
-            "probability", Codec.FLOAT, LeaveVineDecorator::probability,
-            LeaveVineDecorator::new
-    );
+    public static final Codec<LeaveVineDecorator> CODEC =
+            StructCodec.struct(
+                    "probability",
+                    Codec.FLOAT,
+                    LeaveVineDecorator::probability,
+                    LeaveVineDecorator::new);
 
     @Override
     public void place(TreeDecorator.Context context) {
@@ -48,11 +50,14 @@ public record LeaveVineDecorator(float probability) implements TreeDecorator {
         }
     }
 
-    private static void addHangingVine(BlockVec position, String directionProperty, TreeDecorator.Context context) {
+    private static void addHangingVine(
+            BlockVec position, String directionProperty, TreeDecorator.Context context) {
         context.placeVine(position, directionProperty);
 
         var remaining = 4;
-        for (var below = position.add(0, -1, 0); context.isAir(below) && remaining > 0; remaining--) {
+        for (var below = position.add(0, -1, 0);
+                context.isAir(below) && remaining > 0;
+                remaining--) {
             context.placeVine(below, directionProperty);
             below = below.add(0, -1, 0);
         }

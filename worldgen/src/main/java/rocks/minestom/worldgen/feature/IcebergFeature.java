@@ -6,17 +6,19 @@ import rocks.minestom.worldgen.feature.configurations.IcebergConfiguration;
 import rocks.minestom.worldgen.random.RandomSource;
 
 /**
- * Port of vanilla {@code IcebergFeature}: a rounded or elliptical iceberg
- * generated around the dimension's sea level, with an above-water dome, a
- * below-water keel, an optional snow cap, and an optional carved-out cutout.
- * Random call order matches vanilla exactly.
+ * Port of vanilla {@code IcebergFeature}: a rounded or elliptical iceberg generated around the
+ * dimension's sea level, with an above-water dome, a below-water keel, an optional snow cap, and an
+ * optional carved-out cutout. Random call order matches vanilla exactly.
  */
 public final class IcebergFeature implements Feature<IcebergConfiguration> {
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<IcebergConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<IcebergConfiguration, T> context) {
         var level = context.accessor();
         var random = context.random();
-        var origin = new BlockVec(context.origin().blockX(), context.seaLevel(), context.origin().blockZ());
+        var origin =
+                new BlockVec(
+                        context.origin().blockX(), context.seaLevel(), context.origin().blockZ());
         var snowOnTop = random.nextDouble() > 0.7;
         var mainBlockState = context.config().state();
         var shapeAngle = random.nextDouble() * 2.0 * Math.PI;
@@ -35,12 +37,27 @@ public final class IcebergFeature implements Feature<IcebergConfiguration> {
         for (var xo = -a; xo < a; xo++) {
             for (var zo = -a; zo < a; zo++) {
                 for (var yOff = 0; yOff < overWaterHeight; yOff++) {
-                    var radius = isEllipse
-                            ? heightDependentRadiusEllipse(yOff, overWaterHeight, width)
-                            : heightDependentRadiusRound(random, yOff, overWaterHeight, width);
+                    var radius =
+                            isEllipse
+                                    ? heightDependentRadiusEllipse(yOff, overWaterHeight, width)
+                                    : heightDependentRadiusRound(
+                                            random, yOff, overWaterHeight, width);
                     if (isEllipse || xo < radius) {
-                        generateIcebergBlock(level, random, origin, overWaterHeight, xo, yOff, zo, radius, a,
-                                isEllipse, shapeEllipseC, shapeAngle, snowOnTop, mainBlockState);
+                        generateIcebergBlock(
+                                level,
+                                random,
+                                origin,
+                                overWaterHeight,
+                                xo,
+                                yOff,
+                                zo,
+                                radius,
+                                a,
+                                isEllipse,
+                                shapeEllipseC,
+                                shapeAngle,
+                                snowOnTop,
+                                mainBlockState);
                     }
                 }
             }
@@ -51,13 +68,34 @@ public final class IcebergFeature implements Feature<IcebergConfiguration> {
         for (var xo = -a; xo < a; xo++) {
             for (var zo = -a; zo < a; zo++) {
                 for (var yOff = -1; yOff > -underWaterHeight; yOff--) {
-                    var newA = isEllipse
-                            ? (int) Math.ceil((float) a * (1.0F - (float) Math.pow(yOff, 2.0) / ((float) underWaterHeight * 8.0F)))
-                            : a;
+                    var newA =
+                            isEllipse
+                                    ? (int)
+                                            Math.ceil(
+                                                    (float) a
+                                                            * (1.0F
+                                                                    - (float) Math.pow(yOff, 2.0)
+                                                                            / ((float)
+                                                                                            underWaterHeight
+                                                                                    * 8.0F)))
+                                    : a;
                     var radius = heightDependentRadiusSteep(random, -yOff, underWaterHeight, width);
                     if (xo < radius) {
-                        generateIcebergBlock(level, random, origin, underWaterHeight, xo, yOff, zo, radius, newA,
-                                isEllipse, shapeEllipseC, shapeAngle, snowOnTop, mainBlockState);
+                        generateIcebergBlock(
+                                level,
+                                random,
+                                origin,
+                                underWaterHeight,
+                                xo,
+                                yOff,
+                                zo,
+                                radius,
+                                newA,
+                                isEllipse,
+                                shapeEllipseC,
+                                shapeAngle,
+                                snowOnTop,
+                                mainBlockState);
                     }
                 }
             }
@@ -65,15 +103,31 @@ public final class IcebergFeature implements Feature<IcebergConfiguration> {
 
         var doCutOut = isEllipse ? random.nextDouble() > 0.1 : random.nextDouble() > 0.7;
         if (doCutOut) {
-            generateCutOut(random, level, width, overWaterHeight, origin, isEllipse, shapeEllipseA, shapeAngle, shapeEllipseC);
+            generateCutOut(
+                    random,
+                    level,
+                    width,
+                    overWaterHeight,
+                    origin,
+                    isEllipse,
+                    shapeEllipseA,
+                    shapeAngle,
+                    shapeEllipseC);
         }
 
         return true;
     }
 
     private static <T extends Block.Getter & Block.Setter> void generateCutOut(
-            RandomSource random, T level, int width, int height, BlockVec globalOrigin, boolean isEllipse,
-            int shapeEllipseA, double shapeAngle, int shapeEllipseC) {
+            RandomSource random,
+            T level,
+            int width,
+            int height,
+            BlockVec globalOrigin,
+            boolean isEllipse,
+            int shapeEllipseA,
+            double shapeAngle,
+            int shapeEllipseC) {
         var randomSignX = random.nextBoolean() ? -1 : 1;
         var randomSignZ = random.nextBoolean() ? -1 : 1;
         var xOff = random.nextInt(Math.max(width / 2 - 2, 1));
@@ -95,24 +149,51 @@ public final class IcebergFeature implements Feature<IcebergConfiguration> {
 
         for (var yOff = 0; yOff < height - 3; yOff++) {
             var radius = heightDependentRadiusRound(random, yOff, height, width);
-            carve(radius, yOff, globalOrigin, level, false, angle, localOrigin, shapeEllipseA, shapeEllipseC);
+            carve(
+                    radius,
+                    yOff,
+                    globalOrigin,
+                    level,
+                    false,
+                    angle,
+                    localOrigin,
+                    shapeEllipseA,
+                    shapeEllipseC);
         }
 
         for (var yOff = -1; yOff > -height + random.nextInt(5); yOff--) {
             var radius = heightDependentRadiusSteep(random, -yOff, height, width);
-            carve(radius, yOff, globalOrigin, level, true, angle, localOrigin, shapeEllipseA, shapeEllipseC);
+            carve(
+                    radius,
+                    yOff,
+                    globalOrigin,
+                    level,
+                    true,
+                    angle,
+                    localOrigin,
+                    shapeEllipseA,
+                    shapeEllipseC);
         }
     }
 
     private static <T extends Block.Getter & Block.Setter> void carve(
-            int radius, int yOff, BlockVec globalOrigin, T level, boolean underWater, double angle,
-            BlockVec localOrigin, int shapeEllipseA, int shapeEllipseC) {
+            int radius,
+            int yOff,
+            BlockVec globalOrigin,
+            T level,
+            boolean underWater,
+            double angle,
+            BlockVec localOrigin,
+            int shapeEllipseA,
+            int shapeEllipseC) {
         var a = radius + 1 + shapeEllipseA / 3;
         var c = Math.min(radius - 3, 3) + shapeEllipseC / 2 - 1;
 
         for (var xo = -a; xo < a; xo++) {
             for (var zo = -a; zo < a; zo++) {
-                var signedDist = signedDistanceEllipse(xo, zo, localOrigin.blockX(), localOrigin.blockZ(), a, c, angle);
+                var signedDist =
+                        signedDistanceEllipse(
+                                xo, zo, localOrigin.blockX(), localOrigin.blockZ(), a, c, angle);
                 if (signedDist < 0.0) {
                     var pos = globalOrigin.add(xo, yOff, zo);
                     var state = level.getBlock(pos);
@@ -129,7 +210,8 @@ public final class IcebergFeature implements Feature<IcebergConfiguration> {
         }
     }
 
-    private static <T extends Block.Getter & Block.Setter> void removeFloatingSnowLayer(T level, BlockVec pos) {
+    private static <T extends Block.Getter & Block.Setter> void removeFloatingSnowLayer(
+            T level, BlockVec pos) {
         var above = pos.add(0, 1, 0);
         if (level.getBlock(above).compare(Block.SNOW)) {
             level.setBlock(above, Block.AIR);
@@ -137,11 +219,31 @@ public final class IcebergFeature implements Feature<IcebergConfiguration> {
     }
 
     private static <T extends Block.Getter & Block.Setter> void generateIcebergBlock(
-            T level, RandomSource random, BlockVec origin, int height, int xo, int yOff, int zo, int radius, int a,
-            boolean isEllipse, int shapeEllipseC, double shapeAngle, boolean snowOnTop, Block mainBlockState) {
-        var signedDist = isEllipse
-                ? signedDistanceEllipse(xo, zo, 0, 0, a, getEllipseC(yOff, height, shapeEllipseC), shapeAngle)
-                : signedDistanceCircle(xo, zo, radius, random);
+            T level,
+            RandomSource random,
+            BlockVec origin,
+            int height,
+            int xo,
+            int yOff,
+            int zo,
+            int radius,
+            int a,
+            boolean isEllipse,
+            int shapeEllipseC,
+            double shapeAngle,
+            boolean snowOnTop,
+            Block mainBlockState) {
+        var signedDist =
+                isEllipse
+                        ? signedDistanceEllipse(
+                                xo,
+                                zo,
+                                0,
+                                0,
+                                a,
+                                getEllipseC(yOff, height, shapeEllipseC),
+                                shapeAngle)
+                        : signedDistanceCircle(xo, zo, radius, random);
         if (signedDist < 0.0) {
             var pos = origin.add(xo, yOff, zo);
             var compareVal = isEllipse ? -0.5 : (double) (-6 - random.nextInt(3));
@@ -149,19 +251,39 @@ public final class IcebergFeature implements Feature<IcebergConfiguration> {
                 return;
             }
 
-            setIcebergBlock(pos, level, random, height - yOff, height, isEllipse, snowOnTop, mainBlockState);
+            setIcebergBlock(
+                    pos,
+                    level,
+                    random,
+                    height - yOff,
+                    height,
+                    isEllipse,
+                    snowOnTop,
+                    mainBlockState);
         }
     }
 
     private static <T extends Block.Getter & Block.Setter> void setIcebergBlock(
-            BlockVec pos, T level, RandomSource random, int heightDifference, int height, boolean isEllipse,
-            boolean snowOnTop, Block mainBlockState) {
+            BlockVec pos,
+            T level,
+            RandomSource random,
+            int heightDifference,
+            int height,
+            boolean isEllipse,
+            boolean snowOnTop,
+            Block mainBlockState) {
         var state = level.getBlock(pos);
-        if (state.air() || state.compare(Block.SNOW_BLOCK) || state.compare(Block.ICE) || state.compare(Block.WATER)) {
+        if (state.air()
+                || state.compare(Block.SNOW_BLOCK)
+                || state.compare(Block.ICE)
+                || state.compare(Block.WATER)) {
             var randomness = !isEllipse || random.nextDouble() > 0.05;
             var divisor = isEllipse ? 3 : 2;
-            if (snowOnTop && !state.compare(Block.WATER)
-                    && (double) heightDifference <= (double) random.nextInt(Math.max(1, height / divisor)) + (double) height * 0.6
+            if (snowOnTop
+                    && !state.compare(Block.WATER)
+                    && (double) heightDifference
+                            <= (double) random.nextInt(Math.max(1, height / divisor))
+                                    + (double) height * 0.6
                     && randomness) {
                 level.setBlock(pos, Block.SNOW_BLOCK);
             } else {
@@ -184,13 +306,21 @@ public final class IcebergFeature implements Feature<IcebergConfiguration> {
         return off + Math.pow(xo, 2.0) + Math.pow(zo, 2.0) - Math.pow(radius, 2.0);
     }
 
-    private static double signedDistanceEllipse(int xo, int zo, int originX, int originZ, int a, int c, double angle) {
-        return Math.pow(((xo - originX) * Math.cos(angle) - (zo - originZ) * Math.sin(angle)) / (double) a, 2.0)
-                + Math.pow(((xo - originX) * Math.sin(angle) + (zo - originZ) * Math.cos(angle)) / (double) c, 2.0)
+    private static double signedDistanceEllipse(
+            int xo, int zo, int originX, int originZ, int a, int c, double angle) {
+        return Math.pow(
+                        ((xo - originX) * Math.cos(angle) - (zo - originZ) * Math.sin(angle))
+                                / (double) a,
+                        2.0)
+                + Math.pow(
+                        ((xo - originX) * Math.sin(angle) + (zo - originZ) * Math.cos(angle))
+                                / (double) c,
+                        2.0)
                 - 1.0;
     }
 
-    private static int heightDependentRadiusRound(RandomSource random, int yOff, int height, int width) {
+    private static int heightDependentRadiusRound(
+            RandomSource random, int yOff, int height, int width) {
         var k = 3.5F - random.nextFloat();
         var scale = (1.0F - (float) Math.pow(yOff, 2.0) / ((float) height * k)) * (float) width;
         if (height > 15 + random.nextInt(5)) {
@@ -206,7 +336,8 @@ public final class IcebergFeature implements Feature<IcebergConfiguration> {
         return (int) Math.ceil(scale / 2.0F);
     }
 
-    private static int heightDependentRadiusSteep(RandomSource random, int yOff, int height, int width) {
+    private static int heightDependentRadiusSteep(
+            RandomSource random, int yOff, int height, int width) {
         var k = 1.0F + random.nextFloat() / 2.0F;
         var scale = (1.0F - (float) yOff / ((float) height * k)) * (float) width;
         return (int) Math.ceil(scale / 2.0F);
@@ -217,10 +348,13 @@ public final class IcebergFeature implements Feature<IcebergConfiguration> {
     }
 
     private static boolean isIcebergState(Block block) {
-        return block.compare(Block.PACKED_ICE) || block.compare(Block.SNOW_BLOCK) || block.compare(Block.BLUE_ICE);
+        return block.compare(Block.PACKED_ICE)
+                || block.compare(Block.SNOW_BLOCK)
+                || block.compare(Block.BLUE_ICE);
     }
 
-    private static <T extends Block.Getter & Block.Setter> boolean belowIsAir(T level, BlockVec pos) {
+    private static <T extends Block.Getter & Block.Setter> boolean belowIsAir(
+            T level, BlockVec pos) {
         return level.getBlock(pos.add(0, -1, 0)).air();
     }
 

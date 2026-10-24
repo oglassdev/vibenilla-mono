@@ -1,6 +1,5 @@
 package rocks.minestom.crafting;
 
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.ints.IntSets;
@@ -24,7 +23,14 @@ public final class CraftingWorkspace {
     private boolean updatingResult;
     private @Nullable CraftingRecipeMatch currentMatch;
 
-    CraftingWorkspace(CraftingManager manager, Player owner, AbstractInventory inventory, int resultSlot, int[] gridSlots, int gridWidth, int gridHeight) {
+    CraftingWorkspace(
+            CraftingManager manager,
+            Player owner,
+            AbstractInventory inventory,
+            int resultSlot,
+            int[] gridSlots,
+            int gridWidth,
+            int gridHeight) {
         this.manager = manager;
         this.owner = owner;
         this.inventory = inventory;
@@ -79,7 +85,9 @@ public final class CraftingWorkspace {
         for (var rowIndex = 0; rowIndex < this.gridHeight; rowIndex++) {
             for (var columnIndex = 0; columnIndex < this.gridWidth; columnIndex++) {
                 var slotIndex = this.gridSlots[columnIndex + rowIndex * this.gridWidth];
-                slots[columnIndex + rowIndex * this.gridWidth] = new CraftingGrid.CraftingGridSlot(slotIndex, this.inventory.getItemStack(slotIndex));
+                slots[columnIndex + rowIndex * this.gridWidth] =
+                        new CraftingGrid.CraftingGridSlot(
+                                slotIndex, this.inventory.getItemStack(slotIndex));
             }
         }
 
@@ -138,7 +146,9 @@ public final class CraftingWorkspace {
             if (currentStack.isAir()) {
                 this.inventory.setItemStack(slotIndex, remainder);
             } else if (currentStack.isSimilar(remainder)) {
-                this.inventory.setItemStack(slotIndex, currentStack.withAmount(currentStack.amount() + remainder.amount()));
+                this.inventory.setItemStack(
+                        slotIndex,
+                        currentStack.withAmount(currentStack.amount() + remainder.amount()));
             } else if (!player.getInventory().addItemStack(remainder)) {
                 player.dropItem(remainder);
             }

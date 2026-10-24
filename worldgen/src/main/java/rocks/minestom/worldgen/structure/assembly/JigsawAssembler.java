@@ -1,5 +1,9 @@
 package rocks.minestom.worldgen.structure.assembly;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.coordinate.BlockVec;
 import org.slf4j.Logger;
@@ -16,19 +20,12 @@ import rocks.minestom.worldgen.structure.template.BoundingBox;
 import rocks.minestom.worldgen.structure.template.LiquidSettings;
 import rocks.minestom.worldgen.structure.template.Rotation;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
- * Method-by-method port of vanilla's {@code JigsawPlacement}: one sequential
- * {@code WorldgenRandom} (large-feature seeded at the start chunk) threads
- * through start-height sampling, the start rotation, every weighted pool
- * shuffle, every jigsaw-block shuffle and every rotation shuffle. Free space
- * is tracked with exact box-region algebra standing in for vanilla's
- * {@code VoxelShape} joins, and expansion order follows the 26.2
- * placement/selection priorities.
+ * Method-by-method port of vanilla's {@code JigsawPlacement}: one sequential {@code WorldgenRandom}
+ * (large-feature seeded at the start chunk) threads through start-height sampling, the start
+ * rotation, every weighted pool shuffle, every jigsaw-block shuffle and every rotation shuffle.
+ * Free space is tracked with exact box-region algebra standing in for vanilla's {@code VoxelShape}
+ * joins, and expansion order follows the 26.2 placement/selection priorities.
  */
 public final class JigsawAssembler {
     private static final Logger LOGGER = LoggerFactory.getLogger(JigsawAssembler.class);
@@ -47,10 +44,9 @@ public final class JigsawAssembler {
     }
 
     /**
-     * A piece scheduled for placement. The element decides how it places
-     * (template with processors, list of templates, or a feature). Junctions
-     * accumulate during assembly (vanilla
-     * {@code PoolElementStructurePiece.addJunction}) and feed the beardifier.
+     * A piece scheduled for placement. The element decides how it places (template with processors,
+     * list of templates, or a feature). Junctions accumulate during assembly (vanilla {@code
+     * PoolElementStructurePiece.addJunction}) and feed the beardifier.
      */
     public record PlacedPiece(
             PoolElement element,
@@ -59,27 +55,32 @@ public final class JigsawAssembler {
             BoundingBox bounds,
             int groundLevelDelta,
             LiquidSettings liquidSettings,
-            List<JigsawJunction> junctions
-    ) {
-        public PlacedPiece(PoolElement element, BlockVec position, Rotation rotation, BoundingBox bounds,
-                int groundLevelDelta, LiquidSettings liquidSettings) {
-            this(element, position, rotation, bounds, groundLevelDelta, liquidSettings, new ArrayList<>());
+            List<JigsawJunction> junctions) {
+        public PlacedPiece(
+                PoolElement element,
+                BlockVec position,
+                Rotation rotation,
+                BoundingBox bounds,
+                int groundLevelDelta,
+                LiquidSettings liquidSettings) {
+            this(
+                    element,
+                    position,
+                    rotation,
+                    bounds,
+                    groundLevelDelta,
+                    liquidSettings,
+                    new ArrayList<>());
         }
     }
 
     /**
-     * Vanilla {@code JigsawJunction}: where two pieces attach, with the ground
-     * height the connection expects. The beardifier grows a support beard
-     * around junctions of terrain-adapting structures.
+     * Vanilla {@code JigsawJunction}: where two pieces attach, with the ground height the
+     * connection expects. The beardifier grows a support beard around junctions of terrain-adapting
+     * structures.
      */
     public record JigsawJunction(
-            int sourceX,
-            int sourceGroundY,
-            int sourceZ,
-            int deltaY,
-            Projection destProjection
-    ) {
-    }
+            int sourceX, int sourceGroundY, int sourceZ, int deltaY, Projection destProjection) {}
 
     /** Vanilla {@code JigsawPlacement.addPieces}. */
     public List<PlacedPiece> assemble(JigsawStructure config, int chunkX, int chunkZ) {
@@ -88,7 +89,9 @@ public final class JigsawAssembler {
 
         var height = config.startHeight().sample(random);
         var position = new BlockVec(chunkX << 4, height, chunkZ << 4);
-        var aliasLookup = PoolAliasLookup.create(config.poolAliases(), position, this.settings.randomState().seed());
+        var aliasLookup =
+                PoolAliasLookup.create(
+                        config.poolAliases(), position, this.settings.randomState().seed());
 
         var centerRotation = Rotation.getRandom(random);
         var centerPool = this.loader.getTemplatePool(aliasLookup.lookup(config.startPool()));
@@ -107,10 +110,17 @@ public final class JigsawAssembler {
 
         BlockVec anchoredPosition;
         if (config.startJigsawName() != null) {
-            anchoredPosition = getRandomNamedJigsaw(centerElement, config.startJigsawName(), position, centerRotation,
-                    random);
+            anchoredPosition =
+                    getRandomNamedJigsaw(
+                            centerElement,
+                            config.startJigsawName(),
+                            position,
+                            centerRotation,
+                            random);
             if (anchoredPosition == null) {
-                LOGGER.warn("No starting jigsaw {} found in start pool {}", config.startJigsawName(),
+                LOGGER.warn(
+                        "No starting jigsaw {} found in start pool {}",
+                        config.startJigsawName(),
                         config.startPool());
                 return List.of();
             }
@@ -121,10 +131,11 @@ public final class JigsawAssembler {
         var localAnchorX = anchoredPosition.blockX() - position.blockX();
         var localAnchorY = anchoredPosition.blockY() - position.blockY();
         var localAnchorZ = anchoredPosition.blockZ() - position.blockZ();
-        var adjustedPosition = new BlockVec(
-                position.blockX() - localAnchorX,
-                position.blockY() - localAnchorY,
-                position.blockZ() - localAnchorZ);
+        var adjustedPosition =
+                new BlockVec(
+                        position.blockX() - localAnchorX,
+                        position.blockY() - localAnchorY,
+                        position.blockZ() - localAnchorZ);
 
         var groundLevelDelta = centerElement.groundLevelDelta();
         var box = centerElement.getBoundingBox(this.loader, adjustedPosition, centerRotation);
@@ -139,10 +150,11 @@ public final class JigsawAssembler {
 
         var yShift = bottomY - (box.minY() + groundLevelDelta);
         box = box.moved(0, yShift, 0);
-        var centerPosition = new BlockVec(
-                adjustedPosition.blockX(),
-                adjustedPosition.blockY() + yShift,
-                adjustedPosition.blockZ());
+        var centerPosition =
+                new BlockVec(
+                        adjustedPosition.blockX(),
+                        adjustedPosition.blockY() + yShift,
+                        adjustedPosition.blockZ());
 
         if (this.isStartTooCloseToWorldHeightLimits(config, box)) {
             LOGGER.debug("Center piece with bounding box {} does not fit dimension padding", box);
@@ -150,8 +162,14 @@ public final class JigsawAssembler {
         }
 
         var centerY = bottomY + localAnchorY;
-        var centerPiece = new PlacedPiece(centerElement, centerPosition, centerRotation, box, groundLevelDelta,
-                config.liquidSettings());
+        var centerPiece =
+                new PlacedPiece(
+                        centerElement,
+                        centerPosition,
+                        centerRotation,
+                        box,
+                        groundLevelDelta,
+                        config.liquidSettings());
         var pieces = new ArrayList<PlacedPiece>();
         pieces.add(centerPiece);
 
@@ -162,14 +180,15 @@ public final class JigsawAssembler {
         var minY = this.settings.minY();
         var maxY = this.settings.maxYInclusive();
         var maxDistance = config.maxDistanceFromCenter();
-        var aabb = new double[]{
-                centerX - maxDistance,
-                Math.max(centerY - maxDistance, minY + config.dimensionPaddingBottom()),
-                centerZ - maxDistance,
-                centerX + maxDistance + 1,
-                Math.min(centerY + maxDistance + 1, maxY + 1 - config.dimensionPaddingTop()),
-                centerZ + maxDistance + 1
-        };
+        var aabb =
+                new double[] {
+                    centerX - maxDistance,
+                    Math.max(centerY - maxDistance, minY + config.dimensionPaddingBottom()),
+                    centerZ - maxDistance,
+                    centerX + maxDistance + 1,
+                    Math.min(centerY + maxDistance + 1, maxY + 1 - config.dimensionPaddingTop()),
+                    centerZ + maxDistance + 1
+                };
         var free = VoxelRegion.of(aabb);
         free.subtract(VoxelRegion.aabbOf(box));
 
@@ -183,7 +202,8 @@ public final class JigsawAssembler {
         return pieces;
     }
 
-    private boolean isStartTooCloseToWorldHeightLimits(JigsawStructure config, BoundingBox centerBounds) {
+    private boolean isStartTooCloseToWorldHeightLimits(
+            JigsawStructure config, BoundingBox centerBounds) {
         if (config.dimensionPaddingBottom() == 0 && config.dimensionPaddingTop() == 0) {
             return false;
         }
@@ -193,10 +213,15 @@ public final class JigsawAssembler {
         return centerBounds.minY() < minYWithPadding || centerBounds.maxY() > maxYWithPadding;
     }
 
-    private BlockVec getRandomNamedJigsaw(PoolElement element, Key startJigsawName, BlockVec position,
-            Rotation rotation, RandomSource random) {
+    private BlockVec getRandomNamedJigsaw(
+            PoolElement element,
+            Key startJigsawName,
+            BlockVec position,
+            Rotation rotation,
+            RandomSource random) {
         var name = startJigsawName.asString();
-        for (var jigsaw : element.getShuffledJigsawBlocks(this.loader, position, rotation, random)) {
+        for (var jigsaw :
+                element.getShuffledJigsawBlocks(this.loader, position, rotation, random)) {
             if (name.equals(jigsaw.name())) {
                 return jigsaw.position();
             }
@@ -205,9 +230,8 @@ public final class JigsawAssembler {
     }
 
     /**
-     * Vanilla's {@code getFirstFreeHeight} with WORLD_SURFACE_WG semantics:
-     * one above the highest solid noise block, never below sea level (vanilla
-     * columns fill with water up to the sea).
+     * Vanilla's {@code getFirstFreeHeight} with WORLD_SURFACE_WG semantics: one above the highest
+     * solid noise block, never below sea level (vanilla columns fill with water up to the sea).
      */
     int firstFreeHeight(int x, int z) {
         var key = (((long) x) << 32) ^ (z & 0xffffffffL);
@@ -234,8 +258,7 @@ public final class JigsawAssembler {
         return result;
     }
 
-    private record PieceState(PlacedPiece piece, ShapeRef free, int depth) {
-    }
+    private record PieceState(PlacedPiece piece, ShapeRef free, int depth) {}
 
     /** Vanilla's {@code MutableObject<VoxelShape>}. */
     private static final class ShapeRef {
@@ -253,10 +276,15 @@ public final class JigsawAssembler {
         private final PoolAliasLookup aliasLookup;
         private final RandomSource random;
         private final List<PlacedPiece> pieces;
-        private final SequencedPriorityIterator<PieceState> placing = new SequencedPriorityIterator<>();
+        private final SequencedPriorityIterator<PieceState> placing =
+                new SequencedPriorityIterator<>();
 
-        private Placer(JigsawAssembler assembler, JigsawStructure config, PoolAliasLookup aliasLookup,
-                RandomSource random, List<PlacedPiece> pieces) {
+        private Placer(
+                JigsawAssembler assembler,
+                JigsawStructure config,
+                PoolAliasLookup aliasLookup,
+                RandomSource random,
+                List<PlacedPiece> pieces) {
             this.assembler = assembler;
             this.config = config;
             this.aliasLookup = aliasLookup;
@@ -276,14 +304,16 @@ public final class JigsawAssembler {
             var sourceBoxY = sourceBounds.minY();
 
             sourceJigsaws:
-            for (var sourceJigsaw : sourceElement.getShuffledJigsawBlocks(loader, sourcePosition, sourceRotation,
-                    this.random)) {
+            for (var sourceJigsaw :
+                    sourceElement.getShuffledJigsawBlocks(
+                            loader, sourcePosition, sourceRotation, this.random)) {
                 var sourceDirection = sourceJigsaw.front();
                 var sourceJigsawPos = sourceJigsaw.position();
-                var targetJigsawPos = new BlockVec(
-                        sourceJigsawPos.blockX() + sourceDirection.normalX(),
-                        sourceJigsawPos.blockY() + sourceDirection.normalY(),
-                        sourceJigsawPos.blockZ() + sourceDirection.normalZ());
+                var targetJigsawPos =
+                        new BlockVec(
+                                sourceJigsawPos.blockX() + sourceDirection.normalX(),
+                                sourceJigsawPos.blockY() + sourceDirection.normalY(),
+                                sourceJigsawPos.blockZ() + sourceDirection.normalZ());
                 var sourceJigsawLocalY = sourceJigsawPos.blockY() - sourceBoxY;
                 var sourceJigsawBaseHeight = Integer.MIN_VALUE;
                 var poolName = this.aliasLookup.lookup(sourceJigsaw.pool());
@@ -300,7 +330,8 @@ public final class JigsawAssembler {
 
                 var fallbackName = targetPool.fallback();
                 var fallback = loader.getTemplatePool(fallbackName);
-                if (fallback == null || (fallback.size() == 0 && !fallbackName.equals(EMPTY_POOL))) {
+                if (fallback == null
+                        || (fallback.size() == 0 && !fallbackName.equals(EMPTY_POOL))) {
                     LOGGER.warn("Empty or non-existent fallback pool: {}", fallbackName);
                     continue;
                 }
@@ -329,30 +360,41 @@ public final class JigsawAssembler {
                     }
 
                     for (var targetRotation : Rotation.getShuffled(this.random)) {
-                        var targetJigsaws = targetElement.getShuffledJigsawBlocks(loader, BlockVec.ZERO,
-                                targetRotation, this.random);
-                        var hackBox = targetElement.getBoundingBox(loader, BlockVec.ZERO, targetRotation);
+                        var targetJigsaws =
+                                targetElement.getShuffledJigsawBlocks(
+                                        loader, BlockVec.ZERO, targetRotation, this.random);
+                        var hackBox =
+                                targetElement.getBoundingBox(loader, BlockVec.ZERO, targetRotation);
                         int expandTo;
                         if (this.config.useExpansionHack() && hackBox.getYSpan() <= 16) {
                             expandTo = 0;
                             for (var targetJigsaw : targetJigsaws) {
                                 var front = targetJigsaw.front();
-                                var frontPos = new BlockVec(
-                                        targetJigsaw.position().blockX() + front.normalX(),
-                                        targetJigsaw.position().blockY() + front.normalY(),
-                                        targetJigsaw.position().blockZ() + front.normalZ());
+                                var frontPos =
+                                        new BlockVec(
+                                                targetJigsaw.position().blockX() + front.normalX(),
+                                                targetJigsaw.position().blockY() + front.normalY(),
+                                                targetJigsaw.position().blockZ() + front.normalZ());
                                 if (!hackBox.isInside(frontPos)) {
                                     continue;
                                 }
 
                                 var childPoolName = this.aliasLookup.lookup(targetJigsaw.pool());
                                 var childPool = loader.getTemplatePool(childPoolName);
-                                var childPoolSize = childPool != null ? childPool.getMaxSize(loader) : 0;
-                                var childFallback = childPool != null
-                                        ? loader.getTemplatePool(childPool.fallback())
-                                        : null;
-                                var childFallbackSize = childFallback != null ? childFallback.getMaxSize(loader) : 0;
-                                expandTo = Math.max(expandTo, Math.max(childPoolSize, childFallbackSize));
+                                var childPoolSize =
+                                        childPool != null ? childPool.getMaxSize(loader) : 0;
+                                var childFallback =
+                                        childPool != null
+                                                ? loader.getTemplatePool(childPool.fallback())
+                                                : null;
+                                var childFallbackSize =
+                                        childFallback != null
+                                                ? childFallback.getMaxSize(loader)
+                                                : 0;
+                                expandTo =
+                                        Math.max(
+                                                expandTo,
+                                                Math.max(childPoolSize, childFallbackSize));
                             }
                         } else {
                             expandTo = 0;
@@ -364,24 +406,34 @@ public final class JigsawAssembler {
                             }
 
                             var targetJigsawLocalPos = targetJigsaw.position();
-                            var rawTargetBoxPos = new BlockVec(
-                                    targetJigsawPos.blockX() - targetJigsawLocalPos.blockX(),
-                                    targetJigsawPos.blockY() - targetJigsawLocalPos.blockY(),
-                                    targetJigsawPos.blockZ() - targetJigsawLocalPos.blockZ());
-                            var rawTargetBounds = targetElement.getBoundingBox(loader, rawTargetBoxPos,
-                                    targetRotation);
+                            var rawTargetBoxPos =
+                                    new BlockVec(
+                                            targetJigsawPos.blockX()
+                                                    - targetJigsawLocalPos.blockX(),
+                                            targetJigsawPos.blockY()
+                                                    - targetJigsawLocalPos.blockY(),
+                                            targetJigsawPos.blockZ()
+                                                    - targetJigsawLocalPos.blockZ());
+                            var rawTargetBounds =
+                                    targetElement.getBoundingBox(
+                                            loader, rawTargetBoxPos, targetRotation);
                             var rawTargetY = rawTargetBounds.minY();
                             var targetProjection = targetElement.projection();
                             var targetRigid = targetProjection == Projection.RIGID;
                             var targetJigsawLocalY = targetJigsawLocalPos.blockY();
-                            var deltaY = sourceJigsawLocalY - targetJigsawLocalY + sourceDirection.normalY();
+                            var deltaY =
+                                    sourceJigsawLocalY
+                                            - targetJigsawLocalY
+                                            + sourceDirection.normalY();
                             int targetBoxY;
                             if (sourceRigid && targetRigid) {
                                 targetBoxY = sourceBoxY + deltaY;
                             } else {
                                 if (sourceJigsawBaseHeight == Integer.MIN_VALUE) {
-                                    sourceJigsawBaseHeight = this.assembler.firstFreeHeight(
-                                            sourceJigsawPos.blockX(), sourceJigsawPos.blockZ());
+                                    sourceJigsawBaseHeight =
+                                            this.assembler.firstFreeHeight(
+                                                    sourceJigsawPos.blockX(),
+                                                    sourceJigsawPos.blockZ());
                                 }
 
                                 targetBoxY = sourceJigsawBaseHeight - targetJigsawLocalY;
@@ -389,18 +441,26 @@ public final class JigsawAssembler {
 
                             var yOffset = targetBoxY - rawTargetY;
                             var targetBounds = rawTargetBounds.moved(0, yOffset, 0);
-                            var targetBoxPosition = new BlockVec(
-                                    rawTargetBoxPos.blockX(),
-                                    rawTargetBoxPos.blockY() + yOffset,
-                                    rawTargetBoxPos.blockZ());
+                            var targetBoxPosition =
+                                    new BlockVec(
+                                            rawTargetBoxPos.blockX(),
+                                            rawTargetBoxPos.blockY() + yOffset,
+                                            rawTargetBoxPos.blockZ());
                             if (expandTo > 0) {
-                                var newSize = Math.max(expandTo + 1, targetBounds.maxY() - targetBounds.minY());
-                                targetBounds.encapsulate(new BlockVec(
-                                        targetBounds.minX(), targetBounds.minY() + newSize, targetBounds.minZ()));
+                                var newSize =
+                                        Math.max(
+                                                expandTo + 1,
+                                                targetBounds.maxY() - targetBounds.minY());
+                                targetBounds.encapsulate(
+                                        new BlockVec(
+                                                targetBounds.minX(),
+                                                targetBounds.minY() + newSize,
+                                                targetBounds.minZ()));
                             }
 
                             var targetAabb = VoxelRegion.aabbOf(targetBounds);
-                            if (!childrenFree.value.contains(VoxelRegion.deflate(targetAabb, 0.25))) {
+                            if (!childrenFree.value.contains(
+                                    VoxelRegion.deflate(targetAabb, 0.25))) {
                                 continue;
                             }
 
@@ -413,8 +473,14 @@ public final class JigsawAssembler {
                                 targetGroundLevelDelta = targetElement.groundLevelDelta();
                             }
 
-                            var targetPiece = new PlacedPiece(targetElement, targetBoxPosition, targetRotation,
-                                    targetBounds, targetGroundLevelDelta, this.config.liquidSettings());
+                            var targetPiece =
+                                    new PlacedPiece(
+                                            targetElement,
+                                            targetBoxPosition,
+                                            targetRotation,
+                                            targetBounds,
+                                            targetGroundLevelDelta,
+                                            this.config.liquidSettings());
 
                             // Vanilla records the junction on both pieces so the
                             // beardifier can grow support terrain at attachments.
@@ -425,29 +491,42 @@ public final class JigsawAssembler {
                                 junctionY = targetBoxY + targetJigsawLocalY;
                             } else {
                                 if (sourceJigsawBaseHeight == Integer.MIN_VALUE) {
-                                    sourceJigsawBaseHeight = this.assembler.firstFreeHeight(
-                                            sourceJigsawPos.blockX(), sourceJigsawPos.blockZ());
+                                    sourceJigsawBaseHeight =
+                                            this.assembler.firstFreeHeight(
+                                                    sourceJigsawPos.blockX(),
+                                                    sourceJigsawPos.blockZ());
                                 }
 
                                 junctionY = sourceJigsawBaseHeight + deltaY / 2;
                             }
 
-                            sourcePiece.junctions().add(new JigsawJunction(
-                                    targetJigsawPos.blockX(),
-                                    junctionY - sourceJigsawLocalY + sourceGroundLevelDelta,
-                                    targetJigsawPos.blockZ(),
-                                    deltaY,
-                                    targetProjection));
-                            targetPiece.junctions().add(new JigsawJunction(
-                                    sourceJigsawPos.blockX(),
-                                    junctionY - targetJigsawLocalY + targetGroundLevelDelta,
-                                    sourceJigsawPos.blockZ(),
-                                    -deltaY,
-                                    sourceProjection));
+                            sourcePiece
+                                    .junctions()
+                                    .add(
+                                            new JigsawJunction(
+                                                    targetJigsawPos.blockX(),
+                                                    junctionY
+                                                            - sourceJigsawLocalY
+                                                            + sourceGroundLevelDelta,
+                                                    targetJigsawPos.blockZ(),
+                                                    deltaY,
+                                                    targetProjection));
+                            targetPiece
+                                    .junctions()
+                                    .add(
+                                            new JigsawJunction(
+                                                    sourceJigsawPos.blockX(),
+                                                    junctionY
+                                                            - targetJigsawLocalY
+                                                            + targetGroundLevelDelta,
+                                                    sourceJigsawPos.blockZ(),
+                                                    -deltaY,
+                                                    sourceProjection));
 
                             this.pieces.add(targetPiece);
                             if (depth + 1 <= this.config.size()) {
-                                this.placing.add(new PieceState(targetPiece, childrenFree, depth + 1),
+                                this.placing.add(
+                                        new PieceState(targetPiece, childrenFree, depth + 1),
                                         placementPriority);
                             }
                             continue sourceJigsaws;

@@ -1,8 +1,7 @@
 package rocks.minestom.worldgen.random;
 
-import rocks.minestom.worldgen.VMath;
-
 import java.util.concurrent.atomic.AtomicLong;
+import rocks.minestom.worldgen.VMath;
 
 public final class LegacyRandomSource implements RandomSource {
     private static final long MODULUS_MASK = 281474976710655L;

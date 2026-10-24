@@ -1,5 +1,10 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
@@ -8,17 +13,13 @@ import rocks.minestom.worldgen.datapack.DataPack;
 import rocks.minestom.worldgen.feature.placement.PlacementModifiers;
 import rocks.minestom.worldgen.structure.context.BlockTagManager;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 public final class FeatureLoader {
-    private static final Codec<BiomeFeatures> BIOME_FEATURES_CODEC = StructCodec.struct(
-            "features", Codec.KEY.list().list().optional(List.of()), BiomeFeatures::features,
-            BiomeFeatures::new
-    );
+    private static final Codec<BiomeFeatures> BIOME_FEATURES_CODEC =
+            StructCodec.struct(
+                    "features",
+                    Codec.KEY.list().list().optional(List.of()),
+                    BiomeFeatures::features,
+                    BiomeFeatures::new);
 
     private final DataPack dataPack;
     private final BlockTagManager blockTags;
@@ -48,25 +49,27 @@ public final class FeatureLoader {
     }
 
     /**
-     * Deterministic global feature ordering per decoration step for the given
-     * biome set, mirroring vanilla's FeatureSorter result. Cached per biome list.
+     * Deterministic global feature ordering per decoration step for the given biome set, mirroring
+     * vanilla's FeatureSorter result. Cached per biome list.
      */
     public List<FeatureSorter.StepFeatureData> featuresPerStep(List<Key> possibleBiomes) {
-        return this.featuresPerStepCache.computeIfAbsent(possibleBiomes,
+        return this.featuresPerStepCache.computeIfAbsent(
+                possibleBiomes,
                 biomes -> FeatureSorter.buildFeaturesPerStep(biomes, this::getBiomeFeatures));
     }
 
-    /**
-     * Whether the biome's feature lists contain the placed feature, at any step.
-     */
+    /** Whether the biome's feature lists contain the placed feature, at any step. */
     public boolean biomeHasFeature(Key biomeId, Key placedFeatureId) {
-        var featureSet = this.biomeFeatureSetCache.computeIfAbsent(biomeId, biome -> {
-            var set = new HashSet<Key>();
-            for (var step : this.getBiomeFeatures(biome)) {
-                set.addAll(step);
-            }
-            return set;
-        });
+        var featureSet =
+                this.biomeFeatureSetCache.computeIfAbsent(
+                        biomeId,
+                        biome -> {
+                            var set = new HashSet<Key>();
+                            for (var step : this.getBiomeFeatures(biome)) {
+                                set.addAll(step);
+                            }
+                            return set;
+                        });
         return featureSet.contains(placedFeatureId);
     }
 
@@ -127,6 +130,5 @@ public final class FeatureLoader {
         }
     }
 
-    private record BiomeFeatures(List<List<Key>> features) {
-    }
+    private record BiomeFeatures(List<List<Key>> features) {}
 }

@@ -1,21 +1,38 @@
 package rocks.minestom.worldgen.feature.featuresize;
 
+import java.util.OptionalInt;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 
-import java.util.OptionalInt;
+public record TwoLayersFeatureSize(
+        int limit, int lowerSize, int upperSize, OptionalInt minClippedHeight)
+        implements FeatureSize {
 
-public record TwoLayersFeatureSize(int limit, int lowerSize, int upperSize, OptionalInt minClippedHeight) implements FeatureSize {
-
-    public static final Codec<TwoLayersFeatureSize> CODEC = StructCodec.struct(
-            "limit", Codec.INT.optional(1), TwoLayersFeatureSize::limit,
-            "lower_size", Codec.INT.optional(0), TwoLayersFeatureSize::lowerSize,
-            "upper_size", Codec.INT.optional(1), TwoLayersFeatureSize::upperSize,
-            "min_clipped_height", Codec.INT.optional(),
-            size -> size.minClippedHeight().isPresent() ? size.minClippedHeight().getAsInt() : null,
-            (limit, lowerSize, upperSize, minClipped) -> new TwoLayersFeatureSize(limit, lowerSize, upperSize,
-                    minClipped != null ? OptionalInt.of(minClipped) : OptionalInt.empty())
-    );
+    public static final Codec<TwoLayersFeatureSize> CODEC =
+            StructCodec.struct(
+                    "limit",
+                    Codec.INT.optional(1),
+                    TwoLayersFeatureSize::limit,
+                    "lower_size",
+                    Codec.INT.optional(0),
+                    TwoLayersFeatureSize::lowerSize,
+                    "upper_size",
+                    Codec.INT.optional(1),
+                    TwoLayersFeatureSize::upperSize,
+                    "min_clipped_height",
+                    Codec.INT.optional(),
+                    size ->
+                            size.minClippedHeight().isPresent()
+                                    ? size.minClippedHeight().getAsInt()
+                                    : null,
+                    (limit, lowerSize, upperSize, minClipped) ->
+                            new TwoLayersFeatureSize(
+                                    limit,
+                                    lowerSize,
+                                    upperSize,
+                                    minClipped != null
+                                            ? OptionalInt.of(minClipped)
+                                            : OptionalInt.empty()));
 
     public TwoLayersFeatureSize(int limit, int lowerSize, int upperSize) {
         this(limit, lowerSize, upperSize, OptionalInt.empty());

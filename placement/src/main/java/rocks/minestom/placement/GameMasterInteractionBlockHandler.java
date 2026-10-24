@@ -5,12 +5,11 @@ import net.minestom.server.entity.GameMode;
 import net.minestom.server.instance.block.BlockHandler;
 
 public final class GameMasterInteractionBlockHandler implements BlockHandler {
-    public static final GameMasterInteractionBlockHandler INSTANCE = new GameMasterInteractionBlockHandler();
+    public static final GameMasterInteractionBlockHandler INSTANCE =
+            new GameMasterInteractionBlockHandler();
     private static final Key KEY = Key.key("placement:game_master_interaction");
 
-    private GameMasterInteractionBlockHandler() {
-
-    }
+    private GameMasterInteractionBlockHandler() {}
 
     @Override
     public Key getKey() {

@@ -4,24 +4,25 @@ import rocks.minestom.worldgen.VMath;
 import rocks.minestom.worldgen.random.RandomSource;
 
 public final class SimplexNoise {
-    public static final int[][] GRADIENT = new int[][]{
-            {1, 1, 0},
-            {-1, 1, 0},
-            {1, -1, 0},
-            {-1, -1, 0},
-            {1, 0, 1},
-            {-1, 0, 1},
-            {1, 0, -1},
-            {-1, 0, -1},
-            {0, 1, 1},
-            {0, -1, 1},
-            {0, 1, -1},
-            {0, -1, -1},
-            {1, 1, 0},
-            {0, -1, 1},
-            {-1, 1, 0},
-            {0, -1, -1}
-    };
+    public static final int[][] GRADIENT =
+            new int[][] {
+                {1, 1, 0},
+                {-1, 1, 0},
+                {1, -1, 0},
+                {-1, -1, 0},
+                {1, 0, 1},
+                {-1, 0, 1},
+                {1, 0, -1},
+                {-1, 0, -1},
+                {0, 1, 1},
+                {0, -1, 1},
+                {0, 1, -1},
+                {0, -1, -1},
+                {1, 1, 0},
+                {0, -1, 1},
+                {-1, 1, 0},
+                {0, -1, -1}
+            };
     private static final double SQRT_3 = Math.sqrt(3.0D);
     private static final double F2 = 0.5D * (SQRT_3 - 1.0D);
     private static final double G2 = (3.0D - SQRT_3) / 6.0D;
@@ -57,7 +58,8 @@ public final class SimplexNoise {
         return (double) gradient[0] * x + (double) gradient[1] * y + (double) gradient[2] * z;
     }
 
-    private double getCornerNoise3D(int gradientIndex, double x, double y, double z, double falloff) {
+    private double getCornerNoise3D(
+            int gradientIndex, double x, double y, double z, double falloff) {
         var value = falloff - x * x - y * y - z * z;
         if (value < 0.0D) {
             return 0.0D;
@@ -177,8 +179,10 @@ public final class SimplexNoise {
         var permY = cellY & 0xFF;
         var permZ = cellZ & 0xFF;
         var gradient0 = this.p(permX + this.p(permY + this.p(permZ))) % 12;
-        var gradient1 = this.p(permX + offsetX0 + this.p(permY + offsetY0 + this.p(permZ + offsetZ0))) % 12;
-        var gradient2 = this.p(permX + offsetX1 + this.p(permY + offsetY1 + this.p(permZ + offsetZ1))) % 12;
+        var gradient1 =
+                this.p(permX + offsetX0 + this.p(permY + offsetY0 + this.p(permZ + offsetZ0))) % 12;
+        var gradient2 =
+                this.p(permX + offsetX1 + this.p(permY + offsetY1 + this.p(permZ + offsetZ1))) % 12;
         var gradient3 = this.p(permX + 1 + this.p(permY + 1 + this.p(permZ + 1))) % 12;
         var noise0 = this.getCornerNoise3D(gradient0, localX, localY, localZ, 0.6D);
         var noise1 = this.getCornerNoise3D(gradient1, secondX, secondY, secondZ, 0.6D);

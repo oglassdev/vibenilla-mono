@@ -1,17 +1,13 @@
 package io.github.togar2.pvp.entity.explosion;
 
+import java.util.concurrent.ThreadLocalRandom;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.minestom.server.ServerFlag;
-import net.minestom.server.collision.BoundingBox;
-import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.metadata.other.PrimedTntMeta;
-import net.minestom.server.instance.Instance;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.concurrent.ThreadLocalRandom;
 
 public class TntEntity extends Entity {
     private final Entity causingEntity;
@@ -22,8 +18,9 @@ public class TntEntity extends Entity {
         this.causingEntity = causingEntity;
 
         var angle = ThreadLocalRandom.current().nextDouble() * 2 * Math.PI;
-        this.setVelocity(new Vec(-Math.sin(angle) * 0.02, 0.2F, -Math.cos(angle) * 0.02)
-                .mul(ServerFlag.SERVER_TICKS_PER_SECOND));
+        this.setVelocity(
+                new Vec(-Math.sin(angle) * 0.02, 0.2F, -Math.cos(angle) * 0.02)
+                        .mul(ServerFlag.SERVER_TICKS_PER_SECOND));
     }
 
     public int getFuse() {
@@ -46,11 +43,13 @@ public class TntEntity extends Entity {
             var boundingBox = this.boundingBox;
 
             if (instance.getExplosionSupplier() != null) {
-                var additionalData = CompoundBinaryTag.builder()
-                        .putString("sourceEntity", this.getUuid().toString());
+                var additionalData =
+                        CompoundBinaryTag.builder()
+                                .putString("sourceEntity", this.getUuid().toString());
 
                 if (this.causingEntity != null) {
-                    additionalData.putString("causingEntity", this.causingEntity.getUuid().toString());
+                    additionalData.putString(
+                            "causingEntity", this.causingEntity.getUuid().toString());
                 }
 
                 instance.explode(
@@ -58,8 +57,7 @@ public class TntEntity extends Entity {
                         (float) (position.y() + boundingBox.height() * 0.0625),
                         (float) position.z(),
                         4.0F,
-                        additionalData.build()
-                );
+                        additionalData.build());
             }
 
             this.remove();

@@ -1,5 +1,8 @@
 package rocks.minestom.worldgen.feature.trunkplacers;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiConsumer;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.coordinate.BlockVec;
@@ -10,21 +13,31 @@ import rocks.minestom.worldgen.feature.valueproviders.IntProvider;
 import rocks.minestom.worldgen.feature.valueproviders.UniformIntProvider;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.BiConsumer;
-
 public final class CherryTrunkPlacer implements TrunkPlacer {
-    public static final Codec<CherryTrunkPlacer> CODEC = StructCodec.struct(
-            "base_height", Codec.INT, CherryTrunkPlacer::baseHeight,
-            "height_rand_a", Codec.INT, CherryTrunkPlacer::heightRandA,
-            "height_rand_b", Codec.INT, CherryTrunkPlacer::heightRandB,
-            "branch_count", IntProvider.CODEC, CherryTrunkPlacer::branchCount,
-            "branch_horizontal_length", IntProvider.CODEC, CherryTrunkPlacer::branchHorizontalLength,
-            "branch_start_offset_from_top", UniformIntProvider.CODEC, CherryTrunkPlacer::branchStartOffsetFromTop,
-            "branch_end_offset_from_top", IntProvider.CODEC, CherryTrunkPlacer::branchEndOffsetFromTop,
-            CherryTrunkPlacer::new
-    );
+    public static final Codec<CherryTrunkPlacer> CODEC =
+            StructCodec.struct(
+                    "base_height",
+                    Codec.INT,
+                    CherryTrunkPlacer::baseHeight,
+                    "height_rand_a",
+                    Codec.INT,
+                    CherryTrunkPlacer::heightRandA,
+                    "height_rand_b",
+                    Codec.INT,
+                    CherryTrunkPlacer::heightRandB,
+                    "branch_count",
+                    IntProvider.CODEC,
+                    CherryTrunkPlacer::branchCount,
+                    "branch_horizontal_length",
+                    IntProvider.CODEC,
+                    CherryTrunkPlacer::branchHorizontalLength,
+                    "branch_start_offset_from_top",
+                    UniformIntProvider.CODEC,
+                    CherryTrunkPlacer::branchStartOffsetFromTop,
+                    "branch_end_offset_from_top",
+                    IntProvider.CODEC,
+                    CherryTrunkPlacer::branchEndOffsetFromTop,
+                    CherryTrunkPlacer::new);
 
     private final int baseHeight;
     private final int heightRandA;
@@ -42,15 +55,17 @@ public final class CherryTrunkPlacer implements TrunkPlacer {
             IntProvider branchCount,
             IntProvider branchHorizontalLength,
             UniformIntProvider branchStartOffsetFromTop,
-            IntProvider branchEndOffsetFromTop
-    ) {
+            IntProvider branchEndOffsetFromTop) {
         this.baseHeight = baseHeight;
         this.heightRandA = heightRandA;
         this.heightRandB = heightRandB;
         this.branchCount = branchCount;
         this.branchHorizontalLength = branchHorizontalLength;
         this.branchStartOffsetFromTop = branchStartOffsetFromTop;
-        this.secondBranchStartOffsetFromTop = new UniformIntProvider(branchStartOffsetFromTop.minInclusive(), branchStartOffsetFromTop.maxInclusive() - 1);
+        this.secondBranchStartOffsetFromTop =
+                new UniformIntProvider(
+                        branchStartOffsetFromTop.minInclusive(),
+                        branchStartOffsetFromTop.maxInclusive() - 1);
         this.branchEndOffsetFromTop = branchEndOffsetFromTop;
     }
 
@@ -89,12 +104,14 @@ public final class CherryTrunkPlacer implements TrunkPlacer {
             RandomSource random,
             int freeTreeHeight,
             BlockVec basePos,
-            TreeConfiguration config
-    ) {
+            TreeConfiguration config) {
         TrunkPlacer.setDirtAt(getter, logSetter, random, basePos.sub(0, 1, 0), config);
 
-        var firstBranchStart = Math.max(0, freeTreeHeight - 1 + this.branchStartOffsetFromTop.sample(random));
-        var secondBranchStart = Math.max(0, freeTreeHeight - 1 + this.secondBranchStartOffsetFromTop.sample(random));
+        var firstBranchStart =
+                Math.max(0, freeTreeHeight - 1 + this.branchStartOffsetFromTop.sample(random));
+        var secondBranchStart =
+                Math.max(
+                        0, freeTreeHeight - 1 + this.secondBranchStartOffsetFromTop.sample(random));
         if (secondBranchStart >= firstBranchStart) {
             secondBranchStart++;
         }
@@ -118,14 +135,35 @@ public final class CherryTrunkPlacer implements TrunkPlacer {
 
         var foliageAttachments = new ArrayList<FoliagePlacer.FoliageAttachment>();
         if (threeBranches) {
-            foliageAttachments.add(new FoliagePlacer.FoliageAttachment(basePos.add(0, trunkHeight, 0), 0, false));
+            foliageAttachments.add(
+                    new FoliagePlacer.FoliageAttachment(basePos.add(0, trunkHeight, 0), 0, false));
         }
 
         var direction = HorizontalDirection.random(random);
 
-        foliageAttachments.add(this.generateBranch(getter, logSetter, random, freeTreeHeight, basePos, config, direction, firstBranchStart, firstBranchStart < trunkHeight - 1));
+        foliageAttachments.add(
+                this.generateBranch(
+                        getter,
+                        logSetter,
+                        random,
+                        freeTreeHeight,
+                        basePos,
+                        config,
+                        direction,
+                        firstBranchStart,
+                        firstBranchStart < trunkHeight - 1));
         if (atLeastTwoBranches) {
-            foliageAttachments.add(this.generateBranch(getter, logSetter, random, freeTreeHeight, basePos, config, direction.opposite(), secondBranchStart, secondBranchStart < trunkHeight - 1));
+            foliageAttachments.add(
+                    this.generateBranch(
+                            getter,
+                            logSetter,
+                            random,
+                            freeTreeHeight,
+                            basePos,
+                            config,
+                            direction.opposite(),
+                            secondBranchStart,
+                            secondBranchStart < trunkHeight - 1));
         }
 
         return foliageAttachments;
@@ -140,28 +178,34 @@ public final class CherryTrunkPlacer implements TrunkPlacer {
             TreeConfiguration config,
             HorizontalDirection direction,
             int branchStart,
-            boolean trunkContinuesAboveBranch
-    ) {
+            boolean trunkContinuesAboveBranch) {
         var currentPos = basePos.add(0, branchStart, 0);
 
         var branchEndOffset = freeTreeHeight - 1 + this.branchEndOffsetFromTop.sample(random);
         var shortOrContinues = trunkContinuesAboveBranch || branchEndOffset < branchStart;
-        var horizontalLength = this.branchHorizontalLength.sample(random) + (shortOrContinues ? 1 : 0);
+        var horizontalLength =
+                this.branchHorizontalLength.sample(random) + (shortOrContinues ? 1 : 0);
 
-        var targetPos = basePos.add(direction.stepX * horizontalLength, branchEndOffset, direction.stepZ * horizontalLength);
+        var targetPos =
+                basePos.add(
+                        direction.stepX * horizontalLength,
+                        branchEndOffset,
+                        direction.stepZ * horizontalLength);
         var initialSteps = shortOrContinues ? 2 : 1;
 
         for (var branchIndex = 0; branchIndex < initialSteps; branchIndex++) {
             currentPos = currentPos.add(direction.stepX, 0, direction.stepZ);
-            this.placeLogWithAxis(getter, logSetter, random, currentPos, config, direction.axisProperty());
+            this.placeLogWithAxis(
+                    getter, logSetter, random, currentPos, config, direction.axisProperty());
         }
 
         var verticalStep = targetPos.blockY() > currentPos.blockY() ? 1 : -1;
 
         while (true) {
-            var manhattan = Math.abs(targetPos.blockX() - currentPos.blockX())
-                    + Math.abs(targetPos.blockY() - currentPos.blockY())
-                    + Math.abs(targetPos.blockZ() - currentPos.blockZ());
+            var manhattan =
+                    Math.abs(targetPos.blockX() - currentPos.blockX())
+                            + Math.abs(targetPos.blockY() - currentPos.blockY())
+                            + Math.abs(targetPos.blockZ() - currentPos.blockZ());
 
             if (manhattan == 0) {
                 return new FoliagePlacer.FoliageAttachment(targetPos.add(0, 1, 0), 0, false);
@@ -176,7 +220,8 @@ public final class CherryTrunkPlacer implements TrunkPlacer {
                 this.placeLog(getter, logSetter, random, currentPos, config);
             } else {
                 currentPos = currentPos.add(direction.stepX, 0, direction.stepZ);
-                this.placeLogWithAxis(getter, logSetter, random, currentPos, config, direction.axisProperty());
+                this.placeLogWithAxis(
+                        getter, logSetter, random, currentPos, config, direction.axisProperty());
             }
         }
     }
@@ -187,8 +232,7 @@ public final class CherryTrunkPlacer implements TrunkPlacer {
             RandomSource random,
             BlockVec pos,
             TreeConfiguration config,
-            String axis
-    ) {
+            String axis) {
         if (!this.isValidTreePosition(getter, pos)) {
             return;
         }
@@ -203,20 +247,23 @@ public final class CherryTrunkPlacer implements TrunkPlacer {
 
     @Override
     public int getTreeHeight(RandomSource random) {
-        return this.baseHeight + random.nextInt(this.heightRandA + 1) + random.nextInt(this.heightRandB + 1);
+        return this.baseHeight
+                + random.nextInt(this.heightRandA + 1)
+                + random.nextInt(this.heightRandB + 1);
     }
 
     /**
-     * Vanilla {@code Direction.Plane.HORIZONTAL.faces}: {@code {NORTH, EAST,
-     * SOUTH, WEST}}, so {@code random.nextInt(4)} selects the same direction.
+     * Vanilla {@code Direction.Plane.HORIZONTAL.faces}: {@code {NORTH, EAST, SOUTH, WEST}}, so
+     * {@code random.nextInt(4)} selects the same direction.
      */
     private record HorizontalDirection(int stepX, int stepZ) {
-        private static final HorizontalDirection[] VALUES = new HorizontalDirection[]{
-                new HorizontalDirection(0, -1),
-                new HorizontalDirection(1, 0),
-                new HorizontalDirection(0, 1),
-                new HorizontalDirection(-1, 0)
-        };
+        private static final HorizontalDirection[] VALUES =
+                new HorizontalDirection[] {
+                    new HorizontalDirection(0, -1),
+                    new HorizontalDirection(1, 0),
+                    new HorizontalDirection(0, 1),
+                    new HorizontalDirection(-1, 0)
+                };
 
         private static HorizontalDirection random(RandomSource random) {
             return VALUES[random.nextInt(VALUES.length)];
@@ -234,4 +281,3 @@ public final class CherryTrunkPlacer implements TrunkPlacer {
         }
     }
 }
-

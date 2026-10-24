@@ -8,21 +8,20 @@ import net.minestom.server.instance.block.Block;
 import net.minestom.server.utils.Direction;
 
 /**
- * Parsed data from a jigsaw block in a structure template, mirroring vanilla's
- * {@code StructureTemplate.JigsawBlockInfo}.
+ * Parsed data from a jigsaw block in a structure template, mirroring vanilla's {@code
+ * StructureTemplate.JigsawBlockInfo}.
  *
- * <p>Jigsaw blocks are the connection points used during structure assembly.
- * Each jigsaw defines:
+ * <p>Jigsaw blocks are the connection points used during structure assembly. Each jigsaw defines:
+ *
  * <ul>
  *   <li>{@code pool} - The template pool to draw connecting pieces from
  *   <li>{@code name} - This jigsaw's identifier (matched by other jigsaws' targets)
  *   <li>{@code target} - The name to look for on connecting pieces
  *   <li>{@code front} - Direction the jigsaw faces (where pieces connect)
  *   <li>{@code jointType} - How rotations are constrained at this connection
- *   <li>{@code placementPriority} - Expansion-queue priority of the piece this
- *       jigsaw spawns (26.2)
- *   <li>{@code selectionPriority} - Order this jigsaw is processed within its
- *       piece, after shuffling (26.2)
+ *   <li>{@code placementPriority} - Expansion-queue priority of the piece this jigsaw spawns (26.2)
+ *   <li>{@code selectionPriority} - Order this jigsaw is processed within its piece, after
+ *       shuffling (26.2)
  * </ul>
  */
 public record JigsawBlockInfo(
@@ -35,8 +34,7 @@ public record JigsawBlockInfo(
         Direction top,
         int placementPriority,
         int selectionPriority,
-        String finalState
-) {
+        String finalState) {
     private static final Key EMPTY_KEY = Key.key("minecraft:empty");
     private static final String EMPTY_NAME = "minecraft:empty";
 
@@ -71,8 +69,17 @@ public record JigsawBlockInfo(
             finalState = "minecraft:air";
         }
 
-        return new JigsawBlockInfo(position, pool, name, target, jointType, front, top,
-                placementPriority, selectionPriority, finalState);
+        return new JigsawBlockInfo(
+                position,
+                pool,
+                name,
+                target,
+                jointType,
+                front,
+                top,
+                placementPriority,
+                selectionPriority,
+                finalState);
     }
 
     public JigsawBlockInfo withRotation(Rotation rotation, BlockVec newPosition) {
@@ -86,14 +93,12 @@ public record JigsawBlockInfo(
                 rotation.rotate(this.top),
                 this.placementPriority,
                 this.selectionPriority,
-                this.finalState
-        );
+                this.finalState);
     }
 
     /**
-     * Vanilla {@code JigsawBlock.canAttach}: fronts must oppose, the source's
-     * target must match the candidate's name, and non-rollable joints must
-     * share their top direction.
+     * Vanilla {@code JigsawBlock.canAttach}: fronts must oppose, the source's target must match the
+     * candidate's name, and non-rollable joints must share their top direction.
      */
     public boolean canAttach(JigsawBlockInfo other) {
         return this.front == other.front.opposite()
@@ -113,12 +118,12 @@ public record JigsawBlockInfo(
     private static Direction[] parseOrientation(String orientation) {
         var parts = orientation.toLowerCase().split("_");
         if (parts.length != 2) {
-            return new Direction[]{Direction.SOUTH, Direction.UP};
+            return new Direction[] {Direction.SOUTH, Direction.UP};
         }
 
         var front = parseDirection(parts[0]);
         var top = parseDirection(parts[1]);
-        return new Direction[]{front, top};
+        return new Direction[] {front, top};
     }
 
     private static Direction parseDirection(String name) {

@@ -8,11 +8,15 @@ import rocks.minestom.worldgen.feature.configurations.TreeConfiguration;
 import rocks.minestom.worldgen.random.RandomSource;
 
 public record DarkOakFoliagePlacer(int radius, int offset) implements FoliagePlacer {
-    public static final Codec<DarkOakFoliagePlacer> CODEC = StructCodec.struct(
-            "radius", Codec.INT, DarkOakFoliagePlacer::radius,
-            "offset", Codec.INT, DarkOakFoliagePlacer::offset,
-            DarkOakFoliagePlacer::new
-    );
+    public static final Codec<DarkOakFoliagePlacer> CODEC =
+            StructCodec.struct(
+                    "radius",
+                    Codec.INT,
+                    DarkOakFoliagePlacer::radius,
+                    "offset",
+                    Codec.INT,
+                    DarkOakFoliagePlacer::offset,
+                    DarkOakFoliagePlacer::new);
 
     @Override
     public void createFoliage(
@@ -23,21 +27,26 @@ public record DarkOakFoliagePlacer(int radius, int offset) implements FoliagePla
             int maxFreeTreeHeight,
             FoliageAttachment attachment,
             int foliageHeight,
-            int foliageRadius
-    ) {
+            int foliageRadius) {
         var center = attachment.pos().add(0, this.offset, 0);
         var doubleTrunk = attachment.doubleTrunk();
 
         if (doubleTrunk) {
-            this.placeLeavesRow(getter, foliageSetter, random, config, center, foliageRadius + 2, -1, true);
-            this.placeLeavesRow(getter, foliageSetter, random, config, center, foliageRadius + 3, 0, true);
-            this.placeLeavesRow(getter, foliageSetter, random, config, center, foliageRadius + 2, 1, true);
+            this.placeLeavesRow(
+                    getter, foliageSetter, random, config, center, foliageRadius + 2, -1, true);
+            this.placeLeavesRow(
+                    getter, foliageSetter, random, config, center, foliageRadius + 3, 0, true);
+            this.placeLeavesRow(
+                    getter, foliageSetter, random, config, center, foliageRadius + 2, 1, true);
             if (random.nextBoolean()) {
-                this.placeLeavesRow(getter, foliageSetter, random, config, center, foliageRadius, 2, true);
+                this.placeLeavesRow(
+                        getter, foliageSetter, random, config, center, foliageRadius, 2, true);
             }
         } else {
-            this.placeLeavesRow(getter, foliageSetter, random, config, center, foliageRadius + 2, -1, false);
-            this.placeLeavesRow(getter, foliageSetter, random, config, center, foliageRadius + 1, 0, false);
+            this.placeLeavesRow(
+                    getter, foliageSetter, random, config, center, foliageRadius + 2, -1, false);
+            this.placeLeavesRow(
+                    getter, foliageSetter, random, config, center, foliageRadius + 1, 0, false);
         }
     }
 
@@ -59,22 +68,29 @@ public record DarkOakFoliagePlacer(int radius, int offset) implements FoliagePla
             BlockVec center,
             int radius,
             int yOffset,
-            boolean doubleTrunk
-    ) {
+            boolean doubleTrunk) {
         var widthOffset = doubleTrunk ? 1 : 0;
 
         for (var x = -radius; x <= radius + widthOffset; x++) {
             for (var z = -radius; z <= radius + widthOffset; z++) {
                 if (!this.shouldSkipLocationSigned(random, x, yOffset, z, radius, doubleTrunk)) {
-                    var position = new BlockVec(center.blockX() + x, center.blockY() + yOffset, center.blockZ() + z);
+                    var position =
+                            new BlockVec(
+                                    center.blockX() + x,
+                                    center.blockY() + yOffset,
+                                    center.blockZ() + z);
                     FoliagePlacer.tryPlaceLeaf(getter, setter, random, config, position);
                 }
             }
         }
     }
 
-    private boolean shouldSkipLocationSigned(RandomSource random, int x, int y, int z, int radius, boolean doubleTrunk) {
-        if (y == 0 && doubleTrunk && (x == -radius || x >= radius) && (z == -radius || z >= radius)) {
+    private boolean shouldSkipLocationSigned(
+            RandomSource random, int x, int y, int z, int radius, boolean doubleTrunk) {
+        if (y == 0
+                && doubleTrunk
+                && (x == -radius || x >= radius)
+                && (z == -radius || z >= radius)) {
             return true;
         }
 
@@ -83,7 +99,8 @@ public record DarkOakFoliagePlacer(int radius, int offset) implements FoliagePla
         return this.shouldSkipLocation(random, absX, y, absZ, radius, doubleTrunk);
     }
 
-    private boolean shouldSkipLocation(RandomSource random, int absX, int y, int absZ, int radius, boolean doubleTrunk) {
+    private boolean shouldSkipLocation(
+            RandomSource random, int absX, int y, int absZ, int radius, boolean doubleTrunk) {
         if (y == -1 && !doubleTrunk) {
             return absX == radius && absZ == radius;
         }

@@ -21,7 +21,8 @@ public class Snowball extends CustomEntityProjectile implements ItemHoldingProje
         this.triggerStatus((byte) 3); // Snowball particles
 
         var damage = entity.getEntityType() == EntityType.BLAZE ? 3 : 0;
-        ((LivingEntity) entity).damage(new Damage(DamageType.THROWN, this, this.getShooter(), null, damage));
+        ((LivingEntity) entity)
+                .damage(new Damage(DamageType.THROWN, this, this.getShooter(), null, damage));
 
         return true;
     }

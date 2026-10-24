@@ -8,7 +8,8 @@ import org.jetbrains.annotations.NotNull;
 import rocks.minestom.crafting.CraftingManager;
 import rocks.minestom.crafting.CraftingWorkspace;
 
-public final class CraftingShiftClickListener implements EventListener<@NotNull InventoryPreClickEvent> {
+public final class CraftingShiftClickListener
+        implements EventListener<@NotNull InventoryPreClickEvent> {
     private final CraftingManager craftingManager;
 
     public CraftingShiftClickListener(CraftingManager craftingManager) {
@@ -38,7 +39,8 @@ public final class CraftingShiftClickListener implements EventListener<@NotNull 
         return Result.SUCCESS;
     }
 
-    private void handleResultSlotClick(InventoryPreClickEvent event, CraftingWorkspace workspace, Click click) {
+    private void handleResultSlotClick(
+            InventoryPreClickEvent event, CraftingWorkspace workspace, Click click) {
         if (click instanceof Click.LeftShift || click instanceof Click.RightShift) {
             this.handleShiftCraft(event, workspace);
             return;
@@ -75,7 +77,8 @@ public final class CraftingShiftClickListener implements EventListener<@NotNull 
         }
     }
 
-    private void handleResultPickup(InventoryPreClickEvent event, CraftingWorkspace workspace, boolean isRightClick) {
+    private void handleResultPickup(
+            InventoryPreClickEvent event, CraftingWorkspace workspace, boolean isRightClick) {
         event.setCancelled(true);
         var recipeMatch = workspace.currentMatch();
 
@@ -100,7 +103,8 @@ public final class CraftingShiftClickListener implements EventListener<@NotNull 
         if (cursorItem.isAir()) {
             playerInventory.setCursorItem(resultStack.withAmount(pickupAmount));
         } else {
-            playerInventory.setCursorItem(cursorItem.withAmount(cursorItem.amount() + pickupAmount));
+            playerInventory.setCursorItem(
+                    cursorItem.withAmount(cursorItem.amount() + pickupAmount));
         }
 
         workspace.craft(event.getPlayer());

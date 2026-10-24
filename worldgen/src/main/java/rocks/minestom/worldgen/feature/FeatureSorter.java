@@ -1,7 +1,5 @@
 package rocks.minestom.worldgen.feature;
 
-import net.kyori.adventure.key.Key;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -12,16 +10,16 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import net.kyori.adventure.key.Key;
 
 /**
- * Builds the deterministic global ordering of placed features per decoration step.
- * Vanilla assigns each feature an index within its step by topologically sorting
- * the per-biome feature lists; that index seeds the feature's random, so this
- * ordering must match vanilla exactly for placement parity.
+ * Builds the deterministic global ordering of placed features per decoration step. Vanilla assigns
+ * each feature an index within its step by topologically sorting the per-biome feature lists; that
+ * index seeds the feature's random, so this ordering must match vanilla exactly for placement
+ * parity.
  */
 public final class FeatureSorter {
-    private FeatureSorter() {
-    }
+    private FeatureSorter() {}
 
     public record StepFeatureData(List<Key> features, Map<Key, Integer> indexMapping) {
         static StepFeatureData of(List<Key> features) {
@@ -33,12 +31,14 @@ public final class FeatureSorter {
         }
     }
 
-    private record FeatureData(int featureIndex, int step, Key feature) {
-    }
+    private record FeatureData(int featureIndex, int step, Key feature) {}
 
-    public static List<StepFeatureData> buildFeaturesPerStep(List<Key> biomes, Function<Key, List<List<Key>>> featureGetter) {
+    public static List<StepFeatureData> buildFeaturesPerStep(
+            List<Key> biomes, Function<Key, List<List<Key>>> featureGetter) {
         var featureIndexes = new HashMap<Key, Integer>();
-        var comparator = Comparator.comparingInt(FeatureData::step).thenComparingInt(FeatureData::featureIndex);
+        var comparator =
+                Comparator.comparingInt(FeatureData::step)
+                        .thenComparingInt(FeatureData::featureIndex);
         var edges = new TreeMap<FeatureData, Set<FeatureData>>(comparator);
         var maxStep = 0;
 
@@ -49,13 +49,16 @@ public final class FeatureSorter {
 
             for (var step = 0; step < featuresPerStep.size(); step++) {
                 for (var feature : featuresPerStep.get(step)) {
-                    var featureIndex = featureIndexes.computeIfAbsent(feature, key -> featureIndexes.size());
+                    var featureIndex =
+                            featureIndexes.computeIfAbsent(feature, key -> featureIndexes.size());
                     featureList.add(new FeatureData(featureIndex, step, feature));
                 }
             }
 
             for (var index = 0; index < featureList.size(); index++) {
-                var successors = edges.computeIfAbsent(featureList.get(index), key -> new TreeSet<>(comparator));
+                var successors =
+                        edges.computeIfAbsent(
+                                featureList.get(index), key -> new TreeSet<>(comparator));
                 if (index < featureList.size() - 1) {
                     successors.add(featureList.get(index + 1));
                 }
@@ -67,7 +70,8 @@ public final class FeatureSorter {
         var sorted = new ArrayList<FeatureData>();
 
         for (var feature : edges.keySet()) {
-            if (!discovered.contains(feature) && depthFirstSearch(edges, discovered, visiting, sorted::add, feature)) {
+            if (!discovered.contains(feature)
+                    && depthFirstSearch(edges, discovered, visiting, sorted::add, feature)) {
                 throw new IllegalStateException("Feature order cycle found");
             }
         }
@@ -76,17 +80,22 @@ public final class FeatureSorter {
         var result = new ArrayList<StepFeatureData>(maxStep);
         for (var step = 0; step < maxStep; step++) {
             var stepIndex = step;
-            var featuresInStep = reversed.stream()
-                    .filter(data -> data.step() == stepIndex)
-                    .map(FeatureData::feature)
-                    .toList();
+            var featuresInStep =
+                    reversed.stream()
+                            .filter(data -> data.step() == stepIndex)
+                            .map(FeatureData::feature)
+                            .toList();
             result.add(StepFeatureData.of(featuresInStep));
         }
         return result;
     }
 
-    private static boolean depthFirstSearch(Map<FeatureData, Set<FeatureData>> graph, Set<FeatureData> discovered,
-            Set<FeatureData> visiting, Consumer<FeatureData> onFinished, FeatureData start) {
+    private static boolean depthFirstSearch(
+            Map<FeatureData, Set<FeatureData>> graph,
+            Set<FeatureData> discovered,
+            Set<FeatureData> visiting,
+            Consumer<FeatureData> onFinished,
+            FeatureData start) {
         if (discovered.contains(start)) {
             return false;
         }

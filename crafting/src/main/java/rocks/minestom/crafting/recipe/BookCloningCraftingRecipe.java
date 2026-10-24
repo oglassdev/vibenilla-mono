@@ -1,6 +1,8 @@
 package rocks.minestom.crafting.recipe;
 
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import java.util.ArrayList;
+import java.util.List;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.item.ItemStack;
@@ -9,14 +11,12 @@ import rocks.minestom.crafting.CraftingGrid;
 import rocks.minestom.crafting.Ingredient;
 import rocks.minestom.crafting.ItemTagManager;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public final class BookCloningCraftingRecipe implements CraftingRecipe {
     private final Ingredient bookCloningTargetIngredient;
 
     public BookCloningCraftingRecipe(ItemTagManager tagManager) {
-        this.bookCloningTargetIngredient = Ingredient.ofTag(tagManager.materials(Key.key("minecraft:book_cloning_target")));
+        this.bookCloningTargetIngredient =
+                Ingredient.ofTag(tagManager.materials(Key.key("minecraft:book_cloning_target")));
     }
 
     @Override
@@ -40,7 +40,8 @@ public final class BookCloningCraftingRecipe implements CraftingRecipe {
                     return null;
                 }
                 writtenBookSlot = gridSlot;
-            } else if (this.bookCloningTargetIngredient != null && this.bookCloningTargetIngredient.matches(item)) {
+            } else if (this.bookCloningTargetIngredient != null
+                    && this.bookCloningTargetIngredient.matches(item)) {
                 blankBookCount++;
                 usage.addTo(gridSlot.slotIndex(), 1);
             } else {
@@ -61,15 +62,18 @@ public final class BookCloningCraftingRecipe implements CraftingRecipe {
 
         usage.addTo(writtenBookSlot.slotIndex(), 1);
 
-        var newContent = new WrittenBookContent(
-                content.title(),
-                content.author(),
-                content.generation() + 1,
-                content.pages(),
-                content.resolved()
-        );
+        var newContent =
+                new WrittenBookContent(
+                        content.title(),
+                        content.author(),
+                        content.generation() + 1,
+                        content.pages(),
+                        content.resolved());
 
-        var result = writtenBook.with(DataComponents.WRITTEN_BOOK_CONTENT, newContent).withAmount(blankBookCount);
+        var result =
+                writtenBook
+                        .with(DataComponents.WRITTEN_BOOK_CONTENT, newContent)
+                        .withAmount(blankBookCount);
 
         return new CraftingRecipeMatch(this, result, usage, craftingGrid);
     }

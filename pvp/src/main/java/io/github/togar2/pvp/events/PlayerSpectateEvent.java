@@ -7,37 +7,35 @@ import net.minestom.server.event.trait.EntityInstanceEvent;
 import net.minestom.server.event.trait.PlayerEvent;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a spectator tries to spectate an entity by attacking it.
- */
+/** Called when a spectator tries to spectate an entity by attacking it. */
 public class PlayerSpectateEvent implements PlayerEvent, EntityInstanceEvent, CancellableEvent {
 
-	private final Player player;
-	private final Entity target;
+    private final Player player;
+    private final Entity target;
 
-	private boolean cancelled;
+    private boolean cancelled;
 
-	public PlayerSpectateEvent(@NotNull Player player, @NotNull Entity target) {
-		this.player = player;
-		this.target = target;
-	}
+    public PlayerSpectateEvent(@NotNull Player player, @NotNull Entity target) {
+        this.player = player;
+        this.target = target;
+    }
 
-	@Override
-	public @NotNull Player getPlayer() {
-		return this.player;
-	}
+    @Override
+    public @NotNull Player getPlayer() {
+        return this.player;
+    }
 
-	public Entity getTarget() {
-		return this.target;
-	}
+    public Entity getTarget() {
+        return this.target;
+    }
 
-	@Override
-	public boolean isCancelled() {
-		return this.cancelled;
-	}
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
 
-	@Override
-	public void setCancelled(boolean cancel) {
-		this.cancelled = cancel;
-	}
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
+    }
 }

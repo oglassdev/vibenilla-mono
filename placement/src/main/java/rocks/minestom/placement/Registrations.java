@@ -1,14 +1,11 @@
 package rocks.minestom.placement;
 
 import net.kyori.adventure.key.Key;
-import net.minestom.server.MinecraftServer;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockManager;
 
 public final class Registrations {
-    private Registrations() {
-
-    }
+    private Registrations() {}
 
     public static void registerAllVanilla(BlockManager blockManager) {
         registerHandlers(blockManager);
@@ -39,13 +36,17 @@ public final class Registrations {
         registerByTag(FenceGatePlacementRule::new, "minecraft:fence_gates");
         registerByTag(WallPlacementRule::new, "minecraft:walls");
         registerByTag(PressurePlatePlacementRule::new, "minecraft:pressure_plates");
-        registerByTag(block -> new FaceAttachedPlacementRule(block, ButtonBlockHandler.INSTANCE), "minecraft:buttons");
+        registerByTag(
+                block -> new FaceAttachedPlacementRule(block, ButtonBlockHandler.INSTANCE),
+                "minecraft:buttons");
         registerByTag(RailPlacementRule::new, "minecraft:rails");
         registerByTag(BedPlacementRule::new, "minecraft:beds");
         Utility.registerPlacementRules(BedPlacementRule::new, Block.STRAW_BED);
         registerByTag(BannerPlacementRule::new, "minecraft:banners");
         registerByTag(StandingSignPlacementRule::new, "minecraft:standing_signs");
-        registerByTag(block -> new WallMountedPlacementRule(block, SignBlockHandler.INSTANCE), "minecraft:wall_signs");
+        registerByTag(
+                block -> new WallMountedPlacementRule(block, SignBlockHandler.INSTANCE),
+                "minecraft:wall_signs");
         registerByTag(WallMountedPlacementRule::new, "minecraft:wall_banners");
         registerByTag(CeilingHangingSignPlacementRule::new, "minecraft:ceiling_hanging_signs");
         registerByTag(WallHangingSignPlacementRule::new, "minecraft:wall_hanging_signs");
@@ -88,26 +89,28 @@ public final class Registrations {
                 Block.DRIED_GHAST);
 
         Utility.registerPlacementRules(
-                block -> new HorizontalFacingPlacementRule(block, ConsumeInteractionBlockHandler.INSTANCE),
+                block ->
+                        new HorizontalFacingPlacementRule(
+                                block, ConsumeInteractionBlockHandler.INSTANCE),
                 Block.FURNACE,
                 Block.BLAST_FURNACE,
                 Block.SMOKER,
                 Block.LECTERN,
                 Block.LOOM,
                 Block.STONECUTTER);
-        Utility.registerPlacementRules(HorizontalFacingPlacementRule::new,
-                Block.CHISELED_BOOKSHELF,
-                Block.VAULT);
+        Utility.registerPlacementRules(
+                HorizontalFacingPlacementRule::new, Block.CHISELED_BOOKSHELF, Block.VAULT);
         Utility.registerPlacementRules(
                 block -> new HorizontalFacingPlacementRule(block, BeeHiveBlockHandler.INSTANCE),
                 Block.BEEHIVE,
                 Block.BEE_NEST);
         Utility.registerPlacementRules(
-                block -> new WaterloggedHorizontalFacingPlacementRule(
-                        block, true, null),
+                block -> new WaterloggedHorizontalFacingPlacementRule(block, true, null),
                 Block.CALIBRATED_SCULK_SENSOR);
         Utility.registerPlacementRules(
-                block -> new DirectionalPlacementRule(block, ConsumeInteractionBlockHandler.INSTANCE),
+                block ->
+                        new DirectionalPlacementRule(
+                                block, ConsumeInteractionBlockHandler.INSTANCE),
                 Block.BARREL);
         Utility.registerPlacementRules(
                 block -> new HorizontalFacingPlacementRule(block, RepeaterBlockHandler.INSTANCE),
@@ -117,18 +120,21 @@ public final class Registrations {
                 Block.COMPARATOR);
 
         Utility.registerPlacementRules(
-                DirectionalPlacementRule::new,
-                Block.PISTON,
-                Block.STICKY_PISTON);
-        Utility.registerPlacementRules(block -> new DirectionalPlacementRule(block, true), Block.OBSERVER);
+                DirectionalPlacementRule::new, Block.PISTON, Block.STICKY_PISTON);
+        Utility.registerPlacementRules(
+                block -> new DirectionalPlacementRule(block, true), Block.OBSERVER);
 
         Utility.registerPlacementRules(
-                block -> new DirectionalPlacementRule(block, GameMasterInteractionBlockHandler.INSTANCE),
+                block ->
+                        new DirectionalPlacementRule(
+                                block, GameMasterInteractionBlockHandler.INSTANCE),
                 Block.COMMAND_BLOCK,
                 Block.CHAIN_COMMAND_BLOCK,
                 Block.REPEATING_COMMAND_BLOCK);
         Utility.registerPlacementRules(
-                block -> new DirectionalPlacementRule(block, ConsumeInteractionBlockHandler.INSTANCE),
+                block ->
+                        new DirectionalPlacementRule(
+                                block, ConsumeInteractionBlockHandler.INSTANCE),
                 Block.DISPENSER,
                 Block.DROPPER);
 
@@ -174,8 +180,11 @@ public final class Registrations {
                 Block.MAGENTA_STAINED_GLASS_PANE,
                 Block.PINK_STAINED_GLASS_PANE);
 
-        Utility.registerPlacementRules(block -> new FaceAttachedPlacementRule(block, LeverBlockHandler.INSTANCE), Block.LEVER);
-        blockManager.registerBlockPlacementRule(new HandlerAttachingPlacementRule(Block.CAKE, CakeBlockHandler.INSTANCE));
+        Utility.registerPlacementRules(
+                block -> new FaceAttachedPlacementRule(block, LeverBlockHandler.INSTANCE),
+                Block.LEVER);
+        blockManager.registerBlockPlacementRule(
+                new HandlerAttachingPlacementRule(Block.CAKE, CakeBlockHandler.INSTANCE));
         Utility.registerPlacementRules(
                 block -> new HandlerAttachingPlacementRule(block, CandleCakeBlockHandler.INSTANCE),
                 Block.CANDLE_CAKE,
@@ -195,10 +204,14 @@ public final class Registrations {
                 Block.PURPLE_CANDLE_CAKE,
                 Block.MAGENTA_CANDLE_CAKE,
                 Block.PINK_CANDLE_CAKE);
-        blockManager.registerBlockPlacementRule(new HandlerAttachingPlacementRule(Block.JUKEBOX, JukeboxBlockHandler.INSTANCE));
-        blockManager.registerBlockPlacementRule(new HandlerAttachingPlacementRule(Block.COMPOSTER, ComposterBlockHandler.INSTANCE));
+        blockManager.registerBlockPlacementRule(
+                new HandlerAttachingPlacementRule(Block.JUKEBOX, JukeboxBlockHandler.INSTANCE));
+        blockManager.registerBlockPlacementRule(
+                new HandlerAttachingPlacementRule(Block.COMPOSTER, ComposterBlockHandler.INSTANCE));
         Utility.registerPlacementRules(
-                block -> new HandlerAttachingPlacementRule(block, ConsumeInteractionBlockHandler.INSTANCE),
+                block ->
+                        new HandlerAttachingPlacementRule(
+                                block, ConsumeInteractionBlockHandler.INSTANCE),
                 Block.BEACON,
                 Block.BREWING_STAND,
                 Block.CARTOGRAPHY_TABLE,
@@ -207,11 +220,15 @@ public final class Registrations {
                 Block.GRINDSTONE,
                 Block.SMITHING_TABLE);
         Utility.registerPlacementRules(
-                block -> new HandlerAttachingPlacementRule(block, GameMasterInteractionBlockHandler.INSTANCE),
+                block ->
+                        new HandlerAttachingPlacementRule(
+                                block, GameMasterInteractionBlockHandler.INSTANCE),
                 Block.STRUCTURE_BLOCK,
                 Block.TEST_BLOCK,
                 Block.TEST_INSTANCE_BLOCK);
-        blockManager.registerBlockPlacementRule(new HandlerAttachingPlacementRule(Block.DAYLIGHT_DETECTOR, DaylightDetectorBlockHandler.INSTANCE));
+        blockManager.registerBlockPlacementRule(
+                new HandlerAttachingPlacementRule(
+                        Block.DAYLIGHT_DETECTOR, DaylightDetectorBlockHandler.INSTANCE));
         blockManager.registerBlockPlacementRule(new NoteBlockPlacementRule(Block.NOTE_BLOCK));
         Utility.registerPlacementRules(
                 block -> new HandlerAttachingPlacementRule(block, FlowerPotBlockHandler.INSTANCE),
@@ -258,9 +275,11 @@ public final class Registrations {
         Utility.registerPlacementRules(CactusPlacementRule::new, Block.CACTUS);
         Utility.registerPlacementRules(CactusFlowerPlacementRule::new, Block.CACTUS_FLOWER);
         Utility.registerPlacementRules(SugarCanePlacementRule::new, Block.SUGAR_CANE);
-        Utility.registerPlacementRules(MushroomPlacementRule::new, Block.RED_MUSHROOM, Block.BROWN_MUSHROOM);
+        Utility.registerPlacementRules(
+                MushroomPlacementRule::new, Block.RED_MUSHROOM, Block.BROWN_MUSHROOM);
 
-        Utility.registerPlacementRules(SkullPlacementRule::new,
+        Utility.registerPlacementRules(
+                SkullPlacementRule::new,
                 Block.SKELETON_SKULL,
                 Block.WITHER_SKELETON_SKULL,
                 Block.ZOMBIE_HEAD,
@@ -268,7 +287,8 @@ public final class Registrations {
                 Block.CREEPER_HEAD,
                 Block.DRAGON_HEAD,
                 Block.PIGLIN_HEAD);
-        Utility.registerPlacementRules(WallSkullPlacementRule::new,
+        Utility.registerPlacementRules(
+                WallSkullPlacementRule::new,
                 Block.SKELETON_WALL_SKULL,
                 Block.WITHER_SKELETON_WALL_SKULL,
                 Block.ZOMBIE_WALL_HEAD,
@@ -276,32 +296,38 @@ public final class Registrations {
                 Block.CREEPER_WALL_HEAD,
                 Block.DRAGON_WALL_HEAD,
                 Block.PIGLIN_WALL_HEAD);
-        Utility.registerPlacementRules(WallTorchPlacementRule::new,
+        Utility.registerPlacementRules(
+                WallTorchPlacementRule::new,
                 Block.WALL_TORCH,
                 Block.SOUL_WALL_TORCH,
                 Block.REDSTONE_WALL_TORCH,
                 Block.COPPER_WALL_TORCH);
-        Utility.registerPlacementRules(TorchPlacementRule::new,
+        Utility.registerPlacementRules(
+                TorchPlacementRule::new,
                 Block.TORCH,
                 Block.SOUL_TORCH,
                 Block.REDSTONE_TORCH,
                 Block.COPPER_TORCH);
-        Utility.registerPlacementRules(PlantPlacementRule::new,
+        Utility.registerPlacementRules(
+                PlantPlacementRule::new,
                 Block.BUSH,
                 Block.FERN,
                 Block.FIREFLY_BUSH,
                 Block.RED_SHRUB);
         Utility.registerPlacementRules(
-                block -> new PlantPlacementRule(block, Key.key("minecraft:supports_crimson_fungus")),
+                block ->
+                        new PlantPlacementRule(block, Key.key("minecraft:supports_crimson_fungus")),
                 Block.CRIMSON_FUNGUS);
         Utility.registerPlacementRules(
                 block -> new PlantPlacementRule(block, Key.key("minecraft:supports_warped_fungus")),
                 Block.WARPED_FUNGUS);
         Utility.registerPlacementRules(
-                block -> new PlantPlacementRule(block, Key.key("minecraft:supports_nether_sprouts")),
+                block ->
+                        new PlantPlacementRule(block, Key.key("minecraft:supports_nether_sprouts")),
                 Block.NETHER_SPROUTS);
         Utility.registerPlacementRules(
-                block -> new PlantPlacementRule(block, Key.key("minecraft:supports_dry_vegetation")),
+                block ->
+                        new PlantPlacementRule(block, Key.key("minecraft:supports_dry_vegetation")),
                 Block.DEAD_BUSH);
         Utility.registerPlacementRules(
                 block -> new PlantPlacementRule(block, Key.key("minecraft:supports_crimson_roots")),
@@ -311,7 +337,8 @@ public final class Registrations {
                 Block.WARPED_ROOTS);
         Utility.registerPlacementRules(LilyPadPlacementRule::new, Block.LILY_PAD);
         Utility.registerPlacementRules(CocoaPlacementRule::new, Block.COCOA);
-        Utility.registerPlacementRules(LanternPlacementRule::new,
+        Utility.registerPlacementRules(
+                LanternPlacementRule::new,
                 Block.LANTERN,
                 Block.SOUL_LANTERN,
                 Block.COPPER_LANTERN,
@@ -322,7 +349,8 @@ public final class Registrations {
                 Block.WAXED_EXPOSED_COPPER_LANTERN,
                 Block.WAXED_WEATHERED_COPPER_LANTERN,
                 Block.WAXED_OXIDIZED_COPPER_LANTERN);
-        Utility.registerPlacementRules(CandlePlacementRule::new,
+        Utility.registerPlacementRules(
+                CandlePlacementRule::new,
                 Block.CANDLE,
                 Block.WHITE_CANDLE,
                 Block.LIGHT_GRAY_CANDLE,
@@ -343,24 +371,25 @@ public final class Registrations {
         Utility.registerPlacementRules(SnowLayerPlacementRule::new, Block.SNOW);
         Utility.registerPlacementRules(SeaPicklePlacementRule::new, Block.SEA_PICKLE);
         Utility.registerPlacementRules(TurtleEggPlacementRule::new, Block.TURTLE_EGG);
-        Utility.registerPlacementRules(AnvilPlacementRule::new,
-                Block.ANVIL,
-                Block.CHIPPED_ANVIL,
-                Block.DAMAGED_ANVIL);
+        Utility.registerPlacementRules(
+                AnvilPlacementRule::new, Block.ANVIL, Block.CHIPPED_ANVIL, Block.DAMAGED_ANVIL);
         Utility.registerPlacementRules(HopperPlacementRule::new, Block.HOPPER);
         Utility.registerPlacementRules(BellPlacementRule::new, Block.BELL);
-        Utility.registerPlacementRules(MultifacePlacementRule::new,
+        Utility.registerPlacementRules(
+                MultifacePlacementRule::new,
                 Block.VINE,
                 Block.GLOW_LICHEN,
                 Block.SCULK_VEIN,
                 Block.RESIN_CLUMP);
-        Utility.registerPlacementRules(SegmentedPlacementRule::new,
+        Utility.registerPlacementRules(
+                SegmentedPlacementRule::new,
                 Block.PINK_PETALS,
                 Block.LEAF_LITTER,
                 Block.WILDFLOWERS);
         Utility.registerPlacementRules(ScaffoldingPlacementRule::new, Block.SCAFFOLDING);
 
-        Utility.registerPlacementRules(LightningRodPlacementRule::new,
+        Utility.registerPlacementRules(
+                LightningRodPlacementRule::new,
                 Block.LIGHTNING_ROD,
                 Block.EXPOSED_LIGHTNING_ROD,
                 Block.WEATHERED_LIGHTNING_ROD,
@@ -369,7 +398,8 @@ public final class Registrations {
                 Block.WAXED_EXPOSED_LIGHTNING_ROD,
                 Block.WAXED_WEATHERED_LIGHTNING_ROD,
                 Block.WAXED_OXIDIZED_LIGHTNING_ROD);
-        Utility.registerPlacementRules(AmethystClusterPlacementRule::new,
+        Utility.registerPlacementRules(
+                AmethystClusterPlacementRule::new,
                 Block.SMALL_AMETHYST_BUD,
                 Block.MEDIUM_AMETHYST_BUD,
                 Block.LARGE_AMETHYST_BUD,
@@ -385,7 +415,8 @@ public final class Registrations {
         Utility.registerPlacementRules(DecoratedPotPlacementRule::new, Block.DECORATED_POT);
         Utility.registerPlacementRules(EnderChestPlacementRule::new, Block.ENDER_CHEST);
         Utility.registerPlacementRules(BambooStalkPlacementRule::new, Block.BAMBOO);
-        Utility.registerPlacementRules(GrowingPlantHeadPlacementRule::new,
+        Utility.registerPlacementRules(
+                GrowingPlantHeadPlacementRule::new,
                 Block.KELP,
                 Block.WEEPING_VINES,
                 Block.TWISTING_VINES);
@@ -396,7 +427,8 @@ public final class Registrations {
                 block -> new HandlerAttachingPlacementRule(block, BerryBlockHandler.INSTANCE),
                 Block.CAVE_VINES_PLANT);
         Utility.registerPlacementRules(SeagrassPlacementRule::new, Block.SEAGRASS);
-        Utility.registerPlacementRules(MangrovePropagulePlacementRule::new, Block.MANGROVE_PROPAGULE);
+        Utility.registerPlacementRules(
+                MangrovePropagulePlacementRule::new, Block.MANGROVE_PROPAGULE);
         Utility.registerPlacementRules(HangingRootsPlacementRule::new, Block.HANGING_ROOTS);
         Utility.registerPlacementRules(
                 WaterloggedAxisPlacementRule::new,
@@ -409,32 +441,34 @@ public final class Registrations {
                 Block.WAXED_EXPOSED_COPPER_CHAIN,
                 Block.WAXED_WEATHERED_COPPER_CHAIN,
                 Block.WAXED_OXIDIZED_COPPER_CHAIN);
-        Utility.registerPlacementRules(WaterloggedDummyPlacementRule::new,
+        Utility.registerPlacementRules(
+                WaterloggedDummyPlacementRule::new,
                 Block.MANGROVE_ROOTS,
                 Block.HEAVY_CORE,
                 Block.BARRIER,
                 Block.SCULK_SENSOR,
                 Block.SCULK_SHRIEKER);
         Utility.registerPlacementRules(
-                block -> new WaterloggedDummyPlacementRule(block, true),
-                Block.CONDUIT);
-        Utility.registerPlacementRules(HugeMushroomPlacementRule::new,
+                block -> new WaterloggedDummyPlacementRule(block, true), Block.CONDUIT);
+        Utility.registerPlacementRules(
+                HugeMushroomPlacementRule::new,
                 Block.RED_MUSHROOM_BLOCK,
                 Block.BROWN_MUSHROOM_BLOCK,
                 Block.MUSHROOM_STEM);
-        Utility.registerPlacementRules(CampfirePlacementRule::new, Block.CAMPFIRE, Block.SOUL_CAMPFIRE);
+        Utility.registerPlacementRules(
+                CampfirePlacementRule::new, Block.CAMPFIRE, Block.SOUL_CAMPFIRE);
 
-        blockManager.registerBlockPlacementRule(new HandlerAttachingPlacementRule(
-                Block.RESPAWN_ANCHOR, RespawnAnchorBlockHandler.INSTANCE));
-        blockManager.registerBlockPlacementRule(new HandlerAttachingPlacementRule(
-                Block.DRAGON_EGG, DragonEggBlockHandler.INSTANCE));
+        blockManager.registerBlockPlacementRule(
+                new HandlerAttachingPlacementRule(
+                        Block.RESPAWN_ANCHOR, RespawnAnchorBlockHandler.INSTANCE));
+        blockManager.registerBlockPlacementRule(
+                new HandlerAttachingPlacementRule(
+                        Block.DRAGON_EGG, DragonEggBlockHandler.INSTANCE));
 
         Utility.registerPlacementRules(ChorusPlantPlacementRule::new, Block.CHORUS_PLANT);
         Utility.registerPlacementRules(MossyCarpetPlacementRule::new, Block.PALE_MOSS_CARPET);
         Utility.registerPlacementRules(
-                PointedDripstonePlacementRule::new,
-                Block.POINTED_DRIPSTONE,
-                Block.SULFUR_SPIKE);
+                PointedDripstonePlacementRule::new, Block.POINTED_DRIPSTONE, Block.SULFUR_SPIKE);
         Utility.registerPlacementRules(
                 CopperGolemStatuePlacementRule::new,
                 Block.COPPER_GOLEM_STATUE,
@@ -462,23 +496,24 @@ public final class Registrations {
         Utility.registerPlacementRules(RedstoneLampPlacementRule::new, Block.REDSTONE_LAMP);
         Utility.registerPlacementRules(LightPlacementRule::new, Block.LIGHT);
         Utility.registerPlacementRules(PotentSulfurPlacementRule::new, Block.POTENT_SULFUR);
-        Utility.registerPlacementRules(SnowyPlacementRule::new, Block.GRASS_BLOCK, Block.MYCELIUM, Block.PODZOL);
+        Utility.registerPlacementRules(
+                SnowyPlacementRule::new, Block.GRASS_BLOCK, Block.MYCELIUM, Block.PODZOL);
         Utility.registerPlacementRules(FarmlandPlacementRule::new, Block.FARMLAND);
         Utility.registerPlacementRules(DirtPathPlacementRule::new, Block.DIRT_PATH);
         registerConcretePowders(blockManager);
 
-        Utility.registerPlacementRules(block -> new HorizontalFacingPlacementRule(block, true), Block.END_PORTAL_FRAME);
         Utility.registerPlacementRules(
-                block -> new WallMountedPlacementRule(block, true, false, null),
-                Block.LADDER);
+                block -> new HorizontalFacingPlacementRule(block, true), Block.END_PORTAL_FRAME);
+        Utility.registerPlacementRules(
+                block -> new WallMountedPlacementRule(block, true, false, null), Block.LADDER);
         Utility.registerPlacementRules(
                 block -> new WallMountedPlacementRule(block, false, false, null),
                 Block.SHELF_MUSHROOM);
         Utility.registerPlacementRules(TallSeagrassPlacementRule::new, Block.TALL_SEAGRASS);
-        Utility.registerPlacementRules(TallPlantPlacementRule::new,
-                Block.TALL_GRASS,
-                Block.LARGE_FERN);
-        Utility.registerPlacementRules(ShelfPlacementRule::new,
+        Utility.registerPlacementRules(
+                TallPlantPlacementRule::new, Block.TALL_GRASS, Block.LARGE_FERN);
+        Utility.registerPlacementRules(
+                ShelfPlacementRule::new,
                 Block.ACACIA_SHELF,
                 Block.BAMBOO_SHELF,
                 Block.BIRCH_SHELF,
@@ -495,56 +530,112 @@ public final class Registrations {
     }
 
     private static void registerHandlers(BlockManager blockManager) {
-        blockManager.registerHandler(DoorBlockHandler.INSTANCE.getKey(), () -> DoorBlockHandler.INSTANCE);
-        blockManager.registerHandler(TrapdoorBlockHandler.INSTANCE.getKey(), () -> TrapdoorBlockHandler.INSTANCE);
-        blockManager.registerHandler(FenceGateBlockHandler.INSTANCE.getKey(), () -> FenceGateBlockHandler.INSTANCE);
-        blockManager.registerHandler(LeverBlockHandler.INSTANCE.getKey(), () -> LeverBlockHandler.INSTANCE);
-        blockManager.registerHandler(ButtonBlockHandler.INSTANCE.getKey(), () -> ButtonBlockHandler.INSTANCE);
-        blockManager.registerHandler(CandleBlockHandler.INSTANCE.getKey(), () -> CandleBlockHandler.INSTANCE);
-        blockManager.registerHandler(CakeBlockHandler.INSTANCE.getKey(), () -> CakeBlockHandler.INSTANCE);
-        blockManager.registerHandler(CandleCakeBlockHandler.INSTANCE.getKey(), () -> CandleCakeBlockHandler.INSTANCE);
-        blockManager.registerHandler(JukeboxBlockHandler.INSTANCE.getKey(), () -> JukeboxBlockHandler.INSTANCE);
-        blockManager.registerHandler(RedstoneWireBlockHandler.INSTANCE.getKey(), () -> RedstoneWireBlockHandler.INSTANCE);
-        blockManager.registerHandler(LightBlockHandler.INSTANCE.getKey(), () -> LightBlockHandler.INSTANCE);
-        blockManager.registerHandler(BerryBlockHandler.INSTANCE.getKey(), () -> BerryBlockHandler.INSTANCE);
-        blockManager.registerHandler(ComposterBlockHandler.INSTANCE.getKey(), () -> ComposterBlockHandler.INSTANCE);
-        blockManager.registerHandler(BedBlockHandler.INSTANCE.getKey(), () -> BedBlockHandler.INSTANCE);
-        blockManager.registerHandler(DaylightDetectorBlockHandler.INSTANCE.getKey(), () -> DaylightDetectorBlockHandler.INSTANCE);
-        blockManager.registerHandler(ConsumeInteractionBlockHandler.INSTANCE.getKey(), () -> ConsumeInteractionBlockHandler.INSTANCE);
-        blockManager.registerHandler(NoteBlockHandler.INSTANCE.getKey(), () -> NoteBlockHandler.INSTANCE);
-        blockManager.registerHandler(RepeaterBlockHandler.INSTANCE.getKey(), () -> RepeaterBlockHandler.INSTANCE);
-        blockManager.registerHandler(ComparatorBlockHandler.INSTANCE.getKey(), () -> ComparatorBlockHandler.INSTANCE);
-        blockManager.registerHandler(BellBlockHandler.INSTANCE.getKey(), () -> BellBlockHandler.INSTANCE);
-        blockManager.registerHandler(FlowerPotBlockHandler.INSTANCE.getKey(), () -> FlowerPotBlockHandler.INSTANCE);
-        blockManager.registerHandler(SignBlockHandler.INSTANCE.getKey(), () -> SignBlockHandler.INSTANCE);
-        blockManager.registerHandler(RespawnAnchorBlockHandler.INSTANCE.getKey(), () -> RespawnAnchorBlockHandler.INSTANCE);
-        blockManager.registerHandler(DragonEggBlockHandler.INSTANCE.getKey(), () -> DragonEggBlockHandler.INSTANCE);
-        blockManager.registerHandler(BeeHiveBlockHandler.INSTANCE.getKey(), () -> BeeHiveBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                DoorBlockHandler.INSTANCE.getKey(), () -> DoorBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                TrapdoorBlockHandler.INSTANCE.getKey(), () -> TrapdoorBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                FenceGateBlockHandler.INSTANCE.getKey(), () -> FenceGateBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                LeverBlockHandler.INSTANCE.getKey(), () -> LeverBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                ButtonBlockHandler.INSTANCE.getKey(), () -> ButtonBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                CandleBlockHandler.INSTANCE.getKey(), () -> CandleBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                CakeBlockHandler.INSTANCE.getKey(), () -> CakeBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                CandleCakeBlockHandler.INSTANCE.getKey(), () -> CandleCakeBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                JukeboxBlockHandler.INSTANCE.getKey(), () -> JukeboxBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                RedstoneWireBlockHandler.INSTANCE.getKey(),
+                () -> RedstoneWireBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                LightBlockHandler.INSTANCE.getKey(), () -> LightBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                BerryBlockHandler.INSTANCE.getKey(), () -> BerryBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                ComposterBlockHandler.INSTANCE.getKey(), () -> ComposterBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                BedBlockHandler.INSTANCE.getKey(), () -> BedBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                DaylightDetectorBlockHandler.INSTANCE.getKey(),
+                () -> DaylightDetectorBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                ConsumeInteractionBlockHandler.INSTANCE.getKey(),
+                () -> ConsumeInteractionBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                NoteBlockHandler.INSTANCE.getKey(), () -> NoteBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                RepeaterBlockHandler.INSTANCE.getKey(), () -> RepeaterBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                ComparatorBlockHandler.INSTANCE.getKey(), () -> ComparatorBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                BellBlockHandler.INSTANCE.getKey(), () -> BellBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                FlowerPotBlockHandler.INSTANCE.getKey(), () -> FlowerPotBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                SignBlockHandler.INSTANCE.getKey(), () -> SignBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                RespawnAnchorBlockHandler.INSTANCE.getKey(),
+                () -> RespawnAnchorBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                DragonEggBlockHandler.INSTANCE.getKey(), () -> DragonEggBlockHandler.INSTANCE);
+        blockManager.registerHandler(
+                BeeHiveBlockHandler.INSTANCE.getKey(), () -> BeeHiveBlockHandler.INSTANCE);
         blockManager.registerHandler(
                 GameMasterInteractionBlockHandler.INSTANCE.getKey(),
                 () -> GameMasterInteractionBlockHandler.INSTANCE);
     }
 
-    private static void registerByTag(java.util.function.Function<Block, ? extends net.minestom.server.instance.block.rule.BlockPlacementRule> factory, String tagKey) {
+    private static void registerByTag(
+            java.util.function.Function<
+                            Block,
+                            ? extends net.minestom.server.instance.block.rule.BlockPlacementRule>
+                    factory,
+            String tagKey) {
         Utility.registerPlacementRules(factory::apply, Key.key(tagKey));
     }
 
     private static void registerConcretePowders(BlockManager blockManager) {
-        blockManager.registerBlockPlacementRule(new ConcretePowderPlacementRule(Block.WHITE_CONCRETE_POWDER, Block.WHITE_CONCRETE));
-        blockManager.registerBlockPlacementRule(new ConcretePowderPlacementRule(Block.ORANGE_CONCRETE_POWDER, Block.ORANGE_CONCRETE));
-        blockManager.registerBlockPlacementRule(new ConcretePowderPlacementRule(Block.MAGENTA_CONCRETE_POWDER, Block.MAGENTA_CONCRETE));
-        blockManager.registerBlockPlacementRule(new ConcretePowderPlacementRule(Block.LIGHT_BLUE_CONCRETE_POWDER, Block.LIGHT_BLUE_CONCRETE));
-        blockManager.registerBlockPlacementRule(new ConcretePowderPlacementRule(Block.YELLOW_CONCRETE_POWDER, Block.YELLOW_CONCRETE));
-        blockManager.registerBlockPlacementRule(new ConcretePowderPlacementRule(Block.LIME_CONCRETE_POWDER, Block.LIME_CONCRETE));
-        blockManager.registerBlockPlacementRule(new ConcretePowderPlacementRule(Block.PINK_CONCRETE_POWDER, Block.PINK_CONCRETE));
-        blockManager.registerBlockPlacementRule(new ConcretePowderPlacementRule(Block.GRAY_CONCRETE_POWDER, Block.GRAY_CONCRETE));
-        blockManager.registerBlockPlacementRule(new ConcretePowderPlacementRule(Block.LIGHT_GRAY_CONCRETE_POWDER, Block.LIGHT_GRAY_CONCRETE));
-        blockManager.registerBlockPlacementRule(new ConcretePowderPlacementRule(Block.CYAN_CONCRETE_POWDER, Block.CYAN_CONCRETE));
-        blockManager.registerBlockPlacementRule(new ConcretePowderPlacementRule(Block.PURPLE_CONCRETE_POWDER, Block.PURPLE_CONCRETE));
-        blockManager.registerBlockPlacementRule(new ConcretePowderPlacementRule(Block.BLUE_CONCRETE_POWDER, Block.BLUE_CONCRETE));
-        blockManager.registerBlockPlacementRule(new ConcretePowderPlacementRule(Block.BROWN_CONCRETE_POWDER, Block.BROWN_CONCRETE));
-        blockManager.registerBlockPlacementRule(new ConcretePowderPlacementRule(Block.GREEN_CONCRETE_POWDER, Block.GREEN_CONCRETE));
-        blockManager.registerBlockPlacementRule(new ConcretePowderPlacementRule(Block.RED_CONCRETE_POWDER, Block.RED_CONCRETE));
-        blockManager.registerBlockPlacementRule(new ConcretePowderPlacementRule(Block.BLACK_CONCRETE_POWDER, Block.BLACK_CONCRETE));
+        blockManager.registerBlockPlacementRule(
+                new ConcretePowderPlacementRule(Block.WHITE_CONCRETE_POWDER, Block.WHITE_CONCRETE));
+        blockManager.registerBlockPlacementRule(
+                new ConcretePowderPlacementRule(
+                        Block.ORANGE_CONCRETE_POWDER, Block.ORANGE_CONCRETE));
+        blockManager.registerBlockPlacementRule(
+                new ConcretePowderPlacementRule(
+                        Block.MAGENTA_CONCRETE_POWDER, Block.MAGENTA_CONCRETE));
+        blockManager.registerBlockPlacementRule(
+                new ConcretePowderPlacementRule(
+                        Block.LIGHT_BLUE_CONCRETE_POWDER, Block.LIGHT_BLUE_CONCRETE));
+        blockManager.registerBlockPlacementRule(
+                new ConcretePowderPlacementRule(
+                        Block.YELLOW_CONCRETE_POWDER, Block.YELLOW_CONCRETE));
+        blockManager.registerBlockPlacementRule(
+                new ConcretePowderPlacementRule(Block.LIME_CONCRETE_POWDER, Block.LIME_CONCRETE));
+        blockManager.registerBlockPlacementRule(
+                new ConcretePowderPlacementRule(Block.PINK_CONCRETE_POWDER, Block.PINK_CONCRETE));
+        blockManager.registerBlockPlacementRule(
+                new ConcretePowderPlacementRule(Block.GRAY_CONCRETE_POWDER, Block.GRAY_CONCRETE));
+        blockManager.registerBlockPlacementRule(
+                new ConcretePowderPlacementRule(
+                        Block.LIGHT_GRAY_CONCRETE_POWDER, Block.LIGHT_GRAY_CONCRETE));
+        blockManager.registerBlockPlacementRule(
+                new ConcretePowderPlacementRule(Block.CYAN_CONCRETE_POWDER, Block.CYAN_CONCRETE));
+        blockManager.registerBlockPlacementRule(
+                new ConcretePowderPlacementRule(
+                        Block.PURPLE_CONCRETE_POWDER, Block.PURPLE_CONCRETE));
+        blockManager.registerBlockPlacementRule(
+                new ConcretePowderPlacementRule(Block.BLUE_CONCRETE_POWDER, Block.BLUE_CONCRETE));
+        blockManager.registerBlockPlacementRule(
+                new ConcretePowderPlacementRule(Block.BROWN_CONCRETE_POWDER, Block.BROWN_CONCRETE));
+        blockManager.registerBlockPlacementRule(
+                new ConcretePowderPlacementRule(Block.GREEN_CONCRETE_POWDER, Block.GREEN_CONCRETE));
+        blockManager.registerBlockPlacementRule(
+                new ConcretePowderPlacementRule(Block.RED_CONCRETE_POWDER, Block.RED_CONCRETE));
+        blockManager.registerBlockPlacementRule(
+                new ConcretePowderPlacementRule(Block.BLACK_CONCRETE_POWDER, Block.BLACK_CONCRETE));
     }
 }

@@ -1,18 +1,16 @@
 package rocks.minestom.worldgen.structure.mineshaft;
 
+import java.util.LinkedList;
+import java.util.List;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.Direction;
 import rocks.minestom.worldgen.random.RandomSource;
 import rocks.minestom.worldgen.structure.template.BoundingBox;
 
-import java.util.LinkedList;
-import java.util.List;
-
 /**
- * Port of vanilla {@code MineshaftPieces}: the procedural room, corridor,
- * crossing and stairs pieces. Random call order matches vanilla exactly so a
- * seeded {@code WorldgenRandom} reproduces vanilla layouts and decoration
- * block-for-block.
+ * Port of vanilla {@code MineshaftPieces}: the procedural room, corridor, crossing and stairs
+ * pieces. Random call order matches vanilla exactly so a seeded {@code WorldgenRandom} reproduces
+ * vanilla layouts and decoration block-for-block.
  */
 public final class MineshaftPieces {
     private static final int MAX_PILLAR_HEIGHT = 20;
@@ -20,11 +18,17 @@ public final class MineshaftPieces {
     private static final int MAX_DEPTH = 8;
     static final Block CAVE_AIR = Block.CAVE_AIR;
 
-    private MineshaftPieces() {
-    }
+    private MineshaftPieces() {}
 
-    private static MineshaftPiece createRandomShaftPiece(List<MineshaftPiece> pieces, RandomSource random,
-            int footX, int footY, int footZ, Direction direction, int genDepth, MineshaftType type) {
+    private static MineshaftPiece createRandomShaftPiece(
+            List<MineshaftPiece> pieces,
+            RandomSource random,
+            int footX,
+            int footY,
+            int footZ,
+            Direction direction,
+            int genDepth,
+            MineshaftType type) {
         var selection = random.nextInt(100);
         if (selection >= 80) {
             var crossingBox = Crossing.findCrossing(pieces, random, footX, footY, footZ, direction);
@@ -37,7 +41,8 @@ public final class MineshaftPieces {
                 return new Stairs(genDepth, stairsBox, direction, type);
             }
         } else {
-            var corridorBox = Corridor.findCorridorSize(pieces, random, footX, footY, footZ, direction);
+            var corridorBox =
+                    Corridor.findCorridorSize(pieces, random, footX, footY, footZ, direction);
             if (corridorBox != null) {
                 return new Corridor(genDepth, random, corridorBox, direction, type);
             }
@@ -46,17 +51,27 @@ public final class MineshaftPieces {
         return null;
     }
 
-    static MineshaftPiece generateAndAddPiece(MineshaftPiece startPiece, List<MineshaftPiece> pieces,
-            RandomSource random, int footX, int footY, int footZ, Direction direction, int depth) {
+    static MineshaftPiece generateAndAddPiece(
+            MineshaftPiece startPiece,
+            List<MineshaftPiece> pieces,
+            RandomSource random,
+            int footX,
+            int footY,
+            int footZ,
+            Direction direction,
+            int depth) {
         if (depth > MAX_DEPTH) {
             return null;
         }
 
-        if (Math.abs(footX - startPiece.boundingBox.minX()) > 80 || Math.abs(footZ - startPiece.boundingBox.minZ()) > 80) {
+        if (Math.abs(footX - startPiece.boundingBox.minX()) > 80
+                || Math.abs(footZ - startPiece.boundingBox.minZ()) > 80) {
             return null;
         }
 
-        var newPiece = createRandomShaftPiece(pieces, random, footX, footY, footZ, direction, depth + 1, startPiece.type);
+        var newPiece =
+                createRandomShaftPiece(
+                        pieces, random, footX, footY, footZ, direction, depth + 1, startPiece.type);
         if (newPiece != null) {
             pieces.add(newPiece);
             newPiece.addChildren(startPiece, pieces, random);
@@ -75,27 +90,31 @@ public final class MineshaftPieces {
     }
 
     private static boolean isInside(BoundingBox box, int x, int y, int z) {
-        return x >= box.minX() && x <= box.maxX()
-                && y >= box.minY() && y <= box.maxY()
-                && z >= box.minZ() && z <= box.maxZ();
+        return x >= box.minX()
+                && x <= box.maxX()
+                && y >= box.minY()
+                && y <= box.maxY()
+                && z >= box.minZ()
+                && z <= box.maxZ();
     }
 
     /**
-     * Approximation of vanilla {@code isFaceSturdy(UP)} for the block set seen
-     * during mineshaft placement (terrain, fluids and the mineshaft's own
-     * blocks): any motion-blocking full block except fences and chains.
+     * Approximation of vanilla {@code isFaceSturdy(UP)} for the block set seen during mineshaft
+     * placement (terrain, fluids and the mineshaft's own blocks): any motion-blocking full block
+     * except fences and chains.
      */
     private static boolean isFaceSturdy(Block block) {
-        return rocks.minestom.worldgen.feature.SturdyFaces.isFaceSturdy(block,
-                net.minestom.server.instance.block.BlockFace.TOP);
+        return rocks.minestom.worldgen.feature.SturdyFaces.isFaceSturdy(
+                block, net.minestom.server.instance.block.BlockFace.TOP);
     }
 
-    /**
-     * Approximation of vanilla {@code isSolidRender()} for the same block set.
-     */
+    /** Approximation of vanilla {@code isSolidRender()} for the same block set. */
     private static boolean isSolidRender(Block block) {
-        return block.solid() && !isFence(block) && !block.compare(Block.IRON_CHAIN)
-                && !block.compare(Block.COBWEB) && !block.compare(Block.SPAWNER);
+        return block.solid()
+                && !isFence(block)
+                && !block.compare(Block.IRON_CHAIN)
+                && !block.compare(Block.COBWEB)
+                && !block.compare(Block.SPAWNER);
     }
 
     private static boolean isFence(Block block) {
@@ -103,13 +122,19 @@ public final class MineshaftPieces {
     }
 
     private static boolean isReplaceableByStructures(Block block) {
-        return block.air() || block.liquid() || block.compare(Block.GLOW_LICHEN)
-                || block.compare(Block.SEAGRASS) || block.compare(Block.TALL_SEAGRASS);
+        return block.air()
+                || block.liquid()
+                || block.compare(Block.GLOW_LICHEN)
+                || block.compare(Block.SEAGRASS)
+                || block.compare(Block.TALL_SEAGRASS);
     }
 
     private static boolean isFallingBlock(Block block) {
-        return block.compare(Block.SAND) || block.compare(Block.RED_SAND) || block.compare(Block.GRAVEL)
-                || block.compare(Block.SUSPICIOUS_SAND) || block.compare(Block.SUSPICIOUS_GRAVEL);
+        return block.compare(Block.SAND)
+                || block.compare(Block.RED_SAND)
+                || block.compare(Block.GRAVEL)
+                || block.compare(Block.SUSPICIOUS_SAND)
+                || block.compare(Block.SUSPICIOUS_GRAVEL);
     }
 
     public abstract static class MineshaftPiece {
@@ -165,7 +190,8 @@ public final class MineshaftPieces {
             return this.orientation;
         }
 
-        abstract void addChildren(MineshaftPiece startPiece, List<MineshaftPiece> pieces, RandomSource random);
+        abstract void addChildren(
+                MineshaftPiece startPiece, List<MineshaftPiece> pieces, RandomSource random);
 
         abstract void postProcess(MineshaftLevel level, RandomSource random, BoundingBox chunkBB);
 
@@ -199,15 +225,26 @@ public final class MineshaftPieces {
             };
         }
 
-        protected void placeBlock(MineshaftLevel level, Block block, int x, int y, int z, BoundingBox chunkBB) {
+        protected void placeBlock(
+                MineshaftLevel level, Block block, int x, int y, int z, BoundingBox chunkBB) {
             var wx = this.worldX(x, z);
             var wy = this.worldY(y);
             var wz = this.worldZ(x, z);
             var writeTrace = System.getProperty("worldgen.writeTrace");
             if (writeTrace != null && writeTrace.equals(wx + "," + wy + "," + wz)) {
-                System.out.println("MINEPLACE " + wx + "," + wy + "," + wz + " block=" + block.name()
-                        + " inside=" + isInside(chunkBB, wx, wy, wz)
-                        + " replaceable=" + this.canBeReplaced(level, wx, wy, wz));
+                System.out.println(
+                        "MINEPLACE "
+                                + wx
+                                + ","
+                                + wy
+                                + ","
+                                + wz
+                                + " block="
+                                + block.name()
+                                + " inside="
+                                + isInside(chunkBB, wx, wy, wz)
+                                + " replaceable="
+                                + this.canBeReplaced(level, wx, wy, wz));
             }
             if (!isInside(chunkBB, wx, wy, wz)) {
                 return;
@@ -219,8 +256,8 @@ public final class MineshaftPieces {
         }
 
         /**
-         * Vanilla mineshaft {@code canBeReplaced}: never replaces the
-         * structure's own planks, wood, fences or chains.
+         * Vanilla mineshaft {@code canBeReplaced}: never replaces the structure's own planks, wood,
+         * fences or chains.
          */
         private boolean canBeReplaced(MineshaftLevel level, int wx, int wy, int wz) {
             var state = level.getBlock(wx, wy, wz);
@@ -240,7 +277,8 @@ public final class MineshaftPieces {
             return level.getBlock(wx, wy, wz);
         }
 
-        protected boolean isInterior(MineshaftLevel level, int x, int y, int z, BoundingBox chunkBB) {
+        protected boolean isInterior(
+                MineshaftLevel level, int x, int y, int z, BoundingBox chunkBB) {
             var wx = this.worldX(x, z);
             var wy = this.worldY(y + 1);
             var wz = this.worldZ(x, z);
@@ -250,8 +288,18 @@ public final class MineshaftPieces {
             return wy < level.oceanFloorHeight(wx, wz);
         }
 
-        protected void generateBox(MineshaftLevel level, BoundingBox chunkBB, int x0, int y0, int z0,
-                int x1, int y1, int z1, Block edgeBlock, Block fillBlock, boolean skipAir) {
+        protected void generateBox(
+                MineshaftLevel level,
+                BoundingBox chunkBB,
+                int x0,
+                int y0,
+                int z0,
+                int x1,
+                int y1,
+                int z1,
+                Block edgeBlock,
+                Block fillBlock,
+                boolean skipAir) {
             for (var y = y0; y <= y1; y++) {
                 for (var x = x0; x <= x1; x++) {
                     for (var z = z0; z <= z1; z++) {
@@ -268,9 +316,21 @@ public final class MineshaftPieces {
             }
         }
 
-        protected void generateMaybeBox(MineshaftLevel level, BoundingBox chunkBB, RandomSource random,
-                float probability, int x0, int y0, int z0, int x1, int y1, int z1,
-                Block edgeBlock, Block fillBlock, boolean skipAir, boolean hasToBeInside) {
+        protected void generateMaybeBox(
+                MineshaftLevel level,
+                BoundingBox chunkBB,
+                RandomSource random,
+                float probability,
+                int x0,
+                int y0,
+                int z0,
+                int x1,
+                int y1,
+                int z1,
+                Block edgeBlock,
+                Block fillBlock,
+                boolean skipAir,
+                boolean hasToBeInside) {
             var webBox = System.getProperty("worldgen.webBox", "");
             for (var y = y0; y <= y1; y++) {
                 for (var x = x0; x <= x1; x++) {
@@ -280,13 +340,28 @@ public final class MineshaftPieces {
                             var wx = this.worldX(x, z);
                             var wz = this.worldZ(x, z);
                             var parts = webBox.split(",");
-                            if (wx >= Integer.parseInt(parts[0]) && wx <= Integer.parseInt(parts[2])
-                                    && wz >= Integer.parseInt(parts[1]) && wz <= Integer.parseInt(parts[3])) {
-                                System.out.println("MWEB pos=" + wx + "," + this.worldY(y) + "," + wz
-                                        + " roll=" + roll
-                                        + " skipAirHit=" + (skipAir && this.getBlock(level, x, y, z, chunkBB).air())
-                                        + " interior=" + (!hasToBeInside || this.isInterior(level, x, y, z, chunkBB))
-                                        + " edge=" + edgeBlock.name());
+                            if (wx >= Integer.parseInt(parts[0])
+                                    && wx <= Integer.parseInt(parts[2])
+                                    && wz >= Integer.parseInt(parts[1])
+                                    && wz <= Integer.parseInt(parts[3])) {
+                                System.out.println(
+                                        "MWEB pos="
+                                                + wx
+                                                + ","
+                                                + this.worldY(y)
+                                                + ","
+                                                + wz
+                                                + " roll="
+                                                + roll
+                                                + " skipAirHit="
+                                                + (skipAir
+                                                        && this.getBlock(level, x, y, z, chunkBB)
+                                                                .air())
+                                                + " interior="
+                                                + (!hasToBeInside
+                                                        || this.isInterior(level, x, y, z, chunkBB))
+                                                + " edge="
+                                                + edgeBlock.name());
                             }
                         }
                         if (roll > probability) {
@@ -308,15 +383,31 @@ public final class MineshaftPieces {
             }
         }
 
-        protected void maybeGenerateBlock(MineshaftLevel level, BoundingBox chunkBB, RandomSource random,
-                float probability, int x, int y, int z, Block block) {
+        protected void maybeGenerateBlock(
+                MineshaftLevel level,
+                BoundingBox chunkBB,
+                RandomSource random,
+                float probability,
+                int x,
+                int y,
+                int z,
+                Block block) {
             if (random.nextFloat() < probability) {
                 this.placeBlock(level, block, x, y, z, chunkBB);
             }
         }
 
-        protected void generateUpperHalfSphere(MineshaftLevel level, BoundingBox chunkBB, int x0, int y0, int z0,
-                int x1, int y1, int z1, Block fillBlock, boolean skipAir) {
+        protected void generateUpperHalfSphere(
+                MineshaftLevel level,
+                BoundingBox chunkBB,
+                int x0,
+                int y0,
+                int z0,
+                int x1,
+                int y1,
+                int z1,
+                Block fillBlock,
+                boolean skipAir) {
             var diagX = (float) (x1 - x0 + 1);
             var diagY = (float) (y1 - y0 + 1);
             var diagZ = (float) (z1 - z0 + 1);
@@ -334,7 +425,10 @@ public final class MineshaftPieces {
                         if (skipAir && this.getBlock(level, x, y, z, chunkBB).air()) {
                             continue;
                         }
-                        var distance = normalizedX * normalizedX + normalizedY * normalizedY + normalizedZ * normalizedZ;
+                        var distance =
+                                normalizedX * normalizedX
+                                        + normalizedY * normalizedY
+                                        + normalizedZ * normalizedZ;
                         if (distance <= 1.05F) {
                             this.placeBlock(level, fillBlock, x, y, z, chunkBB);
                         }
@@ -343,7 +437,8 @@ public final class MineshaftPieces {
             }
         }
 
-        protected boolean isSupportingBox(MineshaftLevel level, BoundingBox chunkBB, int x0, int x1, int y1, int z0) {
+        protected boolean isSupportingBox(
+                MineshaftLevel level, BoundingBox chunkBB, int x0, int x1, int y1, int z0) {
             for (var x = x0; x <= x1; x++) {
                 if (this.getBlock(level, x, y1 + 1, z0, chunkBB).air()) {
                     return false;
@@ -399,7 +494,8 @@ public final class MineshaftPieces {
             return false;
         }
 
-        protected void setPlanksBlock(MineshaftLevel level, BoundingBox chunkBB, Block planks, int x, int y, int z) {
+        protected void setPlanksBlock(
+                MineshaftLevel level, BoundingBox chunkBB, Block planks, int x, int y, int z) {
             if (!this.isInterior(level, x, y, z, chunkBB)) {
                 return;
             }
@@ -500,7 +596,8 @@ public final class MineshaftPieces {
         }
 
         @Override
-        void addChildren(MineshaftPiece startPiece, List<MineshaftPiece> pieces, RandomSource random) {
+        void addChildren(
+                MineshaftPiece startPiece, List<MineshaftPiece> pieces, RandomSource random) {
             var depth = this.genDepth;
             var heightSpace = this.boundingBox.getYSpan() - 3 - 1;
             if (heightSpace <= 0) {
@@ -514,15 +611,26 @@ public final class MineshaftPieces {
                     break;
                 }
 
-                var child = MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                        this.boundingBox.minX() + pos,
-                        this.boundingBox.minY() + random.nextInt(heightSpace) + 1,
-                        this.boundingBox.minZ() - 1,
-                        Direction.NORTH, depth);
+                var child =
+                        MineshaftPieces.generateAndAddPiece(
+                                startPiece,
+                                pieces,
+                                random,
+                                this.boundingBox.minX() + pos,
+                                this.boundingBox.minY() + random.nextInt(heightSpace) + 1,
+                                this.boundingBox.minZ() - 1,
+                                Direction.NORTH,
+                                depth);
                 if (child != null) {
                     var childBox = child.boundingBox();
-                    this.childEntranceBoxes.add(new BoundingBox(childBox.minX(), childBox.minY(), this.boundingBox.minZ(),
-                            childBox.maxX(), childBox.maxY(), this.boundingBox.minZ() + 1));
+                    this.childEntranceBoxes.add(
+                            new BoundingBox(
+                                    childBox.minX(),
+                                    childBox.minY(),
+                                    this.boundingBox.minZ(),
+                                    childBox.maxX(),
+                                    childBox.maxY(),
+                                    this.boundingBox.minZ() + 1));
                 }
 
                 pos += 4;
@@ -535,15 +643,26 @@ public final class MineshaftPieces {
                     break;
                 }
 
-                var child = MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                        this.boundingBox.minX() + pos,
-                        this.boundingBox.minY() + random.nextInt(heightSpace) + 1,
-                        this.boundingBox.maxZ() + 1,
-                        Direction.SOUTH, depth);
+                var child =
+                        MineshaftPieces.generateAndAddPiece(
+                                startPiece,
+                                pieces,
+                                random,
+                                this.boundingBox.minX() + pos,
+                                this.boundingBox.minY() + random.nextInt(heightSpace) + 1,
+                                this.boundingBox.maxZ() + 1,
+                                Direction.SOUTH,
+                                depth);
                 if (child != null) {
                     var childBox = child.boundingBox();
-                    this.childEntranceBoxes.add(new BoundingBox(childBox.minX(), childBox.minY(), this.boundingBox.maxZ() - 1,
-                            childBox.maxX(), childBox.maxY(), this.boundingBox.maxZ()));
+                    this.childEntranceBoxes.add(
+                            new BoundingBox(
+                                    childBox.minX(),
+                                    childBox.minY(),
+                                    this.boundingBox.maxZ() - 1,
+                                    childBox.maxX(),
+                                    childBox.maxY(),
+                                    this.boundingBox.maxZ()));
                 }
 
                 pos += 4;
@@ -556,15 +675,26 @@ public final class MineshaftPieces {
                     break;
                 }
 
-                var child = MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                        this.boundingBox.minX() - 1,
-                        this.boundingBox.minY() + random.nextInt(heightSpace) + 1,
-                        this.boundingBox.minZ() + pos,
-                        Direction.WEST, depth);
+                var child =
+                        MineshaftPieces.generateAndAddPiece(
+                                startPiece,
+                                pieces,
+                                random,
+                                this.boundingBox.minX() - 1,
+                                this.boundingBox.minY() + random.nextInt(heightSpace) + 1,
+                                this.boundingBox.minZ() + pos,
+                                Direction.WEST,
+                                depth);
                 if (child != null) {
                     var childBox = child.boundingBox();
-                    this.childEntranceBoxes.add(new BoundingBox(this.boundingBox.minX(), childBox.minY(), childBox.minZ(),
-                            this.boundingBox.minX() + 1, childBox.maxY(), childBox.maxZ()));
+                    this.childEntranceBoxes.add(
+                            new BoundingBox(
+                                    this.boundingBox.minX(),
+                                    childBox.minY(),
+                                    childBox.minZ(),
+                                    this.boundingBox.minX() + 1,
+                                    childBox.maxY(),
+                                    childBox.maxZ()));
                 }
 
                 pos += 4;
@@ -577,15 +707,26 @@ public final class MineshaftPieces {
                     break;
                 }
 
-                var child = MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                        this.boundingBox.maxX() + 1,
-                        this.boundingBox.minY() + random.nextInt(heightSpace) + 1,
-                        this.boundingBox.minZ() + pos,
-                        Direction.EAST, depth);
+                var child =
+                        MineshaftPieces.generateAndAddPiece(
+                                startPiece,
+                                pieces,
+                                random,
+                                this.boundingBox.maxX() + 1,
+                                this.boundingBox.minY() + random.nextInt(heightSpace) + 1,
+                                this.boundingBox.minZ() + pos,
+                                Direction.EAST,
+                                depth);
                 if (child != null) {
                     var childBox = child.boundingBox();
-                    this.childEntranceBoxes.add(new BoundingBox(this.boundingBox.maxX() - 1, childBox.minY(), childBox.minZ(),
-                            this.boundingBox.maxX(), childBox.maxY(), childBox.maxZ()));
+                    this.childEntranceBoxes.add(
+                            new BoundingBox(
+                                    this.boundingBox.maxX() - 1,
+                                    childBox.minY(),
+                                    childBox.minZ(),
+                                    this.boundingBox.maxX(),
+                                    childBox.maxY(),
+                                    childBox.maxZ()));
                 }
 
                 pos += 4;
@@ -598,22 +739,45 @@ public final class MineshaftPieces {
                 return;
             }
 
-            this.generateBox(level, chunkBB,
-                    this.boundingBox.minX(), this.boundingBox.minY() + 1, this.boundingBox.minZ(),
-                    this.boundingBox.maxX(), Math.min(this.boundingBox.minY() + 3, this.boundingBox.maxY()), this.boundingBox.maxZ(),
-                    CAVE_AIR, CAVE_AIR, false);
+            this.generateBox(
+                    level,
+                    chunkBB,
+                    this.boundingBox.minX(),
+                    this.boundingBox.minY() + 1,
+                    this.boundingBox.minZ(),
+                    this.boundingBox.maxX(),
+                    Math.min(this.boundingBox.minY() + 3, this.boundingBox.maxY()),
+                    this.boundingBox.maxZ(),
+                    CAVE_AIR,
+                    CAVE_AIR,
+                    false);
 
             for (var entranceBox : this.childEntranceBoxes) {
-                this.generateBox(level, chunkBB,
-                        entranceBox.minX(), entranceBox.maxY() - 2, entranceBox.minZ(),
-                        entranceBox.maxX(), entranceBox.maxY(), entranceBox.maxZ(),
-                        CAVE_AIR, CAVE_AIR, false);
+                this.generateBox(
+                        level,
+                        chunkBB,
+                        entranceBox.minX(),
+                        entranceBox.maxY() - 2,
+                        entranceBox.minZ(),
+                        entranceBox.maxX(),
+                        entranceBox.maxY(),
+                        entranceBox.maxZ(),
+                        CAVE_AIR,
+                        CAVE_AIR,
+                        false);
             }
 
-            this.generateUpperHalfSphere(level, chunkBB,
-                    this.boundingBox.minX(), this.boundingBox.minY() + 4, this.boundingBox.minZ(),
-                    this.boundingBox.maxX(), this.boundingBox.maxY(), this.boundingBox.maxZ(),
-                    CAVE_AIR, false);
+            this.generateUpperHalfSphere(
+                    level,
+                    chunkBB,
+                    this.boundingBox.minX(),
+                    this.boundingBox.minY() + 4,
+                    this.boundingBox.minZ(),
+                    this.boundingBox.maxX(),
+                    this.boundingBox.maxY(),
+                    this.boundingBox.maxZ(),
+                    CAVE_AIR,
+                    false);
         }
     }
 
@@ -623,7 +787,12 @@ public final class MineshaftPieces {
         private boolean hasPlacedSpider;
         private final int numSections;
 
-        Corridor(int genDepth, RandomSource random, BoundingBox boundingBox, Direction direction, MineshaftType type) {
+        Corridor(
+                int genDepth,
+                RandomSource random,
+                BoundingBox boundingBox,
+                Direction direction,
+                MineshaftType type) {
             super(genDepth, type, boundingBox);
             this.setOrientation(direction);
             this.hasRails = random.nextInt(3) == 0;
@@ -635,16 +804,22 @@ public final class MineshaftPieces {
             }
         }
 
-        static BoundingBox findCorridorSize(List<MineshaftPiece> pieces, RandomSource random,
-                int footX, int footY, int footZ, Direction direction) {
+        static BoundingBox findCorridorSize(
+                List<MineshaftPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction) {
             for (var corridorLength = random.nextInt(3) + 2; corridorLength > 0; corridorLength--) {
                 var blockLength = corridorLength * 5;
-                var box = switch (direction) {
-                    case SOUTH -> new BoundingBox(0, 0, 0, 2, 2, blockLength - 1);
-                    case WEST -> new BoundingBox(-(blockLength - 1), 0, 0, 0, 2, 2);
-                    case EAST -> new BoundingBox(0, 0, 0, blockLength - 1, 2, 2);
-                    default -> new BoundingBox(0, 0, -(blockLength - 1), 2, 2, 0);
-                };
+                var box =
+                        switch (direction) {
+                            case SOUTH -> new BoundingBox(0, 0, 0, 2, 2, blockLength - 1);
+                            case WEST -> new BoundingBox(-(blockLength - 1), 0, 0, 0, 2, 2);
+                            case EAST -> new BoundingBox(0, 0, 0, blockLength - 1, 2, 2);
+                            default -> new BoundingBox(0, 0, -(blockLength - 1), 2, 2, 0);
+                        };
 
                 box = box.moved(footX, footY, footZ);
                 if (!hasCollision(pieces, box)) {
@@ -656,7 +831,8 @@ public final class MineshaftPieces {
         }
 
         @Override
-        void addChildren(MineshaftPiece startPiece, List<MineshaftPiece> pieces, RandomSource random) {
+        void addChildren(
+                MineshaftPiece startPiece, List<MineshaftPiece> pieces, RandomSource random) {
             var depth = this.genDepth;
             var endSelection = random.nextInt(4);
             var orientation = this.getOrientation();
@@ -664,62 +840,134 @@ public final class MineshaftPieces {
                 switch (orientation) {
                     case SOUTH -> {
                         if (endSelection <= 1) {
-                            MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                                    this.boundingBox.minX(), this.boundingBox.minY() - 1 + random.nextInt(3),
-                                    this.boundingBox.maxZ() + 1, orientation, depth);
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    this.boundingBox.minX(),
+                                    this.boundingBox.minY() - 1 + random.nextInt(3),
+                                    this.boundingBox.maxZ() + 1,
+                                    orientation,
+                                    depth);
                         } else if (endSelection == 2) {
-                            MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                                    this.boundingBox.minX() - 1, this.boundingBox.minY() - 1 + random.nextInt(3),
-                                    this.boundingBox.maxZ() - 3, Direction.WEST, depth);
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    this.boundingBox.minX() - 1,
+                                    this.boundingBox.minY() - 1 + random.nextInt(3),
+                                    this.boundingBox.maxZ() - 3,
+                                    Direction.WEST,
+                                    depth);
                         } else {
-                            MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                                    this.boundingBox.maxX() + 1, this.boundingBox.minY() - 1 + random.nextInt(3),
-                                    this.boundingBox.maxZ() - 3, Direction.EAST, depth);
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    this.boundingBox.maxX() + 1,
+                                    this.boundingBox.minY() - 1 + random.nextInt(3),
+                                    this.boundingBox.maxZ() - 3,
+                                    Direction.EAST,
+                                    depth);
                         }
                     }
                     case WEST -> {
                         if (endSelection <= 1) {
-                            MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                                    this.boundingBox.minX() - 1, this.boundingBox.minY() - 1 + random.nextInt(3),
-                                    this.boundingBox.minZ(), orientation, depth);
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    this.boundingBox.minX() - 1,
+                                    this.boundingBox.minY() - 1 + random.nextInt(3),
+                                    this.boundingBox.minZ(),
+                                    orientation,
+                                    depth);
                         } else if (endSelection == 2) {
-                            MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                                    this.boundingBox.minX(), this.boundingBox.minY() - 1 + random.nextInt(3),
-                                    this.boundingBox.minZ() - 1, Direction.NORTH, depth);
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    this.boundingBox.minX(),
+                                    this.boundingBox.minY() - 1 + random.nextInt(3),
+                                    this.boundingBox.minZ() - 1,
+                                    Direction.NORTH,
+                                    depth);
                         } else {
-                            MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                                    this.boundingBox.minX(), this.boundingBox.minY() - 1 + random.nextInt(3),
-                                    this.boundingBox.maxZ() + 1, Direction.SOUTH, depth);
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    this.boundingBox.minX(),
+                                    this.boundingBox.minY() - 1 + random.nextInt(3),
+                                    this.boundingBox.maxZ() + 1,
+                                    Direction.SOUTH,
+                                    depth);
                         }
                     }
                     case EAST -> {
                         if (endSelection <= 1) {
-                            MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                                    this.boundingBox.maxX() + 1, this.boundingBox.minY() - 1 + random.nextInt(3),
-                                    this.boundingBox.minZ(), orientation, depth);
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    this.boundingBox.maxX() + 1,
+                                    this.boundingBox.minY() - 1 + random.nextInt(3),
+                                    this.boundingBox.minZ(),
+                                    orientation,
+                                    depth);
                         } else if (endSelection == 2) {
-                            MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                                    this.boundingBox.maxX() - 3, this.boundingBox.minY() - 1 + random.nextInt(3),
-                                    this.boundingBox.minZ() - 1, Direction.NORTH, depth);
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    this.boundingBox.maxX() - 3,
+                                    this.boundingBox.minY() - 1 + random.nextInt(3),
+                                    this.boundingBox.minZ() - 1,
+                                    Direction.NORTH,
+                                    depth);
                         } else {
-                            MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                                    this.boundingBox.maxX() - 3, this.boundingBox.minY() - 1 + random.nextInt(3),
-                                    this.boundingBox.maxZ() + 1, Direction.SOUTH, depth);
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    this.boundingBox.maxX() - 3,
+                                    this.boundingBox.minY() - 1 + random.nextInt(3),
+                                    this.boundingBox.maxZ() + 1,
+                                    Direction.SOUTH,
+                                    depth);
                         }
                     }
                     default -> {
                         if (endSelection <= 1) {
-                            MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                                    this.boundingBox.minX(), this.boundingBox.minY() - 1 + random.nextInt(3),
-                                    this.boundingBox.minZ() - 1, orientation, depth);
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    this.boundingBox.minX(),
+                                    this.boundingBox.minY() - 1 + random.nextInt(3),
+                                    this.boundingBox.minZ() - 1,
+                                    orientation,
+                                    depth);
                         } else if (endSelection == 2) {
-                            MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                                    this.boundingBox.minX() - 1, this.boundingBox.minY() - 1 + random.nextInt(3),
-                                    this.boundingBox.minZ(), Direction.WEST, depth);
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    this.boundingBox.minX() - 1,
+                                    this.boundingBox.minY() - 1 + random.nextInt(3),
+                                    this.boundingBox.minZ(),
+                                    Direction.WEST,
+                                    depth);
                         } else {
-                            MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                                    this.boundingBox.maxX() + 1, this.boundingBox.minY() - 1 + random.nextInt(3),
-                                    this.boundingBox.minZ(), Direction.EAST, depth);
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    this.boundingBox.maxX() + 1,
+                                    this.boundingBox.minY() - 1 + random.nextInt(3),
+                                    this.boundingBox.minZ(),
+                                    Direction.EAST,
+                                    depth);
                         }
                     }
                 }
@@ -727,25 +975,57 @@ public final class MineshaftPieces {
 
             if (depth < MAX_DEPTH) {
                 if (orientation != Direction.NORTH && orientation != Direction.SOUTH) {
-                    for (var x = this.boundingBox.minX() + 3; x + 3 <= this.boundingBox.maxX(); x += 5) {
+                    for (var x = this.boundingBox.minX() + 3;
+                            x + 3 <= this.boundingBox.maxX();
+                            x += 5) {
                         var selection = random.nextInt(5);
                         if (selection == 0) {
-                            MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                                    x, this.boundingBox.minY(), this.boundingBox.minZ() - 1, Direction.NORTH, depth + 1);
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    x,
+                                    this.boundingBox.minY(),
+                                    this.boundingBox.minZ() - 1,
+                                    Direction.NORTH,
+                                    depth + 1);
                         } else if (selection == 1) {
-                            MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                                    x, this.boundingBox.minY(), this.boundingBox.maxZ() + 1, Direction.SOUTH, depth + 1);
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    x,
+                                    this.boundingBox.minY(),
+                                    this.boundingBox.maxZ() + 1,
+                                    Direction.SOUTH,
+                                    depth + 1);
                         }
                     }
                 } else {
-                    for (var z = this.boundingBox.minZ() + 3; z + 3 <= this.boundingBox.maxZ(); z += 5) {
+                    for (var z = this.boundingBox.minZ() + 3;
+                            z + 3 <= this.boundingBox.maxZ();
+                            z += 5) {
                         var selection = random.nextInt(5);
                         if (selection == 0) {
-                            MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                                    this.boundingBox.minX() - 1, this.boundingBox.minY(), z, Direction.WEST, depth + 1);
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    this.boundingBox.minX() - 1,
+                                    this.boundingBox.minY(),
+                                    z,
+                                    Direction.WEST,
+                                    depth + 1);
                         } else if (selection == 1) {
-                            MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                                    this.boundingBox.maxX() + 1, this.boundingBox.minY(), z, Direction.EAST, depth + 1);
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    this.boundingBox.maxX() + 1,
+                                    this.boundingBox.minY(),
+                                    z,
+                                    Direction.EAST,
+                                    depth + 1);
                         }
                     }
                 }
@@ -761,9 +1041,25 @@ public final class MineshaftPieces {
             var length = this.numSections * 5 - 1;
             var planks = this.type.planksState();
             this.generateBox(level, chunkBB, 0, 0, 0, 2, 1, length, CAVE_AIR, CAVE_AIR, false);
-            this.generateMaybeBox(level, chunkBB, random, 0.8F, 0, 2, 0, 2, 2, length, CAVE_AIR, CAVE_AIR, false, false);
+            this.generateMaybeBox(
+                    level, chunkBB, random, 0.8F, 0, 2, 0, 2, 2, length, CAVE_AIR, CAVE_AIR, false,
+                    false);
             if (this.spiderCorridor) {
-                this.generateMaybeBox(level, chunkBB, random, 0.6F, 0, 0, 0, 2, 1, length, Block.COBWEB, CAVE_AIR, false, true);
+                this.generateMaybeBox(
+                        level,
+                        chunkBB,
+                        random,
+                        0.6F,
+                        0,
+                        0,
+                        0,
+                        2,
+                        1,
+                        length,
+                        Block.COBWEB,
+                        CAVE_AIR,
+                        false,
+                        true);
             }
 
             for (var section = 0; section < this.numSections; section++) {
@@ -790,7 +1086,8 @@ public final class MineshaftPieces {
                     var wx = this.worldX(1, spiderZ);
                     var wy = this.worldY(0);
                     var wz = this.worldZ(1, spiderZ);
-                    if (isInside(chunkBB, wx, wy, wz) && this.isInterior(level, 1, 0, spiderZ, chunkBB)) {
+                    if (isInside(chunkBB, wx, wy, wz)
+                            && this.isInterior(level, 1, 0, spiderZ, chunkBB)) {
                         this.hasPlacedSpider = true;
                         level.setBlock(wx, wy, wz, Block.SPAWNER);
                     }
@@ -822,16 +1119,25 @@ public final class MineshaftPieces {
         }
 
         /**
-         * Corridor chest: a rail block plus a loot minecart entity. Only the
-         * rail matters for block parity; the loot seed random calls are kept.
+         * Corridor chest: a rail block plus a loot minecart entity. Only the rail matters for block
+         * parity; the loot seed random calls are kept.
          */
-        private boolean createChest(MineshaftLevel level, BoundingBox chunkBB, RandomSource random, int x, int y, int z) {
+        private boolean createChest(
+                MineshaftLevel level,
+                BoundingBox chunkBB,
+                RandomSource random,
+                int x,
+                int y,
+                int z) {
             var wx = this.worldX(x, z);
             var wy = this.worldY(y);
             var wz = this.worldZ(x, z);
-            if (isInside(chunkBB, wx, wy, wz) && level.getBlock(wx, wy, wz).air()
+            if (isInside(chunkBB, wx, wy, wz)
+                    && level.getBlock(wx, wy, wz).air()
                     && !level.getBlock(wx, wy - 1, wz).air()) {
-                var rail = Block.RAIL.withProperty("shape", random.nextBoolean() ? "north_south" : "east_west");
+                var rail =
+                        Block.RAIL.withProperty(
+                                "shape", random.nextBoolean() ? "north_south" : "east_west");
                 this.placeBlock(level, rail, x, y, z, chunkBB);
                 random.nextLong(); // minecart chest loot table seed
                 return true;
@@ -840,7 +1146,8 @@ public final class MineshaftPieces {
             return false;
         }
 
-        private void placeDoubleLowerOrUpperSupport(MineshaftLevel level, BoundingBox chunkBB, int x, int y, int z) {
+        private void placeDoubleLowerOrUpperSupport(
+                MineshaftLevel level, BoundingBox chunkBB, int x, int y, int z) {
             var wood = this.type.woodState();
             var planks = this.type.planksState();
             if (this.getBlock(level, x, y, z, chunkBB).compare(planks)) {
@@ -852,7 +1159,8 @@ public final class MineshaftPieces {
             }
         }
 
-        private void fillPillarDownOrChainUp(MineshaftLevel level, Block pillarBlock, int x, int y, int z, BoundingBox chunkBB) {
+        private void fillPillarDownOrChainUp(
+                MineshaftLevel level, Block pillarBlock, int x, int y, int z, BoundingBox chunkBB) {
             var wx = this.worldX(x, z);
             var worldY = this.worldY(y);
             var wz = this.worldZ(x, z);
@@ -867,13 +1175,18 @@ public final class MineshaftPieces {
                 if (checkBelow) {
                     var yBelow = worldY - distance;
                     var belowState = level.getBlock(wx, yBelow, wz);
-                    var emptyBelow = isReplaceableByStructures(belowState) && !belowState.compare(Block.LAVA);
+                    var emptyBelow =
+                            isReplaceableByStructures(belowState)
+                                    && !belowState.compare(Block.LAVA);
                     if (!emptyBelow && isFaceSturdy(belowState)) {
                         fillColumnBetween(level, pillarBlock, wx, wz, yBelow + 1, worldY);
                         return;
                     }
 
-                    checkBelow = distance <= MAX_PILLAR_HEIGHT && emptyBelow && yBelow > level.minY() + 1;
+                    checkBelow =
+                            distance <= MAX_PILLAR_HEIGHT
+                                    && emptyBelow
+                                    && yBelow > level.minY() + 1;
                 }
 
                 if (checkAbove) {
@@ -882,34 +1195,48 @@ public final class MineshaftPieces {
                     var emptyAbove = isReplaceableByStructures(aboveState);
                     if (!emptyAbove && canHangChainBelow(aboveState)) {
                         level.setBlockRaw(wx, worldY + 1, wz, this.type.fenceState());
-                        fillColumnBetween(level, Block.IRON_CHAIN, wx, wz, worldY + 2, worldY + distance);
+                        fillColumnBetween(
+                                level, Block.IRON_CHAIN, wx, wz, worldY + 2, worldY + distance);
                         return;
                     }
 
-                    checkAbove = distance <= MAX_CHAIN_HEIGHT && emptyAbove && yAbove < level.maxY();
+                    checkAbove =
+                            distance <= MAX_CHAIN_HEIGHT && emptyAbove && yAbove < level.maxY();
                 }
 
                 distance++;
             }
         }
 
-        private static void fillColumnBetween(MineshaftLevel level, Block pillarBlock, int x, int z,
-                int bottomInclusive, int topExclusive) {
+        private static void fillColumnBetween(
+                MineshaftLevel level,
+                Block pillarBlock,
+                int x,
+                int z,
+                int bottomInclusive,
+                int topExclusive) {
             for (var y = bottomInclusive; y < topExclusive; y++) {
                 level.setBlockRaw(x, y, z, pillarBlock);
             }
         }
 
         /**
-         * Vanilla {@code Block.canSupportCenter(DOWN)}: a cobweb reports
-         * isSolid in Minestom but has no support shape, so a chain must not
-         * hang below one (the fence anchor would overwrite a spider web).
+         * Vanilla {@code Block.canSupportCenter(DOWN)}: a cobweb reports isSolid in Minestom but
+         * has no support shape, so a chain must not hang below one (the fence anchor would
+         * overwrite a spider web).
          */
         private static boolean canHangChainBelow(Block block) {
             return block.solid() && !isFallingBlock(block) && !block.compare(Block.COBWEB);
         }
 
-        private void placeSupport(MineshaftLevel level, BoundingBox chunkBB, int x0, int y0, int z, int y1, int x1,
+        private void placeSupport(
+                MineshaftLevel level,
+                BoundingBox chunkBB,
+                int x0,
+                int y0,
+                int z,
+                int y1,
+                int x1,
                 RandomSource random) {
             if (!this.isSupportingBox(level, chunkBB, x0, x1, y1, z)) {
                 return;
@@ -917,29 +1244,73 @@ public final class MineshaftPieces {
 
             var planks = this.type.planksState();
             var fence = this.type.fenceState();
-            this.generateBox(level, chunkBB, x0, y0, z, x0, y1 - 1, z, fence.withProperty("west", "true"), CAVE_AIR, false);
-            this.generateBox(level, chunkBB, x1, y0, z, x1, y1 - 1, z, fence.withProperty("east", "true"), CAVE_AIR, false);
+            this.generateBox(
+                    level,
+                    chunkBB,
+                    x0,
+                    y0,
+                    z,
+                    x0,
+                    y1 - 1,
+                    z,
+                    fence.withProperty("west", "true"),
+                    CAVE_AIR,
+                    false);
+            this.generateBox(
+                    level,
+                    chunkBB,
+                    x1,
+                    y0,
+                    z,
+                    x1,
+                    y1 - 1,
+                    z,
+                    fence.withProperty("east", "true"),
+                    CAVE_AIR,
+                    false);
             if (random.nextInt(4) == 0) {
                 this.generateBox(level, chunkBB, x0, y1, z, x0, y1, z, planks, CAVE_AIR, false);
                 this.generateBox(level, chunkBB, x1, y1, z, x1, y1, z, planks, CAVE_AIR, false);
             } else {
                 this.generateBox(level, chunkBB, x0, y1, z, x1, y1, z, planks, CAVE_AIR, false);
-                this.maybeGenerateBlock(level, chunkBB, random, 0.05F, x0 + 1, y1, z - 1,
+                this.maybeGenerateBlock(
+                        level,
+                        chunkBB,
+                        random,
+                        0.05F,
+                        x0 + 1,
+                        y1,
+                        z - 1,
                         Block.WALL_TORCH.withProperty("facing", "south"));
-                this.maybeGenerateBlock(level, chunkBB, random, 0.05F, x0 + 1, y1, z + 1,
+                this.maybeGenerateBlock(
+                        level,
+                        chunkBB,
+                        random,
+                        0.05F,
+                        x0 + 1,
+                        y1,
+                        z + 1,
                         Block.WALL_TORCH.withProperty("facing", "north"));
             }
         }
 
-        private void maybePlaceCobWeb(MineshaftLevel level, BoundingBox chunkBB, RandomSource random,
-                float probability, int x, int y, int z) {
-            if (this.isInterior(level, x, y, z, chunkBB) && random.nextFloat() < probability
+        private void maybePlaceCobWeb(
+                MineshaftLevel level,
+                BoundingBox chunkBB,
+                RandomSource random,
+                float probability,
+                int x,
+                int y,
+                int z) {
+            if (this.isInterior(level, x, y, z, chunkBB)
+                    && random.nextFloat() < probability
                     && this.hasSturdyNeighbours(level, chunkBB, x, y, z, 2)) {
                 this.placeBlock(level, Block.COBWEB, x, y, z, chunkBB);
             }
         }
 
-        private boolean hasSturdyNeighbours(MineshaftLevel level, BoundingBox chunkBB, int x, int y, int z, int count) {
+        private boolean hasSturdyNeighbours(
+                MineshaftLevel level, BoundingBox chunkBB, int x, int y, int z, int count) {
             var wx = this.worldX(x, z);
             var wy = this.worldY(y);
             var wz = this.worldZ(x, z);
@@ -951,8 +1322,9 @@ public final class MineshaftPieces {
                 // Vanilla tests the neighbor's face pointing back toward the
                 // cobweb position, not a fixed top face (a mob spawner or a
                 // stair counts direction-dependently).
-                if (isInside(chunkBB, nx, ny, nz) && rocks.minestom.worldgen.feature.SturdyFaces.isFaceSturdy(
-                        level.getBlock(nx, ny, nz), direction.opposite().blockFace())) {
+                if (isInside(chunkBB, nx, ny, nz)
+                        && rocks.minestom.worldgen.feature.SturdyFaces.isFaceSturdy(
+                                level.getBlock(nx, ny, nz), direction.opposite().blockFace())) {
                     if (++sturdyNeighbours >= count) {
                         return true;
                     }
@@ -973,8 +1345,13 @@ public final class MineshaftPieces {
             this.isTwoFloored = boundingBox.getYSpan() > 3;
         }
 
-        static BoundingBox findCrossing(List<MineshaftPiece> pieces, RandomSource random,
-                int footX, int footY, int footZ, Direction direction) {
+        static BoundingBox findCrossing(
+                List<MineshaftPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction) {
             int y1;
             if (random.nextInt(4) == 0) {
                 y1 = 6;
@@ -982,90 +1359,188 @@ public final class MineshaftPieces {
                 y1 = 2;
             }
 
-            var box = switch (direction) {
-                case SOUTH -> new BoundingBox(-1, 0, 0, 3, y1, 4);
-                case WEST -> new BoundingBox(-4, 0, -1, 0, y1, 3);
-                case EAST -> new BoundingBox(0, 0, -1, 4, y1, 3);
-                default -> new BoundingBox(-1, 0, -4, 3, y1, 0);
-            };
+            var box =
+                    switch (direction) {
+                        case SOUTH -> new BoundingBox(-1, 0, 0, 3, y1, 4);
+                        case WEST -> new BoundingBox(-4, 0, -1, 0, y1, 3);
+                        case EAST -> new BoundingBox(0, 0, -1, 4, y1, 3);
+                        default -> new BoundingBox(-1, 0, -4, 3, y1, 0);
+                    };
 
             box = box.moved(footX, footY, footZ);
             return hasCollision(pieces, box) ? null : box;
         }
 
         @Override
-        void addChildren(MineshaftPiece startPiece, List<MineshaftPiece> pieces, RandomSource random) {
+        void addChildren(
+                MineshaftPiece startPiece, List<MineshaftPiece> pieces, RandomSource random) {
             var depth = this.genDepth;
             switch (this.direction) {
                 case SOUTH -> {
-                    MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.minX() + 1, this.boundingBox.minY(), this.boundingBox.maxZ() + 1,
-                            Direction.SOUTH, depth);
-                    MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.minX() - 1, this.boundingBox.minY(), this.boundingBox.minZ() + 1,
-                            Direction.WEST, depth);
-                    MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.maxX() + 1, this.boundingBox.minY(), this.boundingBox.minZ() + 1,
-                            Direction.EAST, depth);
+                    MineshaftPieces.generateAndAddPiece(
+                            startPiece,
+                            pieces,
+                            random,
+                            this.boundingBox.minX() + 1,
+                            this.boundingBox.minY(),
+                            this.boundingBox.maxZ() + 1,
+                            Direction.SOUTH,
+                            depth);
+                    MineshaftPieces.generateAndAddPiece(
+                            startPiece,
+                            pieces,
+                            random,
+                            this.boundingBox.minX() - 1,
+                            this.boundingBox.minY(),
+                            this.boundingBox.minZ() + 1,
+                            Direction.WEST,
+                            depth);
+                    MineshaftPieces.generateAndAddPiece(
+                            startPiece,
+                            pieces,
+                            random,
+                            this.boundingBox.maxX() + 1,
+                            this.boundingBox.minY(),
+                            this.boundingBox.minZ() + 1,
+                            Direction.EAST,
+                            depth);
                 }
                 case WEST -> {
-                    MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.minX() + 1, this.boundingBox.minY(), this.boundingBox.minZ() - 1,
-                            Direction.NORTH, depth);
-                    MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.minX() + 1, this.boundingBox.minY(), this.boundingBox.maxZ() + 1,
-                            Direction.SOUTH, depth);
-                    MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.minX() - 1, this.boundingBox.minY(), this.boundingBox.minZ() + 1,
-                            Direction.WEST, depth);
+                    MineshaftPieces.generateAndAddPiece(
+                            startPiece,
+                            pieces,
+                            random,
+                            this.boundingBox.minX() + 1,
+                            this.boundingBox.minY(),
+                            this.boundingBox.minZ() - 1,
+                            Direction.NORTH,
+                            depth);
+                    MineshaftPieces.generateAndAddPiece(
+                            startPiece,
+                            pieces,
+                            random,
+                            this.boundingBox.minX() + 1,
+                            this.boundingBox.minY(),
+                            this.boundingBox.maxZ() + 1,
+                            Direction.SOUTH,
+                            depth);
+                    MineshaftPieces.generateAndAddPiece(
+                            startPiece,
+                            pieces,
+                            random,
+                            this.boundingBox.minX() - 1,
+                            this.boundingBox.minY(),
+                            this.boundingBox.minZ() + 1,
+                            Direction.WEST,
+                            depth);
                 }
                 case EAST -> {
-                    MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.minX() + 1, this.boundingBox.minY(), this.boundingBox.minZ() - 1,
-                            Direction.NORTH, depth);
-                    MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.minX() + 1, this.boundingBox.minY(), this.boundingBox.maxZ() + 1,
-                            Direction.SOUTH, depth);
-                    MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.maxX() + 1, this.boundingBox.minY(), this.boundingBox.minZ() + 1,
-                            Direction.EAST, depth);
+                    MineshaftPieces.generateAndAddPiece(
+                            startPiece,
+                            pieces,
+                            random,
+                            this.boundingBox.minX() + 1,
+                            this.boundingBox.minY(),
+                            this.boundingBox.minZ() - 1,
+                            Direction.NORTH,
+                            depth);
+                    MineshaftPieces.generateAndAddPiece(
+                            startPiece,
+                            pieces,
+                            random,
+                            this.boundingBox.minX() + 1,
+                            this.boundingBox.minY(),
+                            this.boundingBox.maxZ() + 1,
+                            Direction.SOUTH,
+                            depth);
+                    MineshaftPieces.generateAndAddPiece(
+                            startPiece,
+                            pieces,
+                            random,
+                            this.boundingBox.maxX() + 1,
+                            this.boundingBox.minY(),
+                            this.boundingBox.minZ() + 1,
+                            Direction.EAST,
+                            depth);
                 }
                 default -> {
-                    MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.minX() + 1, this.boundingBox.minY(), this.boundingBox.minZ() - 1,
-                            Direction.NORTH, depth);
-                    MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.minX() - 1, this.boundingBox.minY(), this.boundingBox.minZ() + 1,
-                            Direction.WEST, depth);
-                    MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.maxX() + 1, this.boundingBox.minY(), this.boundingBox.minZ() + 1,
-                            Direction.EAST, depth);
+                    MineshaftPieces.generateAndAddPiece(
+                            startPiece,
+                            pieces,
+                            random,
+                            this.boundingBox.minX() + 1,
+                            this.boundingBox.minY(),
+                            this.boundingBox.minZ() - 1,
+                            Direction.NORTH,
+                            depth);
+                    MineshaftPieces.generateAndAddPiece(
+                            startPiece,
+                            pieces,
+                            random,
+                            this.boundingBox.minX() - 1,
+                            this.boundingBox.minY(),
+                            this.boundingBox.minZ() + 1,
+                            Direction.WEST,
+                            depth);
+                    MineshaftPieces.generateAndAddPiece(
+                            startPiece,
+                            pieces,
+                            random,
+                            this.boundingBox.maxX() + 1,
+                            this.boundingBox.minY(),
+                            this.boundingBox.minZ() + 1,
+                            Direction.EAST,
+                            depth);
                 }
             }
 
             if (this.isTwoFloored) {
                 if (random.nextBoolean()) {
-                    MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.minX() + 1, this.boundingBox.minY() + 3 + 1, this.boundingBox.minZ() - 1,
-                            Direction.NORTH, depth);
+                    MineshaftPieces.generateAndAddPiece(
+                            startPiece,
+                            pieces,
+                            random,
+                            this.boundingBox.minX() + 1,
+                            this.boundingBox.minY() + 3 + 1,
+                            this.boundingBox.minZ() - 1,
+                            Direction.NORTH,
+                            depth);
                 }
 
                 if (random.nextBoolean()) {
-                    MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.minX() - 1, this.boundingBox.minY() + 3 + 1, this.boundingBox.minZ() + 1,
-                            Direction.WEST, depth);
+                    MineshaftPieces.generateAndAddPiece(
+                            startPiece,
+                            pieces,
+                            random,
+                            this.boundingBox.minX() - 1,
+                            this.boundingBox.minY() + 3 + 1,
+                            this.boundingBox.minZ() + 1,
+                            Direction.WEST,
+                            depth);
                 }
 
                 if (random.nextBoolean()) {
-                    MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.maxX() + 1, this.boundingBox.minY() + 3 + 1, this.boundingBox.minZ() + 1,
-                            Direction.EAST, depth);
+                    MineshaftPieces.generateAndAddPiece(
+                            startPiece,
+                            pieces,
+                            random,
+                            this.boundingBox.maxX() + 1,
+                            this.boundingBox.minY() + 3 + 1,
+                            this.boundingBox.minZ() + 1,
+                            Direction.EAST,
+                            depth);
                 }
 
                 if (random.nextBoolean()) {
-                    MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.minX() + 1, this.boundingBox.minY() + 3 + 1, this.boundingBox.maxZ() + 1,
-                            Direction.SOUTH, depth);
+                    MineshaftPieces.generateAndAddPiece(
+                            startPiece,
+                            pieces,
+                            random,
+                            this.boundingBox.minX() + 1,
+                            this.boundingBox.minY() + 3 + 1,
+                            this.boundingBox.maxZ() + 1,
+                            Direction.SOUTH,
+                            depth);
                 }
             }
         }
@@ -1078,45 +1553,121 @@ public final class MineshaftPieces {
 
             var planks = this.type.planksState();
             if (this.isTwoFloored) {
-                this.generateBox(level, chunkBB,
-                        this.boundingBox.minX() + 1, this.boundingBox.minY(), this.boundingBox.minZ(),
-                        this.boundingBox.maxX() - 1, this.boundingBox.minY() + 3 - 1, this.boundingBox.maxZ(),
-                        CAVE_AIR, CAVE_AIR, false);
-                this.generateBox(level, chunkBB,
-                        this.boundingBox.minX(), this.boundingBox.minY(), this.boundingBox.minZ() + 1,
-                        this.boundingBox.maxX(), this.boundingBox.minY() + 3 - 1, this.boundingBox.maxZ() - 1,
-                        CAVE_AIR, CAVE_AIR, false);
-                this.generateBox(level, chunkBB,
-                        this.boundingBox.minX() + 1, this.boundingBox.maxY() - 2, this.boundingBox.minZ(),
-                        this.boundingBox.maxX() - 1, this.boundingBox.maxY(), this.boundingBox.maxZ(),
-                        CAVE_AIR, CAVE_AIR, false);
-                this.generateBox(level, chunkBB,
-                        this.boundingBox.minX(), this.boundingBox.maxY() - 2, this.boundingBox.minZ() + 1,
-                        this.boundingBox.maxX(), this.boundingBox.maxY(), this.boundingBox.maxZ() - 1,
-                        CAVE_AIR, CAVE_AIR, false);
-                this.generateBox(level, chunkBB,
-                        this.boundingBox.minX() + 1, this.boundingBox.minY() + 3, this.boundingBox.minZ() + 1,
-                        this.boundingBox.maxX() - 1, this.boundingBox.minY() + 3, this.boundingBox.maxZ() - 1,
-                        CAVE_AIR, CAVE_AIR, false);
+                this.generateBox(
+                        level,
+                        chunkBB,
+                        this.boundingBox.minX() + 1,
+                        this.boundingBox.minY(),
+                        this.boundingBox.minZ(),
+                        this.boundingBox.maxX() - 1,
+                        this.boundingBox.minY() + 3 - 1,
+                        this.boundingBox.maxZ(),
+                        CAVE_AIR,
+                        CAVE_AIR,
+                        false);
+                this.generateBox(
+                        level,
+                        chunkBB,
+                        this.boundingBox.minX(),
+                        this.boundingBox.minY(),
+                        this.boundingBox.minZ() + 1,
+                        this.boundingBox.maxX(),
+                        this.boundingBox.minY() + 3 - 1,
+                        this.boundingBox.maxZ() - 1,
+                        CAVE_AIR,
+                        CAVE_AIR,
+                        false);
+                this.generateBox(
+                        level,
+                        chunkBB,
+                        this.boundingBox.minX() + 1,
+                        this.boundingBox.maxY() - 2,
+                        this.boundingBox.minZ(),
+                        this.boundingBox.maxX() - 1,
+                        this.boundingBox.maxY(),
+                        this.boundingBox.maxZ(),
+                        CAVE_AIR,
+                        CAVE_AIR,
+                        false);
+                this.generateBox(
+                        level,
+                        chunkBB,
+                        this.boundingBox.minX(),
+                        this.boundingBox.maxY() - 2,
+                        this.boundingBox.minZ() + 1,
+                        this.boundingBox.maxX(),
+                        this.boundingBox.maxY(),
+                        this.boundingBox.maxZ() - 1,
+                        CAVE_AIR,
+                        CAVE_AIR,
+                        false);
+                this.generateBox(
+                        level,
+                        chunkBB,
+                        this.boundingBox.minX() + 1,
+                        this.boundingBox.minY() + 3,
+                        this.boundingBox.minZ() + 1,
+                        this.boundingBox.maxX() - 1,
+                        this.boundingBox.minY() + 3,
+                        this.boundingBox.maxZ() - 1,
+                        CAVE_AIR,
+                        CAVE_AIR,
+                        false);
             } else {
-                this.generateBox(level, chunkBB,
-                        this.boundingBox.minX() + 1, this.boundingBox.minY(), this.boundingBox.minZ(),
-                        this.boundingBox.maxX() - 1, this.boundingBox.maxY(), this.boundingBox.maxZ(),
-                        CAVE_AIR, CAVE_AIR, false);
-                this.generateBox(level, chunkBB,
-                        this.boundingBox.minX(), this.boundingBox.minY(), this.boundingBox.minZ() + 1,
-                        this.boundingBox.maxX(), this.boundingBox.maxY(), this.boundingBox.maxZ() - 1,
-                        CAVE_AIR, CAVE_AIR, false);
+                this.generateBox(
+                        level,
+                        chunkBB,
+                        this.boundingBox.minX() + 1,
+                        this.boundingBox.minY(),
+                        this.boundingBox.minZ(),
+                        this.boundingBox.maxX() - 1,
+                        this.boundingBox.maxY(),
+                        this.boundingBox.maxZ(),
+                        CAVE_AIR,
+                        CAVE_AIR,
+                        false);
+                this.generateBox(
+                        level,
+                        chunkBB,
+                        this.boundingBox.minX(),
+                        this.boundingBox.minY(),
+                        this.boundingBox.minZ() + 1,
+                        this.boundingBox.maxX(),
+                        this.boundingBox.maxY(),
+                        this.boundingBox.maxZ() - 1,
+                        CAVE_AIR,
+                        CAVE_AIR,
+                        false);
             }
 
-            this.placeSupportPillar(level, chunkBB, this.boundingBox.minX() + 1, this.boundingBox.minY(),
-                    this.boundingBox.minZ() + 1, this.boundingBox.maxY());
-            this.placeSupportPillar(level, chunkBB, this.boundingBox.minX() + 1, this.boundingBox.minY(),
-                    this.boundingBox.maxZ() - 1, this.boundingBox.maxY());
-            this.placeSupportPillar(level, chunkBB, this.boundingBox.maxX() - 1, this.boundingBox.minY(),
-                    this.boundingBox.minZ() + 1, this.boundingBox.maxY());
-            this.placeSupportPillar(level, chunkBB, this.boundingBox.maxX() - 1, this.boundingBox.minY(),
-                    this.boundingBox.maxZ() - 1, this.boundingBox.maxY());
+            this.placeSupportPillar(
+                    level,
+                    chunkBB,
+                    this.boundingBox.minX() + 1,
+                    this.boundingBox.minY(),
+                    this.boundingBox.minZ() + 1,
+                    this.boundingBox.maxY());
+            this.placeSupportPillar(
+                    level,
+                    chunkBB,
+                    this.boundingBox.minX() + 1,
+                    this.boundingBox.minY(),
+                    this.boundingBox.maxZ() - 1,
+                    this.boundingBox.maxY());
+            this.placeSupportPillar(
+                    level,
+                    chunkBB,
+                    this.boundingBox.maxX() - 1,
+                    this.boundingBox.minY(),
+                    this.boundingBox.minZ() + 1,
+                    this.boundingBox.maxY());
+            this.placeSupportPillar(
+                    level,
+                    chunkBB,
+                    this.boundingBox.maxX() - 1,
+                    this.boundingBox.minY(),
+                    this.boundingBox.maxZ() - 1,
+                    this.boundingBox.maxY());
             var y = this.boundingBox.minY() - 1;
 
             for (var x = this.boundingBox.minX(); x <= this.boundingBox.maxX(); x++) {
@@ -1126,9 +1677,21 @@ public final class MineshaftPieces {
             }
         }
 
-        private void placeSupportPillar(MineshaftLevel level, BoundingBox chunkBB, int x, int y0, int z, int y1) {
+        private void placeSupportPillar(
+                MineshaftLevel level, BoundingBox chunkBB, int x, int y0, int z, int y1) {
             if (!this.getBlock(level, x, y1 + 1, z, chunkBB).air()) {
-                this.generateBox(level, chunkBB, x, y0, z, x, y1, z, this.type.planksState(), CAVE_AIR, false);
+                this.generateBox(
+                        level,
+                        chunkBB,
+                        x,
+                        y0,
+                        z,
+                        x,
+                        y1,
+                        z,
+                        this.type.planksState(),
+                        CAVE_AIR,
+                        false);
             }
         }
     }
@@ -1139,37 +1702,72 @@ public final class MineshaftPieces {
             this.setOrientation(direction);
         }
 
-        static BoundingBox findStairs(List<MineshaftPiece> pieces, RandomSource random,
-                int footX, int footY, int footZ, Direction direction) {
-            var box = switch (direction) {
-                case SOUTH -> new BoundingBox(0, -5, 0, 2, 2, 8);
-                case WEST -> new BoundingBox(-8, -5, 0, 0, 2, 2);
-                case EAST -> new BoundingBox(0, -5, 0, 8, 2, 2);
-                default -> new BoundingBox(0, -5, -8, 2, 2, 0);
-            };
+        static BoundingBox findStairs(
+                List<MineshaftPiece> pieces,
+                RandomSource random,
+                int footX,
+                int footY,
+                int footZ,
+                Direction direction) {
+            var box =
+                    switch (direction) {
+                        case SOUTH -> new BoundingBox(0, -5, 0, 2, 2, 8);
+                        case WEST -> new BoundingBox(-8, -5, 0, 0, 2, 2);
+                        case EAST -> new BoundingBox(0, -5, 0, 8, 2, 2);
+                        default -> new BoundingBox(0, -5, -8, 2, 2, 0);
+                    };
 
             box = box.moved(footX, footY, footZ);
             return hasCollision(pieces, box) ? null : box;
         }
 
         @Override
-        void addChildren(MineshaftPiece startPiece, List<MineshaftPiece> pieces, RandomSource random) {
+        void addChildren(
+                MineshaftPiece startPiece, List<MineshaftPiece> pieces, RandomSource random) {
             var depth = this.genDepth;
             var orientation = this.getOrientation();
             if (orientation != null) {
                 switch (orientation) {
-                    case SOUTH -> MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.minX(), this.boundingBox.minY(), this.boundingBox.maxZ() + 1,
-                            Direction.SOUTH, depth);
-                    case WEST -> MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.minX() - 1, this.boundingBox.minY(), this.boundingBox.minZ(),
-                            Direction.WEST, depth);
-                    case EAST -> MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.maxX() + 1, this.boundingBox.minY(), this.boundingBox.minZ(),
-                            Direction.EAST, depth);
-                    default -> MineshaftPieces.generateAndAddPiece(startPiece, pieces, random,
-                            this.boundingBox.minX(), this.boundingBox.minY(), this.boundingBox.minZ() - 1,
-                            Direction.NORTH, depth);
+                    case SOUTH ->
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    this.boundingBox.minX(),
+                                    this.boundingBox.minY(),
+                                    this.boundingBox.maxZ() + 1,
+                                    Direction.SOUTH,
+                                    depth);
+                    case WEST ->
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    this.boundingBox.minX() - 1,
+                                    this.boundingBox.minY(),
+                                    this.boundingBox.minZ(),
+                                    Direction.WEST,
+                                    depth);
+                    case EAST ->
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    this.boundingBox.maxX() + 1,
+                                    this.boundingBox.minY(),
+                                    this.boundingBox.minZ(),
+                                    Direction.EAST,
+                                    depth);
+                    default ->
+                            MineshaftPieces.generateAndAddPiece(
+                                    startPiece,
+                                    pieces,
+                                    random,
+                                    this.boundingBox.minX(),
+                                    this.boundingBox.minY(),
+                                    this.boundingBox.minZ() - 1,
+                                    Direction.NORTH,
+                                    depth);
                 }
             }
         }
@@ -1184,8 +1782,18 @@ public final class MineshaftPieces {
             this.generateBox(level, chunkBB, 0, 0, 7, 2, 2, 8, CAVE_AIR, CAVE_AIR, false);
 
             for (var i = 0; i < 5; i++) {
-                this.generateBox(level, chunkBB, 0, 5 - i - (i < 4 ? 1 : 0), 2 + i, 2, 7 - i, 2 + i,
-                        CAVE_AIR, CAVE_AIR, false);
+                this.generateBox(
+                        level,
+                        chunkBB,
+                        0,
+                        5 - i - (i < 4 ? 1 : 0),
+                        2 + i,
+                        2,
+                        7 - i,
+                        2 + i,
+                        CAVE_AIR,
+                        CAVE_AIR,
+                        false);
             }
         }
     }

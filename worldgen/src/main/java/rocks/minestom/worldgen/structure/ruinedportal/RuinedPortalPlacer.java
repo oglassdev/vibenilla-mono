@@ -1,5 +1,10 @@
 package rocks.minestom.worldgen.structure.ruinedportal;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
@@ -43,35 +48,29 @@ import rocks.minestom.worldgen.surface.DataPackBiomeResolver;
 import rocks.minestom.worldgen.terrain.TerrainData;
 import rocks.minestom.worldgen.terrain.TerrainGenerator;
 
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
- * Places ruined portals with vanilla-exact seeding, mirroring
- * {@code rocks.minestom.worldgen.structure.shipwreck.ShipwreckPlacer}. The start
- * (weighted setup, air pocket, giant/normal template, rotation, mirror and the
- * suitable buried/surface Y) is a pure function of the start chunk, resolved
- * from the {@code setLargeFeatureSeed} random. Vanilla's
- * {@code RuinedPortalPiece.postProcess} places the whole piece and then spreads
- * netherrack, drips columns and adds vines/leaves once, in the chunk holding the
- * bounding-box center, drawing from the {@code surface_structures} feature-seed
- * random - so this placer runs the full placement exactly once (unclipped,
- * writing across chunk boundaries) when the center chunk generates.
+ * Places ruined portals with vanilla-exact seeding, mirroring {@code
+ * rocks.minestom.worldgen.structure.shipwreck.ShipwreckPlacer}. The start (weighted setup, air
+ * pocket, giant/normal template, rotation, mirror and the suitable buried/surface Y) is a pure
+ * function of the start chunk, resolved from the {@code setLargeFeatureSeed} random. Vanilla's
+ * {@code RuinedPortalPiece.postProcess} places the whole piece and then spreads netherrack, drips
+ * columns and adds vines/leaves once, in the chunk holding the bounding-box center, drawing from
+ * the {@code surface_structures} feature-seed random - so this placer runs the full placement
+ * exactly once (unclipped, writing across chunk boundaries) when the center chunk generates.
  */
 public final class RuinedPortalPlacer {
     /** The largest giant portal plus the netherrack spread stays within 3 chunks. */
     private static final int REFERENCE_RADIUS = 3;
+
     /** GenerationStep.Decoration.SURFACE_STRUCTURES ordinal. */
     private static final int SURFACE_STRUCTURES_STEP = 4;
+
     private static final float PROBABILITY_OF_GIANT_PORTAL = 0.05F;
     private static final int MIN_Y_INDEX = 15;
     private static final Key FEATURES_CANNOT_REPLACE = Key.key("minecraft:features_cannot_replace");
     private static final float[] NETHERRACK_PROBABILITY_BY_DISTANCE = {
-            1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.9F, 0.9F, 0.8F, 0.7F, 0.6F, 0.4F, 0.2F};
+        1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.9F, 0.9F, 0.8F, 0.7F, 0.6F, 0.4F, 0.2F
+    };
 
     private final StructureLoader structureLoader;
     private final FeatureLoader featureLoader;
@@ -87,23 +86,32 @@ public final class RuinedPortalPlacer {
 
     public boolean isRuinedPortalSet(StructureSet structureSet) {
         for (var entry : structureSet.structures()) {
-            if (this.structureLoader.getStructure(entry.structure()) instanceof RuinedPortalStructure) {
+            if (this.structureLoader.getStructure(entry.structure())
+                    instanceof RuinedPortalStructure) {
                 return true;
             }
         }
         return false;
     }
 
-    public void place(GenerationUnit unit, BiomeZoomer biomeZoomer, NoiseGeneratorSettingsRuntime settings,
-            StructureSet structureSet, int[] surfaceHeights) {
+    public void place(
+            GenerationUnit unit,
+            BiomeZoomer biomeZoomer,
+            NoiseGeneratorSettingsRuntime settings,
+            StructureSet structureSet,
+            int[] surfaceHeights) {
         var startX = unit.absoluteStart().blockX();
         var startZ = unit.absoluteStart().blockZ();
         var chunkX = Math.floorDiv(startX, 16);
         var chunkZ = Math.floorDiv(startZ, 16);
 
         var centered = new ArrayList<RuinedPortalStart>();
-        for (var sourceX = chunkX - REFERENCE_RADIUS; sourceX <= chunkX + REFERENCE_RADIUS; sourceX++) {
-            for (var sourceZ = chunkZ - REFERENCE_RADIUS; sourceZ <= chunkZ + REFERENCE_RADIUS; sourceZ++) {
+        for (var sourceX = chunkX - REFERENCE_RADIUS;
+                sourceX <= chunkX + REFERENCE_RADIUS;
+                sourceX++) {
+            for (var sourceZ = chunkZ - REFERENCE_RADIUS;
+                    sourceZ <= chunkZ + REFERENCE_RADIUS;
+                    sourceZ++) {
                 var start = this.startAt(sourceX, sourceZ, structureSet, settings, biomeZoomer);
                 if (start != null
                         && Math.floorDiv(start.center().blockX(), 16) == chunkX
@@ -124,7 +132,8 @@ public final class RuinedPortalPlacer {
         var chunkBlocks = lookup.terrain(chunkX, chunkZ).blocks();
 
         var random = new WorldgenRandom(new XoroshiroRandomSource(0L));
-        var decorationSeed = random.setDecorationSeed(settings.randomState().seed(), startX, startZ);
+        var decorationSeed =
+                random.setDecorationSeed(settings.randomState().seed(), startX, startZ);
 
         for (var start : centered) {
             var index = this.surfaceStructures().indexOf(start.structureKey());
@@ -132,18 +141,34 @@ public final class RuinedPortalPlacer {
                 continue;
             }
             if (System.getProperty("worldgen.portalDebug") != null) {
-                System.out.println("PINDEX " + start.structureKey() + " index=" + index
-                        + " center=" + start.center() + " bounds=" + start.bounds()
-                        + " runChunk=" + chunkX + "," + chunkZ);
+                System.out.println(
+                        "PINDEX "
+                                + start.structureKey()
+                                + " index="
+                                + index
+                                + " center="
+                                + start.center()
+                                + " bounds="
+                                + start.bounds()
+                                + " runChunk="
+                                + chunkX
+                                + ","
+                                + chunkZ);
             }
             random.setFeatureSeed(decorationSeed, index, SURFACE_STRUCTURES_STEP);
             this.placeStart(start, unit, chunkX, chunkZ, chunkBlocks, lookup, settings, random);
         }
     }
 
-    private void placeStart(RuinedPortalStart start, GenerationUnit unit, int chunkX, int chunkZ,
-            Block[] chunkBlocks, GenerationUnitAdapter.TerrainLookup lookup,
-            NoiseGeneratorSettingsRuntime settings, WorldgenRandom random) {
+    private void placeStart(
+            RuinedPortalStart start,
+            GenerationUnit unit,
+            int chunkX,
+            int chunkZ,
+            Block[] chunkBlocks,
+            GenerationUnitAdapter.TerrainLookup lookup,
+            NoiseGeneratorSettingsRuntime settings,
+            WorldgenRandom random) {
         var template = this.structureLoader.getTemplate(start.templateKey());
         if (template == null) {
             return;
@@ -155,25 +180,51 @@ public final class RuinedPortalPlacer {
         var box = start.bounds();
         var margin = NETHERRACK_PROBABILITY_BY_DISTANCE.length + 2;
         var forkStart = new BlockVec(box.minX() - margin, settings.minY(), box.minZ() - margin);
-        var forkEnd = new BlockVec(box.maxX() + margin + 1, settings.maxYInclusive() + 1, box.maxZ() + margin + 1);
+        var forkEnd =
+                new BlockVec(
+                        box.maxX() + margin + 1,
+                        settings.maxYInclusive() + 1,
+                        box.maxZ() + margin + 1);
         var forkedUnit = unit.fork(forkStart, forkEnd);
-        var adapter = new GenerationUnitAdapter(forkedUnit, chunkX << 4, chunkZ << 4, 16, 16, settings.minY(),
-                chunkBlocks, settings.height(), lookup);
+        var adapter =
+                new GenerationUnitAdapter(
+                        forkedUnit,
+                        chunkX << 4,
+                        chunkZ << 4,
+                        16,
+                        16,
+                        settings.minY(),
+                        chunkBlocks,
+                        settings.height(),
+                        lookup);
         var connectionShapeUpdates = new ArrayList<BlockVec>();
 
         var properties = start.properties();
         var referencePos = start.origin();
-        var processorContext = new StructureProcessorContext(
-                adapter, this.structureLoader.blockTags(), settings.randomState().seed(),
-                start.origin(), referencePos, null);
+        var processorContext =
+                new StructureProcessorContext(
+                        adapter,
+                        this.structureLoader.blockTags(),
+                        settings.randomState().seed(),
+                        start.origin(),
+                        referencePos,
+                        null);
         // Unclipped placement (chunkBounds null): the whole piece is written in
         // the center chunk, spilling across chunk boundaries like vanilla's
         // WorldGenLevel, matching RuinedPortalPiece.postProcess's single run.
-        var placementContext = new StructureTemplate.PlacementContext(
-                adapter, null, processorContext, connectionShapeUpdates, random);
-        template.place(placementContext, start.placementPosition(), start.rotation(), start.mirror(),
-                processors(start.placement(), properties), false, false,
-                LiquidSettings.APPLY_WATERLOGGING, true);
+        var placementContext =
+                new StructureTemplate.PlacementContext(
+                        adapter, null, processorContext, connectionShapeUpdates, random);
+        template.place(
+                placementContext,
+                start.placementPosition(),
+                start.rotation(),
+                start.mirror(),
+                processors(start.placement(), properties),
+                false,
+                false,
+                LiquidSettings.APPLY_WATERLOGGING,
+                true);
 
         this.spreadNetherrack(random, adapter, start);
         this.addNetherrackDripColumnsBelowPortal(random, adapter, start);
@@ -194,17 +245,18 @@ public final class RuinedPortalPlacer {
         }
 
         if (!connectionShapeUpdates.isEmpty()) {
-            StructureShapeUpdater.updateEdges(adapter, this.structureLoader.blockTags(), connectionShapeUpdates);
-            StructureShapeUpdater.update(adapter, this.structureLoader.blockTags(), connectionShapeUpdates);
+            StructureShapeUpdater.updateEdges(
+                    adapter, this.structureLoader.blockTags(), connectionShapeUpdates);
+            StructureShapeUpdater.update(
+                    adapter, this.structureLoader.blockTags(), connectionShapeUpdates);
         }
     }
 
     /**
-     * Vanilla {@code RuinedPortalPiece.makeSettings}: the ignore, rule,
-     * weathering, protected-block, lava-submersion and (nether) blackstone
-     * processors in order. The template placer already prepends
-     * {@code STRUCTURE_BLOCK}, so only the extra air ignore (non-air-pocket) is
-     * added here.
+     * Vanilla {@code RuinedPortalPiece.makeSettings}: the ignore, rule, weathering,
+     * protected-block, lava-submersion and (nether) blackstone processors in order. The template
+     * placer already prepends {@code STRUCTURE_BLOCK}, so only the extra air ignore
+     * (non-air-pocket) is added here.
      */
     private StructureProcessorList processors(VerticalPlacement placement, Properties properties) {
         var processors = new ArrayList<StructureProcessor>();
@@ -239,34 +291,59 @@ public final class RuinedPortalPlacer {
     }
 
     private static ProcessorRule blockReplaceRule(Block source, float probability, Block target) {
-        return new ProcessorRule(new RuleTest.RandomBlockMatchTest(source.key(), probability),
-                RuleTest.AlwaysTrueTest.INSTANCE, PosRuleTest.PosAlwaysTrueTest.INSTANCE, target);
+        return new ProcessorRule(
+                new RuleTest.RandomBlockMatchTest(source.key(), probability),
+                RuleTest.AlwaysTrueTest.INSTANCE,
+                PosRuleTest.PosAlwaysTrueTest.INSTANCE,
+                target);
     }
 
     private static ProcessorRule blockReplaceRule(Block source, Block target) {
-        return new ProcessorRule(new RuleTest.BlockMatchTest(source.key()),
-                RuleTest.AlwaysTrueTest.INSTANCE, PosRuleTest.PosAlwaysTrueTest.INSTANCE, target);
+        return new ProcessorRule(
+                new RuleTest.BlockMatchTest(source.key()),
+                RuleTest.AlwaysTrueTest.INSTANCE,
+                PosRuleTest.PosAlwaysTrueTest.INSTANCE,
+                target);
     }
 
-    private RuinedPortalStart startAt(int chunkX, int chunkZ, StructureSet structureSet,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer) {
+    private RuinedPortalStart startAt(
+            int chunkX,
+            int chunkZ,
+            StructureSet structureSet,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer) {
         var key = (long) chunkX << 32 ^ (chunkZ & 0xFFFFFFFFL);
-        return this.starts.computeIfAbsent(key,
-                unused -> Optional.ofNullable(this.computeStart(chunkX, chunkZ, structureSet, settings, biomeZoomer)))
+        return this.starts
+                .computeIfAbsent(
+                        key,
+                        unused ->
+                                Optional.ofNullable(
+                                        this.computeStart(
+                                                chunkX,
+                                                chunkZ,
+                                                structureSet,
+                                                settings,
+                                                biomeZoomer)))
                 .orElse(null);
     }
 
-    private RuinedPortalStart computeStart(int chunkX, int chunkZ, StructureSet structureSet,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer) {
+    private RuinedPortalStart computeStart(
+            int chunkX,
+            int chunkZ,
+            StructureSet structureSet,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer) {
         var seed = settings.randomState().seed();
         var placement = structureSet.placement();
-        if (!placement.isStartChunk(chunkX, chunkZ, seed, settings.randomState().legacyRandomSource())) {
+        if (!placement.isStartChunk(
+                chunkX, chunkZ, seed, settings.randomState().legacyRandomSource())) {
             return null;
         }
 
         var structures = structureSet.structures();
         if (structures.size() == 1) {
-            return this.tryGenerate(structures.getFirst().structure(), chunkX, chunkZ, settings, biomeZoomer);
+            return this.tryGenerate(
+                    structures.getFirst().structure(), chunkX, chunkZ, settings, biomeZoomer);
         }
 
         var options = new ArrayList<>(structures);
@@ -289,8 +366,11 @@ public final class RuinedPortalPlacer {
             }
 
             var selected = options.get(index);
-            if (this.structureLoader.getStructure(selected.structure()) instanceof RuinedPortalStructure) {
-                var start = this.tryGenerate(selected.structure(), chunkX, chunkZ, settings, biomeZoomer);
+            if (this.structureLoader.getStructure(selected.structure())
+                    instanceof RuinedPortalStructure) {
+                var start =
+                        this.tryGenerate(
+                                selected.structure(), chunkX, chunkZ, settings, biomeZoomer);
                 if (start != null) {
                     return start;
                 }
@@ -303,15 +383,19 @@ public final class RuinedPortalPlacer {
     }
 
     /**
-     * Vanilla {@code RuinedPortalStructure.findGenerationPoint} followed by the
-     * stub biome check at the resolved origin: pick a weighted setup, sample the
-     * air pocket, roll giant/normal template, rotation and mirror, resolve the
-     * suitable Y, then keep the start only if the noise biome at the origin
-     * matches.
+     * Vanilla {@code RuinedPortalStructure.findGenerationPoint} followed by the stub biome check at
+     * the resolved origin: pick a weighted setup, sample the air pocket, roll giant/normal
+     * template, rotation and mirror, resolve the suitable Y, then keep the start only if the noise
+     * biome at the origin matches.
      */
-    private RuinedPortalStart tryGenerate(Key structureKey, int chunkX, int chunkZ,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer) {
-        if (!(this.structureLoader.getStructure(structureKey) instanceof RuinedPortalStructure structure)) {
+    private RuinedPortalStart tryGenerate(
+            Key structureKey,
+            int chunkX,
+            int chunkZ,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer) {
+        if (!(this.structureLoader.getStructure(structureKey)
+                instanceof RuinedPortalStructure structure)) {
             return null;
         }
 
@@ -343,11 +427,14 @@ public final class RuinedPortalPlacer {
         var airPocket = sample(random, setup.airPocketProbability());
         Key templateKey;
         if (random.nextFloat() < PROBABILITY_OF_GIANT_PORTAL) {
-            templateKey = RuinedPortalPieces.STRUCTURE_LOCATION_GIANT_PORTALS[
-                    random.nextInt(RuinedPortalPieces.STRUCTURE_LOCATION_GIANT_PORTALS.length)];
+            templateKey =
+                    RuinedPortalPieces.STRUCTURE_LOCATION_GIANT_PORTALS[
+                            random.nextInt(
+                                    RuinedPortalPieces.STRUCTURE_LOCATION_GIANT_PORTALS.length)];
         } else {
-            templateKey = RuinedPortalPieces.STRUCTURE_LOCATION_PORTALS[
-                    random.nextInt(RuinedPortalPieces.STRUCTURE_LOCATION_PORTALS.length)];
+            templateKey =
+                    RuinedPortalPieces.STRUCTURE_LOCATION_PORTALS[
+                            random.nextInt(RuinedPortalPieces.STRUCTURE_LOCATION_PORTALS.length)];
         }
 
         var template = this.structureLoader.getTemplate(templateKey);
@@ -367,35 +454,69 @@ public final class RuinedPortalPlacer {
         var centerZ = box.minZ() + box.getZSpan() / 2;
         var heightmapOceanFloor = setup.placement() == VerticalPlacement.ON_OCEAN_FLOOR;
         var surfaceY = this.baseHeight(centerX, centerZ, heightmapOceanFloor, settings) - 1;
-        var projectedY = this.findSuitableY(random, setup.placement(), airPocket, surfaceY, box.getYSpan(), box, settings);
+        var projectedY =
+                this.findSuitableY(
+                        random,
+                        setup.placement(),
+                        airPocket,
+                        surfaceY,
+                        box.getYSpan(),
+                        box,
+                        settings);
 
         var origin = new BlockVec(basePosition.blockX(), projectedY, basePosition.blockZ());
-        var biome = biomeZoomer.source().biome(origin.blockX() >> 2, origin.blockY() >> 2, origin.blockZ() >> 2);
+        var biome =
+                biomeZoomer
+                        .source()
+                        .biome(origin.blockX() >> 2, origin.blockY() >> 2, origin.blockZ() >> 2);
         if (!structure.biomes().matches(biome, this.structureLoader.biomeTags())) {
             return null;
         }
 
-        var cold = setup.canBeCold()
-                && BiomeClimate.coldEnoughToSnow(this.biomeResolver(), biome,
-                        origin.blockX(), origin.blockY(), origin.blockZ(), settings.seaLevel());
-        var properties = new Properties(cold, setup.mossiness(), airPocket, setup.overgrown(),
-                setup.vines(), setup.replaceWithBlackstone());
+        var cold =
+                setup.canBeCold()
+                        && BiomeClimate.coldEnoughToSnow(
+                                this.biomeResolver(),
+                                biome,
+                                origin.blockX(),
+                                origin.blockY(),
+                                origin.blockZ(),
+                                settings.seaLevel());
+        var properties =
+                new Properties(
+                        cold,
+                        setup.mossiness(),
+                        airPocket,
+                        setup.overgrown(),
+                        setup.vines(),
+                        setup.replaceWithBlackstone());
 
-        var placementPosition = new BlockVec(placementBase.blockX(), projectedY, placementBase.blockZ());
+        var placementPosition =
+                new BlockVec(placementBase.blockX(), projectedY, placementBase.blockZ());
         var worldBox = template.getBoundingBox(placementPosition, rotation, mirror);
-        var center = new BlockVec(
-                worldBox.minX() + worldBox.getXSpan() / 2,
-                worldBox.minY() + worldBox.getYSpan() / 2,
-                worldBox.minZ() + worldBox.getZSpan() / 2);
+        var center =
+                new BlockVec(
+                        worldBox.minX() + worldBox.getXSpan() / 2,
+                        worldBox.minY() + worldBox.getYSpan() / 2,
+                        worldBox.minZ() + worldBox.getZSpan() / 2);
 
-        return new RuinedPortalStart(structureKey, templateKey, origin, placementPosition, rotation, mirror,
-                setup.placement(), properties, copyBounds(worldBox), center);
+        return new RuinedPortalStart(
+                structureKey,
+                templateKey,
+                origin,
+                placementPosition,
+                rotation,
+                mirror,
+                setup.placement(),
+                properties,
+                copyBounds(worldBox),
+                center);
     }
 
     /**
-     * Vanilla {@code StructureTemplate.transform} folds the rotation pivot into
-     * the placement origin: the codebase rotates around the template origin, so
-     * {@code origin + pivot - rotate(pivot)} reproduces vanilla's pivot rotation.
+     * Vanilla {@code StructureTemplate.transform} folds the rotation pivot into the placement
+     * origin: the codebase rotates around the template origin, so {@code origin + pivot -
+     * rotate(pivot)} reproduces vanilla's pivot rotation.
      */
     private static BlockVec pivotFoldedOrigin(BlockVec origin, BlockVec pivot, Rotation rotation) {
         var rotatedPivot = rotation.rotate(pivot, BlockVec.ZERO);
@@ -413,12 +534,17 @@ public final class RuinedPortalPlacer {
     }
 
     /**
-     * Vanilla {@code RuinedPortalStructure.findSuitableY}: seed a Y per vertical
-     * placement, then walk down until three of the four bottom bounding-box
-     * corners rest on opaque raw terrain.
+     * Vanilla {@code RuinedPortalStructure.findSuitableY}: seed a Y per vertical placement, then
+     * walk down until three of the four bottom bounding-box corners rest on opaque raw terrain.
      */
-    private int findSuitableY(WorldgenRandom random, VerticalPlacement placement, boolean airPocket,
-            int surfaceYAtCenter, int ySpan, BoundingBox box, NoiseGeneratorSettingsRuntime settings) {
+    private int findSuitableY(
+            WorldgenRandom random,
+            VerticalPlacement placement,
+            boolean airPocket,
+            int surfaceYAtCenter,
+            int ySpan,
+            BoundingBox box,
+            NoiseGeneratorSettingsRuntime settings) {
         var minY = settings.minY() + MIN_Y_INDEX;
         int newY;
         if (placement == VerticalPlacement.IN_NETHER) {
@@ -439,11 +565,12 @@ public final class RuinedPortalPlacer {
             newY = surfaceYAtCenter;
         }
 
-        var corners = List.of(
-                new int[]{box.minX(), box.minZ()},
-                new int[]{box.maxX(), box.minZ()},
-                new int[]{box.minX(), box.maxZ()},
-                new int[]{box.maxX(), box.maxZ()});
+        var corners =
+                List.of(
+                        new int[] {box.minX(), box.minZ()},
+                        new int[] {box.maxX(), box.minZ()},
+                        new int[] {box.minX(), box.maxZ()},
+                        new int[] {box.maxX(), box.maxZ()});
         var oceanFloor = placement == VerticalPlacement.ON_OCEAN_FLOOR;
 
         var projectedY = newY;
@@ -462,27 +589,39 @@ public final class RuinedPortalPlacer {
     }
 
     private static int getRandomWithinInterval(WorldgenRandom random, int minPreferred, int max) {
-        return minPreferred < max ? StructureRng.randomBetweenInclusive(random, minPreferred, max) : max;
+        return minPreferred < max
+                ? StructureRng.randomBetweenInclusive(random, minPreferred, max)
+                : max;
     }
 
     private static boolean isOpaque(Block block, boolean oceanFloor) {
         return oceanFloor ? block.solid() : !block.air();
     }
 
-    private void spreadNetherrack(RandomSource random, GenerationUnitAdapter level, RuinedPortalStart start) {
+    private void spreadNetherrack(
+            RandomSource random, GenerationUnitAdapter level, RuinedPortalStart start) {
         var box = start.bounds();
         var placement = start.placement();
-        var followGroundSurface = placement == VerticalPlacement.ON_LAND_SURFACE
-                || placement == VerticalPlacement.ON_OCEAN_FLOOR;
+        var followGroundSurface =
+                placement == VerticalPlacement.ON_LAND_SURFACE
+                        || placement == VerticalPlacement.ON_OCEAN_FLOOR;
         var center = start.center();
         var centerX = center.blockX();
         var centerZ = center.blockZ();
         var maxDistance = NETHERRACK_PROBABILITY_BY_DISTANCE.length;
         var averageWidth = (box.getXSpan() + box.getZSpan()) / 2;
         if (System.getProperty("worldgen.portalDebug") != null) {
-            System.out.println("PSTART box=" + box + " avgWidth=" + averageWidth
-                    + " rng=" + rngState(random)
-                    + " count=" + (random instanceof WorldgenRandom worldgenRandom ? worldgenRandom.getCount() : -1));
+            System.out.println(
+                    "PSTART box="
+                            + box
+                            + " avgWidth="
+                            + averageWidth
+                            + " rng="
+                            + rngState(random)
+                            + " count="
+                            + (random instanceof WorldgenRandom worldgenRandom
+                                    ? worldgenRandom.getCount()
+                                    : -1));
         }
         var distanceAdjustment = random.nextInt(Math.max(1, 8 - averageWidth / 2));
 
@@ -491,22 +630,33 @@ public final class RuinedPortalPlacer {
                 var distance = Math.abs(x - centerX) + Math.abs(z - centerZ);
                 var adjustedDistance = Math.max(0, distance + distanceAdjustment);
                 if (adjustedDistance < maxDistance) {
-                    var probabilityOfNetherrack = NETHERRACK_PROBABILITY_BY_DISTANCE[adjustedDistance];
+                    var probabilityOfNetherrack =
+                            NETHERRACK_PROBABILITY_BY_DISTANCE[adjustedDistance];
                     var roll = random.nextDouble() < probabilityOfNetherrack;
                     if (System.getProperty("worldgen.portalDebug") != null) {
-                        System.out.println("PSPREAD " + x + "," + z + " roll=" + roll
-                                + " surfaceY=" + this.getSurfaceY(level, x, z, placement));
+                        System.out.println(
+                                "PSPREAD "
+                                        + x
+                                        + ","
+                                        + z
+                                        + " roll="
+                                        + roll
+                                        + " surfaceY="
+                                        + this.getSurfaceY(level, x, z, placement));
                     }
                     if (roll) {
                         var surfaceY = this.getSurfaceY(level, x, z, placement);
                         var y = followGroundSurface ? surfaceY : Math.min(box.minY(), surfaceY);
                         var pos = new BlockVec(x, y, z);
-                        if (Math.abs(y - box.minY()) <= 3 && this.canBlockBeReplacedByNetherrackOrMagma(level, pos, placement)) {
+                        if (Math.abs(y - box.minY()) <= 3
+                                && this.canBlockBeReplacedByNetherrackOrMagma(
+                                        level, pos, placement)) {
                             this.placeNetherrackOrMagma(random, level, pos, start.properties());
                             if (start.properties().overgrown()) {
                                 this.maybeAddLeavesAbove(random, level, pos, start.properties());
                             }
-                            this.addNetherrackDripColumn(random, level, pos.add(0, -1, 0), start.properties());
+                            this.addNetherrackDripColumn(
+                                    random, level, pos.add(0, -1, 0), start.properties());
                         }
                     }
                 }
@@ -514,21 +664,23 @@ public final class RuinedPortalPlacer {
         }
     }
 
-    private void addNetherrackDripColumnsBelowPortal(RandomSource random, GenerationUnitAdapter level,
-            RuinedPortalStart start) {
+    private void addNetherrackDripColumnsBelowPortal(
+            RandomSource random, GenerationUnitAdapter level, RuinedPortalStart start) {
         var box = start.bounds();
         for (var x = box.minX() + 1; x < box.maxX(); x++) {
             for (var z = box.minZ() + 1; z < box.maxZ(); z++) {
                 var pos = new BlockVec(x, box.minY(), z);
-                if (level.getBlock(pos.blockX(), pos.blockY(), pos.blockZ()).compare(Block.NETHERRACK)) {
-                    this.addNetherrackDripColumn(random, level, pos.add(0, -1, 0), start.properties());
+                if (level.getBlock(pos.blockX(), pos.blockY(), pos.blockZ())
+                        .compare(Block.NETHERRACK)) {
+                    this.addNetherrackDripColumn(
+                            random, level, pos.add(0, -1, 0), start.properties());
                 }
             }
         }
     }
 
-    private void addNetherrackDripColumn(RandomSource random, GenerationUnitAdapter level, BlockVec pos,
-            Properties properties) {
+    private void addNetherrackDripColumn(
+            RandomSource random, GenerationUnitAdapter level, BlockVec pos, Properties properties) {
         var current = pos;
         this.placeNetherrackOrMagma(random, level, current, properties);
         var remainingCap = 8;
@@ -539,17 +691,20 @@ public final class RuinedPortalPlacer {
         }
     }
 
-    private boolean canBlockBeReplacedByNetherrackOrMagma(GenerationUnitAdapter level, BlockVec pos,
-            VerticalPlacement placement) {
+    private boolean canBlockBeReplacedByNetherrackOrMagma(
+            GenerationUnitAdapter level, BlockVec pos, VerticalPlacement placement) {
         var state = level.getBlock(pos.blockX(), pos.blockY(), pos.blockZ());
         return !state.air()
                 && !state.compare(Block.OBSIDIAN)
-                && !this.structureLoader.blockTags().blocks(FEATURES_CANNOT_REPLACE).contains(state.key())
+                && !this.structureLoader
+                        .blockTags()
+                        .blocks(FEATURES_CANNOT_REPLACE)
+                        .contains(state.key())
                 && (placement == VerticalPlacement.IN_NETHER || !state.compare(Block.LAVA));
     }
 
-    private void placeNetherrackOrMagma(RandomSource random, GenerationUnitAdapter level, BlockVec pos,
-            Properties properties) {
+    private void placeNetherrackOrMagma(
+            RandomSource random, GenerationUnitAdapter level, BlockVec pos, Properties properties) {
         if (!properties.cold() && random.nextFloat() < 0.07F) {
             level.setBlock(pos.blockX(), pos.blockY(), pos.blockZ(), Block.MAGMA_BLOCK);
         } else {
@@ -558,15 +713,16 @@ public final class RuinedPortalPlacer {
     }
 
     /**
-     * Vanilla {@code getSurfaceY} asks for the WG heightmap: the surrounding
-     * chunks are still proto chunks during the pregen ladder, so the value is
-     * the frozen post-carver heightmap, not one primed over structure and
-     * feature writes.
+     * Vanilla {@code getSurfaceY} asks for the WG heightmap: the surrounding chunks are still proto
+     * chunks during the pregen ladder, so the value is the frozen post-carver heightmap, not one
+     * primed over structure and feature writes.
      */
-    private int getSurfaceY(GenerationUnitAdapter level, int x, int z, VerticalPlacement placement) {
-        var height = placement == VerticalPlacement.ON_OCEAN_FLOOR
-                ? level.frozenOceanFloor(x, z)
-                : level.frozenWorldSurface(x, z);
+    private int getSurfaceY(
+            GenerationUnitAdapter level, int x, int z, VerticalPlacement placement) {
+        var height =
+                placement == VerticalPlacement.ON_OCEAN_FLOOR
+                        ? level.frozenOceanFloor(x, z)
+                        : level.frozenWorldSurface(x, z);
         return height - 1;
     }
 
@@ -577,20 +733,28 @@ public final class RuinedPortalPlacer {
         }
         var direction = Direction.HORIZONTAL.get(random.nextInt(Direction.HORIZONTAL.size()));
         var neighbourPos = direction.relative(pos);
-        var neighbourState = level.getBlock(neighbourPos.blockX(), neighbourPos.blockY(), neighbourPos.blockZ());
+        var neighbourState =
+                level.getBlock(neighbourPos.blockX(), neighbourPos.blockY(), neighbourPos.blockZ());
         if (neighbourState.air() && isFaceFull(state)) {
             var face = direction.opposite().serializedName();
-            level.setBlock(neighbourPos.blockX(), neighbourPos.blockY(), neighbourPos.blockZ(),
+            level.setBlock(
+                    neighbourPos.blockX(),
+                    neighbourPos.blockY(),
+                    neighbourPos.blockZ(),
                     Block.VINE.withProperty(face, "true"));
         }
     }
 
-    private void maybeAddLeavesAbove(RandomSource random, GenerationUnitAdapter level, BlockVec pos,
-            Properties properties) {
+    private void maybeAddLeavesAbove(
+            RandomSource random, GenerationUnitAdapter level, BlockVec pos, Properties properties) {
         if (random.nextFloat() < 0.5F
-                && level.getBlock(pos.blockX(), pos.blockY(), pos.blockZ()).compare(Block.NETHERRACK)
+                && level.getBlock(pos.blockX(), pos.blockY(), pos.blockZ())
+                        .compare(Block.NETHERRACK)
                 && level.getBlock(pos.blockX(), pos.blockY() + 1, pos.blockZ()).air()) {
-            level.setBlock(pos.blockX(), pos.blockY() + 1, pos.blockZ(),
+            level.setBlock(
+                    pos.blockX(),
+                    pos.blockY() + 1,
+                    pos.blockZ(),
                     Block.JUNGLE_LEAVES.withProperty("persistent", "true"));
         }
     }
@@ -599,11 +763,16 @@ public final class RuinedPortalPlacer {
         var shape = state.collisionShape();
         var startCorner = shape.relativeStart();
         var endCorner = shape.relativeEnd();
-        return startCorner.x() == 0.0 && startCorner.y() == 0.0 && startCorner.z() == 0.0
-                && endCorner.x() == 1.0 && endCorner.y() == 1.0 && endCorner.z() == 1.0;
+        return startCorner.x() == 0.0
+                && startCorner.y() == 0.0
+                && startCorner.z() == 0.0
+                && endCorner.x() == 1.0
+                && endCorner.y() == 1.0
+                && endCorner.z() == 1.0;
     }
 
-    private int baseHeight(int blockX, int blockZ, boolean oceanFloor, NoiseGeneratorSettingsRuntime settings) {
+    private int baseHeight(
+            int blockX, int blockZ, boolean oceanFloor, NoiseGeneratorSettingsRuntime settings) {
         var chunkX = Math.floorDiv(blockX, 16);
         var chunkZ = Math.floorDiv(blockZ, 16);
         var terrainData = this.terrainData(chunkX, chunkZ, settings);
@@ -612,7 +781,8 @@ public final class RuinedPortalPlacer {
         return solidTop == Integer.MIN_VALUE ? settings.minY() : solidTop + 1;
     }
 
-    private Block terrainBlock(int blockX, int blockY, int blockZ, NoiseGeneratorSettingsRuntime settings) {
+    private Block terrainBlock(
+            int blockX, int blockY, int blockZ, NoiseGeneratorSettingsRuntime settings) {
         var chunkX = Math.floorDiv(blockX, 16);
         var chunkZ = Math.floorDiv(blockZ, 16);
         var terrainData = this.terrainData(chunkX, chunkZ, settings);
@@ -627,8 +797,10 @@ public final class RuinedPortalPlacer {
         return block != null ? block : Block.AIR;
     }
 
-    private TerrainData terrainData(int chunkX, int chunkZ, NoiseGeneratorSettingsRuntime settings) {
-        return this.terrainCache.computeIfAbsent(packChunk(chunkX, chunkZ),
+    private TerrainData terrainData(
+            int chunkX, int chunkZ, NoiseGeneratorSettingsRuntime settings) {
+        return this.terrainCache.computeIfAbsent(
+                packChunk(chunkX, chunkZ),
                 unused -> new TerrainGenerator(settings).generate(chunkX, chunkZ));
     }
 
@@ -662,14 +834,18 @@ public final class RuinedPortalPlacer {
         return this.structureLoader.structuresAtStep(step);
     }
 
-
     private static long packChunk(int chunkX, int chunkZ) {
         return (long) chunkX & 0xFFFFFFFFL | ((long) chunkZ & 0xFFFFFFFFL) << 32;
     }
 
     private static BoundingBox copyBounds(BoundingBox bounds) {
-        return new BoundingBox(bounds.minX(), bounds.minY(), bounds.minZ(),
-                bounds.maxX(), bounds.maxY(), bounds.maxZ());
+        return new BoundingBox(
+                bounds.minX(),
+                bounds.minY(),
+                bounds.minZ(),
+                bounds.maxX(),
+                bounds.maxY(),
+                bounds.maxZ());
     }
 
     private record RuinedPortalStart(
@@ -682,12 +858,13 @@ public final class RuinedPortalPlacer {
             VerticalPlacement placement,
             Properties properties,
             BoundingBox bounds,
-            BlockVec center) {
-    }
+            BlockVec center) {}
 
     private static String rngState(RandomSource random) {
         try {
-            var sourceField = rocks.minestom.worldgen.random.WorldgenRandom.class.getDeclaredField("randomSource");
+            var sourceField =
+                    rocks.minestom.worldgen.random.WorldgenRandom.class.getDeclaredField(
+                            "randomSource");
             sourceField.setAccessible(true);
             var source = sourceField.get(random);
             var generatorField = source.getClass().getDeclaredField("randomNumberGenerator");
@@ -703,4 +880,3 @@ public final class RuinedPortalPlacer {
         }
     }
 }
-

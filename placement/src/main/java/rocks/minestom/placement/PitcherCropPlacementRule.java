@@ -18,13 +18,12 @@ public final class PitcherCropPlacementRule extends BlockPlacementRule {
         var placePosition = placementState.placePosition();
         var below = placementState.instance().getBlock(placePosition.relative(BlockFace.BOTTOM));
 
-        if (!supportsCrops(below) || !hasSufficientLight(placementState.instance(), placePosition)) {
+        if (!supportsCrops(below)
+                || !hasSufficientLight(placementState.instance(), placePosition)) {
             return null;
         }
 
-        return placementState.block()
-                .withProperty("age", "0")
-                .withProperty("half", "lower");
+        return placementState.block().withProperty("age", "0").withProperty("half", "lower");
     }
 
     @Override
@@ -36,20 +35,30 @@ public final class PitcherCropPlacementRule extends BlockPlacementRule {
 
         if (age >= 3) {
             if ("lower".equals(half) && fromFace == BlockFace.TOP) {
-                var above = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.TOP));
+                var above =
+                        updateState
+                                .instance()
+                                .getBlock(updateState.blockPosition().relative(BlockFace.TOP));
                 return this.isMatchingHalf(above, "upper") ? currentBlock : Block.AIR;
             }
 
             if ("upper".equals(half) && fromFace == BlockFace.BOTTOM) {
-                var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+                var below =
+                        updateState
+                                .instance()
+                                .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
                 return this.isMatchingHalf(below, "lower") ? currentBlock : Block.AIR;
             }
         }
 
         if ("lower".equals(half)) {
-            var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+            var below =
+                    updateState
+                            .instance()
+                            .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
 
-            if (!supportsCrops(below) || !hasSufficientLight(updateState.instance(), updateState.blockPosition())) {
+            if (!supportsCrops(below)
+                    || !hasSufficientLight(updateState.instance(), updateState.blockPosition())) {
                 return Block.AIR;
             }
         }
@@ -62,7 +71,8 @@ public final class PitcherCropPlacementRule extends BlockPlacementRule {
     }
 
     private static boolean supportsCrops(Block block) {
-        var supportsCrops = MinecraftServer.process().blocks().getTag(Key.key("minecraft:supports_crops"));
+        var supportsCrops =
+                MinecraftServer.process().blocks().getTag(Key.key("minecraft:supports_crops"));
         return supportsCrops != null && supportsCrops.contains(block);
     }
 

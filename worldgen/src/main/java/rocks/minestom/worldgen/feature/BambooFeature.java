@@ -1,38 +1,58 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.Set;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.ProbabilityConfiguration;
 
-import java.util.Set;
-
 /**
- * Port of vanilla's dedicated {@code BambooFeature}: grows a single bamboo
- * stalk at the origin, replacing the ground beneath a surrounding disc with
- * podzol with the configured probability.
+ * Port of vanilla's dedicated {@code BambooFeature}: grows a single bamboo stalk at the origin,
+ * replacing the ground beneath a surrounding disc with podzol with the configured probability.
  */
 public final class BambooFeature implements Feature<ProbabilityConfiguration> {
 
     /** Vanilla's {@code #minecraft:supports_bamboo} block tag (26.2 contents). */
-    private static final Set<String> SUPPORTS_BAMBOO = Set.of(
-            "minecraft:sand", "minecraft:red_sand", "minecraft:suspicious_sand",
-            "minecraft:dirt", "minecraft:coarse_dirt", "minecraft:rooted_dirt",
-            "minecraft:mud", "minecraft:muddy_mangrove_roots",
-            "minecraft:moss_block", "minecraft:pale_moss_block",
-            "minecraft:grass_block", "minecraft:podzol", "minecraft:mycelium",
-            "minecraft:bamboo", "minecraft:bamboo_sapling",
-            "minecraft:gravel", "minecraft:suspicious_gravel");
+    private static final Set<String> SUPPORTS_BAMBOO =
+            Set.of(
+                    "minecraft:sand",
+                    "minecraft:red_sand",
+                    "minecraft:suspicious_sand",
+                    "minecraft:dirt",
+                    "minecraft:coarse_dirt",
+                    "minecraft:rooted_dirt",
+                    "minecraft:mud",
+                    "minecraft:muddy_mangrove_roots",
+                    "minecraft:moss_block",
+                    "minecraft:pale_moss_block",
+                    "minecraft:grass_block",
+                    "minecraft:podzol",
+                    "minecraft:mycelium",
+                    "minecraft:bamboo",
+                    "minecraft:bamboo_sapling",
+                    "minecraft:gravel",
+                    "minecraft:suspicious_gravel");
 
     /** Vanilla's {@code #minecraft:beneath_bamboo_podzol_replaceable} block tag (26.2 contents). */
-    private static final Set<String> BENEATH_BAMBOO_PODZOL_REPLACEABLE = Set.of(
-            "minecraft:dirt", "minecraft:coarse_dirt", "minecraft:rooted_dirt",
-            "minecraft:mud", "minecraft:muddy_mangrove_roots",
-            "minecraft:moss_block", "minecraft:pale_moss_block",
-            "minecraft:grass_block", "minecraft:podzol", "minecraft:mycelium");
+    private static final Set<String> BENEATH_BAMBOO_PODZOL_REPLACEABLE =
+            Set.of(
+                    "minecraft:dirt",
+                    "minecraft:coarse_dirt",
+                    "minecraft:rooted_dirt",
+                    "minecraft:mud",
+                    "minecraft:muddy_mangrove_roots",
+                    "minecraft:moss_block",
+                    "minecraft:pale_moss_block",
+                    "minecraft:grass_block",
+                    "minecraft:podzol",
+                    "minecraft:mycelium");
 
-    private static final Block BAMBOO_TRUNK = Block.BAMBOO
-            .withProperty("age", "1").withProperty("leaves", "none").withProperty("stage", "0");
-    private static final Block BAMBOO_FINAL_LARGE = BAMBOO_TRUNK.withProperty("leaves", "large").withProperty("stage", "1");
+    private static final Block BAMBOO_TRUNK =
+            Block.BAMBOO
+                    .withProperty("age", "1")
+                    .withProperty("leaves", "none")
+                    .withProperty("stage", "0");
+    private static final Block BAMBOO_FINAL_LARGE =
+            BAMBOO_TRUNK.withProperty("leaves", "large").withProperty("stage", "1");
     private static final Block BAMBOO_TOP_LARGE = BAMBOO_TRUNK.withProperty("leaves", "large");
     private static final Block BAMBOO_TOP_SMALL = BAMBOO_TRUNK.withProperty("leaves", "small");
 
@@ -42,7 +62,8 @@ public final class BambooFeature implements Feature<ProbabilityConfiguration> {
     }
 
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<ProbabilityConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<ProbabilityConfiguration, T> context) {
         var placed = 0;
         var origin = context.origin();
         var level = context.accessor();
@@ -63,7 +84,8 @@ public final class BambooFeature implements Feature<ProbabilityConfiguration> {
                             if (deltaX * deltaX + deltaZ * deltaZ <= radius * radius) {
                                 var podzolY = worldSurfaceHeight(level, x, z) - 1;
                                 var podzolPosition = new BlockVec(x, podzolY, z);
-                                if (BENEATH_BAMBOO_PODZOL_REPLACEABLE.contains(level.getBlock(podzolPosition).name())) {
+                                if (BENEATH_BAMBOO_PODZOL_REPLACEABLE.contains(
+                                        level.getBlock(podzolPosition).name())) {
                                     level.setBlock(podzolPosition, Block.PODZOL);
                                 }
                             }

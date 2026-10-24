@@ -15,29 +15,41 @@ public enum RelevantTarget {
     INTERACTING_ENTITY("interacting_entity", LootContext.INTERACTING_ENTITY);
 
     @SuppressWarnings("UnstableApiUsage")
-    public static final Codec<RelevantTarget> CODEC = Codec.STRING.transform(value -> switch (value) {
-        case "this" -> THIS;
-        case "attacker" -> ATTACKER;
-        case "direct_attacker" -> DIRECT_ATTACKER;
-        case "attacking_player" -> ATTACKING_PLAYER;
-        case "block_entity" -> BLOCK_ENTITY;
-        case "tool" -> TOOL;
-        case "target_entity" -> TARGET_ENTITY;
-        case "interacting_entity" -> INTERACTING_ENTITY;
-        default -> throw new IllegalArgumentException("Unknown context target: " + value);
-    }, RelevantTarget::id);
+    public static final Codec<RelevantTarget> CODEC =
+            Codec.STRING.transform(
+                    value ->
+                            switch (value) {
+                                case "this" -> THIS;
+                                case "attacker" -> ATTACKER;
+                                case "direct_attacker" -> DIRECT_ATTACKER;
+                                case "attacking_player" -> ATTACKING_PLAYER;
+                                case "block_entity" -> BLOCK_ENTITY;
+                                case "tool" -> TOOL;
+                                case "target_entity" -> TARGET_ENTITY;
+                                case "interacting_entity" -> INTERACTING_ENTITY;
+                                default ->
+                                        throw new IllegalArgumentException(
+                                                "Unknown context target: " + value);
+                            },
+                    RelevantTarget::id);
 
     @SuppressWarnings("UnstableApiUsage")
-    public static final Codec<RelevantTarget> ENTITY_OR_BLOCK_CODEC = Codec.STRING.transform(value -> switch (value) {
-        case "this" -> THIS;
-        case "attacker" -> ATTACKER;
-        case "direct_attacker" -> DIRECT_ATTACKER;
-        case "attacking_player" -> ATTACKING_PLAYER;
-        case "block_entity" -> BLOCK_ENTITY;
-        case "target_entity" -> TARGET_ENTITY;
-        case "interacting_entity" -> INTERACTING_ENTITY;
-        default -> throw new IllegalArgumentException("Unknown entity or block target: " + value);
-    }, RelevantTarget::id);
+    public static final Codec<RelevantTarget> ENTITY_OR_BLOCK_CODEC =
+            Codec.STRING.transform(
+                    value ->
+                            switch (value) {
+                                case "this" -> THIS;
+                                case "attacker" -> ATTACKER;
+                                case "direct_attacker" -> DIRECT_ATTACKER;
+                                case "attacking_player" -> ATTACKING_PLAYER;
+                                case "block_entity" -> BLOCK_ENTITY;
+                                case "target_entity" -> TARGET_ENTITY;
+                                case "interacting_entity" -> INTERACTING_ENTITY;
+                                default ->
+                                        throw new IllegalArgumentException(
+                                                "Unknown entity or block target: " + value);
+                            },
+                    RelevantTarget::id);
 
     private final @NotNull String id;
     private final @NotNull LootContext.Key<?> key;

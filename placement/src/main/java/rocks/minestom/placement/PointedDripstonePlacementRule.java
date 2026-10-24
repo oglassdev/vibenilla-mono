@@ -21,18 +21,22 @@ public final class PointedDripstonePlacementRule extends BlockPlacementRule {
         var playerPosition = placementState.playerPosition();
         var pitch = playerPosition == null ? 0.0F : playerPosition.pitch();
         var defaultTipDirection = pitch < 0.0F ? BlockFace.BOTTOM : BlockFace.TOP;
-        var tipDirection = this.calculateTipDirection(blockGetter, placePosition, defaultTipDirection);
+        var tipDirection =
+                this.calculateTipDirection(blockGetter, placePosition, defaultTipDirection);
 
         if (tipDirection == null) {
             return null;
         }
 
         var mergeOpposingTips = !placementState.isPlayerShifting();
-        var thickness = this.calculateThickness(blockGetter, placePosition, tipDirection, mergeOpposingTips);
+        var thickness =
+                this.calculateThickness(
+                        blockGetter, placePosition, tipDirection, mergeOpposingTips);
         var replaced = blockGetter.getBlock(placePosition);
         var waterlogged = replaced.compare(Block.WATER);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withProperty("vertical_direction", verticalName(tipDirection))
                 .withProperty("thickness", thickness)
                 .withProperty("waterlogged", waterlogged ? "true" : "false");
@@ -43,21 +47,29 @@ public final class PointedDripstonePlacementRule extends BlockPlacementRule {
         var currentBlock = updateState.currentBlock();
         var tipDirection = parseDirection(currentBlock.getProperty("vertical_direction"));
 
-        if (tipDirection == null || (updateState.fromFace() != BlockFace.TOP && updateState.fromFace() != BlockFace.BOTTOM)) {
+        if (tipDirection == null
+                || (updateState.fromFace() != BlockFace.TOP
+                        && updateState.fromFace() != BlockFace.BOTTOM)) {
             return currentBlock;
         }
 
-        if (!this.isValidPlacement(updateState.instance(), updateState.blockPosition(), tipDirection)) {
+        if (!this.isValidPlacement(
+                updateState.instance(), updateState.blockPosition(), tipDirection)) {
             return Block.AIR;
         }
 
         var mergeOpposingTips = "tip_merge".equals(currentBlock.getProperty("thickness"));
-        var thickness = this.calculateThickness(
-                updateState.instance(), updateState.blockPosition(), tipDirection, mergeOpposingTips);
+        var thickness =
+                this.calculateThickness(
+                        updateState.instance(),
+                        updateState.blockPosition(),
+                        tipDirection,
+                        mergeOpposingTips);
         return currentBlock.withProperty("thickness", thickness);
     }
 
-    private @Nullable BlockFace calculateTipDirection(Block.Getter blockGetter, Point placePosition, BlockFace defaultTipDirection) {
+    private @Nullable BlockFace calculateTipDirection(
+            Block.Getter blockGetter, Point placePosition, BlockFace defaultTipDirection) {
         if (this.isValidPlacement(blockGetter, placePosition, defaultTipDirection)) {
             return defaultTipDirection;
         }
@@ -71,7 +83,8 @@ public final class PointedDripstonePlacementRule extends BlockPlacementRule {
         return null;
     }
 
-    private boolean isValidPlacement(Block.Getter blockGetter, Point placePosition, BlockFace tipDirection) {
+    private boolean isValidPlacement(
+            Block.Getter blockGetter, Point placePosition, BlockFace tipDirection) {
         var attachmentFace = tipDirection.getOppositeFace();
         var attachmentPosition = placePosition.relative(attachmentFace);
         var attachmentBlock = blockGetter.getBlock(attachmentPosition);
@@ -80,10 +93,15 @@ public final class PointedDripstonePlacementRule extends BlockPlacementRule {
             return true;
         }
 
-        return attachmentBlock.compare(this.block) && isMatchingDirection(attachmentBlock, tipDirection);
+        return attachmentBlock.compare(this.block)
+                && isMatchingDirection(attachmentBlock, tipDirection);
     }
 
-    private String calculateThickness(Block.Getter blockGetter, Point placePosition, BlockFace tipDirection, boolean mergeOpposingTips) {
+    private String calculateThickness(
+            Block.Getter blockGetter,
+            Point placePosition,
+            BlockFace tipDirection,
+            boolean mergeOpposingTips) {
         var aheadPosition = placePosition.relative(tipDirection);
         var aheadBlock = blockGetter.getBlock(aheadPosition);
         var oppositeDirection = tipDirection.getOppositeFace();

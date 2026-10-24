@@ -3,8 +3,8 @@ package rocks.minestom.worldgen.structure.mansion;
 import rocks.minestom.worldgen.random.RandomSource;
 
 /**
- * Port of vanilla {@code WoodlandMansionPieces.FloorRoomCollection}: per-floor
- * template name selection for each room shape.
+ * Port of vanilla {@code WoodlandMansionPieces.FloorRoomCollection}: per-floor template name
+ * selection for each room shape.
  */
 abstract class FloorRoomCollection {
     abstract String get1x1(RandomSource random);
@@ -98,6 +98,5 @@ abstract class FloorRoomCollection {
     }
 
     /** Port of vanilla {@code ThirdFloorRoomCollection}: identical to {@link Second}. */
-    static final class Third extends Second {
-    }
+    static final class Third extends Second {}
 }

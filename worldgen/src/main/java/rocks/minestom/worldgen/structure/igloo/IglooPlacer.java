@@ -1,5 +1,10 @@
 package rocks.minestom.worldgen.structure.igloo;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
@@ -22,27 +27,22 @@ import rocks.minestom.worldgen.structure.template.StructureTemplate;
 import rocks.minestom.worldgen.terrain.TerrainData;
 import rocks.minestom.worldgen.terrain.TerrainGenerator;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
- * Places igloos with vanilla-exact seeding, mirroring
- * {@code rocks.minestom.worldgen.structure.oceanruin.OceanRuinPlacer}: the
- * start (rotation, basement roll, ladder depth and every piece's own surface
- * height) is a pure function of the chunk, and template placement runs per
- * intersecting chunk. Vanilla's {@code IglooPiece.postProcess} never consumes
- * the decoration-time random for block placement (only the terrain heightmap,
- * plus a chest loot seed that is out of scope), so - like ocean ruins - there
- * is no per-chunk feature-seed draw to replicate here.
+ * Places igloos with vanilla-exact seeding, mirroring {@code
+ * rocks.minestom.worldgen.structure.oceanruin.OceanRuinPlacer}: the start (rotation, basement roll,
+ * ladder depth and every piece's own surface height) is a pure function of the chunk, and template
+ * placement runs per intersecting chunk. Vanilla's {@code IglooPiece.postProcess} never consumes
+ * the decoration-time random for block placement (only the terrain heightmap, plus a chest loot
+ * seed that is out of scope), so - like ocean ruins - there is no per-chunk feature-seed draw to
+ * replicate here.
  */
 public final class IglooPlacer {
     /** The top igloo plus its basement footprint stays within 2 chunks. */
     private static final int REFERENCE_RADIUS = 2;
+
     /** Vanilla {@code IglooPieces.GENERATION_HEIGHT}. */
     private static final int GENERATION_HEIGHT = 90;
+
     private static final Key LADDER = Key.key("minecraft", "ladder");
 
     private final StructureLoader structureLoader;
@@ -62,18 +62,32 @@ public final class IglooPlacer {
         return false;
     }
 
-    public void place(GenerationUnit unit, BiomeZoomer biomeZoomer, NoiseGeneratorSettingsRuntime settings,
-            StructureSet structureSet, int[] surfaceHeights) {
+    public void place(
+            GenerationUnit unit,
+            BiomeZoomer biomeZoomer,
+            NoiseGeneratorSettingsRuntime settings,
+            StructureSet structureSet,
+            int[] surfaceHeights) {
         var startX = unit.absoluteStart().blockX();
         var startZ = unit.absoluteStart().blockZ();
         var chunkX = Math.floorDiv(startX, 16);
         var chunkZ = Math.floorDiv(startZ, 16);
-        var chunkBounds = new BoundingBox(startX, settings.minY(), startZ,
-                startX + 15, settings.maxYInclusive(), startZ + 15);
+        var chunkBounds =
+                new BoundingBox(
+                        startX,
+                        settings.minY(),
+                        startZ,
+                        startX + 15,
+                        settings.maxYInclusive(),
+                        startZ + 15);
 
         var intersecting = new ArrayList<IglooStart>();
-        for (var sourceX = chunkX - REFERENCE_RADIUS; sourceX <= chunkX + REFERENCE_RADIUS; sourceX++) {
-            for (var sourceZ = chunkZ - REFERENCE_RADIUS; sourceZ <= chunkZ + REFERENCE_RADIUS; sourceZ++) {
+        for (var sourceX = chunkX - REFERENCE_RADIUS;
+                sourceX <= chunkX + REFERENCE_RADIUS;
+                sourceX++) {
+            for (var sourceZ = chunkZ - REFERENCE_RADIUS;
+                    sourceZ <= chunkZ + REFERENCE_RADIUS;
+                    sourceZ++) {
                 var start = this.startAt(sourceX, sourceZ, structureSet, settings, biomeZoomer);
                 if (start != null && start.bounds().intersects(chunkBounds)) {
                     intersecting.add(start);
@@ -86,10 +100,19 @@ public final class IglooPlacer {
         }
 
         var chunkBlocks = this.liveChunkBlocks(chunkX, chunkZ, surfaceHeights);
-        var adapter = chunkBlocks != null
-                ? new GenerationUnitAdapter(unit, startX, startZ, 16, 16, settings.minY(), chunkBlocks,
-                        settings.height(), StructureWrites.terrainLookup())
-                : new GenerationUnitAdapter(unit);
+        var adapter =
+                chunkBlocks != null
+                        ? new GenerationUnitAdapter(
+                                unit,
+                                startX,
+                                startZ,
+                                16,
+                                16,
+                                settings.minY(),
+                                chunkBlocks,
+                                settings.height(),
+                                StructureWrites.terrainLookup())
+                        : new GenerationUnitAdapter(unit);
 
         var connectionShapeUpdates = new ArrayList<BlockVec>();
         for (var start : intersecting) {
@@ -97,12 +120,17 @@ public final class IglooPlacer {
         }
 
         if (!connectionShapeUpdates.isEmpty()) {
-            StructureShapeUpdater.update(adapter, this.structureLoader.blockTags(), connectionShapeUpdates);
+            StructureShapeUpdater.update(
+                    adapter, this.structureLoader.blockTags(), connectionShapeUpdates);
         }
     }
 
-    private void placeStart(IglooStart start, GenerationUnitAdapter adapter, BoundingBox chunkBounds,
-            NoiseGeneratorSettingsRuntime settings, List<BlockVec> connectionShapeUpdates) {
+    private void placeStart(
+            IglooStart start,
+            GenerationUnitAdapter adapter,
+            BoundingBox chunkBounds,
+            NoiseGeneratorSettingsRuntime settings,
+            List<BlockVec> connectionShapeUpdates) {
         for (var piece : start.pieces()) {
             if (!piece.bounds().intersects(chunkBounds)) {
                 continue;
@@ -113,14 +141,26 @@ public final class IglooPlacer {
                 continue;
             }
 
-            var processorContext = new StructureProcessorContext(
-                    adapter, this.structureLoader.blockTags(), settings.randomState().seed(),
-                    piece.placementPosition(), piece.placementPosition(), null);
-            var placementContext = new StructureTemplate.PlacementContext(
-                    adapter, chunkBounds, processorContext, connectionShapeUpdates);
-            template.place(placementContext, piece.placementPosition(), piece.rotation(),
-                    new StructureProcessorList(List.of()), false, false,
-                    LiquidSettings.IGNORE_WATERLOGGING, true);
+            var processorContext =
+                    new StructureProcessorContext(
+                            adapter,
+                            this.structureLoader.blockTags(),
+                            settings.randomState().seed(),
+                            piece.placementPosition(),
+                            piece.placementPosition(),
+                            null);
+            var placementContext =
+                    new StructureTemplate.PlacementContext(
+                            adapter, chunkBounds, processorContext, connectionShapeUpdates);
+            template.place(
+                    placementContext,
+                    piece.placementPosition(),
+                    piece.rotation(),
+                    new StructureProcessorList(List.of()),
+                    false,
+                    false,
+                    LiquidSettings.IGNORE_WATERLOGGING,
+                    true);
 
             if (piece.template().equals(IglooPieces.STRUCTURE_LOCATION_TOP)) {
                 this.fixTrapdoor(piece, adapter, chunkBounds);
@@ -129,25 +169,31 @@ public final class IglooPlacer {
     }
 
     /**
-     * Vanilla {@code IglooPiece.postProcess} tail: for the visible igloo, if the
-     * block below the trapdoor position is neither air nor a ladder (i.e. there
-     * is no basement shaft under it), the trapdoor is replaced with a snow block.
+     * Vanilla {@code IglooPiece.postProcess} tail: for the visible igloo, if the block below the
+     * trapdoor position is neither air nor a ladder (i.e. there is no basement shaft under it), the
+     * trapdoor is replaced with a snow block.
      */
-    private void fixTrapdoor(PlacedIglooPiece piece, GenerationUnitAdapter adapter, BoundingBox chunkBounds) {
+    private void fixTrapdoor(
+            PlacedIglooPiece piece, GenerationUnitAdapter adapter, BoundingBox chunkBounds) {
         var pivot = IglooPieces.PIVOTS.get(piece.template());
         var relative = calculateRelativePosition(new BlockVec(3, 0, 5), pivot, piece.rotation());
-        var trapdoorPos = piece.templatePosition().add(relative.blockX(), relative.blockY(), relative.blockZ());
+        var trapdoorPos =
+                piece.templatePosition()
+                        .add(relative.blockX(), relative.blockY(), relative.blockZ());
         if (!chunkBounds.isInside(trapdoorPos)) {
             return;
         }
 
-        var below = adapter.getBlock(trapdoorPos.blockX(), trapdoorPos.blockY() - 1, trapdoorPos.blockZ());
+        var below =
+                adapter.getBlock(
+                        trapdoorPos.blockX(), trapdoorPos.blockY() - 1, trapdoorPos.blockZ());
         if (!below.air() && !below.key().equals(LADDER)) {
             adapter.setBlock(trapdoorPos, Block.SNOW_BLOCK);
         }
     }
 
-    private net.minestom.server.instance.block.Block[] liveChunkBlocks(int chunkX, int chunkZ, int[] surfaceHeights) {
+    private net.minestom.server.instance.block.Block[] liveChunkBlocks(
+            int chunkX, int chunkZ, int[] surfaceHeights) {
         var lookup = StructureWrites.terrainLookup();
         if (lookup == null || surfaceHeights == null) {
             return null;
@@ -164,25 +210,44 @@ public final class IglooPlacer {
         return (long) chunkX & 0xFFFFFFFFL | ((long) chunkZ & 0xFFFFFFFFL) << 32;
     }
 
-    private IglooStart startAt(int chunkX, int chunkZ, StructureSet structureSet,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer) {
+    private IglooStart startAt(
+            int chunkX,
+            int chunkZ,
+            StructureSet structureSet,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer) {
         var key = (long) chunkX << 32 ^ (chunkZ & 0xFFFFFFFFL);
-        return this.starts.computeIfAbsent(key,
-                unused -> Optional.ofNullable(this.computeStart(chunkX, chunkZ, structureSet, settings, biomeZoomer)))
+        return this.starts
+                .computeIfAbsent(
+                        key,
+                        unused ->
+                                Optional.ofNullable(
+                                        this.computeStart(
+                                                chunkX,
+                                                chunkZ,
+                                                structureSet,
+                                                settings,
+                                                biomeZoomer)))
                 .orElse(null);
     }
 
-    private IglooStart computeStart(int chunkX, int chunkZ, StructureSet structureSet,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer) {
+    private IglooStart computeStart(
+            int chunkX,
+            int chunkZ,
+            StructureSet structureSet,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer) {
         var seed = settings.randomState().seed();
         var placement = structureSet.placement();
-        if (!placement.isStartChunk(chunkX, chunkZ, seed, settings.randomState().legacyRandomSource())) {
+        if (!placement.isStartChunk(
+                chunkX, chunkZ, seed, settings.randomState().legacyRandomSource())) {
             return null;
         }
 
         var structures = structureSet.structures();
         if (structures.size() == 1) {
-            return this.tryGenerate(structures.getFirst().structure(), chunkX, chunkZ, settings, biomeZoomer);
+            return this.tryGenerate(
+                    structures.getFirst().structure(), chunkX, chunkZ, settings, biomeZoomer);
         }
 
         var options = new ArrayList<>(structures);
@@ -206,7 +271,9 @@ public final class IglooPlacer {
 
             var selected = options.get(index);
             if (this.structureLoader.getStructure(selected.structure()) instanceof IglooStructure) {
-                var start = this.tryGenerate(selected.structure(), chunkX, chunkZ, settings, biomeZoomer);
+                var start =
+                        this.tryGenerate(
+                                selected.structure(), chunkX, chunkZ, settings, biomeZoomer);
                 if (start != null) {
                     return start;
                 }
@@ -219,14 +286,17 @@ public final class IglooPlacer {
     }
 
     /**
-     * Vanilla {@code IglooStructure.findGenerationPoint}: the biome check runs
-     * at the chunk-center {@code WORLD_SURFACE_WG} height, then
-     * {@code generatePieces} draws a rotation and runs
-     * {@code IglooPieces.addPieces} at the chunk's minimum corner with
-     * {@code y = 90} (every piece resolves its own real height below).
+     * Vanilla {@code IglooStructure.findGenerationPoint}: the biome check runs at the chunk-center
+     * {@code WORLD_SURFACE_WG} height, then {@code generatePieces} draws a rotation and runs {@code
+     * IglooPieces.addPieces} at the chunk's minimum corner with {@code y = 90} (every piece
+     * resolves its own real height below).
      */
-    private IglooStart tryGenerate(Key structureKey, int chunkX, int chunkZ,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer) {
+    private IglooStart tryGenerate(
+            Key structureKey,
+            int chunkX,
+            int chunkZ,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer) {
         if (!(this.structureLoader.getStructure(structureKey) instanceof IglooStructure igloo)) {
             return null;
         }
@@ -255,16 +325,23 @@ public final class IglooPlacer {
             }
 
             var finalY = this.resolveHeight(raw, settings);
-            var templatePosition = new BlockVec(raw.position().blockX(), finalY, raw.position().blockZ());
+            var templatePosition =
+                    new BlockVec(raw.position().blockX(), finalY, raw.position().blockZ());
             var pivot = IglooPieces.PIVOTS.get(raw.template());
             var pivotOffset = raw.rotation().rotate(pivot, BlockVec.ZERO);
-            var placementPosition = templatePosition.add(
-                    pivot.blockX() - pivotOffset.blockX(),
-                    pivot.blockY() - pivotOffset.blockY(),
-                    pivot.blockZ() - pivotOffset.blockZ());
+            var placementPosition =
+                    templatePosition.add(
+                            pivot.blockX() - pivotOffset.blockX(),
+                            pivot.blockY() - pivotOffset.blockY(),
+                            pivot.blockZ() - pivotOffset.blockZ());
             var pieceBounds = template.getBoundingBox(placementPosition, raw.rotation());
-            pieces.add(new PlacedIglooPiece(raw.template(), templatePosition, placementPosition, raw.rotation(),
-                    copyBounds(pieceBounds)));
+            pieces.add(
+                    new PlacedIglooPiece(
+                            raw.template(),
+                            templatePosition,
+                            placementPosition,
+                            raw.rotation(),
+                            copyBounds(pieceBounds)));
             bounds = bounds == null ? copyBounds(pieceBounds) : encapsulate(bounds, pieceBounds);
         }
 
@@ -276,9 +353,9 @@ public final class IglooPlacer {
     }
 
     /**
-     * Vanilla {@code IglooPiece.postProcess} height correction: reads
-     * {@code WORLD_SURFACE_WG} at the piece's own rotated entrance column and
-     * shifts the stub template position by {@code height - 90 - 1}.
+     * Vanilla {@code IglooPiece.postProcess} height correction: reads {@code WORLD_SURFACE_WG} at
+     * the piece's own rotated entrance column and shifts the stub template position by {@code
+     * height - 90 - 1}.
      */
     private int resolveHeight(IglooPieces.Piece piece, NoiseGeneratorSettingsRuntime settings) {
         var pivot = IglooPieces.PIVOTS.get(piece.template());
@@ -292,16 +369,17 @@ public final class IglooPlacer {
     }
 
     /**
-     * Vanilla {@code StructureTemplate.calculateRelativePosition} for mirror
-     * {@code NONE}: rotate the local position about the template's rotation
-     * pivot. Equivalent to {@code pivot + rotate(local - pivot)} because this
-     * codebase's {@link Rotation#rotate} pivots at the origin.
+     * Vanilla {@code StructureTemplate.calculateRelativePosition} for mirror {@code NONE}: rotate
+     * the local position about the template's rotation pivot. Equivalent to {@code pivot +
+     * rotate(local - pivot)} because this codebase's {@link Rotation#rotate} pivots at the origin.
      */
-    private static BlockVec calculateRelativePosition(BlockVec local, BlockVec pivot, Rotation rotation) {
-        var difference = new BlockVec(
-                local.blockX() - pivot.blockX(),
-                local.blockY() - pivot.blockY(),
-                local.blockZ() - pivot.blockZ());
+    private static BlockVec calculateRelativePosition(
+            BlockVec local, BlockVec pivot, Rotation rotation) {
+        var difference =
+                new BlockVec(
+                        local.blockX() - pivot.blockX(),
+                        local.blockY() - pivot.blockY(),
+                        local.blockZ() - pivot.blockZ());
         var rotated = rotation.rotate(difference, BlockVec.ZERO);
         return new BlockVec(
                 pivot.blockX() + rotated.blockX(),
@@ -310,9 +388,8 @@ public final class IglooPlacer {
     }
 
     /**
-     * Approximation of vanilla {@code WORLD_SURFACE_WG}, matching every other
-     * placer in this codebase: one above the highest solid block of the raw
-     * noise terrain.
+     * Approximation of vanilla {@code WORLD_SURFACE_WG}, matching every other placer in this
+     * codebase: one above the highest solid block of the raw noise terrain.
      */
     private int worldSurfaceHeight(int blockX, int blockZ, NoiseGeneratorSettingsRuntime settings) {
         var chunkX = Math.floorDiv(blockX, 16);
@@ -323,14 +400,21 @@ public final class IglooPlacer {
         return solidTop == Integer.MIN_VALUE ? settings.minY() : solidTop + 1;
     }
 
-    private TerrainData terrainData(int chunkX, int chunkZ, NoiseGeneratorSettingsRuntime settings) {
-        return this.terrainCache.computeIfAbsent(packChunk(chunkX, chunkZ),
+    private TerrainData terrainData(
+            int chunkX, int chunkZ, NoiseGeneratorSettingsRuntime settings) {
+        return this.terrainCache.computeIfAbsent(
+                packChunk(chunkX, chunkZ),
                 unused -> new TerrainGenerator(settings).generate(chunkX, chunkZ));
     }
 
     private static BoundingBox copyBounds(BoundingBox bounds) {
-        return new BoundingBox(bounds.minX(), bounds.minY(), bounds.minZ(),
-                bounds.maxX(), bounds.maxY(), bounds.maxZ());
+        return new BoundingBox(
+                bounds.minX(),
+                bounds.minY(),
+                bounds.minZ(),
+                bounds.maxX(),
+                bounds.maxY(),
+                bounds.maxZ());
     }
 
     private static BoundingBox encapsulate(BoundingBox bounds, BoundingBox other) {
@@ -338,10 +422,12 @@ public final class IglooPlacer {
         return bounds;
     }
 
-    private record PlacedIglooPiece(Key template, BlockVec templatePosition, BlockVec placementPosition,
-            Rotation rotation, BoundingBox bounds) {
-    }
+    private record PlacedIglooPiece(
+            Key template,
+            BlockVec templatePosition,
+            BlockVec placementPosition,
+            Rotation rotation,
+            BoundingBox bounds) {}
 
-    private record IglooStart(List<PlacedIglooPiece> pieces, BoundingBox bounds) {
-    }
+    private record IglooStart(List<PlacedIglooPiece> pieces, BoundingBox bounds) {}
 }

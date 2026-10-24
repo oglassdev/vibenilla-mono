@@ -1,14 +1,13 @@
 package rocks.minestom.placement;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public final class RailPlacementRule extends BlockPlacementRule {
     public RailPlacementRule(Block block) {
@@ -33,7 +32,10 @@ public final class RailPlacementRule extends BlockPlacementRule {
         var playerPosition = placementState.playerPosition();
         var yaw = playerPosition == null ? 0.0F : playerPosition.yaw();
         var horizontal = BlockFace.fromYaw(yaw);
-        var defaultShape = (horizontal == BlockFace.EAST || horizontal == BlockFace.WEST) ? "east_west" : "north_south";
+        var defaultShape =
+                (horizontal == BlockFace.EAST || horizontal == BlockFace.WEST)
+                        ? "east_west"
+                        : "north_south";
         var initialBlock = withShape(placementState.block(), defaultShape, waterlogged);
         return placeRail(instance, placePosition, initialBlock, defaultShape);
     }
@@ -58,8 +60,20 @@ public final class RailPlacementRule extends BlockPlacementRule {
         var w = hasNeighborRail(instance, west, blockPosition);
         var e = hasNeighborRail(instance, east, blockPosition);
         var defaultShape = defaultShape(currentBlock.getProperty("shape"));
-        var shape = computeShape(instance, north, south, west, east, n, s, w, e,
-                isStraight(currentBlock), defaultShape, null);
+        var shape =
+                computeShape(
+                        instance,
+                        north,
+                        south,
+                        west,
+                        east,
+                        n,
+                        s,
+                        w,
+                        e,
+                        isStraight(currentBlock),
+                        defaultShape,
+                        null);
         var ascendingFace = ascendingFace(shape);
 
         if (ascendingFace != null) {
@@ -104,7 +118,20 @@ public final class RailPlacementRule extends BlockPlacementRule {
         var s = hasNeighborRail(instance, south, pos);
         var w = hasNeighborRail(instance, west, pos);
         var e = hasNeighborRail(instance, east, pos);
-        var shape = computeShape(instance, north, south, west, east, n, s, w, e, straight, defaultShape, null);
+        var shape =
+                computeShape(
+                        instance,
+                        north,
+                        south,
+                        west,
+                        east,
+                        n,
+                        s,
+                        w,
+                        e,
+                        straight,
+                        defaultShape,
+                        null);
         var resolved = initial.withProperty("shape", shape);
 
         for (var connection : connectionsFor(pos, shape)) {
@@ -126,12 +153,17 @@ public final class RailPlacementRule extends BlockPlacementRule {
 
     private static String computeShape(
             Block.Getter getter,
-            Point north, Point south, Point west, Point east,
-            boolean n, boolean s, boolean w, boolean e,
+            Point north,
+            Point south,
+            Point west,
+            Point east,
+            boolean n,
+            boolean s,
+            boolean w,
+            boolean e,
             boolean straight,
             String defaultShape,
-            @Nullable Point newRailPos
-    ) {
+            @Nullable Point newRailPos) {
         var northOrSouth = n || s;
         var westOrEast = w || e;
         String shape = null;
@@ -218,8 +250,12 @@ public final class RailPlacementRule extends BlockPlacementRule {
         return shape == null ? defaultShape : shape;
     }
 
-    private void connectToNeighbor(Instance instance, Point neighborPos, Block neighborBlock,
-                                   List<Point> liveConns, Point newRailPos) {
+    private void connectToNeighbor(
+            Instance instance,
+            Point neighborPos,
+            Block neighborBlock,
+            List<Point> liveConns,
+            Point newRailPos) {
         var straight = isStraight(neighborBlock);
         var north = neighborPos.relative(BlockFace.NORTH);
         var south = neighborPos.relative(BlockFace.SOUTH);
@@ -234,7 +270,20 @@ public final class RailPlacementRule extends BlockPlacementRule {
         var s = matchesColumn(allConns, south);
         var w = matchesColumn(allConns, west);
         var e = matchesColumn(allConns, east);
-        var shape = computeShape(instance, north, south, west, east, n, s, w, e, straight, "north_south", newRailPos);
+        var shape =
+                computeShape(
+                        instance,
+                        north,
+                        south,
+                        west,
+                        east,
+                        n,
+                        s,
+                        w,
+                        e,
+                        straight,
+                        "north_south",
+                        newRailPos);
         var currentShape = neighborBlock.getProperty("shape");
 
         if (shape.equals(currentShape)) {
@@ -302,7 +351,8 @@ public final class RailPlacementRule extends BlockPlacementRule {
      * Vanilla RailState.hasNeighborRail: a rail exists in the column (or ±1Y) and its pruned
      * connections still leave room to point back at us.
      */
-    private static boolean hasNeighborRail(Block.Getter getter, Point neighborSearchPos, Point ourPos) {
+    private static boolean hasNeighborRail(
+            Block.Getter getter, Point neighborSearchPos, Point ourPos) {
         var found = findRail(getter, neighborSearchPos);
 
         if (found == null) {
@@ -370,8 +420,7 @@ public final class RailPlacementRule extends BlockPlacementRule {
     }
 
     private static Block withShape(Block block, String shape, boolean waterlogged) {
-        return block
-                .withProperty("shape", shape)
+        return block.withProperty("shape", shape)
                 .withProperty("waterlogged", String.valueOf(waterlogged));
     }
 
@@ -423,7 +472,5 @@ public final class RailPlacementRule extends BlockPlacementRule {
         return result;
     }
 
-    private record NeighborRail(Point position, Block block) {
-
-    }
+    private record NeighborRail(Point position, Block block) {}
 }

@@ -1,17 +1,17 @@
 package rocks.minestom.worldgen.structure.template;
 
-import net.minestom.server.coordinate.BlockVec;
-import net.minestom.server.utils.Direction;
-import rocks.minestom.worldgen.random.RandomSource;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import net.minestom.server.coordinate.BlockVec;
+import net.minestom.server.utils.Direction;
+import rocks.minestom.worldgen.random.RandomSource;
 
 /**
  * Represents a rotation around the Y-axis in 90-degree increments.
  *
  * <p>Used when placing structure templates to add variety. Rotation affects:
+ *
  * <ul>
  *   <li>Block positions within templates
  *   <li>Directional block properties (facing, axis, etc.)
@@ -28,24 +28,27 @@ public enum Rotation {
 
     public Rotation getRotated(Rotation other) {
         return switch (other) {
-            case CLOCKWISE_90 -> switch (this) {
-                case NONE -> CLOCKWISE_90;
-                case CLOCKWISE_90 -> CLOCKWISE_180;
-                case CLOCKWISE_180 -> COUNTERCLOCKWISE_90;
-                case COUNTERCLOCKWISE_90 -> NONE;
-            };
-            case CLOCKWISE_180 -> switch (this) {
-                case NONE -> CLOCKWISE_180;
-                case CLOCKWISE_90 -> COUNTERCLOCKWISE_90;
-                case CLOCKWISE_180 -> NONE;
-                case COUNTERCLOCKWISE_90 -> CLOCKWISE_90;
-            };
-            case COUNTERCLOCKWISE_90 -> switch (this) {
-                case NONE -> COUNTERCLOCKWISE_90;
-                case CLOCKWISE_90 -> NONE;
-                case CLOCKWISE_180 -> CLOCKWISE_90;
-                case COUNTERCLOCKWISE_90 -> CLOCKWISE_180;
-            };
+            case CLOCKWISE_90 ->
+                    switch (this) {
+                        case NONE -> CLOCKWISE_90;
+                        case CLOCKWISE_90 -> CLOCKWISE_180;
+                        case CLOCKWISE_180 -> COUNTERCLOCKWISE_90;
+                        case COUNTERCLOCKWISE_90 -> NONE;
+                    };
+            case CLOCKWISE_180 ->
+                    switch (this) {
+                        case NONE -> CLOCKWISE_180;
+                        case CLOCKWISE_90 -> COUNTERCLOCKWISE_90;
+                        case CLOCKWISE_180 -> NONE;
+                        case COUNTERCLOCKWISE_90 -> CLOCKWISE_90;
+                    };
+            case COUNTERCLOCKWISE_90 ->
+                    switch (this) {
+                        case NONE -> COUNTERCLOCKWISE_90;
+                        case CLOCKWISE_90 -> NONE;
+                        case CLOCKWISE_180 -> CLOCKWISE_90;
+                        case COUNTERCLOCKWISE_90 -> CLOCKWISE_180;
+                    };
             case NONE -> this;
         };
     }
@@ -65,28 +68,20 @@ public enum Rotation {
 
     public BlockVec rotate(BlockVec position, BlockVec size) {
         return switch (this) {
-            case CLOCKWISE_90 -> new BlockVec(
-                    -position.blockZ(),
-                    position.blockY(),
-                    position.blockX()
-            );
-            case CLOCKWISE_180 -> new BlockVec(
-                    -position.blockX(),
-                    position.blockY(),
-                    -position.blockZ()
-            );
-            case COUNTERCLOCKWISE_90 -> new BlockVec(
-                    position.blockZ(),
-                    position.blockY(),
-                    -position.blockX()
-            );
+            case CLOCKWISE_90 ->
+                    new BlockVec(-position.blockZ(), position.blockY(), position.blockX());
+            case CLOCKWISE_180 ->
+                    new BlockVec(-position.blockX(), position.blockY(), -position.blockZ());
+            case COUNTERCLOCKWISE_90 ->
+                    new BlockVec(position.blockZ(), position.blockY(), -position.blockX());
             case NONE -> position;
         };
     }
 
     public BlockVec rotateSize(BlockVec size) {
         return switch (this) {
-            case CLOCKWISE_90, COUNTERCLOCKWISE_90 -> new BlockVec(size.blockZ(), size.blockY(), size.blockX());
+            case CLOCKWISE_90, COUNTERCLOCKWISE_90 ->
+                    new BlockVec(size.blockZ(), size.blockY(), size.blockX());
             case CLOCKWISE_180, NONE -> size;
         };
     }

@@ -1,5 +1,11 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.BiConsumer;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.TreeConfiguration;
@@ -7,19 +13,13 @@ import rocks.minestom.worldgen.feature.foliageplacers.FoliagePlacer;
 import rocks.minestom.worldgen.feature.treedecorators.TreeDecorator;
 import rocks.minestom.worldgen.feature.trunkplacers.TrunkPlacer;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.function.BiConsumer;
-
 public final class TreeFeature implements Feature<TreeConfiguration> {
     /** Debug trace of tree placement decisions, for parity investigations. */
     public static final boolean TRACE = !System.getProperty("worldgen.treeTrace", "").isEmpty();
 
     /** Heavy per-tree dumps (rng state, world snapshot) for the replay harnesses. */
-    public static final boolean TRACE_FULL = "full".equals(System.getProperty("worldgen.treeTrace"));
+    public static final boolean TRACE_FULL =
+            "full".equals(System.getProperty("worldgen.treeTrace"));
 
     /** Optional x1,z1,x2,z2 box limiting the heavy dumps. */
     private static final int[] TRACE_BOX = parseTraceBox();
@@ -30,18 +30,25 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
             return null;
         }
         var parts = value.split(",");
-        return new int[]{Integer.parseInt(parts[0]), Integer.parseInt(parts[1]),
-                Integer.parseInt(parts[2]), Integer.parseInt(parts[3])};
+        return new int[] {
+            Integer.parseInt(parts[0]),
+            Integer.parseInt(parts[1]),
+            Integer.parseInt(parts[2]),
+            Integer.parseInt(parts[3])
+        };
     }
 
     private static boolean inTraceBox(BlockVec origin) {
         return TRACE_BOX == null
-                || origin.blockX() >= TRACE_BOX[0] && origin.blockX() <= TRACE_BOX[2]
-                && origin.blockZ() >= TRACE_BOX[1] && origin.blockZ() <= TRACE_BOX[3];
+                || origin.blockX() >= TRACE_BOX[0]
+                        && origin.blockX() <= TRACE_BOX[2]
+                        && origin.blockZ() >= TRACE_BOX[1]
+                        && origin.blockZ() <= TRACE_BOX[3];
     }
 
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<TreeConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<TreeConfiguration, T> context) {
         var level = context.accessor();
         var random = context.random();
         var config = context.config();
@@ -52,28 +59,31 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
         var leaves = new HashSet<VanillaPos>();
         var decorations = new HashSet<VanillaPos>();
 
-        BiConsumer<BlockVec, Block> logSetter = (position, block) -> {
-            logs.add(VanillaPos.of(position));
-            level.setBlock(position, block);
-        };
+        BiConsumer<BlockVec, Block> logSetter =
+                (position, block) -> {
+                    logs.add(VanillaPos.of(position));
+                    level.setBlock(position, block);
+                };
 
-        var leafSetter = new FoliagePlacer.FoliageSetter() {
-            @Override
-            public void set(BlockVec position, Block block) {
-                leaves.add(VanillaPos.of(position));
-                level.setBlock(position, block);
-            }
+        var leafSetter =
+                new FoliagePlacer.FoliageSetter() {
+                    @Override
+                    public void set(BlockVec position, Block block) {
+                        leaves.add(VanillaPos.of(position));
+                        level.setBlock(position, block);
+                    }
 
-            @Override
-            public boolean isSet(BlockVec position) {
-                return leaves.contains(VanillaPos.of(position));
-            }
-        };
+                    @Override
+                    public boolean isSet(BlockVec position) {
+                        return leaves.contains(VanillaPos.of(position));
+                    }
+                };
 
-        BiConsumer<BlockVec, Block> decorationSetter = (position, block) -> {
-            decorations.add(VanillaPos.of(position));
-            level.setBlock(position, block);
-        };
+        BiConsumer<BlockVec, Block> decorationSetter =
+                (position, block) -> {
+                    decorations.add(VanillaPos.of(position));
+                    level.setBlock(position, block);
+                };
 
         if (TRACE_FULL && inTraceBox(context.origin())) {
             dumpDecoratorInputs(level, context.origin(), "pre", random, Set.of(), Set.of());
@@ -81,8 +91,15 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
 
         var placed = this.doPlace(context, logSetter, leafSetter);
         if (TRACE) {
-            System.out.println("TRACE tree " + context.origin() + " placed=" + placed
-                    + " logs=" + logs.size() + " leaves=" + leaves.size());
+            System.out.println(
+                    "TRACE tree "
+                            + context.origin()
+                            + " placed="
+                            + placed
+                            + " logs="
+                            + logs.size()
+                            + " leaves="
+                            + leaves.size());
         }
         if (!placed || logs.isEmpty() && leaves.isEmpty()) {
             return false;
@@ -93,13 +110,14 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
         }
 
         if (!config.decorators().isEmpty()) {
-            var decoratorContext = new TreeDecorator.Context(
-                    level,
-                    decorationSetter,
-                    random,
-                    toBlockVecs(logs),
-                    toBlockVecs(leaves),
-                    List.of());
+            var decoratorContext =
+                    new TreeDecorator.Context(
+                            level,
+                            decorationSetter,
+                            random,
+                            toBlockVecs(logs),
+                            toBlockVecs(leaves),
+                            List.of());
             for (var decorator : config.decorators()) {
                 decorator.place(decoratorContext);
             }
@@ -111,12 +129,11 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
     }
 
     /**
-     * Vanilla {@code TreeFeature.place} finishes with
-     * {@code StructureTemplate.updateShapeAtEdge} over the tree's volume: a
-     * double-plant half left without its partner (a leaf or log overwrote the
-     * other half) reacts to the shape update and is destroyed - replaced by
-     * its fluid (water for seagrass-family plants, air otherwise) - and the
-     * cascade takes the surviving partner with it.
+     * Vanilla {@code TreeFeature.place} finishes with {@code StructureTemplate.updateShapeAtEdge}
+     * over the tree's volume: a double-plant half left without its partner (a leaf or log overwrote
+     * the other half) reacts to the shape update and is destroyed - replaced by its fluid (water
+     * for seagrass-family plants, air otherwise) - and the cascade takes the surviving partner with
+     * it.
      */
     private <T extends Block.Getter & Block.Setter> void breakOrphanedDoublePlants(
             T level, Set<VanillaPos> logs, Set<VanillaPos> leaves, Set<VanillaPos> decorations) {
@@ -124,7 +141,11 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
         for (var set : List.of(logs, leaves, decorations)) {
             for (var placed : set) {
                 for (var offset : NEIGHBOR_OFFSETS) {
-                    var neighborPos = new BlockVec(placed.x() + offset[0], placed.y() + offset[1], placed.z() + offset[2]);
+                    var neighborPos =
+                            new BlockVec(
+                                    placed.x() + offset[0],
+                                    placed.y() + offset[1],
+                                    placed.z() + offset[2]);
                     if (!visited.add(neighborPos)) {
                         continue;
                     }
@@ -133,10 +154,14 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
                     if (half == null || !isDoublePlant(neighbor)) {
                         continue;
                     }
-                    var partnerPos = half.equals("lower") ? neighborPos.add(0, 1, 0) : neighborPos.add(0, -1, 0);
+                    var partnerPos =
+                            half.equals("lower")
+                                    ? neighborPos.add(0, 1, 0)
+                                    : neighborPos.add(0, -1, 0);
                     var partner = level.getBlock(partnerPos);
                     var partnerHalf = half.equals("lower") ? "upper" : "lower";
-                    if (partner.key().equals(neighbor.key()) && partnerHalf.equals(partner.getProperty("half"))) {
+                    if (partner.key().equals(neighbor.key())
+                            && partnerHalf.equals(partner.getProperty("half"))) {
                         continue;
                     }
                     level.setBlock(neighborPos, brokenPlantState(neighbor));
@@ -146,14 +171,21 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
     }
 
     private static final int[][] NEIGHBOR_OFFSETS = {
-            {0, 1, 0}, {0, -1, 0}, {1, 0, 0}, {-1, 0, 0}, {0, 0, 1}, {0, 0, -1}
+        {0, 1, 0}, {0, -1, 0}, {1, 0, 0}, {-1, 0, 0}, {0, 0, 1}, {0, 0, -1}
     };
 
     private static boolean isDoublePlant(Block block) {
         var key = block.key().value();
         return switch (key) {
-            case "tall_grass", "large_fern", "tall_seagrass", "sunflower", "lilac", "rose_bush", "peony",
-                    "pitcher_plant" -> true;
+            case "tall_grass",
+                    "large_fern",
+                    "tall_seagrass",
+                    "sunflower",
+                    "lilac",
+                    "rose_bush",
+                    "peony",
+                    "pitcher_plant" ->
+                    true;
             default -> false;
         };
     }
@@ -165,8 +197,7 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
     private <T extends Block.Getter & Block.Setter> boolean doPlace(
             FeaturePlaceContext<TreeConfiguration, T> context,
             BiConsumer<BlockVec, Block> logSetter,
-            FoliagePlacer.FoliageSetter leafSetter
-    ) {
+            FoliagePlacer.FoliageSetter leafSetter) {
         var level = context.accessor();
         var random = context.random();
         var pos = context.origin();
@@ -177,7 +208,8 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
         var trunkHeight = treeHeight - foliageHeight;
         var foliageRadius = config.foliagePlacer().foliageRadius(random, trunkHeight);
 
-        if (pos.blockY() < context.minY() + 1 || pos.blockY() + treeHeight + 1 > context.maxY() + 1) {
+        if (pos.blockY() < context.minY() + 1
+                || pos.blockY() + treeHeight + 1 > context.maxY() + 1) {
             return false;
         }
 
@@ -189,15 +221,27 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
             }
         }
 
-        var foliageAttachments = config.trunkPlacer().placeTrunk(level, logSetter, random, maxFreeTreeHeight, pos, config);
+        var foliageAttachments =
+                config.trunkPlacer()
+                        .placeTrunk(level, logSetter, random, maxFreeTreeHeight, pos, config);
         for (var attachment : foliageAttachments) {
-            config.foliagePlacer().createFoliage(level, leafSetter, random, config, maxFreeTreeHeight, attachment, foliageHeight, foliageRadius);
+            config.foliagePlacer()
+                    .createFoliage(
+                            level,
+                            leafSetter,
+                            random,
+                            config,
+                            maxFreeTreeHeight,
+                            attachment,
+                            foliageHeight,
+                            foliageRadius);
         }
 
         return true;
     }
 
-    private int getMaxFreeTreeHeight(Block.Getter getter, int treeHeight, BlockVec pos, TreeConfiguration config) {
+    private int getMaxFreeTreeHeight(
+            Block.Getter getter, int treeHeight, BlockVec pos, TreeConfiguration config) {
         for (var height = 0; height <= treeHeight + 1; height++) {
             var size = config.minimumSize().getSizeAtHeight(treeHeight, height);
 
@@ -205,7 +249,8 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
                 for (var z = -size; z <= size; z++) {
                     var checkPos = pos.add(x, height, z);
                     if (!config.trunkPlacer().isFree(getter, checkPos)
-                            || !config.ignoreVines() && getter.getBlock(checkPos).compare(Block.VINE)) {
+                            || !config.ignoreVines()
+                                    && getter.getBlock(checkPos).compare(Block.VINE)) {
                         return height - 2;
                     }
                 }
@@ -216,9 +261,8 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
     }
 
     /**
-     * Debug dump of everything needed to replay the decorators offline: the
-     * random state, the log/leaf sets in vanilla iteration order, and the
-     * nearby world state.
+     * Debug dump of everything needed to replay the decorators offline: the random state, the
+     * log/leaf sets in vanilla iteration order, and the nearby world state.
      */
     private static void dumpDecoratorInputs(
             Block.Getter level,
@@ -226,8 +270,7 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
             String stage,
             rocks.minestom.worldgen.random.RandomSource random,
             Set<VanillaPos> logs,
-            Set<VanillaPos> leaves
-    ) {
+            Set<VanillaPos> leaves) {
         try {
             var inner = random;
             var sourceField = inner.getClass().getDeclaredField("randomSource");
@@ -240,19 +283,38 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
             var hiField = generator.getClass().getDeclaredField("seedHi");
             loField.setAccessible(true);
             hiField.setAccessible(true);
-            System.out.println("TRACE rng " + stage + ":" + key(origin) + " " + loField.getLong(generator) + " " + hiField.getLong(generator));
+            System.out.println(
+                    "TRACE rng "
+                            + stage
+                            + ":"
+                            + key(origin)
+                            + " "
+                            + loField.getLong(generator)
+                            + " "
+                            + hiField.getLong(generator));
         } catch (ReflectiveOperationException exception) {
-            System.out.println("TRACE rng " + stage + ":" + key(origin) + " unavailable " + exception);
+            System.out.println(
+                    "TRACE rng " + stage + ":" + key(origin) + " unavailable " + exception);
         }
 
         var logDump = new StringBuilder();
         for (var log : logs) {
-            logDump.append(log.x()).append(',').append(log.y()).append(',').append(log.z()).append(';');
+            logDump.append(log.x())
+                    .append(',')
+                    .append(log.y())
+                    .append(',')
+                    .append(log.z())
+                    .append(';');
         }
         System.out.println("TRACE logset " + stage + ":" + key(origin) + " " + logDump);
         var leafDump = new StringBuilder();
         for (var leaf : leaves) {
-            leafDump.append(leaf.x()).append(',').append(leaf.y()).append(',').append(leaf.z()).append(';');
+            leafDump.append(leaf.x())
+                    .append(',')
+                    .append(leaf.y())
+                    .append(',')
+                    .append(leaf.z())
+                    .append(';');
         }
         System.out.println("TRACE leafset " + stage + ":" + key(origin) + " " + leafDump);
 
@@ -262,7 +324,19 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
                 for (var z = origin.blockZ() - reach; z <= origin.blockZ() + reach; z++) {
                     var block = level.getBlock(x, y, z);
                     if (!block.air()) {
-                        System.out.println("TRACE world " + stage + ":" + key(origin) + " " + x + " " + y + " " + z + " " + serialize(block));
+                        System.out.println(
+                                "TRACE world "
+                                        + stage
+                                        + ":"
+                                        + key(origin)
+                                        + " "
+                                        + x
+                                        + " "
+                                        + y
+                                        + " "
+                                        + z
+                                        + " "
+                                        + serialize(block));
                     }
                 }
             }
@@ -274,7 +348,8 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
     }
 
     /** Debug: print the xoroshiro state of the shared worldgen random. */
-    public static void dumpRngState(String tag, rocks.minestom.worldgen.random.RandomSource random) {
+    public static void dumpRngState(
+            String tag, rocks.minestom.worldgen.random.RandomSource random) {
         try {
             var sourceField = random.getClass().getDeclaredField("randomSource");
             sourceField.setAccessible(true);
@@ -286,7 +361,13 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
             var hiField = generator.getClass().getDeclaredField("seedHi");
             loField.setAccessible(true);
             hiField.setAccessible(true);
-            System.out.println("RNGSTATE " + tag + " " + loField.getLong(generator) + " " + hiField.getLong(generator));
+            System.out.println(
+                    "RNGSTATE "
+                            + tag
+                            + " "
+                            + loField.getLong(generator)
+                            + " "
+                            + hiField.getLong(generator));
         } catch (ReflectiveOperationException exception) {
             System.out.println("RNGSTATE " + tag + " unavailable " + exception);
         }
@@ -318,17 +399,13 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
     }
 
     /**
-     * Vanilla's post-placement leaf distance update: a BFS from the logs sets
-     * the {@code distance} property (1-6) of every reachable block carrying it,
-     * exactly like {@code TreeFeature.updateLeaves}. Decorations are marked as
-     * visited first so they are never distance-updated.
+     * Vanilla's post-placement leaf distance update: a BFS from the logs sets the {@code distance}
+     * property (1-6) of every reachable block carrying it, exactly like {@code
+     * TreeFeature.updateLeaves}. Decorations are marked as visited first so they are never
+     * distance-updated.
      */
     private static <T extends Block.Getter & Block.Setter> boolean updateLeaves(
-            T level,
-            Set<VanillaPos> logs,
-            Set<VanillaPos> leaves,
-            Set<VanillaPos> decorations
-    ) {
+            T level, Set<VanillaPos> logs, Set<VanillaPos> leaves, Set<VanillaPos> decorations) {
         // Vanilla BoundingBox.encapsulatingPositions over roots+logs+leaves+decorations
         var minX = Integer.MAX_VALUE;
         var minY = Integer.MAX_VALUE;
@@ -364,7 +441,8 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
         var boundsMaxZ = maxZ;
 
         for (var pos : decorations) {
-            if (inside(pos, boundsMinX, boundsMinY, boundsMinZ, boundsMaxX, boundsMaxY, boundsMaxZ)) {
+            if (inside(
+                    pos, boundsMinX, boundsMinY, boundsMinZ, boundsMaxX, boundsMaxY, boundsMaxZ)) {
                 shape.set(shapeIndex(pos, boundsMinX, boundsMinY, boundsMinZ, sizeY, sizeZ));
             }
         }
@@ -385,7 +463,14 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
                 var iterator = toCheck.get(smallestDistance).iterator();
                 var current = iterator.next();
                 iterator.remove();
-                if (!inside(current, boundsMinX, boundsMinY, boundsMinZ, boundsMaxX, boundsMaxY, boundsMaxZ)) {
+                if (!inside(
+                        current,
+                        boundsMinX,
+                        boundsMinY,
+                        boundsMinZ,
+                        boundsMaxX,
+                        boundsMaxY,
+                        boundsMaxZ)) {
                     continue;
                 }
 
@@ -393,21 +478,33 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
                     var position = current.toBlockVec();
                     var state = level.getBlock(position);
                     if (state.getProperty("distance") != null) {
-                        level.setBlock(position, state.withProperty("distance", Integer.toString(smallestDistance)));
+                        level.setBlock(
+                                position,
+                                state.withProperty("distance", Integer.toString(smallestDistance)));
                     }
                 }
 
                 shape.set(shapeIndex(current, boundsMinX, boundsMinY, boundsMinZ, sizeY, sizeZ));
 
                 for (var direction : Direction.values()) {
-                    var neighbor = new VanillaPos(
-                            current.x() + direction.stepX(),
-                            current.y() + direction.stepY(),
-                            current.z() + direction.stepZ());
-                    if (!inside(neighbor, boundsMinX, boundsMinY, boundsMinZ, boundsMaxX, boundsMaxY, boundsMaxZ)) {
+                    var neighbor =
+                            new VanillaPos(
+                                    current.x() + direction.stepX(),
+                                    current.y() + direction.stepY(),
+                                    current.z() + direction.stepZ());
+                    if (!inside(
+                            neighbor,
+                            boundsMinX,
+                            boundsMinY,
+                            boundsMinZ,
+                            boundsMaxX,
+                            boundsMaxY,
+                            boundsMaxZ)) {
                         continue;
                     }
-                    if (shape.get(shapeIndex(neighbor, boundsMinX, boundsMinY, boundsMinZ, sizeY, sizeZ))) {
+                    if (shape.get(
+                            shapeIndex(
+                                    neighbor, boundsMinX, boundsMinY, boundsMinZ, sizeY, sizeZ))) {
                         continue;
                     }
 
@@ -429,9 +526,8 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
     }
 
     /**
-     * Vanilla {@code LeavesBlock.getOptionalDistanceAt}: logs count as distance
-     * 0, blocks carrying the {@code distance} property report it, everything
-     * else has none (returned as -1 here).
+     * Vanilla {@code LeavesBlock.getOptionalDistanceAt}: logs count as distance 0, blocks carrying
+     * the {@code distance} property report it, everything else has none (returned as -1 here).
      */
     private static int distanceAt(Block block) {
         if (TrunkPlacer.isLog(block)) {
@@ -441,13 +537,18 @@ public final class TreeFeature implements Feature<TreeConfiguration> {
         return property != null ? Integer.parseInt(property) : -1;
     }
 
-    private static boolean inside(VanillaPos pos, int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
-        return pos.x() >= minX && pos.x() <= maxX
-                && pos.y() >= minY && pos.y() <= maxY
-                && pos.z() >= minZ && pos.z() <= maxZ;
+    private static boolean inside(
+            VanillaPos pos, int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
+        return pos.x() >= minX
+                && pos.x() <= maxX
+                && pos.y() >= minY
+                && pos.y() <= maxY
+                && pos.z() >= minZ
+                && pos.z() <= maxZ;
     }
 
-    private static int shapeIndex(VanillaPos pos, int minX, int minY, int minZ, int sizeY, int sizeZ) {
+    private static int shapeIndex(
+            VanillaPos pos, int minX, int minY, int minZ, int sizeY, int sizeZ) {
         return ((pos.x() - minX) * sizeY + (pos.y() - minY)) * sizeZ + (pos.z() - minZ);
     }
 }

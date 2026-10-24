@@ -1,7 +1,11 @@
 package io.github.togar2.pvp.feature.attributes;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.github.togar2.pvp.feature.CombatFeatures;
 import io.github.togar2.pvp.utils.CombatVersion;
+import java.util.Map;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.component.DataComponents;
@@ -23,11 +27,6 @@ import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 @EnvTest
 public final class VanillaEquipmentFeatureTest {
     @Test
@@ -48,11 +47,15 @@ public final class VanillaEquipmentFeatureTest {
 
             this.leftClick(player, PlayerInventoryUtils.CHESTPLATE_SLOT);
             assertEquals(leggings, player.getInventory().getCursorItem());
-            assertEquals(ItemStack.AIR, player.getInventory().getItemStack(PlayerInventoryUtils.CHESTPLATE_SLOT));
+            assertEquals(
+                    ItemStack.AIR,
+                    player.getInventory().getItemStack(PlayerInventoryUtils.CHESTPLATE_SLOT));
 
             this.leftClick(player, PlayerInventoryUtils.LEGGINGS_SLOT);
             assertEquals(ItemStack.AIR, player.getInventory().getCursorItem());
-            assertEquals(leggings, player.getInventory().getItemStack(PlayerInventoryUtils.LEGGINGS_SLOT));
+            assertEquals(
+                    leggings,
+                    player.getInventory().getItemStack(PlayerInventoryUtils.LEGGINGS_SLOT));
         } finally {
             MinecraftServer.getGlobalEventHandler().removeChild(node);
         }
@@ -72,11 +75,15 @@ public final class VanillaEquipmentFeatureTest {
 
             this.hotbarSwap(player, PlayerInventoryUtils.CHESTPLATE_SLOT, 0);
             assertEquals(leggings, player.getInventory().getItemStack(0));
-            assertEquals(ItemStack.AIR, player.getInventory().getItemStack(PlayerInventoryUtils.CHESTPLATE_SLOT));
+            assertEquals(
+                    ItemStack.AIR,
+                    player.getInventory().getItemStack(PlayerInventoryUtils.CHESTPLATE_SLOT));
 
             this.hotbarSwap(player, PlayerInventoryUtils.LEGGINGS_SLOT, 0);
             assertEquals(ItemStack.AIR, player.getInventory().getItemStack(0));
-            assertEquals(leggings, player.getInventory().getItemStack(PlayerInventoryUtils.LEGGINGS_SLOT));
+            assertEquals(
+                    leggings,
+                    player.getInventory().getItemStack(PlayerInventoryUtils.LEGGINGS_SLOT));
         } finally {
             MinecraftServer.getGlobalEventHandler().removeChild(node);
         }
@@ -90,23 +97,43 @@ public final class VanillaEquipmentFeatureTest {
             var instance = env.createFlatInstance();
             var player = env.createPlayer(instance, new Pos(0.0, 40.0, 0.0));
 
-            player.setEquipment(EquipmentSlot.BOOTS, ItemStack.of(Material.DIAMOND_BOOTS).with(
-                    DataComponents.ENCHANTMENTS, EnchantmentList.EMPTY.with(Enchantment.DEPTH_STRIDER, 3)
-            ));
-            player.setEquipment(EquipmentSlot.CHESTPLATE, ItemStack.of(Material.DIAMOND_CHESTPLATE).with(
-                    DataComponents.ENCHANTMENTS, EnchantmentList.EMPTY.with(Enchantment.BLAST_PROTECTION, 4)
-            ));
+            player.setEquipment(
+                    EquipmentSlot.BOOTS,
+                    ItemStack.of(Material.DIAMOND_BOOTS)
+                            .with(
+                                    DataComponents.ENCHANTMENTS,
+                                    EnchantmentList.EMPTY.with(Enchantment.DEPTH_STRIDER, 3)));
+            player.setEquipment(
+                    EquipmentSlot.CHESTPLATE,
+                    ItemStack.of(Material.DIAMOND_CHESTPLATE)
+                            .with(
+                                    DataComponents.ENCHANTMENTS,
+                                    EnchantmentList.EMPTY.with(Enchantment.BLAST_PROTECTION, 4)));
 
-            assertEquals(1.0, player.getAttributeValue(Attribute.WATER_MOVEMENT_EFFICIENCY), 1.0E-5);
-            assertEquals(0.6, player.getAttributeValue(Attribute.EXPLOSION_KNOCKBACK_RESISTANCE), 1.0E-5);
-            assertTrue(player.getAttribute(Attribute.WATER_MOVEMENT_EFFICIENCY).modifiers().stream()
-                    .anyMatch(modifier -> modifier.id().equals(Key.key("minecraft:enchantment.depth_strider/feet"))));
+            assertEquals(
+                    1.0, player.getAttributeValue(Attribute.WATER_MOVEMENT_EFFICIENCY), 1.0E-5);
+            assertEquals(
+                    0.6,
+                    player.getAttributeValue(Attribute.EXPLOSION_KNOCKBACK_RESISTANCE),
+                    1.0E-5);
+            assertTrue(
+                    player.getAttribute(Attribute.WATER_MOVEMENT_EFFICIENCY).modifiers().stream()
+                            .anyMatch(
+                                    modifier ->
+                                            modifier.id()
+                                                    .equals(
+                                                            Key.key(
+                                                                    "minecraft:enchantment.depth_strider/feet"))));
 
             player.setEquipment(EquipmentSlot.BOOTS, ItemStack.AIR);
             player.setEquipment(EquipmentSlot.CHESTPLATE, ItemStack.of(Material.IRON_CHESTPLATE));
 
-            assertEquals(0.0, player.getAttributeValue(Attribute.WATER_MOVEMENT_EFFICIENCY), 1.0E-5);
-            assertEquals(0.0, player.getAttributeValue(Attribute.EXPLOSION_KNOCKBACK_RESISTANCE), 1.0E-5);
+            assertEquals(
+                    0.0, player.getAttributeValue(Attribute.WATER_MOVEMENT_EFFICIENCY), 1.0E-5);
+            assertEquals(
+                    0.0,
+                    player.getAttributeValue(Attribute.EXPLOSION_KNOCKBACK_RESISTANCE),
+                    1.0E-5);
         } finally {
             MinecraftServer.getGlobalEventHandler().removeChild(node);
         }
@@ -123,7 +150,9 @@ public final class VanillaEquipmentFeatureTest {
             player.setItemInMainHand(ItemStack.of(Material.DIAMOND_SWORD));
             assertEquals(7.0, player.getAttributeValue(Attribute.ATTACK_DAMAGE), 1.0E-5);
 
-            player.setItemInMainHand(ItemStack.of(Material.DIAMOND_SWORD).with(DataComponents.ATTRIBUTE_MODIFIERS, AttributeList.EMPTY));
+            player.setItemInMainHand(
+                    ItemStack.of(Material.DIAMOND_SWORD)
+                            .with(DataComponents.ATTRIBUTE_MODIFIERS, AttributeList.EMPTY));
             assertEquals(1.0, player.getAttributeValue(Attribute.ATTACK_DAMAGE), 1.0E-5);
 
             player.setItemInMainHand(ItemStack.AIR);
@@ -155,11 +184,12 @@ public final class VanillaEquipmentFeatureTest {
     }
 
     private EventNode<?> addEquipmentFeature() {
-        var node = CombatFeatures.empty()
-                .version(CombatVersion.MODERN)
-                .add(CombatFeatures.VANILLA_EQUIPMENT)
-                .build()
-                .createNode();
+        var node =
+                CombatFeatures.empty()
+                        .version(CombatVersion.MODERN)
+                        .add(CombatFeatures.VANILLA_EQUIPMENT)
+                        .build()
+                        .createNode();
         MinecraftServer.getGlobalEventHandler().addChild(node);
         return node;
     }
@@ -172,11 +202,18 @@ public final class VanillaEquipmentFeatureTest {
         this.click(player, slot, hotbarSlot, ClientClickWindowPacket.ClickType.SWAP);
     }
 
-    private void click(Player player, int slot, int button, ClientClickWindowPacket.ClickType clickType) {
+    private void click(
+            Player player, int slot, int button, ClientClickWindowPacket.ClickType clickType) {
         var windowSlot = PlayerInventoryUtils.convertMinestomSlotToWindowSlot(slot);
-        player.addPacketToQueue(new ClientClickWindowPacket(
-                (byte) 0, 0, (short) windowSlot, (byte) button, clickType, Map.of(), ItemStack.Hash.AIR
-        ));
+        player.addPacketToQueue(
+                new ClientClickWindowPacket(
+                        (byte) 0,
+                        0,
+                        (short) windowSlot,
+                        (byte) button,
+                        clickType,
+                        Map.of(),
+                        ItemStack.Hash.AIR));
         player.interpretPacketQueue();
     }
 }

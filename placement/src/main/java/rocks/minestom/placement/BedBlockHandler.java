@@ -9,9 +9,7 @@ public final class BedBlockHandler implements BlockHandler {
     public static final BedBlockHandler INSTANCE = new BedBlockHandler();
     private static final Key KEY = Key.key("placement:bed");
 
-    private BedBlockHandler() {
-
-    }
+    private BedBlockHandler() {}
 
     @Override
     public Key getKey() {
@@ -31,26 +29,35 @@ public final class BedBlockHandler implements BlockHandler {
 
         if (!"head".equals(half)) {
             var facingName = block.getProperty("facing");
-            var facing = facingName == null
-                    ? net.minestom.server.instance.block.BlockFace.NORTH
-                    : net.minestom.server.instance.block.BlockFace.valueOf(facingName.toUpperCase());
+            var facing =
+                    facingName == null
+                            ? net.minestom.server.instance.block.BlockFace.NORTH
+                            : net.minestom.server.instance.block.BlockFace.valueOf(
+                                    facingName.toUpperCase());
             position = position.relative(facing);
         }
 
-        var bedRuleValue = Utility.environmentValue(
-                instance, Key.key("minecraft:bed_rule"), BedRule.CAN_SLEEP_WHEN_DARK);
+        var bedRuleValue =
+                Utility.environmentValue(
+                        instance, Key.key("minecraft:bed_rule"), BedRule.CAN_SLEEP_WHEN_DARK);
         var bedRule = bedRuleValue instanceof BedRule value ? value : BedRule.CAN_SLEEP_WHEN_DARK;
 
         if (bedRule.explodes()) {
             instance.setBlock(position, net.minestom.server.instance.block.Block.AIR);
-            instance.explode((float) position.x() + 0.5F, (float) position.y() + 0.5F,
-                    (float) position.z() + 0.5F, 5.0F);
+            instance.explode(
+                    (float) position.x() + 0.5F,
+                    (float) position.y() + 0.5F,
+                    (float) position.z() + 0.5F,
+                    5.0F);
             return false;
         }
 
         if (bedRule.canSetSpawn() == BedRule.Rule.ALWAYS
                 || bedRule.canSetSpawn() == BedRule.Rule.WHEN_DARK && isDark(instance)) {
-            interaction.getPlayer().setRespawnPoint(new Pos(position.x() + 0.5D, position.y() + 0.1D, position.z() + 0.5D));
+            interaction
+                    .getPlayer()
+                    .setRespawnPoint(
+                            new Pos(position.x() + 0.5D, position.y() + 0.1D, position.z() + 0.5D));
         }
 
         return false;

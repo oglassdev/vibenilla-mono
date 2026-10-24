@@ -18,9 +18,12 @@ public final class CampfirePlacementRule extends BlockPlacementRule {
         var placePosition = placementState.placePosition();
         var replaced = instance.getBlock(placePosition);
         var waterlogged = replaced.compare(Block.WATER);
-        var signalFire = instance.getBlock(placePosition.relative(BlockFace.BOTTOM)).compare(Block.HAY_BLOCK);
+        var signalFire =
+                instance.getBlock(placePosition.relative(BlockFace.BOTTOM))
+                        .compare(Block.HAY_BLOCK);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withProperty("facing", facing.name().toLowerCase())
                 .withProperty("waterlogged", String.valueOf(waterlogged))
                 .withProperty("lit", String.valueOf(!waterlogged))
@@ -33,9 +36,11 @@ public final class CampfirePlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var signalFire = updateState.instance()
-                .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM))
-                .compare(Block.HAY_BLOCK);
+        var signalFire =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM))
+                        .compare(Block.HAY_BLOCK);
         return updateState.currentBlock().withProperty("signal_fire", String.valueOf(signalFire));
     }
 }

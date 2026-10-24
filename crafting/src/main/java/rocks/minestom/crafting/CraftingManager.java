@@ -3,6 +3,10 @@ package rocks.minestom.crafting;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.minestom.server.codec.Transcoder;
@@ -16,11 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rocks.minestom.crafting.recipe.*;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
 
 public final class CraftingManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(CraftingManager.class);
@@ -144,7 +143,9 @@ public final class CraftingManager {
             return;
         }
 
-        this.recipes.add(new ShapedCraftingRecipe(patternWidth, patternRows.size(), patternIngredients, resultStack));
+        this.recipes.add(
+                new ShapedCraftingRecipe(
+                        patternWidth, patternRows.size(), patternIngredients, resultStack));
     }
 
     private void loadShapeless(JsonObject recipeObject) {
@@ -200,12 +201,13 @@ public final class CraftingManager {
             return;
         }
 
-        this.recipes.add(new TransmuteCraftingRecipe(
-                baseIngredient,
-                catalystIngredient,
-                resultStack.material(),
-                resultStack.amount(),
-                resultStack.componentPatch()));
+        this.recipes.add(
+                new TransmuteCraftingRecipe(
+                        baseIngredient,
+                        catalystIngredient,
+                        resultStack.material(),
+                        resultStack.amount(),
+                        resultStack.componentPatch()));
     }
 
     private Ingredient parseIngredient(JsonElement ingredientElement) {
@@ -273,7 +275,8 @@ public final class CraftingManager {
 
             return ItemStack.CODEC.decode(Transcoder.JSON, resultObject).orElse(ItemStack.AIR);
         } catch (Exception exception) {
-            LOGGER.warn("Failed to decode {} recipe result {}", recipeType, resultElement, exception);
+            LOGGER.warn(
+                    "Failed to decode {} recipe result {}", recipeType, resultElement, exception);
             return ItemStack.AIR;
         }
     }
@@ -292,7 +295,9 @@ public final class CraftingManager {
 
     public void registerPlayer(Player player) {
         var playerInventory = player.getInventory();
-        var workspace = new CraftingWorkspace(this, player, playerInventory, 36, new int[] { 37, 38, 39, 40 }, 2, 2);
+        var workspace =
+                new CraftingWorkspace(
+                        this, player, playerInventory, 36, new int[] {37, 38, 39, 40}, 2, 2);
         this.workspaces.put(playerInventory, workspace);
         workspace.refresh();
     }
@@ -302,8 +307,17 @@ public final class CraftingManager {
     }
 
     public Inventory openCraftingTable(Player player) {
-        var craftingInventory = new Inventory(InventoryType.CRAFTING, Component.translatable("container.crafting"));
-        var workspace = new CraftingWorkspace(this, player, craftingInventory, 0, new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 }, 3, 3);
+        var craftingInventory =
+                new Inventory(InventoryType.CRAFTING, Component.translatable("container.crafting"));
+        var workspace =
+                new CraftingWorkspace(
+                        this,
+                        player,
+                        craftingInventory,
+                        0,
+                        new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9},
+                        3,
+                        3);
         this.workspaces.put(craftingInventory, workspace);
         workspace.refresh();
         return craftingInventory;

@@ -1,5 +1,8 @@
 package rocks.minestom.worldgen.feature.trunkplacers;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiConsumer;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.coordinate.BlockVec;
@@ -8,17 +11,20 @@ import rocks.minestom.worldgen.feature.configurations.TreeConfiguration;
 import rocks.minestom.worldgen.feature.foliageplacers.FoliagePlacer;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.BiConsumer;
-
-public record DarkOakTrunkPlacer(int baseHeight, int heightRandA, int heightRandB) implements TrunkPlacer {
-    public static final Codec<DarkOakTrunkPlacer> CODEC = StructCodec.struct(
-            "base_height", Codec.INT, DarkOakTrunkPlacer::baseHeight,
-            "height_rand_a", Codec.INT, DarkOakTrunkPlacer::heightRandA,
-            "height_rand_b", Codec.INT, DarkOakTrunkPlacer::heightRandB,
-            DarkOakTrunkPlacer::new
-    );
+public record DarkOakTrunkPlacer(int baseHeight, int heightRandA, int heightRandB)
+        implements TrunkPlacer {
+    public static final Codec<DarkOakTrunkPlacer> CODEC =
+            StructCodec.struct(
+                    "base_height",
+                    Codec.INT,
+                    DarkOakTrunkPlacer::baseHeight,
+                    "height_rand_a",
+                    Codec.INT,
+                    DarkOakTrunkPlacer::heightRandA,
+                    "height_rand_b",
+                    Codec.INT,
+                    DarkOakTrunkPlacer::heightRandB,
+                    DarkOakTrunkPlacer::new);
 
     @Override
     public List<FoliagePlacer.FoliageAttachment> placeTrunk(
@@ -27,8 +33,7 @@ public record DarkOakTrunkPlacer(int baseHeight, int heightRandA, int heightRand
             RandomSource random,
             int freeTreeHeight,
             BlockVec basePos,
-            TreeConfiguration config
-    ) {
+            TreeConfiguration config) {
         var foliageAttachments = new ArrayList<FoliagePlacer.FoliageAttachment>();
 
         var below = basePos.sub(0, 1, 0);
@@ -37,8 +42,10 @@ public record DarkOakTrunkPlacer(int baseHeight, int heightRandA, int heightRand
         TrunkPlacer.setDirtAt(getter, logSetter, random, below.add(0, 0, 1), config);
         TrunkPlacer.setDirtAt(getter, logSetter, random, below.add(1, 0, 1), config);
 
-        var direction = rocks.minestom.worldgen.feature.Direction.HORIZONTAL.get(
-                random.nextInt(rocks.minestom.worldgen.feature.Direction.HORIZONTAL.size()));
+        var direction =
+                rocks.minestom.worldgen.feature.Direction.HORIZONTAL.get(
+                        random.nextInt(
+                                rocks.minestom.worldgen.feature.Direction.HORIZONTAL.size()));
         var bendStart = freeTreeHeight - random.nextInt(4);
         var bendLength = 2 - random.nextInt(3);
 
@@ -68,16 +75,28 @@ public record DarkOakTrunkPlacer(int baseHeight, int heightRandA, int heightRand
             }
         }
 
-        foliageAttachments.add(new FoliagePlacer.FoliageAttachment(new BlockVec(trunkX, topY, trunkZ), 0, true));
+        foliageAttachments.add(
+                new FoliagePlacer.FoliageAttachment(new BlockVec(trunkX, topY, trunkZ), 0, true));
 
         for (var offsetX = -1; offsetX <= 2; offsetX++) {
             for (var offsetZ = -1; offsetZ <= 2; offsetZ++) {
-                if ((offsetX < 0 || offsetX > 1 || offsetZ < 0 || offsetZ > 1) && random.nextInt(3) <= 0) {
+                if ((offsetX < 0 || offsetX > 1 || offsetZ < 0 || offsetZ > 1)
+                        && random.nextInt(3) <= 0) {
                     var branchHeight = random.nextInt(3) + 2;
                     for (var branchIndex = 0; branchIndex < branchHeight; branchIndex++) {
-                        this.placeLog(getter, logSetter, random, new BlockVec(baseX + offsetX, topY - branchIndex - 1, baseZ + offsetZ), config);
+                        this.placeLog(
+                                getter,
+                                logSetter,
+                                random,
+                                new BlockVec(
+                                        baseX + offsetX, topY - branchIndex - 1, baseZ + offsetZ),
+                                config);
                     }
-                    foliageAttachments.add(new FoliagePlacer.FoliageAttachment(new BlockVec(baseX + offsetX, topY, baseZ + offsetZ), 0, false));
+                    foliageAttachments.add(
+                            new FoliagePlacer.FoliageAttachment(
+                                    new BlockVec(baseX + offsetX, topY, baseZ + offsetZ),
+                                    0,
+                                    false));
                 }
             }
         }
@@ -87,7 +106,9 @@ public record DarkOakTrunkPlacer(int baseHeight, int heightRandA, int heightRand
 
     @Override
     public int getTreeHeight(RandomSource random) {
-        return this.baseHeight + random.nextInt(this.heightRandA + 1) + random.nextInt(this.heightRandB + 1);
+        return this.baseHeight
+                + random.nextInt(this.heightRandA + 1)
+                + random.nextInt(this.heightRandB + 1);
     }
 
     /** Vanilla {@code TreeFeature.isAirOrLeaves}. */
@@ -96,4 +117,3 @@ public record DarkOakTrunkPlacer(int baseHeight, int heightRandA, int heightRand
         return block.air() || rocks.minestom.worldgen.feature.Feature.LEAVES.contains(block.name());
     }
 }
-

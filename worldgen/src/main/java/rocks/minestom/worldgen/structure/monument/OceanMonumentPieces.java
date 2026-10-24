@@ -1,5 +1,8 @@
 package rocks.minestom.worldgen.structure.monument;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.Direction;
@@ -7,28 +10,23 @@ import rocks.minestom.worldgen.random.RandomSource;
 import rocks.minestom.worldgen.structure.StructureRng;
 import rocks.minestom.worldgen.structure.template.BoundingBox;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
 /**
- * Port of vanilla {@code OceanMonumentPieces}: the room-graph generator and
- * piece set that make up an ocean monument. Random call order matches
- * vanilla exactly so a seeded {@code WorldgenRandom} reproduces vanilla room
- * graphs and decoration block-for-block, mirroring
- * {@code rocks.minestom.worldgen.structure.fortress.NetherFortressPieces}.
+ * Port of vanilla {@code OceanMonumentPieces}: the room-graph generator and piece set that make up
+ * an ocean monument. Random call order matches vanilla exactly so a seeded {@code WorldgenRandom}
+ * reproduces vanilla room graphs and decoration block-for-block, mirroring {@code
+ * rocks.minestom.worldgen.structure.fortress.NetherFortressPieces}.
  *
- * <p>One deviation from vanilla: elder guardians are entities and are not
- * spawned by {@link MonumentPiece#spawnElder}. Vanilla's {@code spawnElder}
- * consumes no randomness (entity placement is deterministic from block
- * position alone), so omitting it does not desynchronize any later draw.
+ * <p>One deviation from vanilla: elder guardians are entities and are not spawned by {@link
+ * MonumentPiece#spawnElder}. Vanilla's {@code spawnElder} consumes no randomness (entity placement
+ * is deterministic from block position alone), so omitting it does not desynchronize any later
+ * draw.
  */
 public final class OceanMonumentPieces {
-    private OceanMonumentPieces() {
-    }
+    private OceanMonumentPieces() {}
 
     /** Vanilla {@code OceanMonumentStructure.createTopPiece}. */
-    public static MonumentBuilding generateBuilding(RandomSource random, int west, int north, Direction direction) {
+    public static MonumentBuilding generateBuilding(
+            RandomSource random, int west, int north, Direction direction) {
         return new MonumentBuilding(random, west, north, direction);
     }
 
@@ -41,11 +39,13 @@ public final class OceanMonumentPieces {
     private static final class FitDoubleXRoom implements MonumentRoomFitter {
         @Override
         public boolean fits(RoomDefinition definition) {
-            return definition.hasOpening[Direction.EAST.ordinal()] && !definition.connections[Direction.EAST.ordinal()].claimed;
+            return definition.hasOpening[Direction.EAST.ordinal()]
+                    && !definition.connections[Direction.EAST.ordinal()].claimed;
         }
 
         @Override
-        public MonumentPiece create(Direction orientation, RoomDefinition definition, RandomSource random) {
+        public MonumentPiece create(
+                Direction orientation, RoomDefinition definition, RandomSource random) {
             definition.claimed = true;
             definition.connections[Direction.EAST.ordinal()].claimed = true;
             return new OceanMonumentDoubleXRoom(orientation, definition);
@@ -60,17 +60,23 @@ public final class OceanMonumentPieces {
                     && definition.hasOpening[Direction.UP.ordinal()]
                     && !definition.connections[Direction.UP.ordinal()].claimed) {
                 var east = definition.connections[Direction.EAST.ordinal()];
-                return east.hasOpening[Direction.UP.ordinal()] && !east.connections[Direction.UP.ordinal()].claimed;
+                return east.hasOpening[Direction.UP.ordinal()]
+                        && !east.connections[Direction.UP.ordinal()].claimed;
             }
             return false;
         }
 
         @Override
-        public MonumentPiece create(Direction orientation, RoomDefinition definition, RandomSource random) {
+        public MonumentPiece create(
+                Direction orientation, RoomDefinition definition, RandomSource random) {
             definition.claimed = true;
             definition.connections[Direction.EAST.ordinal()].claimed = true;
             definition.connections[Direction.UP.ordinal()].claimed = true;
-            definition.connections[Direction.EAST.ordinal()].connections[Direction.UP.ordinal()].claimed = true;
+            definition
+                            .connections[Direction.EAST.ordinal()]
+                            .connections[Direction.UP.ordinal()]
+                            .claimed =
+                    true;
             return new OceanMonumentDoubleXYRoom(orientation, definition);
         }
     }
@@ -78,11 +84,13 @@ public final class OceanMonumentPieces {
     private static final class FitDoubleYRoom implements MonumentRoomFitter {
         @Override
         public boolean fits(RoomDefinition definition) {
-            return definition.hasOpening[Direction.UP.ordinal()] && !definition.connections[Direction.UP.ordinal()].claimed;
+            return definition.hasOpening[Direction.UP.ordinal()]
+                    && !definition.connections[Direction.UP.ordinal()].claimed;
         }
 
         @Override
-        public MonumentPiece create(Direction orientation, RoomDefinition definition, RandomSource random) {
+        public MonumentPiece create(
+                Direction orientation, RoomDefinition definition, RandomSource random) {
             definition.claimed = true;
             definition.connections[Direction.UP.ordinal()].claimed = true;
             return new OceanMonumentDoubleYRoom(orientation, definition);
@@ -97,17 +105,23 @@ public final class OceanMonumentPieces {
                     && definition.hasOpening[Direction.UP.ordinal()]
                     && !definition.connections[Direction.UP.ordinal()].claimed) {
                 var north = definition.connections[Direction.NORTH.ordinal()];
-                return north.hasOpening[Direction.UP.ordinal()] && !north.connections[Direction.UP.ordinal()].claimed;
+                return north.hasOpening[Direction.UP.ordinal()]
+                        && !north.connections[Direction.UP.ordinal()].claimed;
             }
             return false;
         }
 
         @Override
-        public MonumentPiece create(Direction orientation, RoomDefinition definition, RandomSource random) {
+        public MonumentPiece create(
+                Direction orientation, RoomDefinition definition, RandomSource random) {
             definition.claimed = true;
             definition.connections[Direction.NORTH.ordinal()].claimed = true;
             definition.connections[Direction.UP.ordinal()].claimed = true;
-            definition.connections[Direction.NORTH.ordinal()].connections[Direction.UP.ordinal()].claimed = true;
+            definition
+                            .connections[Direction.NORTH.ordinal()]
+                            .connections[Direction.UP.ordinal()]
+                            .claimed =
+                    true;
             return new OceanMonumentDoubleYZRoom(orientation, definition);
         }
     }
@@ -115,13 +129,16 @@ public final class OceanMonumentPieces {
     private static final class FitDoubleZRoom implements MonumentRoomFitter {
         @Override
         public boolean fits(RoomDefinition definition) {
-            return definition.hasOpening[Direction.NORTH.ordinal()] && !definition.connections[Direction.NORTH.ordinal()].claimed;
+            return definition.hasOpening[Direction.NORTH.ordinal()]
+                    && !definition.connections[Direction.NORTH.ordinal()].claimed;
         }
 
         @Override
-        public MonumentPiece create(Direction orientation, RoomDefinition definition, RandomSource random) {
+        public MonumentPiece create(
+                Direction orientation, RoomDefinition definition, RandomSource random) {
             var source = definition;
-            if (!definition.hasOpening[Direction.NORTH.ordinal()] || definition.connections[Direction.NORTH.ordinal()].claimed) {
+            if (!definition.hasOpening[Direction.NORTH.ordinal()]
+                    || definition.connections[Direction.NORTH.ordinal()].claimed) {
                 source = definition.connections[Direction.SOUTH.ordinal()];
             }
             source.claimed = true;
@@ -137,7 +154,8 @@ public final class OceanMonumentPieces {
         }
 
         @Override
-        public MonumentPiece create(Direction orientation, RoomDefinition definition, RandomSource random) {
+        public MonumentPiece create(
+                Direction orientation, RoomDefinition definition, RandomSource random) {
             definition.claimed = true;
             return new OceanMonumentSimpleRoom(orientation, definition, random);
         }
@@ -154,7 +172,8 @@ public final class OceanMonumentPieces {
         }
 
         @Override
-        public MonumentPiece create(Direction orientation, RoomDefinition definition, RandomSource random) {
+        public MonumentPiece create(
+                Direction orientation, RoomDefinition definition, RandomSource random) {
             definition.claimed = true;
             return new OceanMonumentSimpleTopRoom(orientation, definition);
         }
@@ -203,9 +222,14 @@ public final class OceanMonumentPieces {
                 child.boundingBox.move(offset);
             }
 
-            var leftWing = BoundingBox.fromCorners(this.getWorldPos(1, 1, 1), this.getWorldPos(23, 8, 21));
-            var rightWing = BoundingBox.fromCorners(this.getWorldPos(34, 1, 1), this.getWorldPos(56, 8, 21));
-            var penthouse = BoundingBox.fromCorners(this.getWorldPos(22, 13, 22), this.getWorldPos(35, 17, 35));
+            var leftWing =
+                    BoundingBox.fromCorners(this.getWorldPos(1, 1, 1), this.getWorldPos(23, 8, 21));
+            var rightWing =
+                    BoundingBox.fromCorners(
+                            this.getWorldPos(34, 1, 1), this.getWorldPos(56, 8, 21));
+            var penthouse =
+                    BoundingBox.fromCorners(
+                            this.getWorldPos(22, 13, 22), this.getWorldPos(35, 17, 35));
             var wingRandom = random.nextInt();
             this.childPieces.add(new OceanMonumentWingRoom(direction, leftWing, wingRandom++));
             this.childPieces.add(new OceanMonumentWingRoom(direction, rightWing, wingRandom++));
@@ -252,13 +276,20 @@ public final class OceanMonumentPieces {
                                 var neighX = x + direction.stepX();
                                 var neighY = y + direction.stepY();
                                 var neighZ = z + direction.stepZ();
-                                if (neighX >= 0 && neighX < 5 && neighZ >= 0 && neighZ < 5 && neighY >= 0 && neighY < 3) {
+                                if (neighX >= 0
+                                        && neighX < 5
+                                        && neighZ >= 0
+                                        && neighZ < 5
+                                        && neighY >= 0
+                                        && neighY < 3) {
                                     var neighPos = getRoomIndex(neighX, neighY, neighZ);
                                     if (roomGrid[neighPos] != null) {
                                         if (neighZ == z) {
-                                            roomGrid[pos].setConnection(direction, roomGrid[neighPos]);
+                                            roomGrid[pos].setConnection(
+                                                    direction, roomGrid[neighPos]);
                                         } else {
-                                            roomGrid[pos].setConnection(direction.opposite(), roomGrid[neighPos]);
+                                            roomGrid[pos].setConnection(
+                                                    direction.opposite(), roomGrid[neighPos]);
                                         }
                                     }
                                 }
@@ -282,11 +313,28 @@ public final class OceanMonumentPieces {
             this.coreRoom.claimed = true;
             this.coreRoom.connections[Direction.EAST.ordinal()].claimed = true;
             this.coreRoom.connections[Direction.NORTH.ordinal()].claimed = true;
-            this.coreRoom.connections[Direction.EAST.ordinal()].connections[Direction.NORTH.ordinal()].claimed = true;
+            this.coreRoom
+                            .connections[Direction.EAST.ordinal()]
+                            .connections[Direction.NORTH.ordinal()]
+                            .claimed =
+                    true;
             this.coreRoom.connections[Direction.UP.ordinal()].claimed = true;
-            this.coreRoom.connections[Direction.EAST.ordinal()].connections[Direction.UP.ordinal()].claimed = true;
-            this.coreRoom.connections[Direction.NORTH.ordinal()].connections[Direction.UP.ordinal()].claimed = true;
-            this.coreRoom.connections[Direction.EAST.ordinal()].connections[Direction.NORTH.ordinal()].connections[Direction.UP.ordinal()].claimed = true;
+            this.coreRoom
+                            .connections[Direction.EAST.ordinal()]
+                            .connections[Direction.UP.ordinal()]
+                            .claimed =
+                    true;
+            this.coreRoom
+                            .connections[Direction.NORTH.ordinal()]
+                            .connections[Direction.UP.ordinal()]
+                            .claimed =
+                    true;
+            this.coreRoom
+                            .connections[Direction.EAST.ordinal()]
+                            .connections[Direction.NORTH.ordinal()]
+                            .connections[Direction.UP.ordinal()]
+                            .claimed =
+                    true;
 
             var roomDefs = new ArrayList<RoomDefinition>();
             for (var definition : roomGrid) {
@@ -311,7 +359,8 @@ public final class OceanMonumentPieces {
                         var of = Direction.values()[f].opposite().ordinal();
                         definitionx.hasOpening[f] = false;
                         definitionx.connections[f].hasOpening[of] = false;
-                        if (definitionx.findSource(scanIndex++) && definitionx.connections[f].findSource(scanIndex++)) {
+                        if (definitionx.findSource(scanIndex++)
+                                && definitionx.connections[f].findSource(scanIndex++)) {
                             closeCount++;
                         } else {
                             definitionx.hasOpening[f] = true;
@@ -367,8 +416,10 @@ public final class OceanMonumentPieces {
             }
 
             for (var i = 0; i < 5; i++) {
-                this.generateWaterBox(level, chunkBB, -1 - i, 0 + i * 2, -1 - i, -1 - i, 23, 58 + i);
-                this.generateWaterBox(level, chunkBB, 58 + i, 0 + i * 2, -1 - i, 58 + i, 23, 58 + i);
+                this.generateWaterBox(
+                        level, chunkBB, -1 - i, 0 + i * 2, -1 - i, -1 - i, 23, 58 + i);
+                this.generateWaterBox(
+                        level, chunkBB, 58 + i, 0 + i * 2, -1 - i, 58 + i, 23, 58 + i);
                 this.generateWaterBox(level, chunkBB, 0 - i, 0 + i * 2, -1 - i, 57 + i, 23, -1 - i);
                 this.generateWaterBox(level, chunkBB, 0 - i, 0 + i * 2, 58 + i, 57 + i, 23, 58 + i);
             }
@@ -380,24 +431,100 @@ public final class OceanMonumentPieces {
             }
         }
 
-        private void generateWing(boolean isFlipped, int xoff, MonumentLevel level, BoundingBox chunkBB) {
+        private void generateWing(
+                boolean isFlipped, int xoff, MonumentLevel level, BoundingBox chunkBB) {
             if (this.chunkIntersects(chunkBB, xoff, 0, xoff + 23, 20)) {
-                this.generateBox(level, chunkBB, xoff, 0, 0, xoff + 24, 0, 20, BASE_GRAY, BASE_GRAY, false);
+                this.generateBox(
+                        level, chunkBB, xoff, 0, 0, xoff + 24, 0, 20, BASE_GRAY, BASE_GRAY, false);
                 this.generateWaterBox(level, chunkBB, xoff, 1, 0, xoff + 24, 10, 20);
 
                 for (var i = 0; i < 4; i++) {
-                    this.generateBox(level, chunkBB, xoff + i, i + 1, i, xoff + i, i + 1, 20, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, xoff + i + 7, i + 5, i + 7, xoff + i + 7, i + 5, 20, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, xoff + 17 - i, i + 5, i + 7, xoff + 17 - i, i + 5, 20, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, xoff + 24 - i, i + 1, i, xoff + 24 - i, i + 1, 20, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, xoff + i + 1, i + 1, i, xoff + 23 - i, i + 1, i, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, xoff + i + 8, i + 5, i + 7, xoff + 16 - i, i + 5, i + 7, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            xoff + i,
+                            i + 1,
+                            i,
+                            xoff + i,
+                            i + 1,
+                            20,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            xoff + i + 7,
+                            i + 5,
+                            i + 7,
+                            xoff + i + 7,
+                            i + 5,
+                            20,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            xoff + 17 - i,
+                            i + 5,
+                            i + 7,
+                            xoff + 17 - i,
+                            i + 5,
+                            20,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            xoff + 24 - i,
+                            i + 1,
+                            i,
+                            xoff + 24 - i,
+                            i + 1,
+                            20,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            xoff + i + 1,
+                            i + 1,
+                            i,
+                            xoff + 23 - i,
+                            i + 1,
+                            i,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            xoff + i + 8,
+                            i + 5,
+                            i + 7,
+                            xoff + 16 - i,
+                            i + 5,
+                            i + 7,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                 }
 
-                this.generateBox(level, chunkBB, xoff + 4, 4, 4, xoff + 6, 4, 20, BASE_GRAY, BASE_GRAY, false);
-                this.generateBox(level, chunkBB, xoff + 7, 4, 4, xoff + 17, 4, 6, BASE_GRAY, BASE_GRAY, false);
-                this.generateBox(level, chunkBB, xoff + 18, 4, 4, xoff + 20, 4, 20, BASE_GRAY, BASE_GRAY, false);
-                this.generateBox(level, chunkBB, xoff + 11, 8, 11, xoff + 13, 8, 20, BASE_GRAY, BASE_GRAY, false);
+                this.generateBox(
+                        level, chunkBB, xoff + 4, 4, 4, xoff + 6, 4, 20, BASE_GRAY, BASE_GRAY,
+                        false);
+                this.generateBox(
+                        level, chunkBB, xoff + 7, 4, 4, xoff + 17, 4, 6, BASE_GRAY, BASE_GRAY,
+                        false);
+                this.generateBox(
+                        level, chunkBB, xoff + 18, 4, 4, xoff + 20, 4, 20, BASE_GRAY, BASE_GRAY,
+                        false);
+                this.generateBox(
+                        level, chunkBB, xoff + 11, 8, 11, xoff + 13, 8, 20, BASE_GRAY, BASE_GRAY,
+                        false);
                 this.placeBlock(level, DOT_DECO_DATA, xoff + 12, 9, 12, chunkBB);
                 this.placeBlock(level, DOT_DECO_DATA, xoff + 12, 9, 15, chunkBB);
                 this.placeBlock(level, DOT_DECO_DATA, xoff + 12, 9, 18, chunkBB);
@@ -418,8 +545,12 @@ public final class OceanMonumentPieces {
                 }
 
                 this.placeBlock(level, DOT_DECO_DATA, rightPos, 5, 5, chunkBB);
-                this.generateBox(level, chunkBB, xoff + 11, 1, 12, xoff + 13, 7, 12, BASE_GRAY, BASE_GRAY, false);
-                this.generateBox(level, chunkBB, xoff + 12, 1, 11, xoff + 12, 7, 13, BASE_GRAY, BASE_GRAY, false);
+                this.generateBox(
+                        level, chunkBB, xoff + 11, 1, 12, xoff + 13, 7, 12, BASE_GRAY, BASE_GRAY,
+                        false);
+                this.generateBox(
+                        level, chunkBB, xoff + 12, 1, 11, xoff + 12, 7, 13, BASE_GRAY, BASE_GRAY,
+                        false);
             }
         }
 
@@ -428,17 +559,63 @@ public final class OceanMonumentPieces {
                 this.generateWaterBox(level, chunkBB, 25, 0, 0, 32, 8, 20);
 
                 for (var i = 0; i < 4; i++) {
-                    this.generateBox(level, chunkBB, 24, 2, 5 + i * 4, 24, 4, 5 + i * 4, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, 22, 4, 5 + i * 4, 23, 4, 5 + i * 4, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            24,
+                            2,
+                            5 + i * 4,
+                            24,
+                            4,
+                            5 + i * 4,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            22,
+                            4,
+                            5 + i * 4,
+                            23,
+                            4,
+                            5 + i * 4,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                     this.placeBlock(level, BASE_LIGHT, 25, 5, 5 + i * 4, chunkBB);
                     this.placeBlock(level, BASE_LIGHT, 26, 6, 5 + i * 4, chunkBB);
                     this.placeBlock(level, LAMP_BLOCK, 26, 5, 5 + i * 4, chunkBB);
-                    this.generateBox(level, chunkBB, 33, 2, 5 + i * 4, 33, 4, 5 + i * 4, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, 34, 4, 5 + i * 4, 35, 4, 5 + i * 4, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            33,
+                            2,
+                            5 + i * 4,
+                            33,
+                            4,
+                            5 + i * 4,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            34,
+                            4,
+                            5 + i * 4,
+                            35,
+                            4,
+                            5 + i * 4,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                     this.placeBlock(level, BASE_LIGHT, 32, 5, 5 + i * 4, chunkBB);
                     this.placeBlock(level, BASE_LIGHT, 31, 6, 5 + i * 4, chunkBB);
                     this.placeBlock(level, LAMP_BLOCK, 31, 5, 5 + i * 4, chunkBB);
-                    this.generateBox(level, chunkBB, 27, 6, 5 + i * 4, 30, 6, 5 + i * 4, BASE_GRAY, BASE_GRAY, false);
+                    this.generateBox(
+                            level, chunkBB, 27, 6, 5 + i * 4, 30, 6, 5 + i * 4, BASE_GRAY,
+                            BASE_GRAY, false);
                 }
             }
         }
@@ -447,9 +624,12 @@ public final class OceanMonumentPieces {
             if (this.chunkIntersects(chunkBB, 15, 20, 42, 21)) {
                 this.generateBox(level, chunkBB, 15, 0, 21, 42, 0, 21, BASE_GRAY, BASE_GRAY, false);
                 this.generateWaterBox(level, chunkBB, 26, 1, 21, 31, 3, 21);
-                this.generateBox(level, chunkBB, 21, 12, 21, 36, 12, 21, BASE_GRAY, BASE_GRAY, false);
-                this.generateBox(level, chunkBB, 17, 11, 21, 40, 11, 21, BASE_GRAY, BASE_GRAY, false);
-                this.generateBox(level, chunkBB, 16, 10, 21, 41, 10, 21, BASE_GRAY, BASE_GRAY, false);
+                this.generateBox(
+                        level, chunkBB, 21, 12, 21, 36, 12, 21, BASE_GRAY, BASE_GRAY, false);
+                this.generateBox(
+                        level, chunkBB, 17, 11, 21, 40, 11, 21, BASE_GRAY, BASE_GRAY, false);
+                this.generateBox(
+                        level, chunkBB, 16, 10, 21, 41, 10, 21, BASE_GRAY, BASE_GRAY, false);
                 this.generateBox(level, chunkBB, 15, 7, 21, 42, 9, 21, BASE_GRAY, BASE_GRAY, false);
                 this.generateBox(level, chunkBB, 16, 6, 21, 41, 6, 21, BASE_GRAY, BASE_GRAY, false);
                 this.generateBox(level, chunkBB, 17, 5, 21, 40, 5, 21, BASE_GRAY, BASE_GRAY, false);
@@ -458,7 +638,8 @@ public final class OceanMonumentPieces {
                 this.generateBox(level, chunkBB, 31, 3, 21, 35, 3, 21, BASE_GRAY, BASE_GRAY, false);
                 this.generateBox(level, chunkBB, 23, 2, 21, 25, 2, 21, BASE_GRAY, BASE_GRAY, false);
                 this.generateBox(level, chunkBB, 32, 2, 21, 34, 2, 21, BASE_GRAY, BASE_GRAY, false);
-                this.generateBox(level, chunkBB, 28, 4, 20, 29, 4, 21, BASE_LIGHT, BASE_LIGHT, false);
+                this.generateBox(
+                        level, chunkBB, 28, 4, 20, 29, 4, 21, BASE_LIGHT, BASE_LIGHT, false);
                 this.placeBlock(level, BASE_LIGHT, 27, 3, 21, chunkBB);
                 this.placeBlock(level, BASE_LIGHT, 30, 3, 21, chunkBB);
                 this.placeBlock(level, BASE_LIGHT, 26, 2, 21, chunkBB);
@@ -508,17 +689,66 @@ public final class OceanMonumentPieces {
                 this.generateWaterBox(level, chunkBB, 21, 1, 22, 36, 23, 36);
 
                 for (var i = 0; i < 4; i++) {
-                    this.generateBox(level, chunkBB, 21 + i, 13 + i, 21 + i, 36 - i, 13 + i, 21 + i, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, 21 + i, 13 + i, 36 - i, 36 - i, 13 + i, 36 - i, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, 21 + i, 13 + i, 22 + i, 21 + i, 13 + i, 35 - i, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, 36 - i, 13 + i, 22 + i, 36 - i, 13 + i, 35 - i, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            21 + i,
+                            13 + i,
+                            21 + i,
+                            36 - i,
+                            13 + i,
+                            21 + i,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            21 + i,
+                            13 + i,
+                            36 - i,
+                            36 - i,
+                            13 + i,
+                            36 - i,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            21 + i,
+                            13 + i,
+                            22 + i,
+                            21 + i,
+                            13 + i,
+                            35 - i,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            36 - i,
+                            13 + i,
+                            22 + i,
+                            36 - i,
+                            13 + i,
+                            35 - i,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                 }
 
-                this.generateBox(level, chunkBB, 25, 16, 25, 32, 16, 32, BASE_GRAY, BASE_GRAY, false);
-                this.generateBox(level, chunkBB, 25, 17, 25, 25, 19, 25, BASE_LIGHT, BASE_LIGHT, false);
-                this.generateBox(level, chunkBB, 32, 17, 25, 32, 19, 25, BASE_LIGHT, BASE_LIGHT, false);
-                this.generateBox(level, chunkBB, 25, 17, 32, 25, 19, 32, BASE_LIGHT, BASE_LIGHT, false);
-                this.generateBox(level, chunkBB, 32, 17, 32, 32, 19, 32, BASE_LIGHT, BASE_LIGHT, false);
+                this.generateBox(
+                        level, chunkBB, 25, 16, 25, 32, 16, 32, BASE_GRAY, BASE_GRAY, false);
+                this.generateBox(
+                        level, chunkBB, 25, 17, 25, 25, 19, 25, BASE_LIGHT, BASE_LIGHT, false);
+                this.generateBox(
+                        level, chunkBB, 32, 17, 25, 32, 19, 25, BASE_LIGHT, BASE_LIGHT, false);
+                this.generateBox(
+                        level, chunkBB, 25, 17, 32, 25, 19, 32, BASE_LIGHT, BASE_LIGHT, false);
+                this.generateBox(
+                        level, chunkBB, 32, 17, 32, 32, 19, 32, BASE_LIGHT, BASE_LIGHT, false);
                 this.placeBlock(level, BASE_LIGHT, 26, 20, 26, chunkBB);
                 this.placeBlock(level, BASE_LIGHT, 27, 21, 27, chunkBB);
                 this.placeBlock(level, LAMP_BLOCK, 27, 20, 27, chunkBB);
@@ -531,10 +761,14 @@ public final class OceanMonumentPieces {
                 this.placeBlock(level, BASE_LIGHT, 31, 20, 26, chunkBB);
                 this.placeBlock(level, BASE_LIGHT, 30, 21, 27, chunkBB);
                 this.placeBlock(level, LAMP_BLOCK, 30, 20, 27, chunkBB);
-                this.generateBox(level, chunkBB, 28, 21, 27, 29, 21, 27, BASE_GRAY, BASE_GRAY, false);
-                this.generateBox(level, chunkBB, 27, 21, 28, 27, 21, 29, BASE_GRAY, BASE_GRAY, false);
-                this.generateBox(level, chunkBB, 28, 21, 30, 29, 21, 30, BASE_GRAY, BASE_GRAY, false);
-                this.generateBox(level, chunkBB, 30, 21, 28, 30, 21, 29, BASE_GRAY, BASE_GRAY, false);
+                this.generateBox(
+                        level, chunkBB, 28, 21, 27, 29, 21, 27, BASE_GRAY, BASE_GRAY, false);
+                this.generateBox(
+                        level, chunkBB, 27, 21, 28, 27, 21, 29, BASE_GRAY, BASE_GRAY, false);
+                this.generateBox(
+                        level, chunkBB, 28, 21, 30, 29, 21, 30, BASE_GRAY, BASE_GRAY, false);
+                this.generateBox(
+                        level, chunkBB, 30, 21, 28, 30, 21, 29, BASE_GRAY, BASE_GRAY, false);
             }
         }
 
@@ -545,7 +779,18 @@ public final class OceanMonumentPieces {
                 this.generateBox(level, chunkBB, 4, 4, 21, 6, 4, 53, BASE_GRAY, BASE_GRAY, false);
 
                 for (var i = 0; i < 4; i++) {
-                    this.generateBox(level, chunkBB, i, i + 1, 21, i, i + 1, 57 - i, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            i,
+                            i + 1,
+                            21,
+                            i,
+                            i + 1,
+                            57 - i,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                 }
 
                 for (var z = 23; z < 53; z += 3) {
@@ -555,7 +800,18 @@ public final class OceanMonumentPieces {
                 this.placeBlock(level, DOT_DECO_DATA, 5, 5, 52, chunkBB);
 
                 for (var i = 0; i < 4; i++) {
-                    this.generateBox(level, chunkBB, i, i + 1, 21, i, i + 1, 57 - i, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            i,
+                            i + 1,
+                            21,
+                            i,
+                            i + 1,
+                            57 - i,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                 }
 
                 this.generateBox(level, chunkBB, 4, 1, 52, 6, 3, 52, BASE_GRAY, BASE_GRAY, false);
@@ -568,7 +824,18 @@ public final class OceanMonumentPieces {
                 this.generateBox(level, chunkBB, 51, 4, 21, 53, 4, 53, BASE_GRAY, BASE_GRAY, false);
 
                 for (var i = 0; i < 4; i++) {
-                    this.generateBox(level, chunkBB, 57 - i, i + 1, 21, 57 - i, i + 1, 57 - i, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            57 - i,
+                            i + 1,
+                            21,
+                            57 - i,
+                            i + 1,
+                            57 - i,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                 }
 
                 for (var z = 23; z < 53; z += 3) {
@@ -585,7 +852,18 @@ public final class OceanMonumentPieces {
                 this.generateWaterBox(level, chunkBB, 7, 1, 51, 50, 10, 57);
 
                 for (var i = 0; i < 4; i++) {
-                    this.generateBox(level, chunkBB, i + 1, i + 1, 57 - i, 56 - i, i + 1, 57 - i, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            i + 1,
+                            i + 1,
+                            57 - i,
+                            56 - i,
+                            i + 1,
+                            57 - i,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                 }
             }
         }
@@ -597,7 +875,18 @@ public final class OceanMonumentPieces {
                 this.generateBox(level, chunkBB, 11, 8, 21, 13, 8, 53, BASE_GRAY, BASE_GRAY, false);
 
                 for (var i = 0; i < 4; i++) {
-                    this.generateBox(level, chunkBB, i + 7, i + 5, 21, i + 7, i + 5, 54, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            i + 7,
+                            i + 5,
+                            21,
+                            i + 7,
+                            i + 5,
+                            54,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                 }
 
                 for (var z = 21; z <= 45; z += 3) {
@@ -611,7 +900,18 @@ public final class OceanMonumentPieces {
                 this.generateBox(level, chunkBB, 44, 8, 21, 46, 8, 53, BASE_GRAY, BASE_GRAY, false);
 
                 for (var i = 0; i < 4; i++) {
-                    this.generateBox(level, chunkBB, 50 - i, i + 5, 21, 50 - i, i + 5, 54, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            50 - i,
+                            i + 5,
+                            21,
+                            50 - i,
+                            i + 5,
+                            54,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                 }
 
                 for (var z = 21; z <= 45; z += 3) {
@@ -641,10 +941,13 @@ public final class OceanMonumentPieces {
                 }
 
                 for (var i = 0; i < 3; i++) {
-                    this.generateBox(level, chunkBB, 8 + i, 5 + i, 54, 49 - i, 5 + i, 54, BASE_GRAY, BASE_GRAY, false);
+                    this.generateBox(
+                            level, chunkBB, 8 + i, 5 + i, 54, 49 - i, 5 + i, 54, BASE_GRAY,
+                            BASE_GRAY, false);
                 }
 
-                this.generateBox(level, chunkBB, 11, 8, 54, 46, 8, 54, BASE_LIGHT, BASE_LIGHT, false);
+                this.generateBox(
+                        level, chunkBB, 11, 8, 54, 46, 8, 54, BASE_LIGHT, BASE_LIGHT, false);
                 this.generateBox(level, chunkBB, 14, 8, 44, 43, 8, 53, BASE_GRAY, BASE_GRAY, false);
             }
         }
@@ -653,11 +956,24 @@ public final class OceanMonumentPieces {
             if (this.chunkIntersects(chunkBB, 14, 21, 20, 43)) {
                 this.generateBox(level, chunkBB, 14, 0, 21, 20, 0, 43, BASE_GRAY, BASE_GRAY, false);
                 this.generateWaterBox(level, chunkBB, 14, 1, 22, 20, 14, 43);
-                this.generateBox(level, chunkBB, 18, 12, 22, 20, 12, 39, BASE_GRAY, BASE_GRAY, false);
-                this.generateBox(level, chunkBB, 18, 12, 21, 20, 12, 21, BASE_LIGHT, BASE_LIGHT, false);
+                this.generateBox(
+                        level, chunkBB, 18, 12, 22, 20, 12, 39, BASE_GRAY, BASE_GRAY, false);
+                this.generateBox(
+                        level, chunkBB, 18, 12, 21, 20, 12, 21, BASE_LIGHT, BASE_LIGHT, false);
 
                 for (var i = 0; i < 4; i++) {
-                    this.generateBox(level, chunkBB, i + 14, i + 9, 21, i + 14, i + 9, 43 - i, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            i + 14,
+                            i + 9,
+                            21,
+                            i + 14,
+                            i + 9,
+                            43 - i,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                 }
 
                 for (var z = 23; z <= 39; z += 3) {
@@ -668,11 +984,24 @@ public final class OceanMonumentPieces {
             if (this.chunkIntersects(chunkBB, 37, 21, 43, 43)) {
                 this.generateBox(level, chunkBB, 37, 0, 21, 43, 0, 43, BASE_GRAY, BASE_GRAY, false);
                 this.generateWaterBox(level, chunkBB, 37, 1, 22, 43, 14, 43);
-                this.generateBox(level, chunkBB, 37, 12, 22, 39, 12, 39, BASE_GRAY, BASE_GRAY, false);
-                this.generateBox(level, chunkBB, 37, 12, 21, 39, 12, 21, BASE_LIGHT, BASE_LIGHT, false);
+                this.generateBox(
+                        level, chunkBB, 37, 12, 22, 39, 12, 39, BASE_GRAY, BASE_GRAY, false);
+                this.generateBox(
+                        level, chunkBB, 37, 12, 21, 39, 12, 21, BASE_LIGHT, BASE_LIGHT, false);
 
                 for (var i = 0; i < 4; i++) {
-                    this.generateBox(level, chunkBB, 43 - i, i + 9, 21, 43 - i, i + 9, 43 - i, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            43 - i,
+                            i + 9,
+                            21,
+                            43 - i,
+                            i + 9,
+                            43 - i,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                 }
 
                 for (var z = 23; z <= 39; z += 3) {
@@ -683,10 +1012,22 @@ public final class OceanMonumentPieces {
             if (this.chunkIntersects(chunkBB, 15, 37, 42, 43)) {
                 this.generateBox(level, chunkBB, 21, 0, 37, 36, 0, 43, BASE_GRAY, BASE_GRAY, false);
                 this.generateWaterBox(level, chunkBB, 21, 1, 37, 36, 14, 43);
-                this.generateBox(level, chunkBB, 21, 12, 37, 36, 12, 39, BASE_GRAY, BASE_GRAY, false);
+                this.generateBox(
+                        level, chunkBB, 21, 12, 37, 36, 12, 39, BASE_GRAY, BASE_GRAY, false);
 
                 for (var i = 0; i < 4; i++) {
-                    this.generateBox(level, chunkBB, 15 + i, i + 9, 43 - i, 42 - i, i + 9, 43 - i, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            15 + i,
+                            i + 9,
+                            43 - i,
+                            42 - i,
+                            i + 9,
+                            43 - i,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                 }
 
                 for (var x = 21; x <= 36; x += 3) {
@@ -703,7 +1044,8 @@ public final class OceanMonumentPieces {
         static final Block DOT_DECO_DATA = BASE_LIGHT;
         static final Block LAMP_BLOCK = Block.SEA_LANTERN;
         static final Block FILL_BLOCK = Block.WATER;
-        private static final Set<Block> FILL_KEEP = Set.of(Block.ICE, Block.PACKED_ICE, Block.BLUE_ICE, Block.WATER);
+        private static final Set<Block> FILL_KEEP =
+                Set.of(Block.ICE, Block.PACKED_ICE, Block.BLUE_ICE, Block.WATER);
 
         private static final int GRIDROOM_WIDTH = 8;
         private static final int GRIDROOM_DEPTH = 8;
@@ -720,10 +1062,17 @@ public final class OceanMonumentPieces {
             this.setOrientation(orientation);
         }
 
-        MonumentPiece(int genDepth, Direction orientation, RoomDefinition roomDefinition,
-                int roomWidth, int roomHeight, int roomDepth) {
+        MonumentPiece(
+                int genDepth,
+                Direction orientation,
+                RoomDefinition roomDefinition,
+                int roomWidth,
+                int roomHeight,
+                int roomDepth) {
             this.genDepth = genDepth;
-            this.boundingBox = makeRoomBoundingBox(orientation, roomDefinition, roomWidth, roomHeight, roomDepth);
+            this.boundingBox =
+                    makeRoomBoundingBox(
+                            orientation, roomDefinition, roomWidth, roomHeight, roomDepth);
             this.roomDefinition = roomDefinition;
             this.setOrientation(orientation);
         }
@@ -732,14 +1081,25 @@ public final class OceanMonumentPieces {
             return roomY * 25 + roomZ * 5 + roomX;
         }
 
-        private static BoundingBox makeRoomBoundingBox(Direction orientation, RoomDefinition roomDefinition,
-                int roomWidth, int roomHeight, int roomDepth) {
+        private static BoundingBox makeRoomBoundingBox(
+                Direction orientation,
+                RoomDefinition roomDefinition,
+                int roomWidth,
+                int roomHeight,
+                int roomDepth) {
             var roomIndex = roomDefinition.index;
             var roomX = roomIndex % 5;
             var roomZ = roomIndex / 5 % 5;
             var roomY = roomIndex / 25;
-            var box = makeBoundingBox(0, 0, 0, orientation,
-                    roomWidth * GRIDROOM_WIDTH, roomHeight * GRIDROOM_HEIGHT, roomDepth * GRIDROOM_DEPTH);
+            var box =
+                    makeBoundingBox(
+                            0,
+                            0,
+                            0,
+                            orientation,
+                            roomWidth * GRIDROOM_WIDTH,
+                            roomHeight * GRIDROOM_HEIGHT,
+                            roomDepth * GRIDROOM_DEPTH);
             switch (orientation) {
                 case NORTH -> box.move(roomX * 8, roomY * 4, -(roomZ + roomDepth) * 8 + 1);
                 case SOUTH -> box.move(roomX * 8, roomY * 4, roomZ * 8);
@@ -750,7 +1110,8 @@ public final class OceanMonumentPieces {
         }
 
         /** Vanilla {@code StructurePiece.makeBoundingBox}. */
-        static BoundingBox makeBoundingBox(int x, int y, int z, Direction direction, int width, int height, int depth) {
+        static BoundingBox makeBoundingBox(
+                int x, int y, int z, Direction direction, int width, int height, int depth) {
             return direction == Direction.NORTH || direction == Direction.SOUTH
                     ? new BoundingBox(x, y, z, x + width - 1, y + height - 1, z + depth - 1)
                     : new BoundingBox(x, y, z, x + depth - 1, y + height - 1, z + width - 1);
@@ -804,7 +1165,8 @@ public final class OceanMonumentPieces {
             return new BlockVec(this.worldX(x, z), this.worldY(y), this.worldZ(x, z));
         }
 
-        void placeBlock(MonumentLevel level, Block block, int x, int y, int z, BoundingBox chunkBB) {
+        void placeBlock(
+                MonumentLevel level, Block block, int x, int y, int z, BoundingBox chunkBB) {
             var pos = this.getWorldPos(x, y, z);
             if (chunkBB.isInside(pos)) {
                 level.setBlock(pos.blockX(), pos.blockY(), pos.blockZ(), block);
@@ -813,11 +1175,23 @@ public final class OceanMonumentPieces {
 
         Block getBlock(MonumentLevel level, int x, int y, int z, BoundingBox chunkBB) {
             var pos = this.getWorldPos(x, y, z);
-            return !chunkBB.isInside(pos) ? Block.AIR : level.getBlock(pos.blockX(), pos.blockY(), pos.blockZ());
+            return !chunkBB.isInside(pos)
+                    ? Block.AIR
+                    : level.getBlock(pos.blockX(), pos.blockY(), pos.blockZ());
         }
 
-        void generateBox(MonumentLevel level, BoundingBox chunkBB, int x0, int y0, int z0,
-                int x1, int y1, int z1, Block edgeBlock, Block fillBlock, boolean skipAir) {
+        void generateBox(
+                MonumentLevel level,
+                BoundingBox chunkBB,
+                int x0,
+                int y0,
+                int z0,
+                int x1,
+                int y1,
+                int z1,
+                Block edgeBlock,
+                Block fillBlock,
+                boolean skipAir) {
             for (var y = y0; y <= y1; y++) {
                 for (var x = x0; x <= x1; x++) {
                     for (var z = z0; z <= z1; z++) {
@@ -833,7 +1207,8 @@ public final class OceanMonumentPieces {
             }
         }
 
-        void fillColumnDown(MonumentLevel level, Block block, int x, int startY, int z, BoundingBox chunkBB) {
+        void fillColumnDown(
+                MonumentLevel level, Block block, int x, int startY, int z, BoundingBox chunkBB) {
             var wx = this.worldX(x, z);
             var wy = this.worldY(startY);
             var wz = this.worldZ(x, z);
@@ -849,17 +1224,29 @@ public final class OceanMonumentPieces {
         }
 
         private static boolean isReplaceableByStructures(Block block) {
-            return block.air() || block.liquid() || block.compare(Block.GLOW_LICHEN)
-                    || block.compare(Block.SEAGRASS) || block.compare(Block.TALL_SEAGRASS);
+            return block.air()
+                    || block.liquid()
+                    || block.compare(Block.GLOW_LICHEN)
+                    || block.compare(Block.SEAGRASS)
+                    || block.compare(Block.TALL_SEAGRASS);
         }
 
-        void generateWaterBox(MonumentLevel level, BoundingBox chunkBB, int x0, int y0, int z0, int x1, int y1, int z1) {
+        void generateWaterBox(
+                MonumentLevel level,
+                BoundingBox chunkBB,
+                int x0,
+                int y0,
+                int z0,
+                int x1,
+                int y1,
+                int z1) {
             for (var y = y0; y <= y1; y++) {
                 for (var x = x0; x <= x1; x++) {
                     for (var z = z0; z <= z1; z++) {
                         var existing = this.getBlock(level, x, y, z, chunkBB);
                         if (!FILL_KEEP.contains(existing)) {
-                            if (this.worldY(y) >= level.seaLevel() && !existing.compare(Block.WATER)) {
+                            if (this.worldY(y) >= level.seaLevel()
+                                    && !existing.compare(Block.WATER)) {
                                 this.placeBlock(level, Block.AIR, x, y, z, chunkBB);
                             } else {
                                 this.placeBlock(level, FILL_BLOCK, x, y, z, chunkBB);
@@ -870,23 +1257,86 @@ public final class OceanMonumentPieces {
             }
         }
 
-        void generateDefaultFloor(MonumentLevel level, BoundingBox chunkBB, int xOff, int zOff, boolean downOpening) {
+        void generateDefaultFloor(
+                MonumentLevel level, BoundingBox chunkBB, int xOff, int zOff, boolean downOpening) {
             if (downOpening) {
-                this.generateBox(level, chunkBB, xOff, 0, zOff, xOff + 2, 0, zOff + 7, BASE_GRAY, BASE_GRAY, false);
-                this.generateBox(level, chunkBB, xOff + 5, 0, zOff, xOff + 7, 0, zOff + 7, BASE_GRAY, BASE_GRAY, false);
-                this.generateBox(level, chunkBB, xOff + 3, 0, zOff, xOff + 4, 0, zOff + 2, BASE_GRAY, BASE_GRAY, false);
-                this.generateBox(level, chunkBB, xOff + 3, 0, zOff + 5, xOff + 4, 0, zOff + 7, BASE_GRAY, BASE_GRAY, false);
-                this.generateBox(level, chunkBB, xOff + 3, 0, zOff + 2, xOff + 4, 0, zOff + 2, BASE_LIGHT, BASE_LIGHT, false);
-                this.generateBox(level, chunkBB, xOff + 3, 0, zOff + 5, xOff + 4, 0, zOff + 5, BASE_LIGHT, BASE_LIGHT, false);
-                this.generateBox(level, chunkBB, xOff + 2, 0, zOff + 3, xOff + 2, 0, zOff + 4, BASE_LIGHT, BASE_LIGHT, false);
-                this.generateBox(level, chunkBB, xOff + 5, 0, zOff + 3, xOff + 5, 0, zOff + 4, BASE_LIGHT, BASE_LIGHT, false);
+                this.generateBox(
+                        level, chunkBB, xOff, 0, zOff, xOff + 2, 0, zOff + 7, BASE_GRAY, BASE_GRAY,
+                        false);
+                this.generateBox(
+                        level, chunkBB, xOff + 5, 0, zOff, xOff + 7, 0, zOff + 7, BASE_GRAY,
+                        BASE_GRAY, false);
+                this.generateBox(
+                        level, chunkBB, xOff + 3, 0, zOff, xOff + 4, 0, zOff + 2, BASE_GRAY,
+                        BASE_GRAY, false);
+                this.generateBox(
+                        level, chunkBB, xOff + 3, 0, zOff + 5, xOff + 4, 0, zOff + 7, BASE_GRAY,
+                        BASE_GRAY, false);
+                this.generateBox(
+                        level,
+                        chunkBB,
+                        xOff + 3,
+                        0,
+                        zOff + 2,
+                        xOff + 4,
+                        0,
+                        zOff + 2,
+                        BASE_LIGHT,
+                        BASE_LIGHT,
+                        false);
+                this.generateBox(
+                        level,
+                        chunkBB,
+                        xOff + 3,
+                        0,
+                        zOff + 5,
+                        xOff + 4,
+                        0,
+                        zOff + 5,
+                        BASE_LIGHT,
+                        BASE_LIGHT,
+                        false);
+                this.generateBox(
+                        level,
+                        chunkBB,
+                        xOff + 2,
+                        0,
+                        zOff + 3,
+                        xOff + 2,
+                        0,
+                        zOff + 4,
+                        BASE_LIGHT,
+                        BASE_LIGHT,
+                        false);
+                this.generateBox(
+                        level,
+                        chunkBB,
+                        xOff + 5,
+                        0,
+                        zOff + 3,
+                        xOff + 5,
+                        0,
+                        zOff + 4,
+                        BASE_LIGHT,
+                        BASE_LIGHT,
+                        false);
             } else {
-                this.generateBox(level, chunkBB, xOff, 0, zOff, xOff + 7, 0, zOff + 7, BASE_GRAY, BASE_GRAY, false);
+                this.generateBox(
+                        level, chunkBB, xOff, 0, zOff, xOff + 7, 0, zOff + 7, BASE_GRAY, BASE_GRAY,
+                        false);
             }
         }
 
-        void generateBoxOnFillOnly(MonumentLevel level, BoundingBox chunkBB, int x0, int y0, int z0,
-                int x1, int y1, int z1, Block targetBlock) {
+        void generateBoxOnFillOnly(
+                MonumentLevel level,
+                BoundingBox chunkBB,
+                int x0,
+                int y0,
+                int z0,
+                int x1,
+                int y1,
+                int z1,
+                Block targetBlock) {
             for (var y = y0; y <= y1; y++) {
                 for (var x = x0; x <= x1; x++) {
                     for (var z = z0; z <= z1; z++) {
@@ -903,17 +1353,16 @@ public final class OceanMonumentPieces {
             var wz0 = this.worldZ(x0, z0);
             var wx1 = this.worldX(x1, z1);
             var wz1 = this.worldZ(x1, z1);
-            return chunkBB.intersects(Math.min(wx0, wx1), Math.min(wz0, wz1), Math.max(wx0, wx1), Math.max(wz0, wz1));
+            return chunkBB.intersects(
+                    Math.min(wx0, wx1), Math.min(wz0, wz1), Math.max(wx0, wx1), Math.max(wz0, wz1));
         }
 
         /**
-         * Vanilla {@code OceanMonumentPiece.spawnElder}: spawns an elder
-         * guardian entity. Entity placement is out of scope for this port
-         * and vanilla's version consumes no randomness, so omitting it does
-         * not desynchronize any later block placement.
+         * Vanilla {@code OceanMonumentPiece.spawnElder}: spawns an elder guardian entity. Entity
+         * placement is out of scope for this port and vanilla's version consumes no randomness, so
+         * omitting it does not desynchronize any later block placement.
          */
-        void spawnElder(MonumentLevel level, BoundingBox chunkBB, int x, int y, int z) {
-        }
+        void spawnElder(MonumentLevel level, BoundingBox chunkBB, int x, int y, int z) {}
     }
 
     public static final class OceanMonumentCoreRoom extends MonumentPiece {
@@ -949,7 +1398,8 @@ public final class OceanMonumentPieces {
             }
 
             this.generateBox(level, chunkBB, 6, 3, 6, 9, 6, 9, BASE_BLACK, BASE_BLACK, false);
-            this.generateBox(level, chunkBB, 7, 4, 7, 8, 5, 8, Block.GOLD_BLOCK, Block.GOLD_BLOCK, false);
+            this.generateBox(
+                    level, chunkBB, 7, 4, 7, 8, 5, 8, Block.GOLD_BLOCK, Block.GOLD_BLOCK, false);
 
             for (var yx = 3; yx <= 6; yx += 3) {
                 for (var x = 6; x <= 9; x += 3) {
@@ -999,8 +1449,10 @@ public final class OceanMonumentPieces {
             var east = this.roomDefinition.connections[Direction.EAST.ordinal()];
             var west = this.roomDefinition;
             if (this.roomDefinition.index / 25 > 0) {
-                this.generateDefaultFloor(level, chunkBB, 8, 0, east.hasOpening[Direction.DOWN.ordinal()]);
-                this.generateDefaultFloor(level, chunkBB, 0, 0, west.hasOpening[Direction.DOWN.ordinal()]);
+                this.generateDefaultFloor(
+                        level, chunkBB, 8, 0, east.hasOpening[Direction.DOWN.ordinal()]);
+                this.generateDefaultFloor(
+                        level, chunkBB, 0, 0, west.hasOpening[Direction.DOWN.ordinal()]);
             }
 
             if (west.connections[Direction.UP.ordinal()] == null) {
@@ -1066,8 +1518,10 @@ public final class OceanMonumentPieces {
             var westUp = west.connections[Direction.UP.ordinal()];
             var eastUp = east.connections[Direction.UP.ordinal()];
             if (this.roomDefinition.index / 25 > 0) {
-                this.generateDefaultFloor(level, chunkBB, 8, 0, east.hasOpening[Direction.DOWN.ordinal()]);
-                this.generateDefaultFloor(level, chunkBB, 0, 0, west.hasOpening[Direction.DOWN.ordinal()]);
+                this.generateDefaultFloor(
+                        level, chunkBB, 8, 0, east.hasOpening[Direction.DOWN.ordinal()]);
+                this.generateDefaultFloor(
+                        level, chunkBB, 0, 0, west.hasOpening[Direction.DOWN.ordinal()]);
             }
 
             if (westUp.connections[Direction.UP.ordinal()] == null) {
@@ -1171,7 +1625,12 @@ public final class OceanMonumentPieces {
         @Override
         void postProcess(MonumentLevel level, RandomSource random, BoundingBox chunkBB) {
             if (this.roomDefinition.index / 25 > 0) {
-                this.generateDefaultFloor(level, chunkBB, 0, 0, this.roomDefinition.hasOpening[Direction.DOWN.ordinal()]);
+                this.generateDefaultFloor(
+                        level,
+                        chunkBB,
+                        0,
+                        0,
+                        this.roomDefinition.hasOpening[Direction.DOWN.ordinal()]);
             }
 
             var above = this.roomDefinition.connections[Direction.UP.ordinal()];
@@ -1196,42 +1655,164 @@ public final class OceanMonumentPieces {
             for (var y = 1; y <= 5; y += 4) {
                 var z = 0;
                 if (definition.hasOpening[Direction.SOUTH.ordinal()]) {
-                    this.generateBox(level, chunkBB, 2, y, z, 2, y + 2, z, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, 5, y, z, 5, y + 2, z, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, 3, y + 2, z, 4, y + 2, z, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 2, y, z, 2, y + 2, z, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 5, y, z, 5, y + 2, z, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            3,
+                            y + 2,
+                            z,
+                            4,
+                            y + 2,
+                            z,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                 } else {
-                    this.generateBox(level, chunkBB, 0, y, z, 7, y + 2, z, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, 0, y + 1, z, 7, y + 1, z, BASE_GRAY, BASE_GRAY, false);
+                    this.generateBox(
+                            level, chunkBB, 0, y, z, 7, y + 2, z, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 0, y + 1, z, 7, y + 1, z, BASE_GRAY, BASE_GRAY, false);
                 }
 
                 var zHigh = 7;
                 if (definition.hasOpening[Direction.NORTH.ordinal()]) {
-                    this.generateBox(level, chunkBB, 2, y, zHigh, 2, y + 2, zHigh, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, 5, y, zHigh, 5, y + 2, zHigh, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, 3, y + 2, zHigh, 4, y + 2, zHigh, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            2,
+                            y,
+                            zHigh,
+                            2,
+                            y + 2,
+                            zHigh,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            5,
+                            y,
+                            zHigh,
+                            5,
+                            y + 2,
+                            zHigh,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            3,
+                            y + 2,
+                            zHigh,
+                            4,
+                            y + 2,
+                            zHigh,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                 } else {
-                    this.generateBox(level, chunkBB, 0, y, zHigh, 7, y + 2, zHigh, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, 0, y + 1, zHigh, 7, y + 1, zHigh, BASE_GRAY, BASE_GRAY, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            0,
+                            y,
+                            zHigh,
+                            7,
+                            y + 2,
+                            zHigh,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
+                    this.generateBox(
+                            level, chunkBB, 0, y + 1, zHigh, 7, y + 1, zHigh, BASE_GRAY, BASE_GRAY,
+                            false);
                 }
 
                 var x = 0;
                 if (definition.hasOpening[Direction.WEST.ordinal()]) {
-                    this.generateBox(level, chunkBB, x, y, 2, x, y + 2, 2, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, x, y, 5, x, y + 2, 5, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, x, y + 2, 3, x, y + 2, 4, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, x, y, 2, x, y + 2, 2, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, x, y, 5, x, y + 2, 5, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            x,
+                            y + 2,
+                            3,
+                            x,
+                            y + 2,
+                            4,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                 } else {
-                    this.generateBox(level, chunkBB, x, y, 0, x, y + 2, 7, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, x, y + 1, 0, x, y + 1, 7, BASE_GRAY, BASE_GRAY, false);
+                    this.generateBox(
+                            level, chunkBB, x, y, 0, x, y + 2, 7, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, x, y + 1, 0, x, y + 1, 7, BASE_GRAY, BASE_GRAY, false);
                 }
 
                 var xHigh = 7;
                 if (definition.hasOpening[Direction.EAST.ordinal()]) {
-                    this.generateBox(level, chunkBB, xHigh, y, 2, xHigh, y + 2, 2, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, xHigh, y, 5, xHigh, y + 2, 5, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, xHigh, y + 2, 3, xHigh, y + 2, 4, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            xHigh,
+                            y,
+                            2,
+                            xHigh,
+                            y + 2,
+                            2,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            xHigh,
+                            y,
+                            5,
+                            xHigh,
+                            y + 2,
+                            5,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            xHigh,
+                            y + 2,
+                            3,
+                            xHigh,
+                            y + 2,
+                            4,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                 } else {
-                    this.generateBox(level, chunkBB, xHigh, y, 0, xHigh, y + 2, 7, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, xHigh, y + 1, 0, xHigh, y + 1, 7, BASE_GRAY, BASE_GRAY, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            xHigh,
+                            y,
+                            0,
+                            xHigh,
+                            y + 2,
+                            7,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
+                    this.generateBox(
+                            level, chunkBB, xHigh, y + 1, 0, xHigh, y + 1, 7, BASE_GRAY, BASE_GRAY,
+                            false);
                 }
 
                 definition = above;
@@ -1251,8 +1832,10 @@ public final class OceanMonumentPieces {
             var northUp = north.connections[Direction.UP.ordinal()];
             var southUp = south.connections[Direction.UP.ordinal()];
             if (this.roomDefinition.index / 25 > 0) {
-                this.generateDefaultFloor(level, chunkBB, 0, 8, north.hasOpening[Direction.DOWN.ordinal()]);
-                this.generateDefaultFloor(level, chunkBB, 0, 0, south.hasOpening[Direction.DOWN.ordinal()]);
+                this.generateDefaultFloor(
+                        level, chunkBB, 0, 8, north.hasOpening[Direction.DOWN.ordinal()]);
+                this.generateDefaultFloor(
+                        level, chunkBB, 0, 0, south.hasOpening[Direction.DOWN.ordinal()]);
             }
 
             if (southUp.connections[Direction.UP.ordinal()] == null) {
@@ -1356,8 +1939,10 @@ public final class OceanMonumentPieces {
             var north = this.roomDefinition.connections[Direction.NORTH.ordinal()];
             var south = this.roomDefinition;
             if (this.roomDefinition.index / 25 > 0) {
-                this.generateDefaultFloor(level, chunkBB, 0, 8, north.hasOpening[Direction.DOWN.ordinal()]);
-                this.generateDefaultFloor(level, chunkBB, 0, 0, south.hasOpening[Direction.DOWN.ordinal()]);
+                this.generateDefaultFloor(
+                        level, chunkBB, 0, 8, north.hasOpening[Direction.DOWN.ordinal()]);
+                this.generateDefaultFloor(
+                        level, chunkBB, 0, 0, south.hasOpening[Direction.DOWN.ordinal()]);
             }
 
             if (south.connections[Direction.UP.ordinal()] == null) {
@@ -1497,7 +2082,8 @@ public final class OceanMonumentPieces {
 
             for (var i = 0; i < 2; i++) {
                 for (var z = 2; z <= 8; z += 3) {
-                    this.generateBox(level, chunkBB, x, 0, z, x, 2, z, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, x, 0, z, x, 2, z, BASE_LIGHT, BASE_LIGHT, false);
                 }
 
                 x = 10;
@@ -1514,7 +2100,8 @@ public final class OceanMonumentPieces {
     public static final class OceanMonumentSimpleRoom extends MonumentPiece {
         private final int mainDesign;
 
-        OceanMonumentSimpleRoom(Direction orientation, RoomDefinition definition, RandomSource random) {
+        OceanMonumentSimpleRoom(
+                Direction orientation, RoomDefinition definition, RandomSource random) {
             super(1, orientation, definition, 1, 1, 1);
             this.mainDesign = random.nextInt(3);
         }
@@ -1522,18 +2109,24 @@ public final class OceanMonumentPieces {
         @Override
         void postProcess(MonumentLevel level, RandomSource random, BoundingBox chunkBB) {
             if (this.roomDefinition.index / 25 > 0) {
-                this.generateDefaultFloor(level, chunkBB, 0, 0, this.roomDefinition.hasOpening[Direction.DOWN.ordinal()]);
+                this.generateDefaultFloor(
+                        level,
+                        chunkBB,
+                        0,
+                        0,
+                        this.roomDefinition.hasOpening[Direction.DOWN.ordinal()]);
             }
 
             if (this.roomDefinition.connections[Direction.UP.ordinal()] == null) {
                 this.generateBoxOnFillOnly(level, chunkBB, 1, 4, 1, 6, 4, 6, BASE_GRAY);
             }
 
-            var centerPillar = this.mainDesign != 0
-                    && random.nextBoolean()
-                    && !this.roomDefinition.hasOpening[Direction.DOWN.ordinal()]
-                    && !this.roomDefinition.hasOpening[Direction.UP.ordinal()]
-                    && this.roomDefinition.countOpenings() > 1;
+            var centerPillar =
+                    this.mainDesign != 0
+                            && random.nextBoolean()
+                            && !this.roomDefinition.hasOpening[Direction.DOWN.ordinal()]
+                            && !this.roomDefinition.hasOpening[Direction.UP.ordinal()]
+                            && this.roomDefinition.countOpenings() > 1;
             if (this.mainDesign == 0) {
                 this.generateBox(level, chunkBB, 0, 1, 0, 2, 1, 2, BASE_LIGHT, BASE_LIGHT, false);
                 this.generateBox(level, chunkBB, 0, 3, 0, 2, 3, 2, BASE_LIGHT, BASE_LIGHT, false);
@@ -1556,35 +2149,47 @@ public final class OceanMonumentPieces {
                 this.generateBox(level, chunkBB, 5, 2, 7, 6, 2, 7, BASE_GRAY, BASE_GRAY, false);
                 this.placeBlock(level, LAMP_BLOCK, 6, 2, 6, chunkBB);
                 if (this.roomDefinition.hasOpening[Direction.SOUTH.ordinal()]) {
-                    this.generateBox(level, chunkBB, 3, 3, 0, 4, 3, 0, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 3, 3, 0, 4, 3, 0, BASE_LIGHT, BASE_LIGHT, false);
                 } else {
-                    this.generateBox(level, chunkBB, 3, 3, 0, 4, 3, 1, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 3, 3, 0, 4, 3, 1, BASE_LIGHT, BASE_LIGHT, false);
                     this.generateBox(level, chunkBB, 3, 2, 0, 4, 2, 0, BASE_GRAY, BASE_GRAY, false);
-                    this.generateBox(level, chunkBB, 3, 1, 0, 4, 1, 1, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 3, 1, 0, 4, 1, 1, BASE_LIGHT, BASE_LIGHT, false);
                 }
 
                 if (this.roomDefinition.hasOpening[Direction.NORTH.ordinal()]) {
-                    this.generateBox(level, chunkBB, 3, 3, 7, 4, 3, 7, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 3, 3, 7, 4, 3, 7, BASE_LIGHT, BASE_LIGHT, false);
                 } else {
-                    this.generateBox(level, chunkBB, 3, 3, 6, 4, 3, 7, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 3, 3, 6, 4, 3, 7, BASE_LIGHT, BASE_LIGHT, false);
                     this.generateBox(level, chunkBB, 3, 2, 7, 4, 2, 7, BASE_GRAY, BASE_GRAY, false);
-                    this.generateBox(level, chunkBB, 3, 1, 6, 4, 1, 7, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 3, 1, 6, 4, 1, 7, BASE_LIGHT, BASE_LIGHT, false);
                 }
 
                 if (this.roomDefinition.hasOpening[Direction.WEST.ordinal()]) {
-                    this.generateBox(level, chunkBB, 0, 3, 3, 0, 3, 4, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 0, 3, 3, 0, 3, 4, BASE_LIGHT, BASE_LIGHT, false);
                 } else {
-                    this.generateBox(level, chunkBB, 0, 3, 3, 1, 3, 4, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 0, 3, 3, 1, 3, 4, BASE_LIGHT, BASE_LIGHT, false);
                     this.generateBox(level, chunkBB, 0, 2, 3, 0, 2, 4, BASE_GRAY, BASE_GRAY, false);
-                    this.generateBox(level, chunkBB, 0, 1, 3, 1, 1, 4, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 0, 1, 3, 1, 1, 4, BASE_LIGHT, BASE_LIGHT, false);
                 }
 
                 if (this.roomDefinition.hasOpening[Direction.EAST.ordinal()]) {
-                    this.generateBox(level, chunkBB, 7, 3, 3, 7, 3, 4, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 7, 3, 3, 7, 3, 4, BASE_LIGHT, BASE_LIGHT, false);
                 } else {
-                    this.generateBox(level, chunkBB, 6, 3, 3, 7, 3, 4, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 6, 3, 3, 7, 3, 4, BASE_LIGHT, BASE_LIGHT, false);
                     this.generateBox(level, chunkBB, 7, 2, 3, 7, 2, 4, BASE_GRAY, BASE_GRAY, false);
-                    this.generateBox(level, chunkBB, 6, 1, 3, 7, 1, 4, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 6, 1, 3, 7, 1, 4, BASE_LIGHT, BASE_LIGHT, false);
                 }
             } else if (this.mainDesign == 1) {
                 this.generateBox(level, chunkBB, 2, 1, 2, 2, 3, 2, BASE_LIGHT, BASE_LIGHT, false);
@@ -1612,27 +2217,35 @@ public final class OceanMonumentPieces {
                 this.placeBlock(level, BASE_GRAY, 6, 2, 0, chunkBB);
                 this.placeBlock(level, BASE_GRAY, 7, 2, 1, chunkBB);
                 if (!this.roomDefinition.hasOpening[Direction.SOUTH.ordinal()]) {
-                    this.generateBox(level, chunkBB, 1, 3, 0, 6, 3, 0, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 1, 3, 0, 6, 3, 0, BASE_LIGHT, BASE_LIGHT, false);
                     this.generateBox(level, chunkBB, 1, 2, 0, 6, 2, 0, BASE_GRAY, BASE_GRAY, false);
-                    this.generateBox(level, chunkBB, 1, 1, 0, 6, 1, 0, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 1, 1, 0, 6, 1, 0, BASE_LIGHT, BASE_LIGHT, false);
                 }
 
                 if (!this.roomDefinition.hasOpening[Direction.NORTH.ordinal()]) {
-                    this.generateBox(level, chunkBB, 1, 3, 7, 6, 3, 7, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 1, 3, 7, 6, 3, 7, BASE_LIGHT, BASE_LIGHT, false);
                     this.generateBox(level, chunkBB, 1, 2, 7, 6, 2, 7, BASE_GRAY, BASE_GRAY, false);
-                    this.generateBox(level, chunkBB, 1, 1, 7, 6, 1, 7, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 1, 1, 7, 6, 1, 7, BASE_LIGHT, BASE_LIGHT, false);
                 }
 
                 if (!this.roomDefinition.hasOpening[Direction.WEST.ordinal()]) {
-                    this.generateBox(level, chunkBB, 0, 3, 1, 0, 3, 6, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 0, 3, 1, 0, 3, 6, BASE_LIGHT, BASE_LIGHT, false);
                     this.generateBox(level, chunkBB, 0, 2, 1, 0, 2, 6, BASE_GRAY, BASE_GRAY, false);
-                    this.generateBox(level, chunkBB, 0, 1, 1, 0, 1, 6, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 0, 1, 1, 0, 1, 6, BASE_LIGHT, BASE_LIGHT, false);
                 }
 
                 if (!this.roomDefinition.hasOpening[Direction.EAST.ordinal()]) {
-                    this.generateBox(level, chunkBB, 7, 3, 1, 7, 3, 6, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 7, 3, 1, 7, 3, 6, BASE_LIGHT, BASE_LIGHT, false);
                     this.generateBox(level, chunkBB, 7, 2, 1, 7, 2, 6, BASE_GRAY, BASE_GRAY, false);
-                    this.generateBox(level, chunkBB, 7, 1, 1, 7, 1, 6, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level, chunkBB, 7, 1, 1, 7, 1, 6, BASE_LIGHT, BASE_LIGHT, false);
                 }
             } else if (this.mainDesign == 2) {
                 this.generateBox(level, chunkBB, 0, 1, 0, 0, 1, 7, BASE_LIGHT, BASE_LIGHT, false);
@@ -1684,7 +2297,12 @@ public final class OceanMonumentPieces {
         @Override
         void postProcess(MonumentLevel level, RandomSource random, BoundingBox chunkBB) {
             if (this.roomDefinition.index / 25 > 0) {
-                this.generateDefaultFloor(level, chunkBB, 0, 0, this.roomDefinition.hasOpening[Direction.DOWN.ordinal()]);
+                this.generateDefaultFloor(
+                        level,
+                        chunkBB,
+                        0,
+                        0,
+                        this.roomDefinition.hasOpening[Direction.DOWN.ordinal()]);
             }
 
             if (this.roomDefinition.connections[Direction.UP.ordinal()] == null) {
@@ -1696,7 +2314,8 @@ public final class OceanMonumentPieces {
                     if (random.nextInt(3) != 0) {
                         var y0 = 2 + (random.nextInt(4) == 0 ? 0 : 1);
                         var wetSponge = Block.WET_SPONGE;
-                        this.generateBox(level, chunkBB, x, y0, z, x, 3, z, wetSponge, wetSponge, false);
+                        this.generateBox(
+                                level, chunkBB, x, y0, z, x, 3, z, wetSponge, wetSponge, false);
                     }
                 }
             }
@@ -1735,14 +2354,27 @@ public final class OceanMonumentPieces {
         void postProcess(MonumentLevel level, RandomSource random, BoundingBox chunkBB) {
             if (this.mainDesign == 0) {
                 for (var i = 0; i < 4; i++) {
-                    this.generateBox(level, chunkBB, 10 - i, 3 - i, 20 - i, 12 + i, 3 - i, 20, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            10 - i,
+                            3 - i,
+                            20 - i,
+                            12 + i,
+                            3 - i,
+                            20,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                 }
 
                 this.generateBox(level, chunkBB, 7, 0, 6, 15, 0, 16, BASE_LIGHT, BASE_LIGHT, false);
                 this.generateBox(level, chunkBB, 6, 0, 6, 6, 3, 20, BASE_LIGHT, BASE_LIGHT, false);
-                this.generateBox(level, chunkBB, 16, 0, 6, 16, 3, 20, BASE_LIGHT, BASE_LIGHT, false);
+                this.generateBox(
+                        level, chunkBB, 16, 0, 6, 16, 3, 20, BASE_LIGHT, BASE_LIGHT, false);
                 this.generateBox(level, chunkBB, 7, 1, 7, 7, 1, 20, BASE_LIGHT, BASE_LIGHT, false);
-                this.generateBox(level, chunkBB, 15, 1, 7, 15, 1, 20, BASE_LIGHT, BASE_LIGHT, false);
+                this.generateBox(
+                        level, chunkBB, 15, 1, 7, 15, 1, 20, BASE_LIGHT, BASE_LIGHT, false);
                 this.generateBox(level, chunkBB, 7, 1, 6, 9, 3, 6, BASE_LIGHT, BASE_LIGHT, false);
                 this.generateBox(level, chunkBB, 13, 1, 6, 15, 3, 6, BASE_LIGHT, BASE_LIGHT, false);
                 this.generateBox(level, chunkBB, 8, 1, 7, 9, 1, 7, BASE_LIGHT, BASE_LIGHT, false);
@@ -1750,7 +2382,8 @@ public final class OceanMonumentPieces {
                 this.generateBox(level, chunkBB, 9, 0, 5, 13, 0, 5, BASE_LIGHT, BASE_LIGHT, false);
                 this.generateBox(level, chunkBB, 10, 0, 7, 12, 0, 7, BASE_BLACK, BASE_BLACK, false);
                 this.generateBox(level, chunkBB, 8, 0, 10, 8, 0, 12, BASE_BLACK, BASE_BLACK, false);
-                this.generateBox(level, chunkBB, 14, 0, 10, 14, 0, 12, BASE_BLACK, BASE_BLACK, false);
+                this.generateBox(
+                        level, chunkBB, 14, 0, 10, 14, 0, 12, BASE_BLACK, BASE_BLACK, false);
 
                 for (var z = 18; z >= 7; z -= 3) {
                     this.placeBlock(level, LAMP_BLOCK, 6, 3, z, chunkBB);
@@ -1778,12 +2411,15 @@ public final class OceanMonumentPieces {
                 this.placeBlock(level, BASE_LIGHT, 9, 7, 20, chunkBB);
                 this.placeBlock(level, BASE_LIGHT, 13, 7, 20, chunkBB);
                 this.generateBox(level, chunkBB, 6, 0, 21, 7, 4, 21, BASE_LIGHT, BASE_LIGHT, false);
-                this.generateBox(level, chunkBB, 15, 0, 21, 16, 4, 21, BASE_LIGHT, BASE_LIGHT, false);
+                this.generateBox(
+                        level, chunkBB, 15, 0, 21, 16, 4, 21, BASE_LIGHT, BASE_LIGHT, false);
                 this.spawnElder(level, chunkBB, 11, 2, 16);
             } else if (this.mainDesign == 1) {
-                this.generateBox(level, chunkBB, 9, 3, 18, 13, 3, 20, BASE_LIGHT, BASE_LIGHT, false);
+                this.generateBox(
+                        level, chunkBB, 9, 3, 18, 13, 3, 20, BASE_LIGHT, BASE_LIGHT, false);
                 this.generateBox(level, chunkBB, 9, 0, 18, 9, 2, 18, BASE_LIGHT, BASE_LIGHT, false);
-                this.generateBox(level, chunkBB, 13, 0, 18, 13, 2, 18, BASE_LIGHT, BASE_LIGHT, false);
+                this.generateBox(
+                        level, chunkBB, 13, 0, 18, 13, 2, 18, BASE_LIGHT, BASE_LIGHT, false);
                 var x = 9;
 
                 for (var i = 0; i < 2; i++) {
@@ -1797,8 +2433,30 @@ public final class OceanMonumentPieces {
                 var column = 10;
 
                 for (var i = 0; i < 2; i++) {
-                    this.generateBox(level, chunkBB, column, 0, 10, column, 6, 10, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, column, 0, 12, column, 6, 12, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            column,
+                            0,
+                            10,
+                            column,
+                            6,
+                            10,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            column,
+                            0,
+                            12,
+                            column,
+                            6,
+                            12,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                     this.placeBlock(level, LAMP_BLOCK, column, 0, 10, chunkBB);
                     this.placeBlock(level, LAMP_BLOCK, column, 0, 12, chunkBB);
                     this.placeBlock(level, LAMP_BLOCK, column, 4, 10, chunkBB);
@@ -1809,13 +2467,36 @@ public final class OceanMonumentPieces {
                 column = 8;
 
                 for (var i = 0; i < 2; i++) {
-                    this.generateBox(level, chunkBB, column, 0, 7, column, 2, 7, BASE_LIGHT, BASE_LIGHT, false);
-                    this.generateBox(level, chunkBB, column, 0, 14, column, 2, 14, BASE_LIGHT, BASE_LIGHT, false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            column,
+                            0,
+                            7,
+                            column,
+                            2,
+                            7,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
+                    this.generateBox(
+                            level,
+                            chunkBB,
+                            column,
+                            0,
+                            14,
+                            column,
+                            2,
+                            14,
+                            BASE_LIGHT,
+                            BASE_LIGHT,
+                            false);
                     column = 14;
                 }
 
                 this.generateBox(level, chunkBB, 8, 3, 8, 8, 3, 13, BASE_BLACK, BASE_BLACK, false);
-                this.generateBox(level, chunkBB, 14, 3, 8, 14, 3, 13, BASE_BLACK, BASE_BLACK, false);
+                this.generateBox(
+                        level, chunkBB, 14, 3, 8, 14, 3, 13, BASE_BLACK, BASE_BLACK, false);
                 this.spawnElder(level, chunkBB, 11, 5, 13);
             }
         }
@@ -1851,7 +2532,9 @@ public final class OceanMonumentPieces {
             this.scanIndex = scanIndex;
 
             for (var i = 0; i < 6; i++) {
-                if (this.connections[i] != null && this.hasOpening[i] && this.connections[i].scanIndex != scanIndex
+                if (this.connections[i] != null
+                        && this.hasOpening[i]
+                        && this.connections[i].scanIndex != scanIndex
                         && this.connections[i].findSource(scanIndex)) {
                     return true;
                 }

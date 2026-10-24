@@ -1,15 +1,14 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.Set;
+import java.util.function.Consumer;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 
-import java.util.Set;
-import java.util.function.Consumer;
-
 /**
- * Port of vanilla's {@code SpeleothemUtils}, reduced to the helpers used by
- * {@code minecraft:speleothem} and {@code minecraft:speleothem_cluster}.
+ * Port of vanilla's {@code SpeleothemUtils}, reduced to the helpers used by {@code
+ * minecraft:speleothem} and {@code minecraft:speleothem_cluster}.
  */
 public final class SpeleothemUtils {
     /** Vanilla Mth sin lookup table, needed for exact circle embedding checks. */
@@ -21,8 +20,7 @@ public final class SpeleothemUtils {
         }
     }
 
-    private SpeleothemUtils() {
-    }
+    private SpeleothemUtils() {}
 
     static float sin(float value) {
         return SIN[(int) (value * 10430.378F) & 65535];
@@ -33,7 +31,8 @@ public final class SpeleothemUtils {
     }
 
     /** Vanilla {@code SpeleothemUtils.getSpeleothemHeight} (large speleothem profile). */
-    static double getSpeleothemHeight(double xzDistanceFromCenter, double speleothemRadius, double scale, double bluntness) {
+    static double getSpeleothemHeight(
+            double xzDistanceFromCenter, double speleothemRadius, double scale, double bluntness) {
         if (xzDistanceFromCenter < bluntness) {
             xzDistanceFromCenter = bluntness;
         }
@@ -46,7 +45,8 @@ public final class SpeleothemUtils {
         return heightRelativeToMaxRadius / 0.384D * speleothemRadius;
     }
 
-    static boolean isCircleMostlyEmbeddedInStone(Block.Getter level, BlockVec center, int xzRadius) {
+    static boolean isCircleMostlyEmbeddedInStone(
+            Block.Getter level, BlockVec center, int xzRadius) {
         if (isEmptyOrWaterOrLava(level.getBlock(center))) {
             return false;
         }
@@ -91,7 +91,12 @@ public final class SpeleothemUtils {
         return state.compare(Block.WATER) || "true".equals(state.getProperty("waterlogged"));
     }
 
-    static void buildBaseToTipColumn(Direction direction, int totalLength, boolean mergedTip, Consumer<Block> consumer, Block pointedBlock) {
+    static void buildBaseToTipColumn(
+            Direction direction,
+            int totalLength,
+            boolean mergedTip,
+            Consumer<Block> consumer,
+            Block pointedBlock) {
         if (totalLength >= 3) {
             consumer.accept(createPointedBlock(direction, "base", pointedBlock));
 
@@ -105,7 +110,8 @@ public final class SpeleothemUtils {
         }
 
         if (totalLength >= 1) {
-            consumer.accept(createPointedBlock(direction, mergedTip ? "tip_merge" : "tip", pointedBlock));
+            consumer.accept(
+                    createPointedBlock(direction, mergedTip ? "tip_merge" : "tip", pointedBlock));
         }
     }
 
@@ -117,26 +123,35 @@ public final class SpeleothemUtils {
             boolean mergedTip,
             Block baseBlock,
             Block pointedBlock,
-            Set<Key> replaceableBlocks
-    ) {
-        if (!isBase(level.getBlock(tipDirection.opposite().relative(startPos)), baseBlock, replaceableBlocks)) {
+            Set<Key> replaceableBlocks) {
+        if (!isBase(
+                level.getBlock(tipDirection.opposite().relative(startPos)),
+                baseBlock,
+                replaceableBlocks)) {
             return;
         }
 
-        var cursor = new BlockVec[]{startPos};
-        buildBaseToTipColumn(tipDirection, height, mergedTip, state -> {
-            if (state.compare(pointedBlock)) {
-                state = state.withProperty("waterlogged", String.valueOf(isWater(level.getBlock(cursor[0]))));
-            }
+        var cursor = new BlockVec[] {startPos};
+        buildBaseToTipColumn(
+                tipDirection,
+                height,
+                mergedTip,
+                state -> {
+                    if (state.compare(pointedBlock)) {
+                        state =
+                                state.withProperty(
+                                        "waterlogged",
+                                        String.valueOf(isWater(level.getBlock(cursor[0]))));
+                    }
 
-            level.setBlock(cursor[0], state);
-            cursor[0] = tipDirection.relative(cursor[0]);
-        }, pointedBlock);
+                    level.setBlock(cursor[0], state);
+                    cursor[0] = tipDirection.relative(cursor[0]);
+                },
+                pointedBlock);
     }
 
     static <T extends Block.Getter & Block.Setter> boolean placeBaseBlockIfPossible(
-            T level, BlockVec position, Block baseBlock, Set<Key> replaceableBlocks
-    ) {
+            T level, BlockVec position, Block baseBlock, Set<Key> replaceableBlocks) {
         var state = level.getBlock(position);
         if (replaceableBlocks.contains(state.key())) {
             level.setBlock(position, baseBlock);
@@ -146,7 +161,8 @@ public final class SpeleothemUtils {
         return false;
     }
 
-    private static Block createPointedBlock(Direction direction, String thickness, Block pointedBlock) {
+    private static Block createPointedBlock(
+            Direction direction, String thickness, Block pointedBlock) {
         return pointedBlock
                 .withProperty("vertical_direction", direction.serializedName())
                 .withProperty("thickness", thickness);

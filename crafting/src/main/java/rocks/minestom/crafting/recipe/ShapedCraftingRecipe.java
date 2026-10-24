@@ -12,7 +12,11 @@ public final class ShapedCraftingRecipe implements CraftingRecipe {
     private final ItemStack resultStack;
     private final int requiredIngredientCount;
 
-    public ShapedCraftingRecipe(int patternWidth, int patternHeight, Ingredient[] patternIngredients, ItemStack resultStack) {
+    public ShapedCraftingRecipe(
+            int patternWidth,
+            int patternHeight,
+            Ingredient[] patternIngredients,
+            ItemStack resultStack) {
         this.patternWidth = patternWidth;
         this.patternHeight = patternHeight;
         this.patternIngredients = patternIngredients;
@@ -36,7 +40,8 @@ public final class ShapedCraftingRecipe implements CraftingRecipe {
             return null;
         }
 
-        if (trimmedGrid.width() != this.patternWidth || trimmedGrid.height() != this.patternHeight) {
+        if (trimmedGrid.width() != this.patternWidth
+                || trimmedGrid.height() != this.patternHeight) {
             return null;
         }
 
@@ -53,15 +58,18 @@ public final class ShapedCraftingRecipe implements CraftingRecipe {
         return new CraftingRecipeMatch(this, this.resultStack, usage, craftingGrid);
     }
 
-    private Int2IntOpenHashMap tryMatch(CraftingGrid.TrimmedGrid trimmedGrid, boolean mirrorPattern) {
+    private Int2IntOpenHashMap tryMatch(
+            CraftingGrid.TrimmedGrid trimmedGrid, boolean mirrorPattern) {
         var usage = new Int2IntOpenHashMap();
         usage.defaultReturnValue(0);
 
         for (var rowIndex = 0; rowIndex < this.patternHeight; rowIndex++) {
             for (var columnIndex = 0; columnIndex < this.patternWidth; columnIndex++) {
-                var ingredientIndex = mirrorPattern
-                        ? (this.patternWidth - 1 - columnIndex) + rowIndex * this.patternWidth
-                        : columnIndex + rowIndex * this.patternWidth;
+                var ingredientIndex =
+                        mirrorPattern
+                                ? (this.patternWidth - 1 - columnIndex)
+                                        + rowIndex * this.patternWidth
+                                : columnIndex + rowIndex * this.patternWidth;
 
                 var ingredient = this.patternIngredients[ingredientIndex];
                 var gridSlot = trimmedGrid.slot(columnIndex, rowIndex);

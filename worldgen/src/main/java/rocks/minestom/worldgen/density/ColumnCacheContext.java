@@ -4,10 +4,9 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 
 /**
- * Density-function context for repeated samples down one column. Honors the
- * datapack's {@code flat_cache}/{@code cache_2d} markers the way vanilla's
- * chunk-cached climate sampler does: their subtrees are Y-invariant by
- * contract, so each caches once per column instead of once per sample.
+ * Density-function context for repeated samples down one column. Honors the datapack's {@code
+ * flat_cache}/{@code cache_2d} markers the way vanilla's chunk-cached climate sampler does: their
+ * subtrees are Y-invariant by contract, so each caches once per column instead of once per sample.
  */
 public final class ColumnCacheContext implements DensityFunction.Context {
     private final Map<DensityFunction, Double> columnCache = new IdentityHashMap<>();
@@ -15,9 +14,7 @@ public final class ColumnCacheContext implements DensityFunction.Context {
     private int blockY;
     private int blockZ;
 
-    /**
-     * Moves to a new column, clearing the per-column cache.
-     */
+    /** Moves to a new column, clearing the per-column cache. */
     public void moveColumn(int blockX, int blockZ) {
         this.blockX = blockX;
         this.blockZ = blockZ;
@@ -28,9 +25,7 @@ public final class ColumnCacheContext implements DensityFunction.Context {
         this.blockY = blockY;
     }
 
-    /**
-     * Value of a column-invariant node, computed once per column.
-     */
+    /** Value of a column-invariant node, computed once per column. */
     public double columnValue(DensityFunction marker, DensityFunction argument) {
         var cached = this.columnCache.get(marker);
         if (cached != null) {

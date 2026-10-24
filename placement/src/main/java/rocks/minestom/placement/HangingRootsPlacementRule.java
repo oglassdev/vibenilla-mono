@@ -30,7 +30,10 @@ public final class HangingRootsPlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var above = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.TOP));
+        var above =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.TOP));
 
         if (!above.registry().collisionShape().isFaceFull(BlockFace.BOTTOM)) {
             return Block.AIR;

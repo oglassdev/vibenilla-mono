@@ -1,45 +1,86 @@
 package rocks.minestom.worldgen.structure.oceanruin;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.coordinate.BlockVec;
 import rocks.minestom.worldgen.random.RandomSource;
 import rocks.minestom.worldgen.structure.template.BoundingBox;
 import rocks.minestom.worldgen.structure.template.Rotation;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * Port of vanilla {@code OceanRuinPieces}: the template selection arrays and
- * {@code addPieces}/{@code addClusterRuins} draw order. Every piece is
- * returned with its build-time position ({@code y = 90}); the per-piece floor
- * height is resolved afterward by {@link OceanRuinPlacer}, mirroring vanilla's
- * {@code OceanRuinPiece.postProcess}.
+ * Port of vanilla {@code OceanRuinPieces}: the template selection arrays and {@code
+ * addPieces}/{@code addClusterRuins} draw order. Every piece is returned with its build-time
+ * position ({@code y = 90}); the per-piece floor height is resolved afterward by {@link
+ * OceanRuinPlacer}, mirroring vanilla's {@code OceanRuinPiece.postProcess}.
  */
 final class OceanRuinPieces {
-    private static final Key[] WARM_RUINS = keys(
-            "underwater_ruin/warm_1", "underwater_ruin/warm_2", "underwater_ruin/warm_3", "underwater_ruin/warm_4",
-            "underwater_ruin/warm_5", "underwater_ruin/warm_6", "underwater_ruin/warm_7", "underwater_ruin/warm_8");
-    private static final Key[] RUINS_BRICK = keys(
-            "underwater_ruin/brick_1", "underwater_ruin/brick_2", "underwater_ruin/brick_3", "underwater_ruin/brick_4",
-            "underwater_ruin/brick_5", "underwater_ruin/brick_6", "underwater_ruin/brick_7", "underwater_ruin/brick_8");
-    private static final Key[] RUINS_CRACKED = keys(
-            "underwater_ruin/cracked_1", "underwater_ruin/cracked_2", "underwater_ruin/cracked_3", "underwater_ruin/cracked_4",
-            "underwater_ruin/cracked_5", "underwater_ruin/cracked_6", "underwater_ruin/cracked_7", "underwater_ruin/cracked_8");
-    private static final Key[] RUINS_MOSSY = keys(
-            "underwater_ruin/mossy_1", "underwater_ruin/mossy_2", "underwater_ruin/mossy_3", "underwater_ruin/mossy_4",
-            "underwater_ruin/mossy_5", "underwater_ruin/mossy_6", "underwater_ruin/mossy_7", "underwater_ruin/mossy_8");
-    private static final Key[] BIG_RUINS_BRICK = keys(
-            "underwater_ruin/big_brick_1", "underwater_ruin/big_brick_2", "underwater_ruin/big_brick_3", "underwater_ruin/big_brick_8");
-    private static final Key[] BIG_RUINS_MOSSY = keys(
-            "underwater_ruin/big_mossy_1", "underwater_ruin/big_mossy_2", "underwater_ruin/big_mossy_3", "underwater_ruin/big_mossy_8");
-    private static final Key[] BIG_RUINS_CRACKED = keys(
-            "underwater_ruin/big_cracked_1", "underwater_ruin/big_cracked_2", "underwater_ruin/big_cracked_3", "underwater_ruin/big_cracked_8");
-    private static final Key[] BIG_WARM_RUINS = keys(
-            "underwater_ruin/big_warm_4", "underwater_ruin/big_warm_5", "underwater_ruin/big_warm_6", "underwater_ruin/big_warm_7");
+    private static final Key[] WARM_RUINS =
+            keys(
+                    "underwater_ruin/warm_1",
+                    "underwater_ruin/warm_2",
+                    "underwater_ruin/warm_3",
+                    "underwater_ruin/warm_4",
+                    "underwater_ruin/warm_5",
+                    "underwater_ruin/warm_6",
+                    "underwater_ruin/warm_7",
+                    "underwater_ruin/warm_8");
+    private static final Key[] RUINS_BRICK =
+            keys(
+                    "underwater_ruin/brick_1",
+                    "underwater_ruin/brick_2",
+                    "underwater_ruin/brick_3",
+                    "underwater_ruin/brick_4",
+                    "underwater_ruin/brick_5",
+                    "underwater_ruin/brick_6",
+                    "underwater_ruin/brick_7",
+                    "underwater_ruin/brick_8");
+    private static final Key[] RUINS_CRACKED =
+            keys(
+                    "underwater_ruin/cracked_1",
+                    "underwater_ruin/cracked_2",
+                    "underwater_ruin/cracked_3",
+                    "underwater_ruin/cracked_4",
+                    "underwater_ruin/cracked_5",
+                    "underwater_ruin/cracked_6",
+                    "underwater_ruin/cracked_7",
+                    "underwater_ruin/cracked_8");
+    private static final Key[] RUINS_MOSSY =
+            keys(
+                    "underwater_ruin/mossy_1",
+                    "underwater_ruin/mossy_2",
+                    "underwater_ruin/mossy_3",
+                    "underwater_ruin/mossy_4",
+                    "underwater_ruin/mossy_5",
+                    "underwater_ruin/mossy_6",
+                    "underwater_ruin/mossy_7",
+                    "underwater_ruin/mossy_8");
+    private static final Key[] BIG_RUINS_BRICK =
+            keys(
+                    "underwater_ruin/big_brick_1",
+                    "underwater_ruin/big_brick_2",
+                    "underwater_ruin/big_brick_3",
+                    "underwater_ruin/big_brick_8");
+    private static final Key[] BIG_RUINS_MOSSY =
+            keys(
+                    "underwater_ruin/big_mossy_1",
+                    "underwater_ruin/big_mossy_2",
+                    "underwater_ruin/big_mossy_3",
+                    "underwater_ruin/big_mossy_8");
+    private static final Key[] BIG_RUINS_CRACKED =
+            keys(
+                    "underwater_ruin/big_cracked_1",
+                    "underwater_ruin/big_cracked_2",
+                    "underwater_ruin/big_cracked_3",
+                    "underwater_ruin/big_cracked_8");
+    private static final Key[] BIG_WARM_RUINS =
+            keys(
+                    "underwater_ruin/big_warm_4",
+                    "underwater_ruin/big_warm_5",
+                    "underwater_ruin/big_warm_6",
+                    "underwater_ruin/big_warm_7");
 
-    private OceanRuinPieces() {
-    }
+    private OceanRuinPieces() {}
 
     private static Key[] keys(String... names) {
         var result = new Key[names.length];
@@ -49,10 +90,14 @@ final class OceanRuinPieces {
         return result;
     }
 
-    record Piece(Key template, BlockVec position, Rotation rotation, float integrity, boolean isLarge) {
-    }
+    record Piece(
+            Key template, BlockVec position, Rotation rotation, float integrity, boolean isLarge) {}
 
-    static List<Piece> addPieces(BlockVec position, Rotation rotation, RandomSource random, OceanRuinStructure structure) {
+    static List<Piece> addPieces(
+            BlockVec position,
+            Rotation rotation,
+            RandomSource random,
+            OceanRuinStructure structure) {
         var pieces = new ArrayList<Piece>();
         var isLarge = random.nextFloat() <= structure.largeProbability();
         var baseIntegrity = isLarge ? 0.9F : 0.8F;
@@ -63,14 +108,20 @@ final class OceanRuinPieces {
         return pieces;
     }
 
-    private static void addClusterRuins(List<Piece> pieces, RandomSource random, Rotation rotation, BlockVec p,
+    private static void addClusterRuins(
+            List<Piece> pieces,
+            RandomSource random,
+            Rotation rotation,
+            BlockVec p,
             OceanRuinStructure structure) {
         var parentPos = new BlockVec(p.blockX(), 90, p.blockZ());
         var parentCorner = parentPos.add(rotation.rotate(new BlockVec(15, 0, 15), BlockVec.ZERO));
         var parentBB = BoundingBox.fromCorners(parentPos, parentCorner);
-        var parentBottomLeft = new BlockVec(
-                Math.min(parentPos.blockX(), parentCorner.blockX()), parentPos.blockY(),
-                Math.min(parentPos.blockZ(), parentCorner.blockZ()));
+        var parentBottomLeft =
+                new BlockVec(
+                        Math.min(parentPos.blockX(), parentCorner.blockX()),
+                        parentPos.blockY(),
+                        Math.min(parentPos.blockZ(), parentCorner.blockZ()));
         var allPositions = allPositions(random, parentBottomLeft);
         var ruins = nextInt(random, 4, 8);
 
@@ -101,8 +152,14 @@ final class OceanRuinPieces {
         return positions;
     }
 
-    private static void addPiece(List<Piece> pieces, BlockVec position, Rotation rotation, RandomSource random,
-            OceanRuinStructure structure, boolean isLarge, float baseIntegrity) {
+    private static void addPiece(
+            List<Piece> pieces,
+            BlockVec position,
+            Rotation rotation,
+            RandomSource random,
+            OceanRuinStructure structure,
+            boolean isLarge,
+            float baseIntegrity) {
         switch (structure.biomeTemp()) {
             case COLD -> {
                 var bricks = isLarge ? BIG_RUINS_BRICK : RUINS_BRICK;

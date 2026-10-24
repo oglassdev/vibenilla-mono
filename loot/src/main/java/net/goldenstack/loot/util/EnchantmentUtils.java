@@ -1,5 +1,8 @@
 package net.goldenstack.loot.util;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
 import net.minestom.server.component.DataComponent;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.entity.Entity;
@@ -13,14 +16,9 @@ import net.minestom.server.registry.RegistryKey;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Consumer;
-
 public class EnchantmentUtils {
 
-    private EnchantmentUtils() {
-    }
+    private EnchantmentUtils() {}
 
     public static int level(@Nullable ItemStack item, @NotNull RegistryKey<Enchantment> key) {
         if (item == null) return 0;
@@ -45,8 +43,13 @@ public class EnchantmentUtils {
         return level;
     }
 
-    public static @NotNull ItemStack modifyItem(@NotNull ItemStack item, @NotNull Consumer<Map<RegistryKey<Enchantment>, Integer>> enchantments) {
-        DataComponent<EnchantmentList> type = item.material().equals(Material.ENCHANTED_BOOK) ? DataComponents.STORED_ENCHANTMENTS : DataComponents.ENCHANTMENTS;
+    public static @NotNull ItemStack modifyItem(
+            @NotNull ItemStack item,
+            @NotNull Consumer<Map<RegistryKey<Enchantment>, Integer>> enchantments) {
+        DataComponent<EnchantmentList> type =
+                item.material().equals(Material.ENCHANTED_BOOK)
+                        ? DataComponents.STORED_ENCHANTMENTS
+                        : DataComponents.ENCHANTMENTS;
 
         EnchantmentList component = item.get(type, EnchantmentList.EMPTY);
 
@@ -62,7 +65,5 @@ public class EnchantmentUtils {
         } else {
             return item.with(type, new EnchantmentList(map));
         }
-
     }
-
 }

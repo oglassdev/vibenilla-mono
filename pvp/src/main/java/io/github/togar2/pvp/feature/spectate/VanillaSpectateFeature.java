@@ -15,13 +15,11 @@ import net.minestom.server.event.player.PlayerTickEvent;
 import net.minestom.server.event.trait.EntityInstanceEvent;
 import net.minestom.server.tag.Tag;
 
-/**
- * Vanilla implementation of {@link SpectateFeature}
- */
+/** Vanilla implementation of {@link SpectateFeature} */
 public class VanillaSpectateFeature implements SpectateFeature, RegistrableFeature {
-    public static final DefinedFeature<VanillaSpectateFeature> DEFINED = new DefinedFeature<>(
-            FeatureType.SPECTATE, configuration -> new VanillaSpectateFeature()
-    );
+    public static final DefinedFeature<VanillaSpectateFeature> DEFINED =
+            new DefinedFeature<>(
+                    FeatureType.SPECTATE, configuration -> new VanillaSpectateFeature());
 
     public static final Tag<Entity> SPECTATING = Tag.Transient("spectating");
 
@@ -32,10 +30,13 @@ public class VanillaSpectateFeature implements SpectateFeature, RegistrableFeatu
 
     @Override
     public void init(EventNode<EntityInstanceEvent> node) {
-        node.addListener(EntityAttackEvent.class, event -> {
-            if (event.getEntity() instanceof Player player && player.getGameMode() == GameMode.SPECTATOR)
-                this.makeSpectate(player, event.getTarget());
-        });
+        node.addListener(
+                EntityAttackEvent.class,
+                event -> {
+                    if (event.getEntity() instanceof Player player
+                            && player.getGameMode() == GameMode.SPECTATOR)
+                        this.makeSpectate(player, event.getTarget());
+                });
 
         node.addListener(PlayerTickEvent.class, event -> this.spectateTick(event.getPlayer()));
     }
@@ -46,8 +47,10 @@ public class VanillaSpectateFeature implements SpectateFeature, RegistrableFeatu
 
         player.refreshPosition(spectating.getPosition());
 
-        if (player.getEntityMeta().isSneaking() || spectating.isRemoved()
-                || (spectating instanceof LivingEntity livingSpectating && livingSpectating.isDead())) {
+        if (player.getEntityMeta().isSneaking()
+                || spectating.isRemoved()
+                || (spectating instanceof LivingEntity livingSpectating
+                        && livingSpectating.isDead())) {
             this.stopSpectating(player);
         }
     }
@@ -55,10 +58,12 @@ public class VanillaSpectateFeature implements SpectateFeature, RegistrableFeatu
     @Override
     public void makeSpectate(Player player, Entity target) {
         var playerSpectateEvent = new PlayerSpectateEvent(player, target);
-        EventDispatcher.callCancellable(playerSpectateEvent, () -> {
-            player.spectate(target);
-            player.setTag(SPECTATING, target);
-        });
+        EventDispatcher.callCancellable(
+                playerSpectateEvent,
+                () -> {
+                    player.spectate(target);
+                    player.setTag(SPECTATING, target);
+                });
     }
 
     @Override

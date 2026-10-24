@@ -17,5 +17,4 @@ public record PhysicsResult(
         Shape[] collisionShapes,
         Point[] collisionShapePositions,
         boolean hasCollision,
-        double collisionFraction
-) {}
+        double collisionFraction) {}

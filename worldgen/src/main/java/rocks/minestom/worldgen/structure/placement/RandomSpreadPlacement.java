@@ -6,11 +6,12 @@ import rocks.minestom.worldgen.structure.StructurePlacement;
 /**
  * Places structures on a grid with random offsets within each cell.
  *
- * <p>The world is divided into regions of {@code spacing} chunks. Within each region,
- * exactly one structure can generate, offset randomly from the region corner by up to
- * {@code spacing - separation} chunks.
+ * <p>The world is divided into regions of {@code spacing} chunks. Within each region, exactly one
+ * structure can generate, offset randomly from the region corner by up to {@code spacing -
+ * separation} chunks.
  *
  * <p>Parameters:
+ *
  * <ul>
  *   <li>{@code spacing} - Region size in chunks (distance between potential spawns)
  *   <li>{@code separation} - Minimum distance between structures in chunks
@@ -22,9 +23,14 @@ import rocks.minestom.worldgen.structure.StructurePlacement;
  *
  * @see RandomSpreadType for offset distribution options
  */
-public record RandomSpreadPlacement(int spacing, int separation, int salt,
-                                    RandomSpreadType spreadType, float frequency,
-                                    FrequencyReduction frequencyReduction) implements StructurePlacement {
+public record RandomSpreadPlacement(
+        int spacing,
+        int separation,
+        int salt,
+        RandomSpreadType spreadType,
+        float frequency,
+        FrequencyReduction frequencyReduction)
+        implements StructurePlacement {
 
     @Override
     public boolean isStartChunk(int chunkX, int chunkZ, long seed, boolean legacyRandomSource) {
@@ -39,7 +45,11 @@ public record RandomSpreadPlacement(int spacing, int separation, int salt,
         // Vanilla getPotentialStructureChunk always uses a legacy random
         // (setLargeFeatureWithSalt), regardless of the world's random type.
         var random = new LegacyRandomSource(0L);
-        var regionSeed = (long) regionX * 341873128712L + (long) regionZ * 132897987541L + seed + (long) this.salt;
+        var regionSeed =
+                (long) regionX * 341873128712L
+                        + (long) regionZ * 132897987541L
+                        + seed
+                        + (long) this.salt;
         random.setSeed(regionSeed);
 
         var offsetBound = spacingValue - separationValue;
@@ -53,6 +63,7 @@ public record RandomSpreadPlacement(int spacing, int separation, int salt,
 
         // Vanilla applyAdditionalChunkRestrictions: frequency gate
         return !(this.frequency < 1.0F)
-                || this.frequencyReduction.shouldGenerate(seed, this.salt, chunkX, chunkZ, this.frequency);
+                || this.frequencyReduction.shouldGenerate(
+                        seed, this.salt, chunkX, chunkZ, this.frequency);
     }
 }

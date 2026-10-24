@@ -36,15 +36,18 @@ public final class BedPlacementRule extends BlockPlacementRule {
         }
 
         var facingName = facing.name().toLowerCase();
-        var headBlock = placementState.block()
-                .withHandler(BedBlockHandler.INSTANCE)
-                .withProperty("facing", facingName)
-                .withProperty("part", "head")
-                .withProperty("occupied", "false");
+        var headBlock =
+                placementState
+                        .block()
+                        .withHandler(BedBlockHandler.INSTANCE)
+                        .withProperty("facing", facingName)
+                        .withProperty("part", "head")
+                        .withProperty("occupied", "false");
 
         instance.setBlock(headPosition, headBlock, false);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withHandler(BedBlockHandler.INSTANCE)
                 .withProperty("facing", facingName)
                 .withProperty("part", "foot")
@@ -68,9 +71,14 @@ public final class BedPlacementRule extends BlockPlacementRule {
             return currentBlock;
         }
 
-        var partner = updateState.instance().getBlock(updateState.blockPosition().relative(partnerDirection));
+        var partner =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(partnerDirection));
         var expectedPartnerPart = "head".equals(part) ? "foot" : "head";
-        var matches = partner.compare(this.block) && expectedPartnerPart.equals(partner.getProperty("part"));
+        var matches =
+                partner.compare(this.block)
+                        && expectedPartnerPart.equals(partner.getProperty("part"));
         return matches ? currentBlock : Block.AIR;
     }
 

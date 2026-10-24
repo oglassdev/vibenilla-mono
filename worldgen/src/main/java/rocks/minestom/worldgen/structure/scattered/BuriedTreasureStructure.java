@@ -4,10 +4,9 @@ import rocks.minestom.worldgen.structure.Structure;
 import rocks.minestom.worldgen.structure.context.StructurePlaceContext;
 
 /**
- * The buried treasure structure ({@code minecraft:buried_treasure}): a
- * single fixed-position piece, generated procedurally rather than from a
- * template; placement is handled by {@link ScatteredFeaturePlacer} instead
- * of the generic template path.
+ * The buried treasure structure ({@code minecraft:buried_treasure}): a single fixed-position piece,
+ * generated procedurally rather than from a template; placement is handled by {@link
+ * ScatteredFeaturePlacer} instead of the generic template path.
  */
 public record BuriedTreasureStructure(StructureBiomes biomes) implements Structure {
     @Override

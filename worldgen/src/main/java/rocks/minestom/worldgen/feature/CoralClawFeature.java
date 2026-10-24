@@ -1,19 +1,17 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.treedecorators.TreeDecorator;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * Port of vanilla's {@code CoralClawFeature}: places a base coral block, then
- * two or three claw branches around a random horizontal direction (that
- * direction, its clockwise neighbor, and its counterclockwise neighbor, in
- * shuffled order), each reaching sideways before curling inward toward the
- * claw direction.
+ * Port of vanilla's {@code CoralClawFeature}: places a base coral block, then two or three claw
+ * branches around a random horizontal direction (that direction, its clockwise neighbor, and its
+ * counterclockwise neighbor, in shuffled order), each reaching sideways before curling inward
+ * toward the claw direction.
  */
 public final class CoralClawFeature extends CoralFeature {
     @Override
@@ -25,8 +23,12 @@ public final class CoralClawFeature extends CoralFeature {
 
         var clawDirection = randomHorizontalDirection(random);
         var branchCount = random.nextInt(2) + 2;
-        var possibleDirections = new ArrayList<>(List.of(
-                clawDirection, clockWise(clawDirection), counterClockWise(clawDirection)));
+        var possibleDirections =
+                new ArrayList<>(
+                        List.of(
+                                clawDirection,
+                                clockWise(clawDirection),
+                                counterClockWise(clawDirection)));
         TreeDecorator.shuffle(possibleDirections, random);
 
         for (var index = 0; index < branchCount; index++) {
@@ -41,7 +43,7 @@ public final class CoralClawFeature extends CoralFeature {
                 inwayLength = random.nextInt(3) + 2;
             } else {
                 position = Direction.UP.relative(position);
-                var segmentCandidates = new Direction[]{branchDirection, Direction.UP};
+                var segmentCandidates = new Direction[] {branchDirection, Direction.UP};
                 segmentDirection = segmentCandidates[random.nextInt(segmentCandidates.length)];
                 inwayLength = random.nextInt(3) + 3;
             }
@@ -78,7 +80,9 @@ public final class CoralClawFeature extends CoralFeature {
             case EAST -> Direction.SOUTH;
             case SOUTH -> Direction.WEST;
             case WEST -> Direction.NORTH;
-            default -> throw new IllegalStateException("Unable to get clockwise facing of " + direction);
+            default ->
+                    throw new IllegalStateException(
+                            "Unable to get clockwise facing of " + direction);
         };
     }
 
@@ -88,7 +92,9 @@ public final class CoralClawFeature extends CoralFeature {
             case WEST -> Direction.SOUTH;
             case SOUTH -> Direction.EAST;
             case EAST -> Direction.NORTH;
-            default -> throw new IllegalStateException("Unable to get counterclockwise facing of " + direction);
+            default ->
+                    throw new IllegalStateException(
+                            "Unable to get counterclockwise facing of " + direction);
         };
     }
 }

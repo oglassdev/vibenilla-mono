@@ -7,15 +7,16 @@ import rocks.minestom.worldgen.feature.stateproviders.BlockStateProvider;
 import rocks.minestom.worldgen.feature.stateproviders.BlockStateProviders;
 
 /**
- * Vanilla's {@code AlterGroundDecorator}: replaces the ground around the
- * lowest logs (podzol under spruces) in overlapping circles plus a few random
- * edge circles.
+ * Vanilla's {@code AlterGroundDecorator}: replaces the ground around the lowest logs (podzol under
+ * spruces) in overlapping circles plus a few random edge circles.
  */
 public record AlterGroundDecorator(BlockStateProvider provider) implements TreeDecorator {
-    public static final Codec<AlterGroundDecorator> CODEC = StructCodec.struct(
-            "provider", BlockStateProviders.CODEC, AlterGroundDecorator::provider,
-            AlterGroundDecorator::new
-    );
+    public static final Codec<AlterGroundDecorator> CODEC =
+            StructCodec.struct(
+                    "provider",
+                    BlockStateProviders.CODEC,
+                    AlterGroundDecorator::provider,
+                    AlterGroundDecorator::new);
 
     @Override
     public void place(TreeDecorator.Context context) {
@@ -59,7 +60,8 @@ public record AlterGroundDecorator(BlockStateProvider provider) implements TreeD
     private void placeBlockAt(TreeDecorator.Context context, BlockVec position) {
         for (var dy = 2; dy >= -3; dy--) {
             var cursor = position.add(0, dy, 0);
-            var replaceWith = this.provider.getOptionalState(context.level(), context.random(), cursor);
+            var replaceWith =
+                    this.provider.getOptionalState(context.level(), context.random(), cursor);
             if (replaceWith != null) {
                 context.setBlock(cursor, replaceWith);
                 break;

@@ -15,11 +15,20 @@ public final class TripWirePlacementRule extends BlockPlacementRule {
         var blockGetter = placementState.instance();
         var placePosition = placementState.placePosition();
 
-        return placementState.block()
-                .withProperty("north", String.valueOf(this.connects(blockGetter, placePosition, BlockFace.NORTH)))
-                .withProperty("east", String.valueOf(this.connects(blockGetter, placePosition, BlockFace.EAST)))
-                .withProperty("south", String.valueOf(this.connects(blockGetter, placePosition, BlockFace.SOUTH)))
-                .withProperty("west", String.valueOf(this.connects(blockGetter, placePosition, BlockFace.WEST)));
+        return placementState
+                .block()
+                .withProperty(
+                        "north",
+                        String.valueOf(this.connects(blockGetter, placePosition, BlockFace.NORTH)))
+                .withProperty(
+                        "east",
+                        String.valueOf(this.connects(blockGetter, placePosition, BlockFace.EAST)))
+                .withProperty(
+                        "south",
+                        String.valueOf(this.connects(blockGetter, placePosition, BlockFace.SOUTH)))
+                .withProperty(
+                        "west",
+                        String.valueOf(this.connects(blockGetter, placePosition, BlockFace.WEST)));
     }
 
     @Override
@@ -30,8 +39,11 @@ public final class TripWirePlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var connected = this.connects(updateState.instance(), updateState.blockPosition(), fromFace);
-        return updateState.currentBlock().withProperty(fromFace.name().toLowerCase(), String.valueOf(connected));
+        var connected =
+                this.connects(updateState.instance(), updateState.blockPosition(), fromFace);
+        return updateState
+                .currentBlock()
+                .withProperty(fromFace.name().toLowerCase(), String.valueOf(connected));
     }
 
     private boolean connects(Block.Getter blockGetter, Point placePosition, BlockFace face) {
@@ -39,7 +51,8 @@ public final class TripWirePlacementRule extends BlockPlacementRule {
 
         if (neighbor.compare(Block.TRIPWIRE_HOOK)) {
             var hookFacing = neighbor.getProperty("facing");
-            return hookFacing != null && face.getOppositeFace().name().toLowerCase().equals(hookFacing);
+            return hookFacing != null
+                    && face.getOppositeFace().name().toLowerCase().equals(hookFacing);
         }
 
         return neighbor.compare(this.block);

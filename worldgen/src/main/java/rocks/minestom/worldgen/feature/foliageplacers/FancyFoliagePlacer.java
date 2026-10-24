@@ -8,12 +8,18 @@ import rocks.minestom.worldgen.feature.configurations.TreeConfiguration;
 import rocks.minestom.worldgen.random.RandomSource;
 
 public record FancyFoliagePlacer(int radius, int offset, int height) implements FoliagePlacer {
-    public static final Codec<FancyFoliagePlacer> CODEC = StructCodec.struct(
-            "radius", Codec.INT, FancyFoliagePlacer::radius,
-            "offset", Codec.INT, FancyFoliagePlacer::offset,
-            "height", Codec.INT, FancyFoliagePlacer::height,
-            FancyFoliagePlacer::new
-    );
+    public static final Codec<FancyFoliagePlacer> CODEC =
+            StructCodec.struct(
+                    "radius",
+                    Codec.INT,
+                    FancyFoliagePlacer::radius,
+                    "offset",
+                    Codec.INT,
+                    FancyFoliagePlacer::offset,
+                    "height",
+                    Codec.INT,
+                    FancyFoliagePlacer::height,
+                    FancyFoliagePlacer::new);
 
     @Override
     public void createFoliage(
@@ -24,11 +30,22 @@ public record FancyFoliagePlacer(int radius, int offset, int height) implements 
             int maxFreeTreeHeight,
             FoliageAttachment attachment,
             int foliageHeight,
-            int foliageRadius
-    ) {
+            int foliageRadius) {
         for (var layerY = this.offset; layerY >= this.offset - foliageHeight; layerY--) {
-            var layerRadius = foliageRadius + (layerY != this.offset && layerY != this.offset - foliageHeight ? 1 : 0);
-            this.placeLeavesRow(getter, foliageSetter, random, config, attachment.pos(), layerRadius, layerY, attachment.doubleTrunk());
+            var layerRadius =
+                    foliageRadius
+                            + (layerY != this.offset && layerY != this.offset - foliageHeight
+                                    ? 1
+                                    : 0);
+            this.placeLeavesRow(
+                    getter,
+                    foliageSetter,
+                    random,
+                    config,
+                    attachment.pos(),
+                    layerRadius,
+                    layerY,
+                    attachment.doubleTrunk());
         }
     }
 
@@ -50,14 +67,17 @@ public record FancyFoliagePlacer(int radius, int offset, int height) implements 
             BlockVec center,
             int radius,
             int yOffset,
-            boolean doubleTrunk
-    ) {
+            boolean doubleTrunk) {
         var widthOffset = doubleTrunk ? 1 : 0;
 
         for (var x = -radius; x <= radius + widthOffset; x++) {
             for (var z = -radius; z <= radius + widthOffset; z++) {
                 if (!this.shouldSkipLocationSigned(x, z, radius)) {
-                    var position = new BlockVec(center.blockX() + x, center.blockY() + yOffset, center.blockZ() + z);
+                    var position =
+                            new BlockVec(
+                                    center.blockX() + x,
+                                    center.blockY() + yOffset,
+                                    center.blockZ() + z);
                     FoliagePlacer.tryPlaceLeaf(getter, setter, random, config, position);
                 }
             }

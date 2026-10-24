@@ -30,7 +30,8 @@ public final class LanternPlacementRule extends BlockPlacementRule {
             var supportBlock = instance.getBlock(supportPosition);
 
             if (Utility.canSupportCenter(supportBlock, supportFace.getOppositeFace())) {
-                return placementState.block()
+                return placementState
+                        .block()
                         .withProperty("hanging", hanging ? "true" : "false")
                         .withProperty("waterlogged", waterlogged ? "true" : "false");
             }
@@ -50,7 +51,8 @@ public final class LanternPlacementRule extends BlockPlacementRule {
             return currentBlock;
         }
 
-        var supportBlock = updateState.instance().getBlock(updateState.blockPosition().relative(supportFace));
+        var supportBlock =
+                updateState.instance().getBlock(updateState.blockPosition().relative(supportFace));
 
         if (!Utility.canSupportCenter(supportBlock, supportFace.getOppositeFace())) {
             return Block.AIR;
@@ -61,7 +63,14 @@ public final class LanternPlacementRule extends BlockPlacementRule {
 
     private static BlockFace[] nearestLookingDirections(@Nullable Pos playerPosition) {
         if (playerPosition == null) {
-            return new BlockFace[]{BlockFace.BOTTOM, BlockFace.TOP, BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST};
+            return new BlockFace[] {
+                BlockFace.BOTTOM,
+                BlockFace.TOP,
+                BlockFace.NORTH,
+                BlockFace.EAST,
+                BlockFace.SOUTH,
+                BlockFace.WEST
+            };
         }
 
         var pitch = playerPosition.pitch() * (float) (Math.PI / 180.0);
@@ -86,17 +95,29 @@ public final class LanternPlacementRule extends BlockPlacementRule {
             if (yMag > xMag) {
                 return makeDirectionArray(axisY, axisX, axisZ);
             }
-            return zMag > yMag ? makeDirectionArray(axisX, axisZ, axisY) : makeDirectionArray(axisX, axisY, axisZ);
+            return zMag > yMag
+                    ? makeDirectionArray(axisX, axisZ, axisY)
+                    : makeDirectionArray(axisX, axisY, axisZ);
         }
 
         if (yMag > zMag) {
             return makeDirectionArray(axisY, axisZ, axisX);
         }
 
-        return xMag > yMag ? makeDirectionArray(axisZ, axisX, axisY) : makeDirectionArray(axisZ, axisY, axisX);
+        return xMag > yMag
+                ? makeDirectionArray(axisZ, axisX, axisY)
+                : makeDirectionArray(axisZ, axisY, axisX);
     }
 
-    private static BlockFace[] makeDirectionArray(BlockFace first, BlockFace second, BlockFace third) {
-        return new BlockFace[]{first, second, third, third.getOppositeFace(), second.getOppositeFace(), first.getOppositeFace()};
+    private static BlockFace[] makeDirectionArray(
+            BlockFace first, BlockFace second, BlockFace third) {
+        return new BlockFace[] {
+            first,
+            second,
+            third,
+            third.getOppositeFace(),
+            second.getOppositeFace(),
+            first.getOppositeFace()
+        };
     }
 }

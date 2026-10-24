@@ -14,7 +14,10 @@ public final class SlabPlacementRule extends BlockPlacementRule {
         var existingBlock = placementState.instance().getBlock(placementState.placePosition());
 
         if (existingBlock.compare(placementState.block())) {
-            return placementState.block().withProperty("type", "double").withProperty("waterlogged", "false");
+            return placementState
+                    .block()
+                    .withProperty("type", "double")
+                    .withProperty("waterlogged", "false");
         }
 
         var blockFace = placementState.blockFace();
@@ -23,7 +26,8 @@ public final class SlabPlacementRule extends BlockPlacementRule {
         var top = blockFace == BlockFace.BOTTOM || (blockFace != BlockFace.TOP && cursorY > 0.5D);
         var waterlogged = existingBlock.compare(Block.WATER);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withProperty("type", top ? "top" : "bottom")
                 .withProperty("waterlogged", waterlogged ? "true" : "false");
     }
@@ -49,7 +53,10 @@ public final class SlabPlacementRule extends BlockPlacementRule {
         var cursorPosition = replacement.cursorPosition();
         var above = cursorPosition != null && cursorPosition.y() > 0.5D;
         var clickedFace = replacement.blockFace();
-        var horizontal = clickedFace != null && clickedFace != BlockFace.TOP && clickedFace != BlockFace.BOTTOM;
+        var horizontal =
+                clickedFace != null
+                        && clickedFace != BlockFace.TOP
+                        && clickedFace != BlockFace.BOTTOM;
         var type = replacement.block().getProperty("type");
 
         if ("bottom".equals(type)) {

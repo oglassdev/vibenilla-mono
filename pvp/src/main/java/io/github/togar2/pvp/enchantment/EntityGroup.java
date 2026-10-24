@@ -31,6 +31,7 @@ public enum EntityGroup {
     }
 
     public static boolean hasInvertedHealingAndHarm(Entity entity) {
-        return RegistryTags.contains(RegistryTags.INVERTED_HEALING_AND_HARM, entity.getEntityType());
+        return RegistryTags.contains(
+                RegistryTags.INVERTED_HEALING_AND_HARM, entity.getEntityType());
     }
 }

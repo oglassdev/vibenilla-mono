@@ -7,8 +7,8 @@ import rocks.minestom.worldgen.random.RandomSource;
 import rocks.minestom.worldgen.surface.VerticalAnchor;
 
 /**
- * Height providers as used by carver configs, sampling against the generation
- * range (vanilla {@code HeightProvider.sample(random, WorldGenerationContext)}).
+ * Height providers as used by carver configs, sampling against the generation range (vanilla {@code
+ * HeightProvider.sample(random, WorldGenerationContext)}).
  */
 public interface CarverHeightProvider {
     int sample(RandomSource random, int minY, int maxYInclusive);
@@ -22,12 +22,22 @@ public interface CarverHeightProvider {
 
         var type = Key.key(object.get("type").getAsString()).asString();
         return switch (type) {
-            case "minecraft:constant" -> new Constant(
-                    VerticalAnchor.CODEC.decode(Transcoder.JSON, object.get("value")).orElseThrow());
-            case "minecraft:uniform" -> new Uniform(
-                    VerticalAnchor.CODEC.decode(Transcoder.JSON, object.get("min_inclusive")).orElseThrow(),
-                    VerticalAnchor.CODEC.decode(Transcoder.JSON, object.get("max_inclusive")).orElseThrow());
-            default -> throw new IllegalArgumentException("Unsupported carver height provider: " + type);
+            case "minecraft:constant" ->
+                    new Constant(
+                            VerticalAnchor.CODEC
+                                    .decode(Transcoder.JSON, object.get("value"))
+                                    .orElseThrow());
+            case "minecraft:uniform" ->
+                    new Uniform(
+                            VerticalAnchor.CODEC
+                                    .decode(Transcoder.JSON, object.get("min_inclusive"))
+                                    .orElseThrow(),
+                            VerticalAnchor.CODEC
+                                    .decode(Transcoder.JSON, object.get("max_inclusive"))
+                                    .orElseThrow());
+            default ->
+                    throw new IllegalArgumentException(
+                            "Unsupported carver height provider: " + type);
         };
     }
 
@@ -38,7 +48,8 @@ public interface CarverHeightProvider {
         }
     }
 
-    record Uniform(VerticalAnchor minInclusive, VerticalAnchor maxInclusive) implements CarverHeightProvider {
+    record Uniform(VerticalAnchor minInclusive, VerticalAnchor maxInclusive)
+            implements CarverHeightProvider {
         @Override
         public int sample(RandomSource random, int minY, int maxYInclusive) {
             var min = this.minInclusive.resolveY(minY, maxYInclusive);

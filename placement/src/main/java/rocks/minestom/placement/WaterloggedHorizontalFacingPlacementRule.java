@@ -10,7 +10,8 @@ public final class WaterloggedHorizontalFacingPlacementRule extends BlockPlaceme
     private final boolean awayFromPlayer;
     private final @Nullable BlockHandler handler;
 
-    public WaterloggedHorizontalFacingPlacementRule(Block block, boolean awayFromPlayer, @Nullable BlockHandler handler) {
+    public WaterloggedHorizontalFacingPlacementRule(
+            Block block, boolean awayFromPlayer, @Nullable BlockHandler handler) {
         super(block);
         this.awayFromPlayer = awayFromPlayer;
         this.handler = handler;
@@ -27,9 +28,11 @@ public final class WaterloggedHorizontalFacingPlacementRule extends BlockPlaceme
         }
 
         var replaced = placementState.instance().getBlock(placementState.placePosition());
-        var result = this.handler == null ? placementState.block() : placementState.block().withHandler(this.handler);
-        return result
-                .withProperty("facing", facing.name().toLowerCase())
+        var result =
+                this.handler == null
+                        ? placementState.block()
+                        : placementState.block().withHandler(this.handler);
+        return result.withProperty("facing", facing.name().toLowerCase())
                 .withProperty("waterlogged", String.valueOf(replaced.compare(Block.WATER)));
     }
 }

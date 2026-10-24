@@ -6,9 +6,9 @@ import net.minestom.server.codec.StructCodec;
 import rocks.minestom.worldgen.random.RandomSource;
 
 public record ConstantFloatProvider(float value) implements FloatProvider {
-    public static final Codec<ConstantFloatProvider> CODEC = StructCodec.struct(
-            "value", Codec.FLOAT, ConstantFloatProvider::value,
-            ConstantFloatProvider::new);
+    public static final Codec<ConstantFloatProvider> CODEC =
+            StructCodec.struct(
+                    "value", Codec.FLOAT, ConstantFloatProvider::value, ConstantFloatProvider::new);
 
     @Override
     public Key type() {

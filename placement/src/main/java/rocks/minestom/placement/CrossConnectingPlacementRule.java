@@ -10,39 +10,36 @@ import org.jetbrains.annotations.Nullable;
 
 public final class CrossConnectingPlacementRule extends BlockPlacementRule {
     private static final BlockFace[] HORIZONTAL_FACES = {
-            BlockFace.NORTH,
-            BlockFace.EAST,
-            BlockFace.SOUTH,
-            BlockFace.WEST
+        BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST
     };
 
     private static final Block[] CROSS_CONNECTING_BLOCKS = {
-            Block.IRON_BARS,
-            Block.COPPER_BARS,
-            Block.EXPOSED_COPPER_BARS,
-            Block.WEATHERED_COPPER_BARS,
-            Block.OXIDIZED_COPPER_BARS,
-            Block.WAXED_COPPER_BARS,
-            Block.WAXED_EXPOSED_COPPER_BARS,
-            Block.WAXED_WEATHERED_COPPER_BARS,
-            Block.WAXED_OXIDIZED_COPPER_BARS,
-            Block.GLASS_PANE,
-            Block.WHITE_STAINED_GLASS_PANE,
-            Block.LIGHT_GRAY_STAINED_GLASS_PANE,
-            Block.GRAY_STAINED_GLASS_PANE,
-            Block.BLACK_STAINED_GLASS_PANE,
-            Block.BROWN_STAINED_GLASS_PANE,
-            Block.RED_STAINED_GLASS_PANE,
-            Block.ORANGE_STAINED_GLASS_PANE,
-            Block.YELLOW_STAINED_GLASS_PANE,
-            Block.LIME_STAINED_GLASS_PANE,
-            Block.GREEN_STAINED_GLASS_PANE,
-            Block.CYAN_STAINED_GLASS_PANE,
-            Block.LIGHT_BLUE_STAINED_GLASS_PANE,
-            Block.BLUE_STAINED_GLASS_PANE,
-            Block.PURPLE_STAINED_GLASS_PANE,
-            Block.MAGENTA_STAINED_GLASS_PANE,
-            Block.PINK_STAINED_GLASS_PANE
+        Block.IRON_BARS,
+        Block.COPPER_BARS,
+        Block.EXPOSED_COPPER_BARS,
+        Block.WEATHERED_COPPER_BARS,
+        Block.OXIDIZED_COPPER_BARS,
+        Block.WAXED_COPPER_BARS,
+        Block.WAXED_EXPOSED_COPPER_BARS,
+        Block.WAXED_WEATHERED_COPPER_BARS,
+        Block.WAXED_OXIDIZED_COPPER_BARS,
+        Block.GLASS_PANE,
+        Block.WHITE_STAINED_GLASS_PANE,
+        Block.LIGHT_GRAY_STAINED_GLASS_PANE,
+        Block.GRAY_STAINED_GLASS_PANE,
+        Block.BLACK_STAINED_GLASS_PANE,
+        Block.BROWN_STAINED_GLASS_PANE,
+        Block.RED_STAINED_GLASS_PANE,
+        Block.ORANGE_STAINED_GLASS_PANE,
+        Block.YELLOW_STAINED_GLASS_PANE,
+        Block.LIME_STAINED_GLASS_PANE,
+        Block.GREEN_STAINED_GLASS_PANE,
+        Block.CYAN_STAINED_GLASS_PANE,
+        Block.LIGHT_BLUE_STAINED_GLASS_PANE,
+        Block.BLUE_STAINED_GLASS_PANE,
+        Block.PURPLE_STAINED_GLASS_PANE,
+        Block.MAGENTA_STAINED_GLASS_PANE,
+        Block.PINK_STAINED_GLASS_PANE
     };
 
     public CrossConnectingPlacementRule(Block block) {
@@ -59,7 +56,8 @@ public final class CrossConnectingPlacementRule extends BlockPlacementRule {
         var shulkerBoxesTag = blockRegistry.getTag(Key.key("minecraft:shulker_boxes"));
         var replaced = blockGetter.getBlock(placePosition);
         var waterlogged = replaced.compare(Block.WATER);
-        var result = placementState.block().withProperty("waterlogged", String.valueOf(waterlogged));
+        var result =
+                placementState.block().withProperty("waterlogged", String.valueOf(waterlogged));
 
         for (var face : HORIZONTAL_FACES) {
             var neighborPosition = placePosition.relative(face);
@@ -92,7 +90,9 @@ public final class CrossConnectingPlacementRule extends BlockPlacementRule {
         var leavesTag = blockRegistry.getTag(Key.key("minecraft:leaves"));
         var shulkerBoxesTag = blockRegistry.getTag(Key.key("minecraft:shulker_boxes"));
         var connects = attachsTo(neighbor, sturdy, wallsTag, leavesTag, shulkerBoxesTag);
-        return updateState.currentBlock().withProperty(fromFace.name().toLowerCase(), String.valueOf(connects));
+        return updateState
+                .currentBlock()
+                .withProperty(fromFace.name().toLowerCase(), String.valueOf(connects));
     }
 
     private static boolean attachsTo(
@@ -100,8 +100,7 @@ public final class CrossConnectingPlacementRule extends BlockPlacementRule {
             boolean sturdy,
             @Nullable RegistryTag<Block> wallsTag,
             @Nullable RegistryTag<Block> leavesTag,
-            @Nullable RegistryTag<Block> shulkerBoxesTag
-    ) {
+            @Nullable RegistryTag<Block> shulkerBoxesTag) {
         if (wallsTag != null && wallsTag.contains(neighbor)) {
             return true;
         }
@@ -126,8 +125,7 @@ public final class CrossConnectingPlacementRule extends BlockPlacementRule {
     private static boolean isExceptionForConnection(
             Block neighbor,
             @Nullable RegistryTag<Block> leavesTag,
-            @Nullable RegistryTag<Block> shulkerBoxesTag
-    ) {
+            @Nullable RegistryTag<Block> shulkerBoxesTag) {
         if (leavesTag != null && leavesTag.contains(neighbor)) {
             return true;
         }

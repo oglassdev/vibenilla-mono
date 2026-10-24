@@ -1,12 +1,11 @@
 package rocks.minestom.crafting.recipe;
 
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import java.util.ArrayList;
+import java.util.List;
 import net.minestom.server.item.ItemStack;
 import rocks.minestom.crafting.CraftingGrid;
 import rocks.minestom.crafting.Ingredient;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public final class ShapelessCraftingRecipe implements CraftingRecipe {
     private final List<Ingredient> requiredIngredients;
@@ -33,7 +32,9 @@ public final class ShapelessCraftingRecipe implements CraftingRecipe {
             var slotItem = gridSlot.item();
             var matchedIngredient = false;
 
-            for (var ingredientIndex = 0; ingredientIndex < remainingIngredients.size(); ingredientIndex++) {
+            for (var ingredientIndex = 0;
+                    ingredientIndex < remainingIngredients.size();
+                    ingredientIndex++) {
                 var ingredient = remainingIngredients.get(ingredientIndex);
 
                 if (ingredient.matches(slotItem)) {

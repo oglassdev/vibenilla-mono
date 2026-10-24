@@ -1,5 +1,7 @@
 package io.github.togar2.pvp.feature.attack;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import io.github.togar2.pvp.enchantment.CombatEnchantments;
 import io.github.togar2.pvp.feature.CombatFeatures;
 import io.github.togar2.pvp.utils.CombatVersion;
@@ -19,21 +21,20 @@ import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 @EnvTest
 public final class VanillaSpearFeatureTest {
     @Test
     public void jabRequiresTheAttackCharge(Env env) {
         CombatEnchantments.registerAll();
-        var node = CombatFeatures.empty()
-                .version(CombatVersion.MODERN)
-                .add(CombatFeatures.VANILLA_ENCHANTMENT)
-                .add(CombatFeatures.VANILLA_KNOCKBACK)
-                .add(CombatFeatures.VANILLA_ATTACK_COOLDOWN)
-                .add(CombatFeatures.VANILLA_SPEAR)
-                .build()
-                .createNode();
+        var node =
+                CombatFeatures.empty()
+                        .version(CombatVersion.MODERN)
+                        .add(CombatFeatures.VANILLA_ENCHANTMENT)
+                        .add(CombatFeatures.VANILLA_KNOCKBACK)
+                        .add(CombatFeatures.VANILLA_ATTACK_COOLDOWN)
+                        .add(CombatFeatures.VANILLA_SPEAR)
+                        .build()
+                        .createNode();
         MinecraftServer.getGlobalEventHandler().addChild(node);
 
         try {
@@ -60,14 +61,15 @@ public final class VanillaSpearFeatureTest {
     @Test
     public void jabStopsAtTheFirstBlock(Env env) {
         CombatEnchantments.registerAll();
-        var node = CombatFeatures.empty()
-                .version(CombatVersion.MODERN)
-                .add(CombatFeatures.VANILLA_ENCHANTMENT)
-                .add(CombatFeatures.VANILLA_KNOCKBACK)
-                .add(CombatFeatures.VANILLA_ATTACK_COOLDOWN)
-                .add(CombatFeatures.VANILLA_SPEAR)
-                .build()
-                .createNode();
+        var node =
+                CombatFeatures.empty()
+                        .version(CombatVersion.MODERN)
+                        .add(CombatFeatures.VANILLA_ENCHANTMENT)
+                        .add(CombatFeatures.VANILLA_KNOCKBACK)
+                        .add(CombatFeatures.VANILLA_ATTACK_COOLDOWN)
+                        .add(CombatFeatures.VANILLA_SPEAR)
+                        .build()
+                        .createNode();
         MinecraftServer.getGlobalEventHandler().addChild(node);
 
         try {

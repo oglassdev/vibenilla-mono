@@ -6,30 +6,34 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Holds the climate parameter space and lookup structures used to map noise samples to biomes.
- * This defines the multi-dimensional climate model and the search structure that
- * finds the closest biome target for a sampled climate point.
+ * Holds the climate parameter space and lookup structures used to map noise samples to biomes. This
+ * defines the multi-dimensional climate model and the search structure that finds the closest biome
+ * target for a sampled climate point.
  */
 public final class Climate {
     private static final float QUANTIZATION_FACTOR = 10000.0F;
     private static final int PARAMETER_COUNT = 7;
 
-    private Climate() {
-    }
+    private Climate() {}
 
     public static long quantizeCoord(float value) {
         return (long) (value * QUANTIZATION_FACTOR);
     }
 
-    public static TargetPoint target(float temperature, float humidity, float continentalness, float erosion, float depth, float weirdness) {
+    public static TargetPoint target(
+            float temperature,
+            float humidity,
+            float continentalness,
+            float erosion,
+            float depth,
+            float weirdness) {
         return new TargetPoint(
                 quantizeCoord(temperature),
                 quantizeCoord(humidity),
                 quantizeCoord(continentalness),
                 quantizeCoord(erosion),
                 quantizeCoord(depth),
-                quantizeCoord(weirdness)
-        );
+                quantizeCoord(weirdness));
     }
 
     public static ParameterPoint parameters(
@@ -39,12 +43,25 @@ public final class Climate {
             Parameter erosion,
             Parameter depth,
             Parameter weirdness,
-            float offset
-    ) {
-        return new ParameterPoint(temperature, humidity, continentalness, erosion, depth, weirdness, quantizeCoord(offset));
+            float offset) {
+        return new ParameterPoint(
+                temperature,
+                humidity,
+                continentalness,
+                erosion,
+                depth,
+                weirdness,
+                quantizeCoord(offset));
     }
 
-    public static ParameterPoint parameters(float temperature, float humidity, float continentalness, float erosion, float depth, float weirdness, float offset) {
+    public static ParameterPoint parameters(
+            float temperature,
+            float humidity,
+            float continentalness,
+            float erosion,
+            float depth,
+            float weirdness,
+            float offset) {
         return parameters(
                 Parameter.point(temperature),
                 Parameter.point(humidity),
@@ -52,8 +69,7 @@ public final class Climate {
                 Parameter.point(erosion),
                 Parameter.point(depth),
                 Parameter.point(weirdness),
-                offset
-        );
+                offset);
     }
 
     public record Parameter(long min, long max) {
@@ -82,7 +98,8 @@ public final class Climate {
                 return this;
             }
 
-            return new Parameter(Math.min(this.min, parameter.min), Math.max(this.max, parameter.max));
+            return new Parameter(
+                    Math.min(this.min, parameter.min), Math.max(this.max, parameter.max));
         }
 
         public long distance(long value) {
@@ -114,10 +131,17 @@ public final class Climate {
             long continentalness,
             long erosion,
             long depth,
-            long weirdness
-    ) {
+            long weirdness) {
         private long[] toParameterArray() {
-            return new long[]{this.temperature, this.humidity, this.continentalness, this.erosion, this.depth, this.weirdness, 0L};
+            return new long[] {
+                this.temperature,
+                this.humidity,
+                this.continentalness,
+                this.erosion,
+                this.depth,
+                this.weirdness,
+                0L
+            };
         }
     }
 
@@ -128,8 +152,7 @@ public final class Climate {
             Parameter erosion,
             Parameter depth,
             Parameter weirdness,
-            long offset
-    ) {
+            long offset) {
         public long fitness(TargetPoint target) {
             var sum = 0L;
             sum += square(this.temperature.distance(target.temperature));
@@ -150,8 +173,7 @@ public final class Climate {
                     this.erosion,
                     this.depth,
                     this.weirdness,
-                    new Parameter(this.offset, this.offset)
-            );
+                    new Parameter(this.offset, this.offset));
         }
 
         private static long square(long value) {
@@ -202,13 +224,18 @@ public final class Climate {
 
         private static <T> RTree<T> create(List<Pair<ParameterPoint, T>> values) {
             if (values.isEmpty()) {
-                throw new IllegalArgumentException("Need at least one value to build the search tree.");
+                throw new IllegalArgumentException(
+                        "Need at least one value to build the search tree.");
             }
 
             var parameterCount = values.getFirst().first().parameterSpace().size();
 
             if (parameterCount != PARAMETER_COUNT) {
-                throw new IllegalStateException("Expecting parameter space to be " + PARAMETER_COUNT + ", got " + parameterCount);
+                throw new IllegalStateException(
+                        "Expecting parameter space to be "
+                                + PARAMETER_COUNT
+                                + ", got "
+                                + parameterCount);
             }
 
             var leaves = new ArrayList<Node<T>>(values.size());
@@ -230,16 +257,18 @@ public final class Climate {
             }
 
             if (nodes.size() <= CHILDREN_PER_NODE) {
-                nodes.sort(Comparator.comparingLong(node -> {
-                    var sum = 0L;
+                nodes.sort(
+                        Comparator.comparingLong(
+                                node -> {
+                                    var sum = 0L;
 
-                    for (var index = 0; index < parameterCount; index++) {
-                        var parameter = node.parameterSpace[index];
-                        sum += Math.abs((parameter.min + parameter.max) / 2L);
-                    }
+                                    for (var index = 0; index < parameterCount; index++) {
+                                        var parameter = node.parameterSpace[index];
+                                        sum += Math.abs((parameter.min + parameter.max) / 2L);
+                                    }
 
-                    return sum;
-                }));
+                                    return sum;
+                                }));
 
                 return new SubTree<>(nodes);
             }
@@ -272,11 +301,14 @@ public final class Climate {
             return new SubTree<>(children);
         }
 
-        private static <T> void sort(List<? extends Node<T>> nodes, int parameterCount, int axis, boolean absolute) {
+        private static <T> void sort(
+                List<? extends Node<T>> nodes, int parameterCount, int axis, boolean absolute) {
             var comparator = comparator(axis, absolute);
 
             for (var index = 1; index < parameterCount; index++) {
-                comparator = comparator.thenComparing(comparator((axis + index) % parameterCount, absolute));
+                comparator =
+                        comparator.thenComparing(
+                                comparator((axis + index) % parameterCount, absolute));
             }
 
             @SuppressWarnings({"rawtypes"})
@@ -285,17 +317,24 @@ public final class Climate {
         }
 
         private static <T> Comparator<Node<T>> comparator(int axis, boolean absolute) {
-            return Comparator.comparingLong(node -> {
-                var parameter = node.parameterSpace[axis];
-                var midpoint = (parameter.min + parameter.max) / 2L;
-                return absolute ? Math.abs(midpoint) : midpoint;
-            });
+            return Comparator.comparingLong(
+                    node -> {
+                        var parameter = node.parameterSpace[axis];
+                        var midpoint = (parameter.min + parameter.max) / 2L;
+                        return absolute ? Math.abs(midpoint) : midpoint;
+                    });
         }
 
         private static <T> List<SubTree<T>> bucketize(List<? extends Node<T>> nodes) {
             var buckets = new ArrayList<SubTree<T>>();
             var bucket = new ArrayList<Node<T>>();
-            var bucketSize = (int) Math.pow((double) CHILDREN_PER_NODE, Math.floor(Math.log((double) nodes.size() - 0.01D) / Math.log((double) CHILDREN_PER_NODE)));
+            var bucketSize =
+                    (int)
+                            Math.pow(
+                                    (double) CHILDREN_PER_NODE,
+                                    Math.floor(
+                                            Math.log((double) nodes.size() - 0.01D)
+                                                    / Math.log((double) CHILDREN_PER_NODE)));
 
             for (var node : nodes) {
                 bucket.add(node);
@@ -353,7 +392,8 @@ public final class Climate {
                 this.parameterSpace = parameterSpace.toArray(new Parameter[0]);
             }
 
-            protected abstract Leaf<T> search(long[] target, Leaf<T> previousBest, DistanceMetric<T> metric);
+            protected abstract Leaf<T> search(
+                    long[] target, Leaf<T> previousBest, DistanceMetric<T> metric);
 
             protected long distance(long[] target) {
                 var sum = 0L;
@@ -374,7 +414,8 @@ public final class Climate {
             }
 
             @Override
-            protected Leaf<T> search(long[] target, Leaf<T> previousBest, DistanceMetric<T> metric) {
+            protected Leaf<T> search(
+                    long[] target, Leaf<T> previousBest, DistanceMetric<T> metric) {
                 return this;
             }
         }
@@ -394,8 +435,12 @@ public final class Climate {
             }
 
             @Override
-            protected Leaf<T> search(long[] target, Leaf<T> previousBest, DistanceMetric<T> metric) {
-                var bestDistance = previousBest == null ? Long.MAX_VALUE : metric.distance(previousBest, target);
+            protected Leaf<T> search(
+                    long[] target, Leaf<T> previousBest, DistanceMetric<T> metric) {
+                var bestDistance =
+                        previousBest == null
+                                ? Long.MAX_VALUE
+                                : metric.distance(previousBest, target);
                 var bestLeaf = previousBest;
 
                 for (var child : this.children) {
@@ -405,7 +450,8 @@ public final class Climate {
                     }
 
                     var leaf = child.search(target, bestLeaf, metric);
-                    var leafDistance = child == leaf ? childDistance : metric.distance(leaf, target);
+                    var leafDistance =
+                            child == leaf ? childDistance : metric.distance(leaf, target);
                     if (leafDistance < bestDistance) {
                         bestDistance = leafDistance;
                         bestLeaf = leaf;

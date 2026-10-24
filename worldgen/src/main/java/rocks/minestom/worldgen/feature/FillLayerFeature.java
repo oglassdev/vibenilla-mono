@@ -4,12 +4,13 @@ import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.LayerConfiguration;
 
 /**
- * Port of vanilla {@code FillLayerFeature}: fills every air block of a single
- * horizontal layer across the 16x16 origin chunk with the configured state.
+ * Port of vanilla {@code FillLayerFeature}: fills every air block of a single horizontal layer
+ * across the 16x16 origin chunk with the configured state.
  */
 public final class FillLayerFeature implements Feature<LayerConfiguration> {
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<LayerConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<LayerConfiguration, T> context) {
         var origin = context.origin();
         var config = context.config();
         var level = context.accessor();

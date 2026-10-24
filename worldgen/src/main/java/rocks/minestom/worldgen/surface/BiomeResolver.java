@@ -9,4 +9,3 @@ public interface BiomeResolver {
 
     boolean frozenTemperatureModifier(Key biome);
 }
-

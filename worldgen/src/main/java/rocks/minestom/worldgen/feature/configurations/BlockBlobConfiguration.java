@@ -8,10 +8,8 @@ import rocks.minestom.worldgen.feature.FeatureConfiguration;
 import rocks.minestom.worldgen.feature.placement.PlacementModifiers;
 import rocks.minestom.worldgen.structure.context.BlockTagManager;
 
-public record BlockBlobConfiguration(
-        Block state,
-        PlacementModifiers.BlockPredicate canPlaceOn
-) implements FeatureConfiguration {
+public record BlockBlobConfiguration(Block state, PlacementModifiers.BlockPredicate canPlaceOn)
+        implements FeatureConfiguration {
 
     public static BlockBlobConfiguration fromJson(JsonElement json, BlockTagManager blockTags) {
         if (!json.isJsonObject()) {
@@ -20,7 +18,9 @@ public record BlockBlobConfiguration(
 
         var obj = json.getAsJsonObject();
         var state = BlockCodec.CODEC.decode(Transcoder.JSON, obj.get("state")).orElseThrow();
-        var canPlaceOn = PlacementModifiers.parseBlockPredicate(obj.getAsJsonObject("can_place_on"), blockTags);
+        var canPlaceOn =
+                PlacementModifiers.parseBlockPredicate(
+                        obj.getAsJsonObject("can_place_on"), blockTags);
         return new BlockBlobConfiguration(state, canPlaceOn);
     }
 }

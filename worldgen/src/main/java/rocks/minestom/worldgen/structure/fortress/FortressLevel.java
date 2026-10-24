@@ -1,20 +1,18 @@
 package rocks.minestom.worldgen.structure.fortress;
 
+import java.util.List;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.structure.StructureWrites;
 
-import java.util.List;
-
 /**
- * Chunk-local world view for nether fortress piece placement, mirroring the
- * reads and writes vanilla pieces perform against the proto-chunk. All piece
- * reads and writes are clamped to the generating chunk, so a single chunk
- * column buffer is enough.
+ * Chunk-local world view for nether fortress piece placement, mirroring the reads and writes
+ * vanilla pieces perform against the proto-chunk. All piece reads and writes are clamped to the
+ * generating chunk, so a single chunk column buffer is enough.
  *
- * <p>Writes go through the plain {@link Block.Setter} interface (rather than
- * a concrete {@code GenerationUnitAdapter}) so tests can drive placement
- * against a lightweight fake without a real generation unit.
+ * <p>Writes go through the plain {@link Block.Setter} interface (rather than a concrete {@code
+ * GenerationUnitAdapter}) so tests can drive placement against a lightweight fake without a real
+ * generation unit.
  */
 final class FortressLevel {
     private final Block.Setter adapter;
@@ -27,8 +25,15 @@ final class FortressLevel {
     private final int[] chunkHandle;
     private final List<BlockVec> shapeUpdatePositions;
 
-    FortressLevel(Block.Setter adapter, Block[] blocks, int startX, int startZ,
-            int minY, int maxY, int[] chunkHandle, List<BlockVec> shapeUpdatePositions) {
+    FortressLevel(
+            Block.Setter adapter,
+            Block[] blocks,
+            int startX,
+            int startZ,
+            int minY,
+            int maxY,
+            int[] chunkHandle,
+            List<BlockVec> shapeUpdatePositions) {
         this.adapter = adapter;
         this.blocks = blocks;
         this.startX = startX;
@@ -63,10 +68,9 @@ final class FortressLevel {
     }
 
     /**
-     * Vanilla {@code StructurePiece.SHAPE_CHECK_BLOCKS}, restricted to the
-     * families fortress pieces actually place (fences): a position marked
-     * here has its connection shape recomputed against its final neighbors
-     * once every piece in the chunk has been placed.
+     * Vanilla {@code StructurePiece.SHAPE_CHECK_BLOCKS}, restricted to the families fortress pieces
+     * actually place (fences): a position marked here has its connection shape recomputed against
+     * its final neighbors once every piece in the chunk has been placed.
      */
     private static boolean isShapeCheckBlock(Block block) {
         var key = block.key().value();
@@ -81,7 +85,12 @@ final class FortressLevel {
         var localX = x - this.startX;
         var localZ = z - this.startZ;
         var yIndex = y - this.minY;
-        if (localX < 0 || localX >= 16 || localZ < 0 || localZ >= 16 || yIndex < 0 || yIndex >= this.height) {
+        if (localX < 0
+                || localX >= 16
+                || localZ < 0
+                || localZ >= 16
+                || yIndex < 0
+                || yIndex >= this.height) {
             return -1;
         }
         return (localX * 16 + localZ) * this.height + yIndex;

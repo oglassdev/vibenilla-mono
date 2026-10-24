@@ -1,28 +1,27 @@
 package rocks.minestom.worldgen.structure.ruinedportal;
 
+import java.util.List;
 import rocks.minestom.worldgen.structure.Structure;
 import rocks.minestom.worldgen.structure.context.StructurePlaceContext;
 
-import java.util.List;
-
 /**
- * The ruined portal structure ({@code minecraft:ruined_portal} and its six
- * biome variants, all type {@code minecraft:ruined_portal}). Unlike the generic
- * {@link rocks.minestom.worldgen.structure.SimpleStructure} template path, it
- * picks a weighted {@link Setup} (vertical placement, air pocket, mossiness,
- * vines, overgrowth, blackstone), rolls a giant/normal template plus a mirror,
- * resolves a suitable buried/surface Y, applies weathering processors and then
- * spreads netherrack, so placement is handled by {@link RuinedPortalPlacer}.
+ * The ruined portal structure ({@code minecraft:ruined_portal} and its six biome variants, all type
+ * {@code minecraft:ruined_portal}). Unlike the generic {@link
+ * rocks.minestom.worldgen.structure.SimpleStructure} template path, it picks a weighted {@link
+ * Setup} (vertical placement, air pocket, mossiness, vines, overgrowth, blackstone), rolls a
+ * giant/normal template plus a mirror, resolves a suitable buried/surface Y, applies weathering
+ * processors and then spreads netherrack, so placement is handled by {@link RuinedPortalPlacer}.
  */
-public record RuinedPortalStructure(StructureBiomes biomes, List<Setup> setups) implements Structure {
+public record RuinedPortalStructure(StructureBiomes biomes, List<Setup> setups)
+        implements Structure {
     @Override
     public void place(StructurePlaceContext context) {
         // Handled by RuinedPortalPlacer; nothing to do through the template path.
     }
 
     /**
-     * Vanilla {@code RuinedPortalStructure.Setup}: one weighted placement
-     * configuration read from the structure's {@code setups} JSON array.
+     * Vanilla {@code RuinedPortalStructure.Setup}: one weighted placement configuration read from
+     * the structure's {@code setups} JSON array.
      */
     public record Setup(
             VerticalPlacement placement,
@@ -32,13 +31,11 @@ public record RuinedPortalStructure(StructureBiomes biomes, List<Setup> setups) 
             boolean vines,
             boolean canBeCold,
             boolean replaceWithBlackstone,
-            float weight
-    ) {
-    }
+            float weight) {}
 
     /**
-     * Vanilla {@code RuinedPortalPiece.Properties}: the resolved per-piece
-     * decoration flags handed to the processors and post-processing.
+     * Vanilla {@code RuinedPortalPiece.Properties}: the resolved per-piece decoration flags handed
+     * to the processors and post-processing.
      */
     public record Properties(
             boolean cold,
@@ -46,9 +43,7 @@ public record RuinedPortalStructure(StructureBiomes biomes, List<Setup> setups) 
             boolean airPocket,
             boolean overgrown,
             boolean vines,
-            boolean replaceWithBlackstone
-    ) {
-    }
+            boolean replaceWithBlackstone) {}
 
     /** Vanilla {@code RuinedPortalPiece.VerticalPlacement}. */
     public enum VerticalPlacement {

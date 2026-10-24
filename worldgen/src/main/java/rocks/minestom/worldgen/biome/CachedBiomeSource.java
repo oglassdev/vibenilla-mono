@@ -1,18 +1,16 @@
 package rocks.minestom.worldgen.biome;
 
-import net.kyori.adventure.key.Key;
-import rocks.minestom.worldgen.density.ColumnCacheContext;
-
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import net.kyori.adventure.key.Key;
+import rocks.minestom.worldgen.density.ColumnCacheContext;
 
 /**
- * Memoizes biome lookups per chunk column of quarts. The raw multi-noise source
- * re-walks six density-function trees per sample; terrain, surface rules, the
- * zoomer, and feature biome filters all hit the same quarts repeatedly, so one
- * cached pass per chunk mirrors vanilla reading biomes back from the chunk
- * palette instead of resampling climate.
+ * Memoizes biome lookups per chunk column of quarts. The raw multi-noise source re-walks six
+ * density-function trees per sample; terrain, surface rules, the zoomer, and feature biome filters
+ * all hit the same quarts repeatedly, so one cached pass per chunk mirrors vanilla reading biomes
+ * back from the chunk palette instead of resampling climate.
  */
 public final class CachedBiomeSource implements BiomeSource {
     private static final int MAX_CACHED_CHUNKS = 8192;
@@ -45,7 +43,8 @@ public final class CachedBiomeSource implements BiomeSource {
     }
 
     /**
-     * All quart biomes of the chunk, laid out as (localQuartX * 4 + localQuartZ) * quartHeight + (quartY - minQuartY).
+     * All quart biomes of the chunk, laid out as (localQuartX * 4 + localQuartZ) * quartHeight +
+     * (quartY - minQuartY).
      */
     public Key[] chunkColumn(int chunkX, int chunkZ) {
         var key = (long) chunkX << 32 | (chunkZ & 0xFFFFFFFFL);
@@ -81,7 +80,11 @@ public final class CachedBiomeSource implements BiomeSource {
                         var context = contexts[localX * 4 + localZ];
                         context.blockY(quartY << 2);
                         column[(localX * 4 + localZ) * this.quartHeight + yIndex] =
-                                this.source.biome(startQuartX + localX, quartY, startQuartZ + localZ, context);
+                                this.source.biome(
+                                        startQuartX + localX,
+                                        quartY,
+                                        startQuartZ + localZ,
+                                        context);
                     }
                 }
             }

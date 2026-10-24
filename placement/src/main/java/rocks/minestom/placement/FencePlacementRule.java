@@ -2,7 +2,6 @@ package rocks.minestom.placement;
 
 import net.kyori.adventure.key.Key;
 import net.minestom.server.MinecraftServer;
-import net.minestom.server.coordinate.Point;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
@@ -11,17 +10,15 @@ import org.jetbrains.annotations.Nullable;
 
 public final class FencePlacementRule extends BlockPlacementRule {
     private static final BlockFace[] HORIZONTAL_FACES = {
-            BlockFace.NORTH,
-            BlockFace.EAST,
-            BlockFace.SOUTH,
-            BlockFace.WEST
+        BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST
     };
 
     private final boolean wooden;
 
     public FencePlacementRule(Block block) {
         super(block);
-        var woodenFencesTag = MinecraftServer.process().blocks().getTag(Key.key("minecraft:wooden_fences"));
+        var woodenFencesTag =
+                MinecraftServer.process().blocks().getTag(Key.key("minecraft:wooden_fences"));
         this.wooden = woodenFencesTag != null && woodenFencesTag.contains(block);
     }
 
@@ -37,14 +34,25 @@ public final class FencePlacementRule extends BlockPlacementRule {
         var shulkerBoxesTag = blockRegistry.getTag(Key.key("minecraft:shulker_boxes"));
         var replaced = blockGetter.getBlock(placePosition);
         var waterlogged = replaced.compare(Block.WATER);
-        var result = placementState.block().withProperty("waterlogged", String.valueOf(waterlogged));
+        var result =
+                placementState.block().withProperty("waterlogged", String.valueOf(waterlogged));
 
         for (var face : HORIZONTAL_FACES) {
             var neighborPosition = placePosition.relative(face);
             var neighbor = blockGetter.getBlock(neighborPosition);
             var oppositeFace = face.getOppositeFace();
             var sturdy = neighbor.registry().collisionShape().isFaceFull(oppositeFace);
-            var connects = connectsTo(neighbor, sturdy, oppositeFace, this.wooden, fencesTag, woodenFencesTag, fenceGatesTag, leavesTag, shulkerBoxesTag);
+            var connects =
+                    connectsTo(
+                            neighbor,
+                            sturdy,
+                            oppositeFace,
+                            this.wooden,
+                            fencesTag,
+                            woodenFencesTag,
+                            fenceGatesTag,
+                            leavesTag,
+                            shulkerBoxesTag);
             result = result.withProperty(face.name().toLowerCase(), String.valueOf(connects));
         }
 
@@ -72,8 +80,20 @@ public final class FencePlacementRule extends BlockPlacementRule {
         var fenceGatesTag = blockRegistry.getTag(Key.key("minecraft:fence_gates"));
         var leavesTag = blockRegistry.getTag(Key.key("minecraft:leaves"));
         var shulkerBoxesTag = blockRegistry.getTag(Key.key("minecraft:shulker_boxes"));
-        var connects = connectsTo(neighbor, sturdy, oppositeFace, this.wooden, fencesTag, woodenFencesTag, fenceGatesTag, leavesTag, shulkerBoxesTag);
-        return updateState.currentBlock().withProperty(fromFace.name().toLowerCase(), String.valueOf(connects));
+        var connects =
+                connectsTo(
+                        neighbor,
+                        sturdy,
+                        oppositeFace,
+                        this.wooden,
+                        fencesTag,
+                        woodenFencesTag,
+                        fenceGatesTag,
+                        leavesTag,
+                        shulkerBoxesTag);
+        return updateState
+                .currentBlock()
+                .withProperty(fromFace.name().toLowerCase(), String.valueOf(connects));
     }
 
     private static boolean connectsTo(
@@ -85,8 +105,7 @@ public final class FencePlacementRule extends BlockPlacementRule {
             @Nullable RegistryTag<Block> woodenFencesTag,
             @Nullable RegistryTag<Block> fenceGatesTag,
             @Nullable RegistryTag<Block> leavesTag,
-            @Nullable RegistryTag<Block> shulkerBoxesTag
-    ) {
+            @Nullable RegistryTag<Block> shulkerBoxesTag) {
         if (fencesTag != null && fencesTag.contains(neighbor)) {
             var neighborWooden = woodenFencesTag != null && woodenFencesTag.contains(neighbor);
             return neighborWooden == selfWooden;
@@ -113,8 +132,7 @@ public final class FencePlacementRule extends BlockPlacementRule {
     private static boolean isExceptionForConnection(
             Block neighbor,
             @Nullable RegistryTag<Block> leavesTag,
-            @Nullable RegistryTag<Block> shulkerBoxesTag
-    ) {
+            @Nullable RegistryTag<Block> shulkerBoxesTag) {
         if (leavesTag != null && leavesTag.contains(neighbor)) {
             return true;
         }

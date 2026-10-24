@@ -14,8 +14,13 @@ public final class SnowyPlacementRule extends BlockPlacementRule {
 
     @Override
     public Block blockPlace(PlacementState placementState) {
-        var above = placementState.instance().getBlock(placementState.placePosition().relative(BlockFace.TOP));
-        return placementState.block().withProperty("snowy", String.valueOf(Utility.hasTag(above, SNOW_TAG)));
+        var above =
+                placementState
+                        .instance()
+                        .getBlock(placementState.placePosition().relative(BlockFace.TOP));
+        return placementState
+                .block()
+                .withProperty("snowy", String.valueOf(Utility.hasTag(above, SNOW_TAG)));
     }
 
     @Override
@@ -24,7 +29,12 @@ public final class SnowyPlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var above = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.TOP));
-        return updateState.currentBlock().withProperty("snowy", String.valueOf(Utility.hasTag(above, SNOW_TAG)));
+        var above =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.TOP));
+        return updateState
+                .currentBlock()
+                .withProperty("snowy", String.valueOf(Utility.hasTag(above, SNOW_TAG)));
     }
 }

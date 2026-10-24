@@ -20,12 +20,16 @@ public final class MossyCarpetPlacementRule extends BlockPlacementRule {
         var south = side(blockGetter, placePosition, BlockFace.SOUTH);
         var west = side(blockGetter, placePosition, BlockFace.WEST);
 
-        if (!hasBase && "none".equals(north) && "none".equals(east)
-                && "none".equals(south) && "none".equals(west)) {
+        if (!hasBase
+                && "none".equals(north)
+                && "none".equals(east)
+                && "none".equals(south)
+                && "none".equals(west)) {
             return null;
         }
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withProperty("base", String.valueOf(hasBase))
                 .withProperty("north", north)
                 .withProperty("east", east)
@@ -47,12 +51,16 @@ public final class MossyCarpetPlacementRule extends BlockPlacementRule {
         var south = side(blockGetter, blockPosition, BlockFace.SOUTH);
         var west = side(blockGetter, blockPosition, BlockFace.WEST);
 
-        if (!hasBase && "none".equals(north) && "none".equals(east)
-                && "none".equals(south) && "none".equals(west)) {
+        if (!hasBase
+                && "none".equals(north)
+                && "none".equals(east)
+                && "none".equals(south)
+                && "none".equals(west)) {
             return Block.AIR;
         }
 
-        return updateState.currentBlock()
+        return updateState
+                .currentBlock()
                 .withProperty("base", String.valueOf(hasBase))
                 .withProperty("north", north)
                 .withProperty("east", east)
@@ -76,7 +84,9 @@ public final class MossyCarpetPlacementRule extends BlockPlacementRule {
     }
 
     private static boolean isHorizontal(BlockFace face) {
-        return face == BlockFace.NORTH || face == BlockFace.SOUTH
-                || face == BlockFace.EAST || face == BlockFace.WEST;
+        return face == BlockFace.NORTH
+                || face == BlockFace.SOUTH
+                || face == BlockFace.EAST
+                || face == BlockFace.WEST;
     }
 }

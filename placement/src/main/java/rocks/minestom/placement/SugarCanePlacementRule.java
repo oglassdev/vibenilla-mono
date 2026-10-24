@@ -8,10 +8,7 @@ import net.minestom.server.instance.block.rule.BlockPlacementRule;
 
 public final class SugarCanePlacementRule extends BlockPlacementRule {
     private static final BlockFace[] HORIZONTAL_FACES = {
-            BlockFace.NORTH,
-            BlockFace.EAST,
-            BlockFace.SOUTH,
-            BlockFace.WEST
+        BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST
     };
 
     public SugarCanePlacementRule(Block block) {
@@ -31,8 +28,9 @@ public final class SugarCanePlacementRule extends BlockPlacementRule {
         var registry = MinecraftServer.process().blocks();
         var dirtTag = registry.getTag(Key.key("minecraft:dirt"));
         var sandTag = registry.getTag(Key.key("minecraft:sand"));
-        var onValidGround = (dirtTag != null && dirtTag.contains(supportBlock))
-                || (sandTag != null && sandTag.contains(supportBlock));
+        var onValidGround =
+                (dirtTag != null && dirtTag.contains(supportBlock))
+                        || (sandTag != null && sandTag.contains(supportBlock));
 
         if (!onValidGround) {
             return null;
@@ -62,8 +60,9 @@ public final class SugarCanePlacementRule extends BlockPlacementRule {
         var registry = MinecraftServer.process().blocks();
         var dirtTag = registry.getTag(Key.key("minecraft:dirt"));
         var sandTag = registry.getTag(Key.key("minecraft:sand"));
-        var onValidGround = (dirtTag != null && dirtTag.contains(below))
-                || (sandTag != null && sandTag.contains(below));
+        var onValidGround =
+                (dirtTag != null && dirtTag.contains(below))
+                        || (sandTag != null && sandTag.contains(below));
 
         if (!onValidGround) {
             return Block.AIR;

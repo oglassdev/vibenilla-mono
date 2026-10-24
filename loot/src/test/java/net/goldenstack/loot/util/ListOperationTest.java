@@ -1,16 +1,15 @@
 package net.goldenstack.loot.util;
 
-import net.minestom.server.adventure.MinestomAdventure;
-import net.minestom.server.MinecraftServer;
-import net.minestom.server.codec.Transcoder;
-import net.minestom.server.registry.RegistryTranscoder;
-import org.junit.jupiter.api.Test;
-
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.List;
+import net.minestom.server.MinecraftServer;
+import net.minestom.server.adventure.MinestomAdventure;
+import net.minestom.server.codec.Transcoder;
+import net.minestom.server.registry.RegistryTranscoder;
+import org.junit.jupiter.api.Test;
 
 class ListOperationTest {
 
@@ -25,7 +24,9 @@ class ListOperationTest {
         var append = ListOperation.CODEC.decode(transcoder, appendInput).orElseThrow();
 
         assertInstanceOf(ListOperation.Append.class, append);
-        assertThrows(IllegalArgumentException.class, () -> ListOperation.CODEC.decode(transcoder, invalidInput).orElseThrow());
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> ListOperation.CODEC.decode(transcoder, invalidInput).orElseThrow());
     }
 
     @Test

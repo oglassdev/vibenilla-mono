@@ -25,7 +25,8 @@ public final class StandingSignPlacementRule extends BlockPlacementRule {
         var replaced = instance.getBlock(placePosition);
         var waterlogged = replaced.compare(Block.WATER);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withHandler(SignBlockHandler.INSTANCE)
                 .withProperty("rotation", Integer.toString(rotation))
                 .withProperty("waterlogged", String.valueOf(waterlogged));
@@ -37,7 +38,10 @@ public final class StandingSignPlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+        var below =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
 
         if (!below.solid()) {
             return Block.AIR;

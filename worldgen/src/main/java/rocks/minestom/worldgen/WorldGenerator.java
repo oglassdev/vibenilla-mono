@@ -1,5 +1,11 @@
 package rocks.minestom.worldgen;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
@@ -25,18 +31,10 @@ import rocks.minestom.worldgen.terrain.Beardifier;
 import rocks.minestom.worldgen.terrain.TerrainData;
 import rocks.minestom.worldgen.terrain.TerrainGenerator;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-
 /**
- * Orchestrates chunk generation by filling biomes, evaluating density to place
- * base blocks and fluids, applying surface rules, and placing features.
- * This is the step that turns abstract noise and biome data into actual blocks
- * in a chunk.
+ * Orchestrates chunk generation by filling biomes, evaluating density to place base blocks and
+ * fluids, applying surface rules, and placing features. This is the step that turns abstract noise
+ * and biome data into actual blocks in a chunk.
  */
 public final class WorldGenerator implements Generator {
     private final NoiseGeneratorSettingsRuntime settings;
@@ -55,67 +53,86 @@ public final class WorldGenerator implements Generator {
     // arriving in that window must still land chronologically, so writePending
     // only switches to the live (fork) path once decoration is fully done
     private final Set<Long> fullyDecorated = java.util.concurrent.ConcurrentHashMap.newKeySet();
-    private final Map<Long, Map<Integer, Block>> pendingCrossWrites = new java.util.concurrent.ConcurrentHashMap<>();
-    private final Map<Long, List<BlockVec>> pendingFluidTicks = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Map<Long, Map<Integer, Block>> pendingCrossWrites =
+            new java.util.concurrent.ConcurrentHashMap<>();
+    private final Map<Long, List<BlockVec>> pendingFluidTicks =
+            new java.util.concurrent.ConcurrentHashMap<>();
 
-    private final GenerationUnitAdapter.TerrainLookup terrainAccess = new GenerationUnitAdapter.TerrainLookup() {
-        @Override
-        public TerrainData terrain(int chunkX, int chunkZ) {
-            return WorldGenerator.this.terrainData(chunkX, chunkZ);
-        }
+    private final GenerationUnitAdapter.TerrainLookup terrainAccess =
+            new GenerationUnitAdapter.TerrainLookup() {
+                @Override
+                public TerrainData terrain(int chunkX, int chunkZ) {
+                    return WorldGenerator.this.terrainData(chunkX, chunkZ);
+                }
 
-        @Override
-        public boolean writePending(int chunkX, int chunkZ, int bufferIndex, Block block, Block previousBlock) {
-            var key = (long) chunkX << 32 | (chunkZ & 0xFFFFFFFFL);
-            if (WorldGenerator.this.fullyDecorated.contains(key)) {
-                return false;
-            }
+                @Override
+                public boolean writePending(
+                        int chunkX, int chunkZ, int bufferIndex, Block block, Block previousBlock) {
+                    var key = (long) chunkX << 32 | (chunkZ & 0xFFFFFFFFL);
+                    if (WorldGenerator.this.fullyDecorated.contains(key)) {
+                        return false;
+                    }
 
-            // Every spill into a not-yet-decorated chunk defers to that
-            // chunk's blit: Minestom applies queued forks only after the
-            // target's whole generate pass, which would re-assert this
-            // (older) write on top of the target's own decoration. The
-            // pending queue also survives terrain cache eviction, which is
-            // what actually broke the earlier unconditional-deferral
-            // attempt (placement-style writes then lived only in the
-            // evictable buffer)
-            WorldGenerator.this.pendingCrossWrites
-                    .computeIfAbsent(key, mapKey -> new java.util.concurrent.ConcurrentHashMap<>())
-                    .put(bufferIndex, block);
-            return true;
-        }
+                    // Every spill into a not-yet-decorated chunk defers to that
+                    // chunk's blit: Minestom applies queued forks only after the
+                    // target's whole generate pass, which would re-assert this
+                    // (older) write on top of the target's own decoration. The
+                    // pending queue also survives terrain cache eviction, which is
+                    // what actually broke the earlier unconditional-deferral
+                    // attempt (placement-style writes then lived only in the
+                    // evictable buffer)
+                    WorldGenerator.this
+                            .pendingCrossWrites
+                            .computeIfAbsent(
+                                    key, mapKey -> new java.util.concurrent.ConcurrentHashMap<>())
+                            .put(bufferIndex, block);
+                    return true;
+                }
 
-        @Override
-        public Boolean decorated(int chunkX, int chunkZ) {
-            return WorldGenerator.this.fullyDecorated.contains((long) chunkX << 32 | (chunkZ & 0xFFFFFFFFL));
-        }
-    };
+                @Override
+                public Boolean decorated(int chunkX, int chunkZ) {
+                    return WorldGenerator.this.fullyDecorated.contains(
+                            (long) chunkX << 32 | (chunkZ & 0xFFFFFFFFL));
+                }
+            };
     // LRU: decoration probes neighbors, so evicting wholesale caused recompute
     // storms of the full terrain+surface+carve pipeline
-    private final Map<Long, TerrainData> terrainDataCache = java.util.Collections.synchronizedMap(
-            new java.util.LinkedHashMap<>(64, 0.75f, true) {
-                @Override
-                protected boolean removeEldestEntry(Map.Entry<Long, TerrainData> eldest) {
-                    return this.size() > MAX_CACHED_TERRAIN;
-                }
-            });
+    private final Map<Long, TerrainData> terrainDataCache =
+            java.util.Collections.synchronizedMap(
+                    new java.util.LinkedHashMap<>(64, 0.75f, true) {
+                        @Override
+                        protected boolean removeEldestEntry(Map.Entry<Long, TerrainData> eldest) {
+                            return this.size() > MAX_CACHED_TERRAIN;
+                        }
+                    });
 
-    public WorldGenerator(NoiseGeneratorSettingsRuntime settings, BiomeSource biomeSource, long biomeZoomSeed,
-            BiomeResolver biomeResolver, FeatureLoader featureLoader, StructurePlacer structurePlacer) {
+    public WorldGenerator(
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeSource biomeSource,
+            long biomeZoomSeed,
+            BiomeResolver biomeResolver,
+            FeatureLoader featureLoader,
+            StructurePlacer structurePlacer) {
         this.settings = settings;
         this.biomeSource = new CachedBiomeSource(biomeSource, settings.minY(), settings.height());
         this.biomeZoomer = new BiomeZoomer(this.biomeSource, biomeZoomSeed);
         this.biomeResolver = biomeResolver;
         this.featureLoader = featureLoader;
         this.structurePlacer = structurePlacer;
-        this.carvers = new Carvers(settings, this.biomeSource, biomeResolver, this.biomeZoomer,
-                new CarverLoader(featureLoader.dataPack(), featureLoader.blockTags()));
+        this.carvers =
+                new Carvers(
+                        settings,
+                        this.biomeSource,
+                        biomeResolver,
+                        this.biomeZoomer,
+                        new CarverLoader(featureLoader.dataPack(), featureLoader.blockTags()));
     }
 
     @Override
     public void generate(GenerationUnit unit) {
         var modifier = unit.modifier();
-        fillBiomesFromNoise(unit, this.biomeSource, this.settings.minY(), this.settings.maxYInclusive());
+        fillBiomesFromNoise(
+                unit, this.biomeSource, this.settings.minY(), this.settings.maxYInclusive());
         var startX = unit.absoluteStart().blockX();
         var startZ = unit.absoluteStart().blockZ();
         var sizeZ = unit.size().blockZ();
@@ -131,7 +148,11 @@ public final class WorldGenerator implements Generator {
         // water so the emulated single tick round preserves schedule order
         if (!terrainData.fluidTicks().isEmpty()) {
             this.pendingFluidTicks
-                    .computeIfAbsent(chunkKey, unused -> java.util.Collections.synchronizedList(new java.util.ArrayList<>()))
+                    .computeIfAbsent(
+                            chunkKey,
+                            unused ->
+                                    java.util.Collections.synchronizedList(
+                                            new java.util.ArrayList<>()))
                     .addAll(terrainData.fluidTicks());
         }
 
@@ -149,15 +170,15 @@ public final class WorldGenerator implements Generator {
         // range comes from the instance dimension and may exceed the generator
         // settings' range (nether/end terrain is 128 tall in a 256-tall world).
         var yOffset = unit.absoluteStart().blockY() - this.settings.minY();
-        modifier.setAllRelative((x, y, z) -> {
-            var terrainY = y + yOffset;
-            if (terrainY < 0 || terrainY >= height) {
-                return Block.AIR;
-            }
-            var block = terrainBlocks[(x * sizeZ + z) * height + terrainY];
-            return block != null ? block : Block.AIR;
-        });
-
+        modifier.setAllRelative(
+                (x, y, z) -> {
+                    var terrainY = y + yOffset;
+                    if (terrainY < 0 || terrainY >= height) {
+                        return Block.AIR;
+                    }
+                    var block = terrainBlocks[(x * sizeZ + z) * height + terrainY];
+                    return block != null ? block : Block.AIR;
+                });
 
         this.placeFeatures(unit, terrainData);
 
@@ -181,14 +202,14 @@ public final class WorldGenerator implements Generator {
     }
 
     /**
-     * Runs the single-round water tick emulation (see {@link WaterSpread})
-     * for every chunk whose full 3x3 neighborhood has finished decorating,
-     * mirroring vanilla's scheduled fluid ticks firing once the chunk itself
-     * is promoted to FULL and starts block-ticking.
+     * Runs the single-round water tick emulation (see {@link WaterSpread}) for every chunk whose
+     * full 3x3 neighborhood has finished decorating, mirroring vanilla's scheduled fluid ticks
+     * firing once the chunk itself is promoted to FULL and starts block-ticking.
      */
     private void flushFluidTicks(GenerationUnit unit, TerrainData terrainData) {
-        var chunkKey = (long) (unit.absoluteStart().blockX() >> 4) << 32
-                | ((unit.absoluteStart().blockZ() >> 4) & 0xFFFFFFFFL);
+        var chunkKey =
+                (long) (unit.absoluteStart().blockX() >> 4) << 32
+                        | ((unit.absoluteStart().blockZ() >> 4) & 0xFFFFFFFFL);
         java.util.Collection<Long> pendingChunks;
         var script = scriptedPostProcess();
         if (script != null) {
@@ -224,19 +245,25 @@ public final class WorldGenerator implements Generator {
                 var sizeX = unit.size().blockX();
                 var sizeZ = unit.size().blockZ();
                 var forkPadding = 128;
-                var forkStart = new BlockVec(startX - forkPadding, this.settings.minY(), startZ - forkPadding);
-                var forkEnd = new BlockVec(startX + sizeX + forkPadding, this.settings.maxYInclusive() + 1,
-                        startZ + sizeZ + forkPadding);
-                adapter = new GenerationUnitAdapter(
-                        unit.fork(forkStart, forkEnd),
-                        startX,
-                        startZ,
-                        sizeX,
-                        sizeZ,
-                        this.settings.minY(),
-                        terrainData.blocks(),
-                        this.settings.height(),
-                        this.terrainAccess);
+                var forkStart =
+                        new BlockVec(
+                                startX - forkPadding, this.settings.minY(), startZ - forkPadding);
+                var forkEnd =
+                        new BlockVec(
+                                startX + sizeX + forkPadding,
+                                this.settings.maxYInclusive() + 1,
+                                startZ + sizeZ + forkPadding);
+                adapter =
+                        new GenerationUnitAdapter(
+                                unit.fork(forkStart, forkEnd),
+                                startX,
+                                startZ,
+                                sizeX,
+                                sizeZ,
+                                this.settings.minY(),
+                                terrainData.blocks(),
+                                this.settings.height(),
+                                this.terrainAccess);
             }
 
             var pending = this.pendingFluidTicks.remove(pendingKey);
@@ -248,7 +275,8 @@ public final class WorldGenerator implements Generator {
                 // Vanilla postProcessGeneration iterates the marked positions
                 // per SECTION bottom-up (insertion order within a section);
                 // source formation cascades depend on this order.
-                positions.sort(java.util.Comparator.comparingInt(position -> position.blockY() >> 4));
+                positions.sort(
+                        java.util.Comparator.comparingInt(position -> position.blockY() >> 4));
                 for (var position : positions) {
                     WaterSpread.tick(adapter, position);
                 }
@@ -264,11 +292,10 @@ public final class WorldGenerator implements Generator {
     private static volatile boolean scriptedPostProcessLoaded;
 
     /**
-     * Optional replay script mapping each decorated chunk to the chunks
-     * vanilla post-processed (fluid ticks + marked positions) right after
-     * it, parsed from an instrumented ladder log ({@code DECO x,z} /
-     * {@code POSTPROC x,z} lines, {@code worldgen.eventScript} property).
-     * Null when no script is configured (live 3x3-neighborhood flushing).
+     * Optional replay script mapping each decorated chunk to the chunks vanilla post-processed
+     * (fluid ticks + marked positions) right after it, parsed from an instrumented ladder log
+     * ({@code DECO x,z} / {@code POSTPROC x,z} lines, {@code worldgen.eventScript} property). Null
+     * when no script is configured (live 3x3-neighborhood flushing).
      */
     private static Map<Long, List<Long>> scriptedPostProcess() {
         if (scriptedPostProcessLoaded) {
@@ -288,12 +315,15 @@ public final class WorldGenerator implements Generator {
                         if (parts.length != 3) {
                             continue;
                         }
-                        var key = (long) Integer.parseInt(parts[1]) << 32
-                                | (Integer.parseInt(parts[2]) & 0xFFFFFFFFL);
+                        var key =
+                                (long) Integer.parseInt(parts[1]) << 32
+                                        | (Integer.parseInt(parts[2]) & 0xFFFFFFFFL);
                         if (parts[0].equals("DECO")) {
                             currentDeco = key;
                         } else if (parts[0].equals("POSTPROC") && currentDeco != Long.MIN_VALUE) {
-                            script.computeIfAbsent(currentDeco, unused -> new java.util.ArrayList<>()).add(key);
+                            script.computeIfAbsent(
+                                            currentDeco, unused -> new java.util.ArrayList<>())
+                                    .add(key);
                         }
                     }
                     scriptedPostProcessCache = script;
@@ -319,10 +349,9 @@ public final class WorldGenerator implements Generator {
     }
 
     /**
-     * Replays the cross-chunk writes queued for this chunk while it was
-     * mid-decoration, translating each terrain-buffer index back into a
-     * position relative to the unit and writing it through the modifier so
-     * it lands directly on the already-blitted chunk.
+     * Replays the cross-chunk writes queued for this chunk while it was mid-decoration, translating
+     * each terrain-buffer index back into a position relative to the unit and writing it through
+     * the modifier so it lands directly on the already-blitted chunk.
      */
     private void applyLateSpillWrites(GenerationUnit unit, long chunkKey, int height) {
         var lateWrites = this.pendingCrossWrites.remove(chunkKey);
@@ -332,13 +361,13 @@ public final class WorldGenerator implements Generator {
     }
 
     /**
-     * Re-writes spilled positions through the ROOT modifier with the current
-     * buffer content. The buffer holds the chronological truth (the chunk's
-     * own decoration may have overwritten a spill - a mineshaft corridor
-     * digging through a neighbor-planted dungeon chest), and a root-modifier
+     * Re-writes spilled positions through the ROOT modifier with the current buffer content. The
+     * buffer holds the chronological truth (the chunk's own decoration may have overwritten a spill
+     * - a mineshaft corridor digging through a neighbor-planted dungeon chest), and a root-modifier
      * write also clears any stale block-entity special the blit cached.
      */
-    private void replaySpills(GenerationUnit unit, long chunkKey, int height, Map<Integer, Block> spills) {
+    private void replaySpills(
+            GenerationUnit unit, long chunkKey, int height, Map<Integer, Block> spills) {
         var minY = this.settings.minY();
         var unitStartY = unit.absoluteStart().blockY();
         var unitSizeY = unit.size().blockY();
@@ -355,14 +384,15 @@ public final class WorldGenerator implements Generator {
                 continue;
             }
             var current = buffer[bufferIndex];
-            lateModifier.setRelative(localX, localY, localZ, current != null ? current : entry.getValue());
+            lateModifier.setRelative(
+                    localX, localY, localZ, current != null ? current : entry.getValue());
         }
     }
 
     /**
-     * Debug trace for isolating lush-caves-style decoration divergences: dumps
-     * the rng seed state and a world snapshot right before a placed feature
-     * runs, in the same format {@code ChunkVegetationReplay} consumes.
+     * Debug trace for isolating lush-caves-style decoration divergences: dumps the rng seed state
+     * and a world snapshot right before a placed feature runs, in the same format {@code
+     * ChunkVegetationReplay} consumes.
      */
     private static String rngState(WorldgenRandom random) {
         try {
@@ -382,7 +412,13 @@ public final class WorldGenerator implements Generator {
         }
     }
 
-    private static void dumpDecorTrace(String key, WorldgenRandom random, GenerationUnitAdapter levelAdapter, BlockVec origin, int minY, int maxY) {
+    private static void dumpDecorTrace(
+            String key,
+            WorldgenRandom random,
+            GenerationUnitAdapter levelAdapter,
+            BlockVec origin,
+            int minY,
+            int maxY) {
         try {
             var sourceField = random.getClass().getDeclaredField("randomSource");
             sourceField.setAccessible(true);
@@ -394,7 +430,13 @@ public final class WorldGenerator implements Generator {
             var hiField = generator.getClass().getDeclaredField("seedHi");
             loField.setAccessible(true);
             hiField.setAccessible(true);
-            System.out.println("TRACE rng " + key + " " + loField.getLong(generator) + " " + hiField.getLong(generator));
+            System.out.println(
+                    "TRACE rng "
+                            + key
+                            + " "
+                            + loField.getLong(generator)
+                            + " "
+                            + hiField.getLong(generator));
         } catch (ReflectiveOperationException exception) {
             System.out.println("TRACE rng " + key + " unavailable " + exception);
         }
@@ -407,7 +449,17 @@ public final class WorldGenerator implements Generator {
                 for (var z = origin.blockZ() - reachXZ; z < origin.blockZ() + reachXZ; z++) {
                     var block = levelAdapter.getBlock(x, y, z);
                     if (!block.air()) {
-                        System.out.println("TRACE world " + key + " " + x + " " + y + " " + z + " " + serializeBlock(block));
+                        System.out.println(
+                                "TRACE world "
+                                        + key
+                                        + " "
+                                        + x
+                                        + " "
+                                        + y
+                                        + " "
+                                        + z
+                                        + " "
+                                        + serializeBlock(block));
                     }
                 }
             }
@@ -432,32 +484,42 @@ public final class WorldGenerator implements Generator {
     }
 
     /**
-     * Locates the nearest start of the given structure around a block
-     * position, scanning up to {@code radiusChunks} chunks outward, or null
-     * if none is found (or this dimension places no structures).
+     * Locates the nearest start of the given structure around a block position, scanning up to
+     * {@code radiusChunks} chunks outward, or null if none is found (or this dimension places no
+     * structures).
      */
     public BlockVec locateStructure(Key structureKey, int centerX, int centerZ, int radiusChunks) {
-        return this.locateStructure(structureKey, centerX, centerZ, radiusChunks, java.util.Set.of());
+        return this.locateStructure(
+                structureKey, centerX, centerZ, radiusChunks, java.util.Set.of());
     }
 
     /**
      * Same as {@link #locateStructure(Key, int, int, int)}, but skips any start chunk packed into
-     * {@code excludedChunkKeys} (as {@code (long) chunkX << 32 | chunkZ & 0xffffffffL}), letting callers
-     * enumerate the nearest N instances of a structure by excluding starts already found.
+     * {@code excludedChunkKeys} (as {@code (long) chunkX << 32 | chunkZ & 0xffffffffL}), letting
+     * callers enumerate the nearest N instances of a structure by excluding starts already found.
      */
-    public BlockVec locateStructure(Key structureKey, int centerX, int centerZ, int radiusChunks,
+    public BlockVec locateStructure(
+            Key structureKey,
+            int centerX,
+            int centerZ,
+            int radiusChunks,
             java.util.Set<Long> excludedChunkKeys) {
         if (this.structurePlacer == null) {
             return null;
         }
-        return this.structurePlacer.locateNearest(structureKey, centerX >> 4, centerZ >> 4, radiusChunks,
-                excludedChunkKeys, this.biomeZoomer, this.settings);
+        return this.structurePlacer.locateNearest(
+                structureKey,
+                centerX >> 4,
+                centerZ >> 4,
+                radiusChunks,
+                excludedChunkKeys,
+                this.biomeZoomer,
+                this.settings);
     }
 
     /**
-     * Applies the surface rules onto the terrain buffer, mirroring vanilla's
-     * per-column scan (fluid keeps the stone-depth-above run, air resets it;
-     * rules only replace the default block).
+     * Applies the surface rules onto the terrain buffer, mirroring vanilla's per-column scan (fluid
+     * keeps the stone-depth-above run, air resets it; rules only replace the default block).
      */
     private void applySurface(TerrainData terrainData, int chunkX, int chunkZ) {
         var surfaceRule = this.settings.surfaceRule();
@@ -479,20 +541,24 @@ public final class WorldGenerator implements Generator {
         var stoneMask = terrainData.stoneMask();
         var terrainBlocks = terrainData.blocks();
 
-        var surfaceContext = new SurfaceRules.Context(
-                this.settings.surfaceSystem(),
-                this.settings.randomState(),
-                this.biomeResolver,
-                this.biomeZoomer,
-                this.settings.preliminarySurfaceLevel(),
-                minY,
-                maxY);
+        var surfaceContext =
+                new SurfaceRules.Context(
+                        this.settings.surfaceSystem(),
+                        this.settings.randomState(),
+                        this.biomeResolver,
+                        this.biomeZoomer,
+                        this.settings.preliminarySurfaceLevel(),
+                        minY,
+                        maxY);
 
         // WORLD_SURFACE_WG equivalent: highest non-air block (solid or fluid) per column
         var worldSurfaceHeights = new int[sizeX * sizeZ];
         for (var surfaceIndex = 0; surfaceIndex < worldSurfaceHeights.length; surfaceIndex++) {
             var solidTop = surfaceHeights[surfaceIndex];
-            var fluidTop = waterHeights[surfaceIndex] == Integer.MIN_VALUE ? Integer.MIN_VALUE : waterHeights[surfaceIndex] - 1;
+            var fluidTop =
+                    waterHeights[surfaceIndex] == Integer.MIN_VALUE
+                            ? Integer.MIN_VALUE
+                            : waterHeights[surfaceIndex] - 1;
             worldSurfaceHeights[surfaceIndex] = Math.max(solidTop, fluidTop);
         }
 
@@ -533,7 +599,8 @@ public final class WorldGenerator implements Generator {
                         nextCeilingStoneY = minY;
                         for (var lookaheadY = blockY - 1; lookaheadY >= minY; lookaheadY--) {
                             var lookaheadState = stoneMask[maskIndex + lookaheadY - minY];
-                            if (lookaheadState == TerrainData.AIR || lookaheadState == TerrainData.FLUID) {
+                            if (lookaheadState == TerrainData.AIR
+                                    || lookaheadState == TerrainData.FLUID) {
                                 nextCeilingStoneY = lookaheadY + 1;
                                 break;
                             }
@@ -571,34 +638,36 @@ public final class WorldGenerator implements Generator {
         var unitMinY = unit.absoluteStart().blockY();
         var unitMaxY = unitMinY + unit.size().blockY();
         var forkStart = new BlockVec(startX - forkPadding, unitMinY, startZ - forkPadding);
-        var forkEnd = new BlockVec(startX + sizeX + forkPadding, unitMaxY,
-                startZ + sizeZ + forkPadding);
+        var forkEnd =
+                new BlockVec(startX + sizeX + forkPadding, unitMaxY, startZ + sizeZ + forkPadding);
         var featureUnit = unit.fork(forkStart, forkEnd);
-        var levelAdapter = new GenerationUnitAdapter(
-                featureUnit,
-                startX,
-                startZ,
-                sizeX,
-                sizeZ,
-                this.settings.minY(),
-                terrainData.blocks(),
-                this.settings.height(),
-                this.terrainAccess);
+        var levelAdapter =
+                new GenerationUnitAdapter(
+                        featureUnit,
+                        startX,
+                        startZ,
+                        sizeX,
+                        sizeZ,
+                        this.settings.minY(),
+                        terrainData.blocks(),
+                        this.settings.height(),
+                        this.terrainAccess);
 
-        var placementContext = new PlacementContext(
-                levelAdapter,
-                startX,
-                startZ,
-                sizeX,
-                sizeZ,
-                surfaceHeights,
-                waterHeights,
-                this.settings.minY(),
-                this.settings.maxYInclusive(),
-                this.settings.seaLevel(),
-                this.biomeZoomer,
-                null,
-                this.featureLoader);
+        var placementContext =
+                new PlacementContext(
+                        levelAdapter,
+                        startX,
+                        startZ,
+                        sizeX,
+                        sizeZ,
+                        surfaceHeights,
+                        waterHeights,
+                        this.settings.minY(),
+                        this.settings.maxYInclusive(),
+                        this.settings.seaLevel(),
+                        this.biomeZoomer,
+                        null,
+                        this.featureLoader);
 
         // Vanilla decoration: biomes from the 3x3 chunk neighborhood pick the feature
         // set; each feature is seeded from the decoration seed and its global index
@@ -606,7 +675,8 @@ public final class WorldGenerator implements Generator {
         var chunkBiomes = this.collectNeighborhoodBiomes(startX >> 4, startZ >> 4);
         var featuresPerStep = this.featureLoader.featuresPerStep(this.biomeSource.possibleBiomes());
         var random = new WorldgenRandom(new XoroshiroRandomSource(0L));
-        var decorationSeed = random.setDecorationSeed(this.settings.randomState().seed(), startX, startZ);
+        var decorationSeed =
+                random.setDecorationSeed(this.settings.randomState().seed(), startX, startZ);
         var origin = new BlockVec(startX, this.settings.minY(), startZ);
 
         // Vanilla step interleave: each decoration step places its structures
@@ -614,7 +684,13 @@ public final class WorldGenerator implements Generator {
         var totalSteps = Math.max(11, featuresPerStep.size());
         for (var stepIndex = 0; stepIndex < totalSteps; stepIndex++) {
             if (this.structurePlacer != null) {
-                this.structurePlacer.placeStructures(unit, surfaceHeights, this.biomeZoomer, this.settings, stepIndex, levelAdapter);
+                this.structurePlacer.placeStructures(
+                        unit,
+                        surfaceHeights,
+                        this.biomeZoomer,
+                        this.settings,
+                        stepIndex,
+                        levelAdapter);
             }
             if (stepIndex >= featuresPerStep.size()) {
                 continue;
@@ -651,54 +727,94 @@ public final class WorldGenerator implements Generator {
 
                 placementContext.currentFeature(placedFeatureKey);
                 var debugChunk = System.getProperty("worldgen.debugchunk");
-                var debugThis = debugChunk != null
-                        && Arrays.asList(debugChunk.split(";")).contains((startX >> 4) + "," + (startZ >> 4));
+                var debugThis =
+                        debugChunk != null
+                                && Arrays.asList(debugChunk.split(";"))
+                                        .contains((startX >> 4) + "," + (startZ >> 4));
                 var debugStep = stepIndex;
                 if (debugThis) {
-                    System.out.println("FEATSTART idx=" + featureIndex + " step=" + stepIndex
-                            + " rng=" + rngState(random) + " " + placedFeatureKey.asString());
+                    System.out.println(
+                            "FEATSTART idx="
+                                    + featureIndex
+                                    + " step="
+                                    + stepIndex
+                                    + " rng="
+                                    + rngState(random)
+                                    + " "
+                                    + placedFeatureKey.asString());
                 }
 
                 var decorTraceChunk = System.getProperty("worldgen.decorTrace", "");
                 var decorTraceFeature = System.getProperty("worldgen.decorTraceFeature", "");
-                var tracingThisFeature = decorTraceChunk.equals((startX >> 4) + "," + (startZ >> 4))
-                        && placedFeatureKey.asString().contains(decorTraceFeature);
+                var tracingThisFeature =
+                        decorTraceChunk.equals((startX >> 4) + "," + (startZ >> 4))
+                                && placedFeatureKey.asString().contains(decorTraceFeature);
                 if (tracingThisFeature) {
-                    dumpDecorTrace(placedFeatureKey.asString() + ":" + featureIndex + ":" + stepIndex, random, levelAdapter, origin,
-                            this.settings.minY(), this.settings.maxYInclusive());
+                    dumpDecorTrace(
+                            placedFeatureKey.asString() + ":" + featureIndex + ":" + stepIndex,
+                            random,
+                            levelAdapter,
+                            origin,
+                            this.settings.minY(),
+                            this.settings.maxYInclusive());
                 }
 
-                var placeRandom = tracingThisFeature ? new CountingRandomSource(random) : (RandomSource) random;
-                placedFeature.place(placementContext, placeRandom, origin, (position, featureRandom) -> {
-                    if (debugThis) {
-                        System.out.println("FEATPOS " + placedFeatureKey.asString() + " idx=" + featureIndex + " step=" + debugStep
-                                + " rng=" + rngState(random) + " pos=" + position);
-                    }
-                    // No world-bounds filter: vanilla runs features at out-of-world
-                    // origins (deep ore blobs still reach into the world, and the
-                    // shared random must consume their draws either way)
-                    var context = new FeaturePlaceContext<>(
-                            levelAdapter,
-                            featureRandom,
-                            position,
-                            configuredFeature.config(),
-                            this.settings.randomState().seed(),
-                            this.settings.minY(),
-                            this.settings.maxYInclusive(),
-                            this.settings.seaLevel());
+                var placeRandom =
+                        tracingThisFeature
+                                ? new CountingRandomSource(random)
+                                : (RandomSource) random;
+                placedFeature.place(
+                        placementContext,
+                        placeRandom,
+                        origin,
+                        (position, featureRandom) -> {
+                            if (debugThis) {
+                                System.out.println(
+                                        "FEATPOS "
+                                                + placedFeatureKey.asString()
+                                                + " idx="
+                                                + featureIndex
+                                                + " step="
+                                                + debugStep
+                                                + " rng="
+                                                + rngState(random)
+                                                + " pos="
+                                                + position);
+                            }
+                            // No world-bounds filter: vanilla runs features at out-of-world
+                            // origins (deep ore blobs still reach into the world, and the
+                            // shared random must consume their draws either way)
+                            var context =
+                                    new FeaturePlaceContext<>(
+                                            levelAdapter,
+                                            featureRandom,
+                                            position,
+                                            configuredFeature.config(),
+                                            this.settings.randomState().seed(),
+                                            this.settings.minY(),
+                                            this.settings.maxYInclusive(),
+                                            this.settings.seaLevel());
 
-                    var featureImpl = configuredFeature.feature();
-                    if (featureImpl instanceof RandomSelectorFeature randomSelector) {
-                        randomSelector.place(context, this.featureLoader);
-                    } else if (featureImpl instanceof FreezeTopLayerFeature freezeTopLayer) {
-                        freezeTopLayer.place(context, placementContext, this.biomeResolver);
-                    } else {
-                        ((Feature) featureImpl).place(context);
-                    }
-                });
+                            var featureImpl = configuredFeature.feature();
+                            if (featureImpl instanceof RandomSelectorFeature randomSelector) {
+                                randomSelector.place(context, this.featureLoader);
+                            } else if (featureImpl
+                                    instanceof FreezeTopLayerFeature freezeTopLayer) {
+                                freezeTopLayer.place(context, placementContext, this.biomeResolver);
+                            } else {
+                                ((Feature) featureImpl).place(context);
+                            }
+                        });
                 if (tracingThisFeature) {
-                    System.out.println("TRACE draws " + placedFeatureKey.asString() + ":" + featureIndex + ":" + stepIndex
-                            + " " + ((CountingRandomSource) placeRandom).count);
+                    System.out.println(
+                            "TRACE draws "
+                                    + placedFeatureKey.asString()
+                                    + ":"
+                                    + featureIndex
+                                    + ":"
+                                    + stepIndex
+                                    + " "
+                                    + ((CountingRandomSource) placeRandom).count);
                 }
             }
         }
@@ -711,20 +827,28 @@ public final class WorldGenerator implements Generator {
         // structure's canopy can reach further than the usual 16-block
         // neighbor margin from whichever chunk happens to finish it off.
         var leavesForkPadding = 128;
-        var leavesForkStart = new BlockVec(startX - leavesForkPadding, this.settings.minY(), startZ - leavesForkPadding);
-        var leavesForkEnd = new BlockVec(startX + sizeX + leavesForkPadding, this.settings.maxYInclusive() + 1,
-                startZ + sizeZ + leavesForkPadding);
+        var leavesForkStart =
+                new BlockVec(
+                        startX - leavesForkPadding,
+                        this.settings.minY(),
+                        startZ - leavesForkPadding);
+        var leavesForkEnd =
+                new BlockVec(
+                        startX + sizeX + leavesForkPadding,
+                        this.settings.maxYInclusive() + 1,
+                        startZ + sizeZ + leavesForkPadding);
         var leavesUnit = unit.fork(leavesForkStart, leavesForkEnd);
-        var leavesAdapter = new GenerationUnitAdapter(
-                leavesUnit,
-                startX,
-                startZ,
-                sizeX,
-                sizeZ,
-                this.settings.minY(),
-                terrainData.blocks(),
-                this.settings.height(),
-                this.terrainAccess);
+        var leavesAdapter =
+                new GenerationUnitAdapter(
+                        leavesUnit,
+                        startX,
+                        startZ,
+                        sizeX,
+                        sizeZ,
+                        this.settings.minY(),
+                        terrainData.blocks(),
+                        this.settings.height(),
+                        this.terrainAccess);
         StructureWrites.flushLeavesUpdates(surfaceHeights, leavesAdapter);
         if (this.structurePlacer != null) {
             this.structurePlacer.flushShapeUpdates(startX >> 4, startZ >> 4, leavesAdapter);
@@ -793,9 +917,9 @@ public final class WorldGenerator implements Generator {
     }
 
     /**
-     * Distinct biomes over the 3x3 chunk neighborhood at quart resolution,
-     * mirroring the section palettes vanilla unions for decoration. Each chunk's
-     * set is memoized since neighbors share it.
+     * Distinct biomes over the 3x3 chunk neighborhood at quart resolution, mirroring the section
+     * palettes vanilla unions for decoration. Each chunk's set is memoized since neighbors share
+     * it.
      */
     private List<Key> collectNeighborhoodBiomes(int chunkX, int chunkZ) {
         var union = new HashSet<Key>();
@@ -811,9 +935,9 @@ public final class WorldGenerator implements Generator {
     }
 
     /**
-     * Memoized pure terrain computation per chunk. Decoration probes neighbor
-     * heights (vanilla reads real neighbor chunks), so entries are shared
-     * between a chunk's own generation and its neighbors' feature passes.
+     * Memoized pure terrain computation per chunk. Decoration probes neighbor heights (vanilla
+     * reads real neighbor chunks), so entries are shared between a chunk's own generation and its
+     * neighbors' feature passes.
      */
     private TerrainData terrainData(int chunkX, int chunkZ) {
         var key = (long) chunkX << 32 | (chunkZ & 0xFFFFFFFFL);
@@ -826,9 +950,11 @@ public final class WorldGenerator implements Generator {
         // Vanilla NOISE stage: the beardifier for the chunk's structure starts
         // joins the density before the solid/air decision. Start computation
         // itself only reads un-bearded terrain, so this cannot recurse.
-        var beardifier = this.structurePlacer != null
-                ? this.structurePlacer.beardifier(chunkX, chunkZ, this.biomeZoomer, this.settings)
-                : Beardifier.EMPTY;
+        var beardifier =
+                this.structurePlacer != null
+                        ? this.structurePlacer.beardifier(
+                                chunkX, chunkZ, this.biomeZoomer, this.settings)
+                        : Beardifier.EMPTY;
         var data = generator.generate(chunkX, chunkZ, beardifier);
         this.applySurface(data, chunkX, chunkZ);
         // Vanilla chunk status order is NOISE -> SURFACE -> CARVERS; the carvers
@@ -872,7 +998,8 @@ public final class WorldGenerator implements Generator {
                 || key.asString().equals("minecraft:end_spike");
     }
 
-    private static void fillBiomesFromNoise(GenerationUnit unit, BiomeSource biomes, int minY, int maxY) {
+    private static void fillBiomesFromNoise(
+            GenerationUnit unit, BiomeSource biomes, int minY, int maxY) {
         var startX = unit.absoluteStart().blockX();
         var startZ = unit.absoluteStart().blockZ();
         var endX = startX + unit.size().blockX() - 1;
@@ -906,7 +1033,8 @@ public final class WorldGenerator implements Generator {
                     for (var dx = 0; dx < 4; dx++) {
                         for (var dy = 0; dy < 4; dy++) {
                             for (var dz = 0; dz < 4; dz++) {
-                                unit.modifier().setBiome(baseX + dx, baseY + dy, baseZ + dz, biomeKey);
+                                unit.modifier()
+                                        .setBiome(baseX + dx, baseY + dy, baseZ + dz, biomeKey);
                             }
                         }
                     }

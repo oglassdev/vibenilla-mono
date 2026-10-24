@@ -6,10 +6,7 @@ import net.minestom.server.instance.block.rule.BlockPlacementRule;
 
 public final class ScaffoldingPlacementRule extends BlockPlacementRule {
     private static final BlockFace[] HORIZONTAL_FACES = {
-            BlockFace.NORTH,
-            BlockFace.EAST,
-            BlockFace.SOUTH,
-            BlockFace.WEST
+        BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST
     };
 
     public ScaffoldingPlacementRule(Block block) {
@@ -31,7 +28,8 @@ public final class ScaffoldingPlacementRule extends BlockPlacementRule {
         var belowBlock = instance.getBlock(placePosition.relative(BlockFace.BOTTOM));
         var bottom = distance > 0 && !belowBlock.compare(this.block);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withProperty("waterlogged", waterlogged ? "true" : "false")
                 .withProperty("distance", Integer.toString(distance))
                 .withProperty("bottom", bottom ? "true" : "false");
@@ -51,8 +49,12 @@ public final class ScaffoldingPlacementRule extends BlockPlacementRule {
             return Block.AIR;
         }
 
-        var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
-        return updateState.currentBlock()
+        var below =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+        return updateState
+                .currentBlock()
                 .withProperty("distance", Integer.toString(distance))
                 .withProperty("bottom", String.valueOf(distance > 0 && !below.compare(this.block)));
     }
@@ -79,7 +81,9 @@ public final class ScaffoldingPlacementRule extends BlockPlacementRule {
             var neighborBlock = instance.getBlock(placePosition.relative(face));
 
             if (neighborBlock.compare(this.block)) {
-                distance = Math.min(distance, parseDistance(neighborBlock.getProperty("distance")) + 1);
+                distance =
+                        Math.min(
+                                distance, parseDistance(neighborBlock.getProperty("distance")) + 1);
 
                 if (distance == 1) {
                     break;
@@ -107,7 +111,9 @@ public final class ScaffoldingPlacementRule extends BlockPlacementRule {
             var neighborBlock = instance.getBlock(placePosition.relative(face));
 
             if (neighborBlock.compare(this.block)) {
-                distance = Math.min(distance, parseDistance(neighborBlock.getProperty("distance")) + 1);
+                distance =
+                        Math.min(
+                                distance, parseDistance(neighborBlock.getProperty("distance")) + 1);
             }
         }
 
@@ -115,8 +121,10 @@ public final class ScaffoldingPlacementRule extends BlockPlacementRule {
     }
 
     private static boolean isHorizontal(BlockFace face) {
-        return face == BlockFace.NORTH || face == BlockFace.SOUTH
-                || face == BlockFace.EAST || face == BlockFace.WEST;
+        return face == BlockFace.NORTH
+                || face == BlockFace.SOUTH
+                || face == BlockFace.EAST
+                || face == BlockFace.WEST;
     }
 
     private static int parseDistance(String property) {

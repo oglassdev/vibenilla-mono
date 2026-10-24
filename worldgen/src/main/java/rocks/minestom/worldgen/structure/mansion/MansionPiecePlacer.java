@@ -1,5 +1,7 @@
 package rocks.minestom.worldgen.structure.mansion;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.minestom.server.coordinate.BlockVec;
 import rocks.minestom.worldgen.feature.Direction;
 import rocks.minestom.worldgen.random.RandomSource;
@@ -7,17 +9,13 @@ import rocks.minestom.worldgen.structure.template.Mirror;
 import rocks.minestom.worldgen.structure.template.Rotation;
 import rocks.minestom.worldgen.structure.template.StructureTemplate;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * Port of vanilla {@code WoodlandMansionPieces.MansionPiecePlacer}: converts
- * a solved {@link MansionGrid} into an ordered list of
- * {@link WoodlandMansionPiece} template placements.
+ * Port of vanilla {@code WoodlandMansionPieces.MansionPiecePlacer}: converts a solved {@link
+ * MansionGrid} into an ordered list of {@link WoodlandMansionPiece} template placements.
  *
- * <p>Random call order matches vanilla exactly. This class only builds the
- * piece list (template name, position, rotation, mirror); template loading
- * and world placement are handled by {@code MansionPlacer}.
+ * <p>Random call order matches vanilla exactly. This class only builds the piece list (template
+ * name, position, rotation, mirror); template loading and world placement are handled by {@code
+ * MansionPlacer}.
  */
 final class MansionPiecePlacer {
     private final RandomSource random;
@@ -28,7 +26,8 @@ final class MansionPiecePlacer {
         this.random = random;
     }
 
-    static List<WoodlandMansionPiece> generateMansion(BlockVec origin, Rotation rotation, RandomSource random) {
+    static List<WoodlandMansionPiece> generateMansion(
+            BlockVec origin, Rotation rotation, RandomSource random) {
         var grid = new MansionGrid(random);
         var placer = new MansionPiecePlacer(random);
         var pieces = new ArrayList<WoodlandMansionPiece>();
@@ -36,7 +35,11 @@ final class MansionPiecePlacer {
         return pieces;
     }
 
-    private void createMansion(BlockVec origin, Rotation rotation, List<WoodlandMansionPiece> pieces, MansionGrid mansion) {
+    private void createMansion(
+            BlockVec origin,
+            Rotation rotation,
+            List<WoodlandMansionPiece> pieces,
+            MansionGrid mansion) {
         var data = new PlacementData();
         data.position = origin;
         data.rotation = rotation;
@@ -53,8 +56,17 @@ final class MansionPiecePlacer {
         this.startY = mansion.entranceY + 1;
         var endX = mansion.entranceX + 1;
         var endY = mansion.entranceY;
-        this.traverseOuterWalls(pieces, data, baseGrid, Direction.SOUTH, this.startX, this.startY, endX, endY);
-        this.traverseOuterWalls(pieces, secondData, baseGrid, Direction.SOUTH, this.startX, this.startY, endX, endY);
+        this.traverseOuterWalls(
+                pieces, data, baseGrid, Direction.SOUTH, this.startX, this.startY, endX, endY);
+        this.traverseOuterWalls(
+                pieces,
+                secondData,
+                baseGrid,
+                Direction.SOUTH,
+                this.startX,
+                this.startY,
+                endX,
+                endY);
         var thirdData = new PlacementData();
         thirdData.position = above(origin, 19);
         thirdData.rotation = data.rotation;
@@ -65,10 +77,19 @@ final class MansionPiecePlacer {
         for (var y = 0; y < thirdGrid.height; y++) {
             for (var x = thirdGrid.width - 1; x >= 0; x--) {
                 if (MansionGrid.isHouse(thirdGrid, x, y)) {
-                    thirdData.position = relative(thirdData.position, rotate(rotation, Direction.SOUTH), 8 + (y - this.startY) * 8);
-                    thirdData.position = relative(thirdData.position, rotate(rotation, Direction.EAST), (x - this.startX) * 8);
+                    thirdData.position =
+                            relative(
+                                    thirdData.position,
+                                    rotate(rotation, Direction.SOUTH),
+                                    8 + (y - this.startY) * 8);
+                    thirdData.position =
+                            relative(
+                                    thirdData.position,
+                                    rotate(rotation, Direction.EAST),
+                                    (x - this.startX) * 8);
                     this.traverseWallPiece(pieces, thirdData);
-                    this.traverseOuterWalls(pieces, thirdData, thirdGrid, Direction.SOUTH, x, y, x, y);
+                    this.traverseOuterWalls(
+                            pieces, thirdData, thirdGrid, Direction.SOUTH, x, y, x, y);
                     done = true;
                     break outer;
                 }
@@ -78,11 +99,12 @@ final class MansionPiecePlacer {
         this.createRoof(pieces, above(origin, 16), rotation, baseGrid, thirdGrid);
         this.createRoof(pieces, above(origin, 27), rotation, thirdGrid, null);
 
-        var roomCollections = new FloorRoomCollection[]{
-                new FloorRoomCollection.First(),
-                new FloorRoomCollection.Second(),
-                new FloorRoomCollection.Third()
-        };
+        var roomCollections =
+                new FloorRoomCollection[] {
+                    new FloorRoomCollection.First(),
+                    new FloorRoomCollection.Second(),
+                    new FloorRoomCollection.Third()
+                };
 
         for (var floorNum = 0; floorNum < 3; floorNum++) {
             var floorOrigin = above(origin, 8 * floorNum + (floorNum == 2 ? 3 : 0));
@@ -97,28 +119,47 @@ final class MansionPiecePlacer {
                         continue;
                     }
 
-                    var pos = relative(floorOrigin, rotate(rotation, Direction.SOUTH), 8 + (y - this.startY) * 8);
+                    var pos =
+                            relative(
+                                    floorOrigin,
+                                    rotate(rotation, Direction.SOUTH),
+                                    8 + (y - this.startY) * 8);
                     pos = relative(pos, rotate(rotation, Direction.EAST), (x - this.startX) * 8);
                     pieces.add(new WoodlandMansionPiece("corridor_floor", pos, rotation));
 
-                    if (grid.get(x, y - 1) == 1 || (rooms.get(x, y - 1) & MansionGrid.ROOM_CORRIDOR_FLAG) == MansionGrid.ROOM_CORRIDOR_FLAG) {
-                        pieces.add(new WoodlandMansionPiece("carpet_north",
-                                above(relative(pos, rotate(rotation, Direction.EAST), 1), 1), rotation));
+                    if (grid.get(x, y - 1) == 1
+                            || (rooms.get(x, y - 1) & MansionGrid.ROOM_CORRIDOR_FLAG)
+                                    == MansionGrid.ROOM_CORRIDOR_FLAG) {
+                        pieces.add(
+                                new WoodlandMansionPiece(
+                                        "carpet_north",
+                                        above(
+                                                relative(pos, rotate(rotation, Direction.EAST), 1),
+                                                1),
+                                        rotation));
                     }
 
-                    if (grid.get(x + 1, y) == 1 || (rooms.get(x + 1, y) & MansionGrid.ROOM_CORRIDOR_FLAG) == MansionGrid.ROOM_CORRIDOR_FLAG) {
+                    if (grid.get(x + 1, y) == 1
+                            || (rooms.get(x + 1, y) & MansionGrid.ROOM_CORRIDOR_FLAG)
+                                    == MansionGrid.ROOM_CORRIDOR_FLAG) {
                         var carpetPos = relative(pos, rotate(rotation, Direction.SOUTH), 1);
                         carpetPos = relative(carpetPos, rotate(rotation, Direction.EAST), 5);
-                        pieces.add(new WoodlandMansionPiece("carpet_east", above(carpetPos, 1), rotation));
+                        pieces.add(
+                                new WoodlandMansionPiece(
+                                        "carpet_east", above(carpetPos, 1), rotation));
                     }
 
-                    if (grid.get(x, y + 1) == 1 || (rooms.get(x, y + 1) & MansionGrid.ROOM_CORRIDOR_FLAG) == MansionGrid.ROOM_CORRIDOR_FLAG) {
+                    if (grid.get(x, y + 1) == 1
+                            || (rooms.get(x, y + 1) & MansionGrid.ROOM_CORRIDOR_FLAG)
+                                    == MansionGrid.ROOM_CORRIDOR_FLAG) {
                         var carpetPos = relative(pos, rotate(rotation, Direction.SOUTH), 5);
                         carpetPos = relative(carpetPos, rotate(rotation, Direction.WEST), 1);
                         pieces.add(new WoodlandMansionPiece(southPiece, carpetPos, rotation));
                     }
 
-                    if (grid.get(x - 1, y) == 1 || (rooms.get(x - 1, y) & MansionGrid.ROOM_CORRIDOR_FLAG) == MansionGrid.ROOM_CORRIDOR_FLAG) {
+                    if (grid.get(x - 1, y) == 1
+                            || (rooms.get(x - 1, y) & MansionGrid.ROOM_CORRIDOR_FLAG)
+                                    == MansionGrid.ROOM_CORRIDOR_FLAG) {
                         var carpetPos = relative(pos, rotate(rotation, Direction.WEST), 1);
                         carpetPos = relative(carpetPos, rotate(rotation, Direction.NORTH), 1);
                         pieces.add(new WoodlandMansionPiece(westPiece, carpetPos, rotation));
@@ -140,7 +181,10 @@ final class MansionPiecePlacer {
                     var roomData = rooms.get(x, y);
                     var roomType = roomData & 983040;
                     var roomId = roomData & 65535;
-                    thirdFloorStartRoom = thirdFloorStartRoom && (roomData & MansionGrid.ROOM_CORRIDOR_FLAG) == MansionGrid.ROOM_CORRIDOR_FLAG;
+                    thirdFloorStartRoom =
+                            thirdFloorStartRoom
+                                    && (roomData & MansionGrid.ROOM_CORRIDOR_FLAG)
+                                            == MansionGrid.ROOM_CORRIDOR_FLAG;
                     doorDirs.clear();
                     if ((roomData & MansionGrid.ROOM_DOOR_FLAG) == MansionGrid.ROOM_DOOR_FLAG) {
                         for (var direction : Direction.HORIZONTAL) {
@@ -153,48 +197,92 @@ final class MansionPiecePlacer {
                     Direction doorDir = null;
                     if (!doorDirs.isEmpty()) {
                         doorDir = doorDirs.get(this.random.nextInt(doorDirs.size()));
-                    } else if ((roomData & MansionGrid.ROOM_ORIGIN_FLAG) == MansionGrid.ROOM_ORIGIN_FLAG) {
+                    } else if ((roomData & MansionGrid.ROOM_ORIGIN_FLAG)
+                            == MansionGrid.ROOM_ORIGIN_FLAG) {
                         doorDir = Direction.UP;
                     }
 
-                    var roomPos = relative(floorOrigin, rotate(rotation, Direction.SOUTH), 8 + (y - this.startY) * 8);
-                    roomPos = relative(roomPos, rotate(rotation, Direction.EAST), -1 + (x - this.startX) * 8);
+                    var roomPos =
+                            relative(
+                                    floorOrigin,
+                                    rotate(rotation, Direction.SOUTH),
+                                    8 + (y - this.startY) * 8);
+                    roomPos =
+                            relative(
+                                    roomPos,
+                                    rotate(rotation, Direction.EAST),
+                                    -1 + (x - this.startX) * 8);
 
-                    if (MansionGrid.isHouse(grid, x - 1, y) && !mansion.isRoomId(grid, x - 1, y, floorNum, roomId)) {
-                        pieces.add(new WoodlandMansionPiece(doorDir == Direction.WEST ? doorPiece : wallPiece, roomPos, rotation));
+                    if (MansionGrid.isHouse(grid, x - 1, y)
+                            && !mansion.isRoomId(grid, x - 1, y, floorNum, roomId)) {
+                        pieces.add(
+                                new WoodlandMansionPiece(
+                                        doorDir == Direction.WEST ? doorPiece : wallPiece,
+                                        roomPos,
+                                        rotation));
                     }
 
                     if (grid.get(x + 1, y) == 1 && !thirdFloorStartRoom) {
                         var posx = relative(roomPos, rotate(rotation, Direction.EAST), 8);
-                        pieces.add(new WoodlandMansionPiece(doorDir == Direction.EAST ? doorPiece : wallPiece, posx, rotation));
+                        pieces.add(
+                                new WoodlandMansionPiece(
+                                        doorDir == Direction.EAST ? doorPiece : wallPiece,
+                                        posx,
+                                        rotation));
                     }
 
-                    if (MansionGrid.isHouse(grid, x, y + 1) && !mansion.isRoomId(grid, x, y + 1, floorNum, roomId)) {
+                    if (MansionGrid.isHouse(grid, x, y + 1)
+                            && !mansion.isRoomId(grid, x, y + 1, floorNum, roomId)) {
                         var posx = relative(roomPos, rotate(rotation, Direction.SOUTH), 7);
                         posx = relative(posx, rotate(rotation, Direction.EAST), 7);
-                        pieces.add(new WoodlandMansionPiece(doorDir == Direction.SOUTH ? doorPiece : wallPiece, posx,
-                                rotation.getRotated(Rotation.CLOCKWISE_90)));
+                        pieces.add(
+                                new WoodlandMansionPiece(
+                                        doorDir == Direction.SOUTH ? doorPiece : wallPiece,
+                                        posx,
+                                        rotation.getRotated(Rotation.CLOCKWISE_90)));
                     }
 
                     if (grid.get(x, y - 1) == 1 && !thirdFloorStartRoom) {
                         var posx = relative(roomPos, rotate(rotation, Direction.NORTH), 1);
                         posx = relative(posx, rotate(rotation, Direction.EAST), 7);
-                        pieces.add(new WoodlandMansionPiece(doorDir == Direction.NORTH ? doorPiece : wallPiece, posx,
-                                rotation.getRotated(Rotation.CLOCKWISE_90)));
+                        pieces.add(
+                                new WoodlandMansionPiece(
+                                        doorDir == Direction.NORTH ? doorPiece : wallPiece,
+                                        posx,
+                                        rotation.getRotated(Rotation.CLOCKWISE_90)));
                     }
 
                     if (roomType == MansionGrid.ROOM_1x1) {
-                        this.addRoom1x1(pieces, roomPos, rotation, doorDir, roomCollections[floorNum]);
+                        this.addRoom1x1(
+                                pieces, roomPos, rotation, doorDir, roomCollections[floorNum]);
                     } else if (roomType == MansionGrid.ROOM_1x2 && doorDir != null) {
                         var roomDir = mansion.get1x2RoomDirection(grid, x, y, floorNum, roomId);
-                        var isStairsRoom = (roomData & MansionGrid.ROOM_STAIRS_FLAG) == MansionGrid.ROOM_STAIRS_FLAG;
-                        this.addRoom1x2(pieces, roomPos, rotation, roomDir, doorDir, roomCollections[floorNum], isStairsRoom);
-                    } else if (roomType == MansionGrid.ROOM_2x2 && doorDir != null && doorDir != Direction.UP) {
+                        var isStairsRoom =
+                                (roomData & MansionGrid.ROOM_STAIRS_FLAG)
+                                        == MansionGrid.ROOM_STAIRS_FLAG;
+                        this.addRoom1x2(
+                                pieces,
+                                roomPos,
+                                rotation,
+                                roomDir,
+                                doorDir,
+                                roomCollections[floorNum],
+                                isStairsRoom);
+                    } else if (roomType == MansionGrid.ROOM_2x2
+                            && doorDir != null
+                            && doorDir != Direction.UP) {
                         var roomDir = doorDir.getClockWise();
-                        if (!mansion.isRoomId(grid, x + roomDir.stepX(), y + roomDir.stepZ(), floorNum, roomId)) {
+                        if (!mansion.isRoomId(
+                                grid, x + roomDir.stepX(), y + roomDir.stepZ(), floorNum, roomId)) {
                             roomDir = roomDir.opposite();
                         }
-                        this.addRoom2x2(pieces, roomPos, rotation, roomDir, doorDir, roomCollections[floorNum]);
+                        this.addRoom2x2(
+                                pieces,
+                                roomPos,
+                                rotation,
+                                roomDir,
+                                doorDir,
+                                roomCollections[floorNum]);
                     } else if (roomType == MansionGrid.ROOM_2x2 && doorDir == Direction.UP) {
                         this.addRoom2x2Secret(pieces, roomPos, rotation, roomCollections[floorNum]);
                     }
@@ -203,23 +291,37 @@ final class MansionPiecePlacer {
         }
     }
 
-    private void traverseOuterWalls(List<WoodlandMansionPiece> pieces, PlacementData data, MansionGrid.SimpleGrid grid,
-            Direction gridDirection, int startX, int startY, int endX, int endY) {
+    private void traverseOuterWalls(
+            List<WoodlandMansionPiece> pieces,
+            PlacementData data,
+            MansionGrid.SimpleGrid grid,
+            Direction gridDirection,
+            int startX,
+            int startY,
+            int endX,
+            int endY) {
         var gridX = startX;
         var gridY = startY;
         var startDirection = gridDirection;
 
         do {
-            if (!MansionGrid.isHouse(grid, gridX + gridDirection.stepX(), gridY + gridDirection.stepZ())) {
+            if (!MansionGrid.isHouse(
+                    grid, gridX + gridDirection.stepX(), gridY + gridDirection.stepZ())) {
                 this.traverseTurn(pieces, data);
                 gridDirection = gridDirection.getClockWise();
                 if (gridX != endX || gridY != endY || startDirection != gridDirection) {
                     this.traverseWallPiece(pieces, data);
                 }
-            } else if (MansionGrid.isHouse(grid, gridX + gridDirection.stepX(), gridY + gridDirection.stepZ())
-                    && MansionGrid.isHouse(grid,
-                            gridX + gridDirection.stepX() + gridDirection.getCounterClockWise().stepX(),
-                            gridY + gridDirection.stepZ() + gridDirection.getCounterClockWise().stepZ())) {
+            } else if (MansionGrid.isHouse(
+                            grid, gridX + gridDirection.stepX(), gridY + gridDirection.stepZ())
+                    && MansionGrid.isHouse(
+                            grid,
+                            gridX
+                                    + gridDirection.stepX()
+                                    + gridDirection.getCounterClockWise().stepX(),
+                            gridY
+                                    + gridDirection.stepZ()
+                                    + gridDirection.getCounterClockWise().stepZ())) {
                 this.traverseInnerTurn(pieces, data);
                 gridX += gridDirection.stepX();
                 gridY += gridDirection.stepZ();
@@ -234,12 +336,21 @@ final class MansionPiecePlacer {
         } while (gridX != endX || gridY != endY || startDirection != gridDirection);
     }
 
-    private void createRoof(List<WoodlandMansionPiece> pieces, BlockVec roofOrigin, Rotation rotation,
-            MansionGrid.SimpleGrid grid, MansionGrid.SimpleGrid aboveGrid) {
+    private void createRoof(
+            List<WoodlandMansionPiece> pieces,
+            BlockVec roofOrigin,
+            Rotation rotation,
+            MansionGrid.SimpleGrid grid,
+            MansionGrid.SimpleGrid aboveGrid) {
         for (var y = 0; y < grid.height; y++) {
             for (var x = 0; x < grid.width; x++) {
-                var position = relative(roofOrigin, rotate(rotation, Direction.SOUTH), 8 + (y - this.startY) * 8);
-                position = relative(position, rotate(rotation, Direction.EAST), (x - this.startX) * 8);
+                var position =
+                        relative(
+                                roofOrigin,
+                                rotate(rotation, Direction.SOUTH),
+                                8 + (y - this.startY) * 8);
+                position =
+                        relative(position, rotate(rotation, Direction.EAST), (x - this.startX) * 8);
                 var isAbove = aboveGrid != null && MansionGrid.isHouse(aboveGrid, x, y);
                 if (MansionGrid.isHouse(grid, x, y) && !isAbove) {
                     pieces.add(new WoodlandMansionPiece("roof", above(position, 3), rotation));
@@ -252,18 +363,30 @@ final class MansionPiecePlacer {
                     if (!MansionGrid.isHouse(grid, x - 1, y)) {
                         var p2 = relative(position, rotate(rotation, Direction.EAST), 0);
                         p2 = relative(p2, rotate(rotation, Direction.SOUTH), 7);
-                        pieces.add(new WoodlandMansionPiece("roof_front", p2, rotation.getRotated(Rotation.CLOCKWISE_180)));
+                        pieces.add(
+                                new WoodlandMansionPiece(
+                                        "roof_front",
+                                        p2,
+                                        rotation.getRotated(Rotation.CLOCKWISE_180)));
                     }
 
                     if (!MansionGrid.isHouse(grid, x, y - 1)) {
                         var p2 = relative(position, rotate(rotation, Direction.WEST), 1);
-                        pieces.add(new WoodlandMansionPiece("roof_front", p2, rotation.getRotated(Rotation.COUNTERCLOCKWISE_90)));
+                        pieces.add(
+                                new WoodlandMansionPiece(
+                                        "roof_front",
+                                        p2,
+                                        rotation.getRotated(Rotation.COUNTERCLOCKWISE_90)));
                     }
 
                     if (!MansionGrid.isHouse(grid, x, y + 1)) {
                         var p2 = relative(position, rotate(rotation, Direction.EAST), 6);
                         p2 = relative(p2, rotate(rotation, Direction.SOUTH), 6);
-                        pieces.add(new WoodlandMansionPiece("roof_front", p2, rotation.getRotated(Rotation.CLOCKWISE_90)));
+                        pieces.add(
+                                new WoodlandMansionPiece(
+                                        "roof_front",
+                                        p2,
+                                        rotation.getRotated(Rotation.CLOCKWISE_90)));
                     }
                 }
             }
@@ -272,8 +395,16 @@ final class MansionPiecePlacer {
         if (aboveGrid != null) {
             for (var y = 0; y < grid.height; y++) {
                 for (var x = 0; x < grid.width; x++) {
-                    var origin = relative(roofOrigin, rotate(rotation, Direction.SOUTH), 8 + (y - this.startY) * 8);
-                    origin = relative(origin, rotate(rotation, Direction.EAST), (x - this.startX) * 8);
+                    var origin =
+                            relative(
+                                    roofOrigin,
+                                    rotate(rotation, Direction.SOUTH),
+                                    8 + (y - this.startY) * 8);
+                    origin =
+                            relative(
+                                    origin,
+                                    rotate(rotation, Direction.EAST),
+                                    (x - this.startX) * 8);
                     var isAbove = MansionGrid.isHouse(aboveGrid, x, y);
                     if (MansionGrid.isHouse(grid, x, y) && isAbove) {
                         if (!MansionGrid.isHouse(grid, x + 1, y)) {
@@ -284,32 +415,50 @@ final class MansionPiecePlacer {
                         if (!MansionGrid.isHouse(grid, x - 1, y)) {
                             var p2 = relative(origin, rotate(rotation, Direction.WEST), 1);
                             p2 = relative(p2, rotate(rotation, Direction.SOUTH), 6);
-                            pieces.add(new WoodlandMansionPiece("small_wall", p2, rotation.getRotated(Rotation.CLOCKWISE_180)));
+                            pieces.add(
+                                    new WoodlandMansionPiece(
+                                            "small_wall",
+                                            p2,
+                                            rotation.getRotated(Rotation.CLOCKWISE_180)));
                         }
 
                         if (!MansionGrid.isHouse(grid, x, y - 1)) {
                             var p2 = relative(origin, rotate(rotation, Direction.WEST), 0);
                             p2 = relative(p2, rotate(rotation, Direction.NORTH), 1);
-                            pieces.add(new WoodlandMansionPiece("small_wall", p2, rotation.getRotated(Rotation.COUNTERCLOCKWISE_90)));
+                            pieces.add(
+                                    new WoodlandMansionPiece(
+                                            "small_wall",
+                                            p2,
+                                            rotation.getRotated(Rotation.COUNTERCLOCKWISE_90)));
                         }
 
                         if (!MansionGrid.isHouse(grid, x, y + 1)) {
                             var p2 = relative(origin, rotate(rotation, Direction.EAST), 6);
                             p2 = relative(p2, rotate(rotation, Direction.SOUTH), 7);
-                            pieces.add(new WoodlandMansionPiece("small_wall", p2, rotation.getRotated(Rotation.CLOCKWISE_90)));
+                            pieces.add(
+                                    new WoodlandMansionPiece(
+                                            "small_wall",
+                                            p2,
+                                            rotation.getRotated(Rotation.CLOCKWISE_90)));
                         }
 
                         if (!MansionGrid.isHouse(grid, x + 1, y)) {
                             if (!MansionGrid.isHouse(grid, x, y - 1)) {
                                 var p2 = relative(origin, rotate(rotation, Direction.EAST), 7);
                                 p2 = relative(p2, rotate(rotation, Direction.NORTH), 2);
-                                pieces.add(new WoodlandMansionPiece("small_wall_corner", p2, rotation));
+                                pieces.add(
+                                        new WoodlandMansionPiece(
+                                                "small_wall_corner", p2, rotation));
                             }
 
                             if (!MansionGrid.isHouse(grid, x, y + 1)) {
                                 var p2 = relative(origin, rotate(rotation, Direction.EAST), 8);
                                 p2 = relative(p2, rotate(rotation, Direction.SOUTH), 7);
-                                pieces.add(new WoodlandMansionPiece("small_wall_corner", p2, rotation.getRotated(Rotation.CLOCKWISE_90)));
+                                pieces.add(
+                                        new WoodlandMansionPiece(
+                                                "small_wall_corner",
+                                                p2,
+                                                rotation.getRotated(Rotation.CLOCKWISE_90)));
                             }
                         }
 
@@ -317,13 +466,21 @@ final class MansionPiecePlacer {
                             if (!MansionGrid.isHouse(grid, x, y - 1)) {
                                 var p2 = relative(origin, rotate(rotation, Direction.WEST), 2);
                                 p2 = relative(p2, rotate(rotation, Direction.NORTH), 1);
-                                pieces.add(new WoodlandMansionPiece("small_wall_corner", p2, rotation.getRotated(Rotation.COUNTERCLOCKWISE_90)));
+                                pieces.add(
+                                        new WoodlandMansionPiece(
+                                                "small_wall_corner",
+                                                p2,
+                                                rotation.getRotated(Rotation.COUNTERCLOCKWISE_90)));
                             }
 
                             if (!MansionGrid.isHouse(grid, x, y + 1)) {
                                 var p2 = relative(origin, rotate(rotation, Direction.WEST), 1);
                                 p2 = relative(p2, rotate(rotation, Direction.SOUTH), 8);
-                                pieces.add(new WoodlandMansionPiece("small_wall_corner", p2, rotation.getRotated(Rotation.CLOCKWISE_180)));
+                                pieces.add(
+                                        new WoodlandMansionPiece(
+                                                "small_wall_corner",
+                                                p2,
+                                                rotation.getRotated(Rotation.CLOCKWISE_180)));
                             }
                         }
                     }
@@ -333,7 +490,11 @@ final class MansionPiecePlacer {
 
         for (var y = 0; y < grid.height; y++) {
             for (var x = 0; x < grid.width; x++) {
-                var origin = relative(roofOrigin, rotate(rotation, Direction.SOUTH), 8 + (y - this.startY) * 8);
+                var origin =
+                        relative(
+                                roofOrigin,
+                                rotate(rotation, Direction.SOUTH),
+                                8 + (y - this.startY) * 8);
                 origin = relative(origin, rotate(rotation, Direction.EAST), (x - this.startX) * 8);
                 var isAbove = aboveGrid != null && MansionGrid.isHouse(aboveGrid, x, y);
                 if (!MansionGrid.isHouse(grid, x, y) || isAbove) {
@@ -351,11 +512,19 @@ final class MansionPiecePlacer {
                     }
 
                     if (!MansionGrid.isHouse(grid, x, y - 1)) {
-                        pieces.add(new WoodlandMansionPiece("roof_corner", p2, rotation.getRotated(Rotation.COUNTERCLOCKWISE_90)));
+                        pieces.add(
+                                new WoodlandMansionPiece(
+                                        "roof_corner",
+                                        p2,
+                                        rotation.getRotated(Rotation.COUNTERCLOCKWISE_90)));
                     } else if (MansionGrid.isHouse(grid, x + 1, y - 1)) {
                         var p3 = relative(origin, rotate(rotation, Direction.EAST), 9);
                         p3 = relative(p3, rotate(rotation, Direction.NORTH), 2);
-                        pieces.add(new WoodlandMansionPiece("roof_inner_corner", p3, rotation.getRotated(Rotation.CLOCKWISE_90)));
+                        pieces.add(
+                                new WoodlandMansionPiece(
+                                        "roof_inner_corner",
+                                        p3,
+                                        rotation.getRotated(Rotation.CLOCKWISE_90)));
                     }
                 }
 
@@ -364,18 +533,34 @@ final class MansionPiecePlacer {
                     p2 = relative(p2, rotate(rotation, Direction.SOUTH), 0);
                     if (!MansionGrid.isHouse(grid, x, y + 1)) {
                         var p3 = relative(p2, rotate(rotation, Direction.SOUTH), 6);
-                        pieces.add(new WoodlandMansionPiece("roof_corner", p3, rotation.getRotated(Rotation.CLOCKWISE_90)));
+                        pieces.add(
+                                new WoodlandMansionPiece(
+                                        "roof_corner",
+                                        p3,
+                                        rotation.getRotated(Rotation.CLOCKWISE_90)));
                     } else if (MansionGrid.isHouse(grid, x - 1, y + 1)) {
                         var p3 = relative(p2, rotate(rotation, Direction.SOUTH), 8);
                         p3 = relative(p3, rotate(rotation, Direction.WEST), 3);
-                        pieces.add(new WoodlandMansionPiece("roof_inner_corner", p3, rotation.getRotated(Rotation.COUNTERCLOCKWISE_90)));
+                        pieces.add(
+                                new WoodlandMansionPiece(
+                                        "roof_inner_corner",
+                                        p3,
+                                        rotation.getRotated(Rotation.COUNTERCLOCKWISE_90)));
                     }
 
                     if (!MansionGrid.isHouse(grid, x, y - 1)) {
-                        pieces.add(new WoodlandMansionPiece("roof_corner", p2, rotation.getRotated(Rotation.CLOCKWISE_180)));
+                        pieces.add(
+                                new WoodlandMansionPiece(
+                                        "roof_corner",
+                                        p2,
+                                        rotation.getRotated(Rotation.CLOCKWISE_180)));
                     } else if (MansionGrid.isHouse(grid, x - 1, y - 1)) {
                         var p3 = relative(p2, rotate(rotation, Direction.SOUTH), 1);
-                        pieces.add(new WoodlandMansionPiece("roof_inner_corner", p3, rotation.getRotated(Rotation.CLOCKWISE_180)));
+                        pieces.add(
+                                new WoodlandMansionPiece(
+                                        "roof_inner_corner",
+                                        p3,
+                                        rotation.getRotated(Rotation.CLOCKWISE_180)));
                     }
                 }
             }
@@ -384,12 +569,18 @@ final class MansionPiecePlacer {
 
     private void entrance(List<WoodlandMansionPiece> pieces, PlacementData data) {
         var west = rotate(data.rotation, Direction.WEST);
-        pieces.add(new WoodlandMansionPiece("entrance", relative(data.position, west, 9), data.rotation));
+        pieces.add(
+                new WoodlandMansionPiece(
+                        "entrance", relative(data.position, west, 9), data.rotation));
         data.position = relative(data.position, rotate(data.rotation, Direction.SOUTH), 16);
     }
 
     private void traverseWallPiece(List<WoodlandMansionPiece> pieces, PlacementData data) {
-        pieces.add(new WoodlandMansionPiece(data.wallType, relative(data.position, rotate(data.rotation, Direction.EAST), 7), data.rotation));
+        pieces.add(
+                new WoodlandMansionPiece(
+                        data.wallType,
+                        relative(data.position, rotate(data.rotation, Direction.EAST), 7),
+                        data.rotation));
         data.position = relative(data.position, rotate(data.rotation, Direction.SOUTH), 8);
     }
 
@@ -407,7 +598,11 @@ final class MansionPiecePlacer {
         data.rotation = data.rotation.getRotated(Rotation.COUNTERCLOCKWISE_90);
     }
 
-    private void addRoom1x1(List<WoodlandMansionPiece> pieces, BlockVec roomPos, Rotation rotation, Direction doorDir,
+    private void addRoom1x1(
+            List<WoodlandMansionPiece> pieces,
+            BlockVec roomPos,
+            Rotation rotation,
+            Direction doorDir,
             FloorRoomCollection rooms) {
         var pieceRot = Rotation.NONE;
         var roomType = rooms.get1x1(this.random);
@@ -423,70 +618,121 @@ final class MansionPiecePlacer {
             }
         }
 
-        var orientation = StructureTemplate.getZeroPositionWithTransform(
-                new BlockVec(1, 0, 0), Mirror.NONE, pieceRot, 7, 7);
+        var orientation =
+                StructureTemplate.getZeroPositionWithTransform(
+                        new BlockVec(1, 0, 0), Mirror.NONE, pieceRot, 7, 7);
         pieceRot = pieceRot.getRotated(rotation);
         orientation = rotateBlockVec(rotation, orientation);
         var pos = roomPos.add(orientation.blockX(), 0, orientation.blockZ());
         pieces.add(new WoodlandMansionPiece(roomType, pos, pieceRot));
     }
 
-    private void addRoom1x2(List<WoodlandMansionPiece> pieces, BlockVec roomPos, Rotation rotation, Direction roomDir,
-            Direction doorDir, FloorRoomCollection rooms, boolean isStairsRoom) {
+    private void addRoom1x2(
+            List<WoodlandMansionPiece> pieces,
+            BlockVec roomPos,
+            Rotation rotation,
+            Direction roomDir,
+            Direction doorDir,
+            FloorRoomCollection rooms,
+            boolean isStairsRoom) {
         if (doorDir == Direction.EAST && roomDir == Direction.SOUTH) {
             var pos = relative(roomPos, rotate(rotation, Direction.EAST), 1);
-            pieces.add(new WoodlandMansionPiece(rooms.get1x2SideEntrance(this.random, isStairsRoom), pos, rotation));
+            pieces.add(
+                    new WoodlandMansionPiece(
+                            rooms.get1x2SideEntrance(this.random, isStairsRoom), pos, rotation));
         } else if (doorDir == Direction.EAST && roomDir == Direction.NORTH) {
             var pos = relative(roomPos, rotate(rotation, Direction.EAST), 1);
             pos = relative(pos, rotate(rotation, Direction.SOUTH), 6);
-            pieces.add(new WoodlandMansionPiece(rooms.get1x2SideEntrance(this.random, isStairsRoom), pos, rotation, Mirror.LEFT_RIGHT));
+            pieces.add(
+                    new WoodlandMansionPiece(
+                            rooms.get1x2SideEntrance(this.random, isStairsRoom),
+                            pos,
+                            rotation,
+                            Mirror.LEFT_RIGHT));
         } else if (doorDir == Direction.WEST && roomDir == Direction.NORTH) {
             var pos = relative(roomPos, rotate(rotation, Direction.EAST), 7);
             pos = relative(pos, rotate(rotation, Direction.SOUTH), 6);
-            pieces.add(new WoodlandMansionPiece(rooms.get1x2SideEntrance(this.random, isStairsRoom), pos,
-                    rotation.getRotated(Rotation.CLOCKWISE_180)));
+            pieces.add(
+                    new WoodlandMansionPiece(
+                            rooms.get1x2SideEntrance(this.random, isStairsRoom),
+                            pos,
+                            rotation.getRotated(Rotation.CLOCKWISE_180)));
         } else if (doorDir == Direction.WEST && roomDir == Direction.SOUTH) {
             var pos = relative(roomPos, rotate(rotation, Direction.EAST), 7);
-            pieces.add(new WoodlandMansionPiece(rooms.get1x2SideEntrance(this.random, isStairsRoom), pos, rotation, Mirror.FRONT_BACK));
+            pieces.add(
+                    new WoodlandMansionPiece(
+                            rooms.get1x2SideEntrance(this.random, isStairsRoom),
+                            pos,
+                            rotation,
+                            Mirror.FRONT_BACK));
         } else if (doorDir == Direction.SOUTH && roomDir == Direction.EAST) {
             var pos = relative(roomPos, rotate(rotation, Direction.EAST), 1);
-            pieces.add(new WoodlandMansionPiece(rooms.get1x2SideEntrance(this.random, isStairsRoom), pos,
-                    rotation.getRotated(Rotation.CLOCKWISE_90), Mirror.LEFT_RIGHT));
+            pieces.add(
+                    new WoodlandMansionPiece(
+                            rooms.get1x2SideEntrance(this.random, isStairsRoom),
+                            pos,
+                            rotation.getRotated(Rotation.CLOCKWISE_90),
+                            Mirror.LEFT_RIGHT));
         } else if (doorDir == Direction.SOUTH && roomDir == Direction.WEST) {
             var pos = relative(roomPos, rotate(rotation, Direction.EAST), 7);
-            pieces.add(new WoodlandMansionPiece(rooms.get1x2SideEntrance(this.random, isStairsRoom), pos,
-                    rotation.getRotated(Rotation.CLOCKWISE_90)));
+            pieces.add(
+                    new WoodlandMansionPiece(
+                            rooms.get1x2SideEntrance(this.random, isStairsRoom),
+                            pos,
+                            rotation.getRotated(Rotation.CLOCKWISE_90)));
         } else if (doorDir == Direction.NORTH && roomDir == Direction.WEST) {
             var pos = relative(roomPos, rotate(rotation, Direction.EAST), 7);
             pos = relative(pos, rotate(rotation, Direction.SOUTH), 6);
-            pieces.add(new WoodlandMansionPiece(rooms.get1x2SideEntrance(this.random, isStairsRoom), pos,
-                    rotation.getRotated(Rotation.CLOCKWISE_90), Mirror.FRONT_BACK));
+            pieces.add(
+                    new WoodlandMansionPiece(
+                            rooms.get1x2SideEntrance(this.random, isStairsRoom),
+                            pos,
+                            rotation.getRotated(Rotation.CLOCKWISE_90),
+                            Mirror.FRONT_BACK));
         } else if (doorDir == Direction.NORTH && roomDir == Direction.EAST) {
             var pos = relative(roomPos, rotate(rotation, Direction.EAST), 1);
             pos = relative(pos, rotate(rotation, Direction.SOUTH), 6);
-            pieces.add(new WoodlandMansionPiece(rooms.get1x2SideEntrance(this.random, isStairsRoom), pos,
-                    rotation.getRotated(Rotation.COUNTERCLOCKWISE_90)));
+            pieces.add(
+                    new WoodlandMansionPiece(
+                            rooms.get1x2SideEntrance(this.random, isStairsRoom),
+                            pos,
+                            rotation.getRotated(Rotation.COUNTERCLOCKWISE_90)));
         } else if (doorDir == Direction.SOUTH && roomDir == Direction.NORTH) {
             var pos = relative(roomPos, rotate(rotation, Direction.EAST), 1);
             pos = relative(pos, rotate(rotation, Direction.NORTH), 8);
-            pieces.add(new WoodlandMansionPiece(rooms.get1x2FrontEntrance(this.random, isStairsRoom), pos, rotation));
+            pieces.add(
+                    new WoodlandMansionPiece(
+                            rooms.get1x2FrontEntrance(this.random, isStairsRoom), pos, rotation));
         } else if (doorDir == Direction.NORTH && roomDir == Direction.SOUTH) {
             var pos = relative(roomPos, rotate(rotation, Direction.EAST), 7);
             pos = relative(pos, rotate(rotation, Direction.SOUTH), 14);
-            pieces.add(new WoodlandMansionPiece(rooms.get1x2FrontEntrance(this.random, isStairsRoom), pos,
-                    rotation.getRotated(Rotation.CLOCKWISE_180)));
+            pieces.add(
+                    new WoodlandMansionPiece(
+                            rooms.get1x2FrontEntrance(this.random, isStairsRoom),
+                            pos,
+                            rotation.getRotated(Rotation.CLOCKWISE_180)));
         } else if (doorDir == Direction.WEST && roomDir == Direction.EAST) {
             var pos = relative(roomPos, rotate(rotation, Direction.EAST), 15);
-            pieces.add(new WoodlandMansionPiece(rooms.get1x2FrontEntrance(this.random, isStairsRoom), pos,
-                    rotation.getRotated(Rotation.CLOCKWISE_90)));
+            pieces.add(
+                    new WoodlandMansionPiece(
+                            rooms.get1x2FrontEntrance(this.random, isStairsRoom),
+                            pos,
+                            rotation.getRotated(Rotation.CLOCKWISE_90)));
         } else if (doorDir == Direction.EAST && roomDir == Direction.WEST) {
             var pos = relative(roomPos, rotate(rotation, Direction.WEST), 7);
             pos = relative(pos, rotate(rotation, Direction.SOUTH), 6);
-            pieces.add(new WoodlandMansionPiece(rooms.get1x2FrontEntrance(this.random, isStairsRoom), pos,
-                    rotation.getRotated(Rotation.COUNTERCLOCKWISE_90)));
+            pieces.add(
+                    new WoodlandMansionPiece(
+                            rooms.get1x2FrontEntrance(this.random, isStairsRoom),
+                            pos,
+                            rotation.getRotated(Rotation.COUNTERCLOCKWISE_90)));
         } else if (doorDir == Direction.UP && roomDir == Direction.EAST) {
             var pos = relative(roomPos, rotate(rotation, Direction.EAST), 15);
-            pieces.add(new WoodlandMansionPiece(rooms.get1x2Secret(this.random), pos, rotation.getRotated(Rotation.CLOCKWISE_90)));
+            pieces.add(
+                    new WoodlandMansionPiece(
+                            rooms.get1x2Secret(this.random),
+                            pos,
+                            rotation.getRotated(Rotation.CLOCKWISE_90)));
         } else if (doorDir == Direction.UP && roomDir == Direction.SOUTH) {
             var pos = relative(roomPos, rotate(rotation, Direction.EAST), 1);
             pos = relative(pos, rotate(rotation, Direction.NORTH), 0);
@@ -494,8 +740,13 @@ final class MansionPiecePlacer {
         }
     }
 
-    private void addRoom2x2(List<WoodlandMansionPiece> pieces, BlockVec roomPos, Rotation rotation, Direction roomDir,
-            Direction doorDir, FloorRoomCollection rooms) {
+    private void addRoom2x2(
+            List<WoodlandMansionPiece> pieces,
+            BlockVec roomPos,
+            Rotation rotation,
+            Direction roomDir,
+            Direction doorDir,
+            FloorRoomCollection rooms) {
         var east = 0;
         var south = 0;
         var rot = rotation;
@@ -538,12 +789,20 @@ final class MansionPiecePlacer {
         pieces.add(new WoodlandMansionPiece(rooms.get2x2(this.random), pos, rot, mirror));
     }
 
-    private void addRoom2x2Secret(List<WoodlandMansionPiece> pieces, BlockVec roomPos, Rotation rotation, FloorRoomCollection rooms) {
+    private void addRoom2x2Secret(
+            List<WoodlandMansionPiece> pieces,
+            BlockVec roomPos,
+            Rotation rotation,
+            FloorRoomCollection rooms) {
         var pos = relative(roomPos, rotate(rotation, Direction.EAST), 1);
-        pieces.add(new WoodlandMansionPiece(rooms.get2x2Secret(this.random), pos, rotation, Mirror.NONE));
+        pieces.add(
+                new WoodlandMansionPiece(
+                        rooms.get2x2Secret(this.random), pos, rotation, Mirror.NONE));
     }
 
-    /** Vanilla {@code Rotation.rotate(Direction)} applied to the feature-package {@link Direction}. */
+    /**
+     * Vanilla {@code Rotation.rotate(Direction)} applied to the feature-package {@link Direction}.
+     */
     private static Direction rotate(Rotation rotation, Direction direction) {
         if (direction.stepY() != 0) {
             return direction;
@@ -561,7 +820,10 @@ final class MansionPiecePlacer {
     }
 
     private static BlockVec relative(BlockVec position, Direction direction, int distance) {
-        return position.add(direction.stepX() * distance, direction.stepY() * distance, direction.stepZ() * distance);
+        return position.add(
+                direction.stepX() * distance,
+                direction.stepY() * distance,
+                direction.stepZ() * distance);
     }
 
     private static BlockVec above(BlockVec position, int distance) {

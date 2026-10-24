@@ -5,11 +5,11 @@ import io.github.togar2.pvp.utils.ChunkBlockGetter;
 import io.github.togar2.pvp.utils.CollisionUtil;
 import io.github.togar2.pvp.utils.FluidUtil;
 import io.github.togar2.pvp.utils.ProjectileUtil;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
 import net.minestom.server.ServerFlag;
 import net.minestom.server.collision.Aerodynamics;
 import net.minestom.server.collision.BoundingBox;
-import net.minestom.server.collision.EntityCollisionResult;
-import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
@@ -19,16 +19,10 @@ import net.minestom.server.event.EventDispatcher;
 import net.minestom.server.event.entity.projectile.ProjectileCollideWithBlockEvent;
 import net.minestom.server.event.entity.projectile.ProjectileCollideWithEntityEvent;
 import net.minestom.server.event.entity.projectile.ProjectileUncollideEvent;
-import net.minestom.server.instance.Chunk;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.network.packet.server.play.EntityTeleportPacket;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Collection;
-import java.util.Random;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class CustomEntityProjectile extends Entity {
     private static final BoundingBox POINT_BOX = new BoundingBox(0, 0, 0);
@@ -78,9 +72,7 @@ public class CustomEntityProjectile extends Entity {
         return this.onStuck();
     }
 
-    public void onUnstuck() {
-
-    }
+    public void onUnstuck() {}
 
     public boolean onHit(Entity entity) {
         return false;
@@ -97,7 +89,8 @@ public class CustomEntityProjectile extends Entity {
         this.shoot(from, to, power, spread);
     }
 
-    public void shootFromRotation(float pitch, float yaw, float yBias, double power, double spread) {
+    public void shootFromRotation(
+            float pitch, float yaw, float yBias, double power, double spread) {
         var dx = -Math.sin(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch));
         var dy = -Math.sin(Math.toRadians(pitch + yBias));
         var dz = Math.cos(Math.toRadians(yaw)) * Math.cos(Math.toRadians(pitch));
@@ -120,8 +113,7 @@ public class CustomEntityProjectile extends Entity {
         this.velocity = new Vec(dx * velocityScale, dy * velocityScale, dz * velocityScale);
         this.setView(
                 (float) Math.toDegrees(Math.atan2(dx, dz)),
-                (float) Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)))
-        );
+                (float) Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz))));
     }
 
     private void shoot(@NotNull Pos from, @NotNull Point to, double power, double spread) {
@@ -172,11 +164,13 @@ public class CustomEntityProjectile extends Entity {
         var blockGetter = new ChunkBlockGetter(this.instance, this.currentChunk, Block.STONE);
         var block = blockGetter.getBlock(collidedPoint);
 
-        return !block.collisionShape().intersectBox(collidedPoint.sub(collidedBlockVec).sub(0, 0.6, 0), UNSTUCK_BOX);
+        return !block.collisionShape()
+                .intersectBox(collidedPoint.sub(collidedBlockVec).sub(0, 0.6, 0), UNSTUCK_BOX);
     }
 
     protected boolean canHit(Entity entity) {
-        return entity instanceof LivingEntity && !(entity instanceof Player player && player.getGameMode() == GameMode.SPECTATOR);
+        return entity instanceof LivingEntity
+                && !(entity instanceof Player player && player.getGameMode() == GameMode.SPECTATOR);
     }
 
     @Override
@@ -207,8 +201,16 @@ public class CustomEntityProjectile extends Entity {
             }
 
             var blockGetter = new ChunkBlockGetter(this.instance, this.currentChunk, Block.AIR);
-            var physicsResult = ProjectileUtil.simulateMovement(this.position, diff, POINT_BOX,
-                    this.instance.getWorldBorder(), blockGetter, this.hasPhysics, this.previousPhysicsResult, true);
+            var physicsResult =
+                    ProjectileUtil.simulateMovement(
+                            this.position,
+                            diff,
+                            POINT_BOX,
+                            this.instance.getWorldBorder(),
+                            blockGetter,
+                            this.hasPhysics,
+                            this.previousPhysicsResult,
+                            true);
             this.previousPhysicsResult = physicsResult;
 
             var newPosition = physicsResult.newPosition();
@@ -217,21 +219,37 @@ public class CustomEntityProjectile extends Entity {
                 var noCollideShooter = this.getAliveTicks() < 6;
 
                 var margin = this.computeMargin();
-                var sweepBox = margin > 0.0F ? new BoundingBox(margin * 2.0, margin * 2.0, margin * 2.0) : POINT_BOX;
-                var entityResult = CollisionUtil.checkEntityCollisions(this.instance, sweepBox,
-                        this.position.sub(0.0, margin, 0.0), diff, 3, e -> {
-                            if ((noCollideShooter || !this.leftOwner) && e == this.shooter) return false;
-                            return e != this && this.canHit(e);
-                        }, physicsResult);
+                var sweepBox =
+                        margin > 0.0F
+                                ? new BoundingBox(margin * 2.0, margin * 2.0, margin * 2.0)
+                                : POINT_BOX;
+                var entityResult =
+                        CollisionUtil.checkEntityCollisions(
+                                this.instance,
+                                sweepBox,
+                                this.position.sub(0.0, margin, 0.0),
+                                diff,
+                                3,
+                                e -> {
+                                    if ((noCollideShooter || !this.leftOwner) && e == this.shooter)
+                                        return false;
+                                    return e != this && this.canHit(e);
+                                },
+                                physicsResult);
 
                 for (var collided : entityResult.stream().sorted().toList()) {
                     var prevVelocity = this.velocity;
 
-                    var event = new ProjectileCollideWithEntityEvent(this, collided.collisionPoint().asPos(), collided.entity());
+                    var event =
+                            new ProjectileCollideWithEntityEvent(
+                                    this, collided.collisionPoint().asPos(), collided.entity());
                     EventDispatcher.call(event);
                     if (event.isCancelled()) continue;
 
-                    this.refreshPosition(this.position.withCoord(collided.collisionPoint()), this.noClip, this.isStuck());
+                    this.refreshPosition(
+                            this.position.withCoord(collided.collisionPoint()),
+                            this.noClip,
+                            this.isStuck());
 
                     if (this.onHit(collided.entity())) {
                         this.scheduler().scheduleNextProcess(this::remove);
@@ -239,7 +257,9 @@ public class CustomEntityProjectile extends Entity {
                     }
 
                     if (this.velocity != prevVelocity) {
-                        newPosition = this.position.add(this.velocity.div(ServerFlag.SERVER_TICKS_PER_SECOND));
+                        newPosition =
+                                this.position.add(
+                                        this.velocity.div(ServerFlag.SERVER_TICKS_PER_SECOND));
                         break;
                     }
                 }
@@ -254,16 +274,26 @@ public class CustomEntityProjectile extends Entity {
                 var signumZ = physicsResult.collisionZ() ? Math.signum(this.velocity.z()) : 0;
                 var collisionDirection = new Vec(signumX, signumY, signumZ);
 
-                var collidedPosition = collisionDirection.add(physicsResult.newPosition()).apply(Vec.Operator.FLOOR);
+                var collidedPosition =
+                        collisionDirection
+                                .add(physicsResult.newPosition())
+                                .apply(Vec.Operator.FLOOR);
                 var block = this.instance.getBlock(collidedPosition);
 
-                var event = new ProjectileCollideWithBlockEvent(this, physicsResult.newPosition().withCoord(collidedPosition), block);
+                var event =
+                        new ProjectileCollideWithBlockEvent(
+                                this,
+                                physicsResult.newPosition().withCoord(collidedPosition),
+                                block);
                 EventDispatcher.call(event);
                 if (!event.isCancelled()) {
                     this.setNoGravity(true);
                     this.setVelocity(Vec.ZERO);
                     this.collisionDirection = collisionDirection;
-                    this.refreshPosition(this.position.withCoord(physicsResult.newPosition()), this.noClip, false);
+                    this.refreshPosition(
+                            this.position.withCoord(physicsResult.newPosition()),
+                            this.noClip,
+                            false);
 
                     if (this.onStuck(event)) {
                         this.scheduler().scheduleNextProcess(this::remove);
@@ -275,8 +305,12 @@ public class CustomEntityProjectile extends Entity {
 
             var yawSign = this.noClip ? -1.0 : 1.0;
             var yaw = (float) Math.toDegrees(Math.atan2(yawSign * diff.x(), yawSign * diff.z()));
-            var pitch = (float) Math.toDegrees(
-                    Math.atan2(diff.y(), Math.sqrt(diff.x() * diff.x() + diff.z() * diff.z())));
+            var pitch =
+                    (float)
+                            Math.toDegrees(
+                                    Math.atan2(
+                                            diff.y(),
+                                            Math.sqrt(diff.x() * diff.x() + diff.z() * diff.z())));
 
             yaw = Pos.fixYaw(lerpRotation(this.prevYaw, yaw));
             pitch = lerpRotation(this.prevPitch, pitch);
@@ -287,8 +321,13 @@ public class CustomEntityProjectile extends Entity {
             this.refreshPosition(newPosition.withView(yaw, pitch), false, this.isStuck());
 
             if (this.isStuck()) {
-                this.sendPacketToViewers(new EntityTeleportPacket(this.getEntityId(), this.position,
-                        Vec.ZERO, RelativeFlags.DELTA_COORD, this.isOnGround()));
+                this.sendPacketToViewers(
+                        new EntityTeleportPacket(
+                                this.getEntityId(),
+                                this.position,
+                                Vec.ZERO,
+                                RelativeFlags.DELTA_COORD,
+                                this.isOnGround()));
             }
 
             if (!this.shouldUpdateVelocityBeforeMovement()) {
@@ -300,11 +339,19 @@ public class CustomEntityProjectile extends Entity {
     private void updateVelocityBeforeMovement() {
         var aerodynamics = this.getAerodynamics();
         var touchingWater = FluidUtil.isTouchingWater(this);
-        var horizontalInertia = touchingWater ? this.getWaterInertia() : aerodynamics.horizontalAirResistance();
-        var verticalInertia = touchingWater ? this.getWaterInertia() : aerodynamics.verticalAirResistance();
-        var gravity = this.hasNoGravity() ? 0.0 : aerodynamics.gravity() * ServerFlag.SERVER_TICKS_PER_SECOND;
+        var horizontalInertia =
+                touchingWater ? this.getWaterInertia() : aerodynamics.horizontalAirResistance();
+        var verticalInertia =
+                touchingWater ? this.getWaterInertia() : aerodynamics.verticalAirResistance();
+        var gravity =
+                this.hasNoGravity()
+                        ? 0.0
+                        : aerodynamics.gravity() * ServerFlag.SERVER_TICKS_PER_SECOND;
 
-        this.velocity = this.velocity.sub(0.0, gravity, 0.0).mul(horizontalInertia, verticalInertia, horizontalInertia);
+        this.velocity =
+                this.velocity
+                        .sub(0.0, gravity, 0.0)
+                        .mul(horizontalInertia, verticalInertia, horizontalInertia);
     }
 
     private void updateVelocityAfterMovement() {
@@ -313,11 +360,19 @@ public class CustomEntityProjectile extends Entity {
         }
 
         var aerodynamics = this.getAerodynamics();
-        this.velocity = this.velocity.mul(
-                aerodynamics.horizontalAirResistance(),
-                aerodynamics.verticalAirResistance(),
-                aerodynamics.horizontalAirResistance()
-        ).sub(0.0, this.hasNoGravity() ? 0.0 : aerodynamics.gravity() * ServerFlag.SERVER_TICKS_PER_SECOND, 0.0);
+        this.velocity =
+                this.velocity
+                        .mul(
+                                aerodynamics.horizontalAirResistance(),
+                                aerodynamics.verticalAirResistance(),
+                                aerodynamics.horizontalAirResistance())
+                        .sub(
+                                0.0,
+                                this.hasNoGravity()
+                                        ? 0.0
+                                        : aerodynamics.gravity()
+                                                * ServerFlag.SERVER_TICKS_PER_SECOND,
+                                0.0);
     }
 
     private void checkLeftOwner(Vec movement) {
@@ -334,12 +389,36 @@ public class CustomEntityProjectile extends Entity {
         var projectileBox = this.getBoundingBox();
         var nextPosition = this.position.add(movement);
 
-        var minX = Math.min(this.position.x() + projectileBox.minX(), nextPosition.x() + projectileBox.minX()) - 1.0;
-        var maxX = Math.max(this.position.x() + projectileBox.maxX(), nextPosition.x() + projectileBox.maxX()) + 1.0;
-        var minY = Math.min(this.position.y() + projectileBox.minY(), nextPosition.y() + projectileBox.minY()) - 1.0;
-        var maxY = Math.max(this.position.y() + projectileBox.maxY(), nextPosition.y() + projectileBox.maxY()) + 1.0;
-        var minZ = Math.min(this.position.z() + projectileBox.minZ(), nextPosition.z() + projectileBox.minZ()) - 1.0;
-        var maxZ = Math.max(this.position.z() + projectileBox.maxZ(), nextPosition.z() + projectileBox.maxZ()) + 1.0;
+        var minX =
+                Math.min(
+                                this.position.x() + projectileBox.minX(),
+                                nextPosition.x() + projectileBox.minX())
+                        - 1.0;
+        var maxX =
+                Math.max(
+                                this.position.x() + projectileBox.maxX(),
+                                nextPosition.x() + projectileBox.maxX())
+                        + 1.0;
+        var minY =
+                Math.min(
+                                this.position.y() + projectileBox.minY(),
+                                nextPosition.y() + projectileBox.minY())
+                        - 1.0;
+        var maxY =
+                Math.max(
+                                this.position.y() + projectileBox.maxY(),
+                                nextPosition.y() + projectileBox.maxY())
+                        + 1.0;
+        var minZ =
+                Math.min(
+                                this.position.z() + projectileBox.minZ(),
+                                nextPosition.z() + projectileBox.minZ())
+                        - 1.0;
+        var maxZ =
+                Math.max(
+                                this.position.z() + projectileBox.maxZ(),
+                                nextPosition.z() + projectileBox.maxZ())
+                        + 1.0;
 
         return maxX < ownerPosition.x() + ownerBox.minX()
                 || minX > ownerPosition.x() + ownerBox.maxX()

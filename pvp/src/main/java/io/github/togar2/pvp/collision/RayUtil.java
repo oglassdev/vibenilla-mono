@@ -7,23 +7,49 @@ import org.jetbrains.annotations.Nullable;
 public final class RayUtil {
     private RayUtil() {}
 
-    public static boolean checkIntersection(BoundingBox movingBoundingBox, Point rayStart, Point rayDirection,
-                                            BoundingBox staticBoundingBox, Point staticOffset,
-                                            SweepResult finalResult) {
-        return !Double.isNaN(intersectionPercentage(movingBoundingBox, rayStart, rayDirection,
-                staticBoundingBox, staticOffset, finalResult.result, finalResult));
+    public static boolean checkIntersection(
+            BoundingBox movingBoundingBox,
+            Point rayStart,
+            Point rayDirection,
+            BoundingBox staticBoundingBox,
+            Point staticOffset,
+            SweepResult finalResult) {
+        return !Double.isNaN(
+                intersectionPercentage(
+                        movingBoundingBox,
+                        rayStart,
+                        rayDirection,
+                        staticBoundingBox,
+                        staticOffset,
+                        finalResult.result,
+                        finalResult));
     }
 
-    public static double intersectionPercentage(BoundingBox movingBoundingBox, Point rayStart, Point rayDirection,
-                                                BoundingBox staticBoundingBox, Point staticOffset,
-                                                double maxPercentage) {
-        return intersectionPercentage(movingBoundingBox, rayStart, rayDirection,
-                staticBoundingBox, staticOffset, maxPercentage, null);
+    public static double intersectionPercentage(
+            BoundingBox movingBoundingBox,
+            Point rayStart,
+            Point rayDirection,
+            BoundingBox staticBoundingBox,
+            Point staticOffset,
+            double maxPercentage) {
+        return intersectionPercentage(
+                movingBoundingBox,
+                rayStart,
+                rayDirection,
+                staticBoundingBox,
+                staticOffset,
+                maxPercentage,
+                null);
     }
 
-    private static double intersectionPercentage(BoundingBox movingBoundingBox, Point rayStart, Point rayDirection,
-                                                 BoundingBox staticBoundingBox, Point staticOffset,
-                                                 double maxPercentage, @Nullable SweepResult finalResult) {
+    private static double intersectionPercentage(
+            BoundingBox movingBoundingBox,
+            Point rayStart,
+            Point rayDirection,
+            BoundingBox staticBoundingBox,
+            Point staticOffset,
+            double maxPercentage,
+            @Nullable SweepResult finalResult) {
         var halfWidth = movingBoundingBox.width() / 2;
         var halfHeight = movingBoundingBox.height() / 2;
         var halfDepth = movingBoundingBox.depth() / 2;
@@ -101,7 +127,8 @@ public final class RayUtil {
             collisionFace = 2;
         }
 
-        if (percentage > Math.min(exitX, Math.min(exitY, exitZ)) || percentage < 0) return Double.NaN;
+        if (percentage > Math.min(exitX, Math.min(exitY, exitZ)) || percentage < 0)
+            return Double.NaN;
 
         percentage *= 0.99999;
 

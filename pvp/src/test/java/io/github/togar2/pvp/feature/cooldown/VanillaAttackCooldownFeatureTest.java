@@ -1,28 +1,28 @@
 package io.github.togar2.pvp.feature.cooldown;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.github.togar2.pvp.feature.CombatFeatures;
 import io.github.togar2.pvp.feature.FeatureType;
 import io.github.togar2.pvp.utils.CombatVersion;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.coordinate.Pos;
-import net.minestom.server.event.EventNode;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 @EnvTest
 public final class VanillaAttackCooldownFeatureTest {
     @Test
     public void mainHandItemTypeChangeResetsCooldown(Env env) {
-        var featureSet = CombatFeatures.empty()
-                .version(CombatVersion.MODERN)
-                .add(CombatFeatures.VANILLA_ATTACK_COOLDOWN)
-                .build();
+        var featureSet =
+                CombatFeatures.empty()
+                        .version(CombatVersion.MODERN)
+                        .add(CombatFeatures.VANILLA_ATTACK_COOLDOWN)
+                        .build();
         var cooldownFeature = featureSet.get(FeatureType.ATTACK_COOLDOWN);
         var node = featureSet.createNode();
         MinecraftServer.getGlobalEventHandler().addChild(node);
@@ -49,10 +49,11 @@ public final class VanillaAttackCooldownFeatureTest {
 
     @Test
     public void sameItemTypeWithDifferentComponentsKeepsCooldown(Env env) {
-        var featureSet = CombatFeatures.empty()
-                .version(CombatVersion.MODERN)
-                .add(CombatFeatures.VANILLA_ATTACK_COOLDOWN)
-                .build();
+        var featureSet =
+                CombatFeatures.empty()
+                        .version(CombatVersion.MODERN)
+                        .add(CombatFeatures.VANILLA_ATTACK_COOLDOWN)
+                        .build();
         var cooldownFeature = featureSet.get(FeatureType.ATTACK_COOLDOWN);
         var node = featureSet.createNode();
         MinecraftServer.getGlobalEventHandler().addChild(node);
@@ -67,7 +68,8 @@ public final class VanillaAttackCooldownFeatureTest {
             for (var tick = 0; tick < 10; tick++) env.tick();
             var progressBefore = cooldownFeature.getAttackCooldownProgress(player);
 
-            player.setItemInMainHand(ItemStack.of(Material.DIAMOND_SWORD).with(DataComponents.DAMAGE, 10));
+            player.setItemInMainHand(
+                    ItemStack.of(Material.DIAMOND_SWORD).with(DataComponents.DAMAGE, 10));
             env.tick();
 
             assertTrue(cooldownFeature.getAttackCooldownProgress(player) > progressBefore);
@@ -75,5 +77,4 @@ public final class VanillaAttackCooldownFeatureTest {
             MinecraftServer.getGlobalEventHandler().removeChild(node);
         }
     }
-
 }

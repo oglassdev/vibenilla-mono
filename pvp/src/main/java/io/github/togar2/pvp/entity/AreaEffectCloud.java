@@ -1,6 +1,10 @@
 package io.github.togar2.pvp.entity;
 
 import io.github.togar2.pvp.feature.effect.EffectFeature;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import net.minestom.server.collision.Aerodynamics;
 import net.minestom.server.collision.BoundingBox;
 import net.minestom.server.color.AlphaColor;
@@ -16,15 +20,11 @@ import net.minestom.server.item.component.PotionContents;
 import net.minestom.server.particle.Particle;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 public final class AreaEffectCloud extends Entity {
     private static final float MAX_RADIUS = 32.0F;
     private static final float MIN_RADIUS = 0.5F;
-    private static final Particle.EntityEffect DEFAULT_PARTICLE = Particle.ENTITY_EFFECT.withColor(new AlphaColor(-1));
+    private static final Particle.EntityEffect DEFAULT_PARTICLE =
+            Particle.ENTITY_EFFECT.withColor(new AlphaColor(-1));
 
     private final AreaEffectCloudMeta meta;
     private final Map<LivingEntity, Integer> victims = new HashMap<>();
@@ -41,7 +41,8 @@ public final class AreaEffectCloud extends Entity {
     private float radiusOnUse;
     private float radiusPerTick;
 
-    public AreaEffectCloud(PotionContents potionContents, @Nullable Entity owner, EffectFeature effectFeature) {
+    public AreaEffectCloud(
+            PotionContents potionContents, @Nullable Entity owner, EffectFeature effectFeature) {
         super(EntityType.AREA_EFFECT_CLOUD);
 
         this.meta = (AreaEffectCloudMeta) this.getEntityMeta();
@@ -112,29 +113,29 @@ public final class AreaEffectCloud extends Entity {
         var cloudBox = new BoundingBox(radius * 2.0, 0.5, radius * 2.0);
         var chunkRange = (int) Math.ceil((radius + 8.0) / 16.0);
 
-        instance.getEntityTracker().nearbyEntitiesByChunkRange(
-                this.position,
-                chunkRange,
-                EntityTracker.Target.ENTITIES,
-                entity -> {
+        instance.getEntityTracker()
+                .nearbyEntitiesByChunkRange(
+                        this.position,
+                        chunkRange,
+                        EntityTracker.Target.ENTITIES,
+                        entity -> {
+                            if (!(entity instanceof LivingEntity livingEntity)) {
+                                return;
+                            }
 
-                    if (!(entity instanceof LivingEntity livingEntity)) {
-                        return;
-                    }
+                            if (entity instanceof Player player
+                                    && player.getGameMode() == GameMode.SPECTATOR) {
+                                return;
+                            }
 
-                    if (entity instanceof Player player && player.getGameMode() == GameMode.SPECTATOR) {
-                        return;
-                    }
+                            if (!cloudBox.intersectEntity(this.position, entity)) {
+                                return;
+                            }
 
-                    if (!cloudBox.intersectEntity(this.position, entity)) {
-                        return;
-                    }
-
-                    if (this.getHorizontalDistanceSquared(entity) <= radiusSquared) {
-                        this.nearbyVictims.add(livingEntity);
-                    }
-                }
-        );
+                            if (this.getHorizontalDistanceSquared(entity) <= radiusSquared) {
+                                this.nearbyVictims.add(livingEntity);
+                            }
+                        });
 
         for (var entity : this.nearbyVictims) {
 
@@ -142,7 +143,8 @@ public final class AreaEffectCloud extends Entity {
                 continue;
             }
 
-            this.effectFeature.addLingeringPotionEffects(entity, this.potionContents, this, this.owner);
+            this.effectFeature.addLingeringPotionEffects(
+                    entity, this.potionContents, this, this.owner);
             this.victims.put(entity, this.age + this.reapplicationDelay);
 
             if (this.radiusOnUse != 0.0F) {

@@ -5,25 +5,23 @@ import net.minestom.server.component.DataComponents;
 import net.minestom.server.entity.Player;
 import net.minestom.server.item.ItemStack;
 
-/**
- * Combat feature used to manage a players attack cooldown.
- */
+/** Combat feature used to manage a players attack cooldown. */
 public interface AttackCooldownFeature extends CombatFeature {
-    AttackCooldownFeature NO_OP = new AttackCooldownFeature() {
-        @Override
-        public void resetCooldownProgress(Player player) {
-        }
+    AttackCooldownFeature NO_OP =
+            new AttackCooldownFeature() {
+                @Override
+                public void resetCooldownProgress(Player player) {}
 
-        @Override
-        public double getAttackCooldownProgress(Player player) {
-            return 1.0;
-        }
+                @Override
+                public double getAttackCooldownProgress(Player player) {
+                    return 1.0;
+                }
 
-        @Override
-        public double getAttackCooldownProgress(Player player, double adjustTicks) {
-            return 1.0;
-        }
-    };
+                @Override
+                public double getAttackCooldownProgress(Player player, double adjustTicks) {
+                    return 1.0;
+                }
+            };
 
     void resetCooldownProgress(Player player);
 

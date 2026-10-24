@@ -1,17 +1,15 @@
 package rocks.minestom.worldgen.structure.stronghold;
 
+import java.util.List;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.GenerationUnitAdapter;
 import rocks.minestom.worldgen.structure.StructureWrites;
 
-import java.util.List;
-
 /**
- * Chunk-local world view for stronghold piece placement, mirroring the reads
- * and writes vanilla pieces perform against the proto-chunk. All piece reads
- * and writes are clamped to the generating chunk, so a single chunk column
- * buffer is enough.
+ * Chunk-local world view for stronghold piece placement, mirroring the reads and writes vanilla
+ * pieces perform against the proto-chunk. All piece reads and writes are clamped to the generating
+ * chunk, so a single chunk column buffer is enough.
  */
 final class StrongholdLevel {
     private final GenerationUnitAdapter adapter;
@@ -24,8 +22,15 @@ final class StrongholdLevel {
     private final int[] chunkHandle;
     private final List<BlockVec> shapeUpdatePositions;
 
-    StrongholdLevel(GenerationUnitAdapter adapter, Block[] blocks, int startX, int startZ,
-            int minY, int maxY, int[] chunkHandle, List<BlockVec> shapeUpdatePositions) {
+    StrongholdLevel(
+            GenerationUnitAdapter adapter,
+            Block[] blocks,
+            int startX,
+            int startZ,
+            int minY,
+            int maxY,
+            int[] chunkHandle,
+            List<BlockVec> shapeUpdatePositions) {
         this.adapter = adapter;
         this.blocks = blocks;
         this.startX = startX;
@@ -60,10 +65,9 @@ final class StrongholdLevel {
     }
 
     /**
-     * Vanilla {@code StructurePiece.SHAPE_CHECK_BLOCKS}, restricted to the
-     * families stronghold pieces actually place (fences and iron bars): a
-     * position marked here has its connection shape recomputed against its
-     * final neighbors once every piece in the chunk has been placed.
+     * Vanilla {@code StructurePiece.SHAPE_CHECK_BLOCKS}, restricted to the families stronghold
+     * pieces actually place (fences and iron bars): a position marked here has its connection shape
+     * recomputed against its final neighbors once every piece in the chunk has been placed.
      */
     private static boolean isShapeCheckBlock(Block block) {
         var key = block.key().value();
@@ -71,8 +75,8 @@ final class StrongholdLevel {
     }
 
     /**
-     * Vanilla {@code OCEAN_FLOOR_WG} heightmap: one above the highest
-     * motion-blocking block, live over the structure's writes.
+     * Vanilla {@code OCEAN_FLOOR_WG} heightmap: one above the highest motion-blocking block, live
+     * over the structure's writes.
      */
     int oceanFloorHeight(int x, int z) {
         var localX = x - this.startX;
@@ -102,7 +106,12 @@ final class StrongholdLevel {
         var localX = x - this.startX;
         var localZ = z - this.startZ;
         var yIndex = y - this.minY;
-        if (localX < 0 || localX >= 16 || localZ < 0 || localZ >= 16 || yIndex < 0 || yIndex >= this.height) {
+        if (localX < 0
+                || localX >= 16
+                || localZ < 0
+                || localZ >= 16
+                || yIndex < 0
+                || yIndex >= this.height) {
             return -1;
         }
         return (localX * 16 + localZ) * this.height + yIndex;

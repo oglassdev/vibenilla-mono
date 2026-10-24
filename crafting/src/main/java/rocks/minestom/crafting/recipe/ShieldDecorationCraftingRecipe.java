@@ -1,32 +1,31 @@
 package rocks.minestom.crafting.recipe;
 
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import java.util.Map;
 import net.minestom.server.color.DyeColor;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.item.Material;
 import rocks.minestom.crafting.CraftingGrid;
 
-import java.util.Map;
-
 public final class ShieldDecorationCraftingRecipe implements CraftingRecipe {
-    private static final Map<Material, DyeColor> BANNER_COLORS = Map.ofEntries(
-            Map.entry(Material.WHITE_BANNER, DyeColor.WHITE),
-            Map.entry(Material.ORANGE_BANNER, DyeColor.ORANGE),
-            Map.entry(Material.MAGENTA_BANNER, DyeColor.MAGENTA),
-            Map.entry(Material.LIGHT_BLUE_BANNER, DyeColor.LIGHT_BLUE),
-            Map.entry(Material.YELLOW_BANNER, DyeColor.YELLOW),
-            Map.entry(Material.LIME_BANNER, DyeColor.LIME),
-            Map.entry(Material.PINK_BANNER, DyeColor.PINK),
-            Map.entry(Material.GRAY_BANNER, DyeColor.GRAY),
-            Map.entry(Material.LIGHT_GRAY_BANNER, DyeColor.LIGHT_GRAY),
-            Map.entry(Material.CYAN_BANNER, DyeColor.CYAN),
-            Map.entry(Material.PURPLE_BANNER, DyeColor.PURPLE),
-            Map.entry(Material.BLUE_BANNER, DyeColor.BLUE),
-            Map.entry(Material.BROWN_BANNER, DyeColor.BROWN),
-            Map.entry(Material.GREEN_BANNER, DyeColor.GREEN),
-            Map.entry(Material.RED_BANNER, DyeColor.RED),
-            Map.entry(Material.BLACK_BANNER, DyeColor.BLACK)
-    );
+    private static final Map<Material, DyeColor> BANNER_COLORS =
+            Map.ofEntries(
+                    Map.entry(Material.WHITE_BANNER, DyeColor.WHITE),
+                    Map.entry(Material.ORANGE_BANNER, DyeColor.ORANGE),
+                    Map.entry(Material.MAGENTA_BANNER, DyeColor.MAGENTA),
+                    Map.entry(Material.LIGHT_BLUE_BANNER, DyeColor.LIGHT_BLUE),
+                    Map.entry(Material.YELLOW_BANNER, DyeColor.YELLOW),
+                    Map.entry(Material.LIME_BANNER, DyeColor.LIME),
+                    Map.entry(Material.PINK_BANNER, DyeColor.PINK),
+                    Map.entry(Material.GRAY_BANNER, DyeColor.GRAY),
+                    Map.entry(Material.LIGHT_GRAY_BANNER, DyeColor.LIGHT_GRAY),
+                    Map.entry(Material.CYAN_BANNER, DyeColor.CYAN),
+                    Map.entry(Material.PURPLE_BANNER, DyeColor.PURPLE),
+                    Map.entry(Material.BLUE_BANNER, DyeColor.BLUE),
+                    Map.entry(Material.BROWN_BANNER, DyeColor.BROWN),
+                    Map.entry(Material.GREEN_BANNER, DyeColor.GREEN),
+                    Map.entry(Material.RED_BANNER, DyeColor.RED),
+                    Map.entry(Material.BLACK_BANNER, DyeColor.BLACK));
 
     @Override
     public CraftingRecipeMatch match(CraftingGrid craftingGrid) {

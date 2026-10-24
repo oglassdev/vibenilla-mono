@@ -1,11 +1,10 @@
 package rocks.minestom.crafting.recipe;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.item.ItemStack;
 import rocks.minestom.crafting.CraftingGrid;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public interface CraftingRecipe {
     CraftingRecipeMatch match(CraftingGrid craftingGrid);

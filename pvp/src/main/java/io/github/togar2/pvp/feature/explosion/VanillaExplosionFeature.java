@@ -18,15 +18,17 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Vanilla implementation of {@link ExplosionFeature}
- * <p>
- * Provides an explosion supplier which can be registered to an instance,
- * see {@link VanillaExplosionFeature#getExplosionSupplier()}.
+ *
+ * <p>Provides an explosion supplier which can be registered to an instance, see {@link
+ * VanillaExplosionFeature#getExplosionSupplier()}.
  */
 public class VanillaExplosionFeature implements ExplosionFeature, RegistrableFeature {
-    public static final DefinedFeature<VanillaExplosionFeature> DEFINED = new DefinedFeature<>(
-            FeatureType.EXPLOSION, VanillaExplosionFeature::new,
-            FeatureType.ENCHANTMENT, FeatureType.FALL
-    );
+    public static final DefinedFeature<VanillaExplosionFeature> DEFINED =
+            new DefinedFeature<>(
+                    FeatureType.EXPLOSION,
+                    VanillaExplosionFeature::new,
+                    FeatureType.ENCHANTMENT,
+                    FeatureType.FALL);
 
     private final FeatureConfiguration configuration;
 
@@ -38,9 +40,11 @@ public class VanillaExplosionFeature implements ExplosionFeature, RegistrableFea
 
     @Override
     public void initDependencies() {
-        this.explosionSupplier = new VanillaExplosionSupplier(
-                this, this.configuration.get(FeatureType.ENCHANTMENT), this.configuration.get(FeatureType.FALL)
-        );
+        this.explosionSupplier =
+                new VanillaExplosionSupplier(
+                        this,
+                        this.configuration.get(FeatureType.ENCHANTMENT),
+                        this.configuration.get(FeatureType.FALL));
     }
 
     @Override
@@ -50,7 +54,9 @@ public class VanillaExplosionFeature implements ExplosionFeature, RegistrableFea
 
     @Override
     public void init(EventNode<EntityInstanceEvent> node) {
-        node.addListener(EntitySpawnEvent.class, event -> this.installExplosionSupplier(event.getSpawnInstance()));
+        node.addListener(
+                EntitySpawnEvent.class,
+                event -> this.installExplosionSupplier(event.getSpawnInstance()));
     }
 
     public void installExplosionSupplier(Instance instance) {
@@ -60,18 +66,25 @@ public class VanillaExplosionFeature implements ExplosionFeature, RegistrableFea
     }
 
     @Override
-    public void primeExplosive(Instance instance, Point blockPosition, @NotNull IgnitionCause cause, int fuse) {
+    public void primeExplosive(
+            Instance instance, Point blockPosition, @NotNull IgnitionCause cause, int fuse) {
         this.installExplosionSupplier(instance);
 
         var event = new ExplosivePrimeEvent(instance, blockPosition, cause, fuse);
-        EventDispatcher.callCancellable(event, () -> {
-            var entity = new TntEntity(cause.causingEntity());
-            entity.setFuse(event.getFuse());
-            entity.setInstance(instance, blockPosition.add(0.5, 0, 0.5));
-            entity.getViewersAsAudience().playSound(Sound.sound(
-                    SoundEvent.ENTITY_TNT_PRIMED, Sound.Source.BLOCK,
-                    1.0F, 1.0F
-            ), entity);
-        });
+        EventDispatcher.callCancellable(
+                event,
+                () -> {
+                    var entity = new TntEntity(cause.causingEntity());
+                    entity.setFuse(event.getFuse());
+                    entity.setInstance(instance, blockPosition.add(0.5, 0, 0.5));
+                    entity.getViewersAsAudience()
+                            .playSound(
+                                    Sound.sound(
+                                            SoundEvent.ENTITY_TNT_PRIMED,
+                                            Sound.Source.BLOCK,
+                                            1.0F,
+                                            1.0F),
+                                    entity);
+                });
     }
 }

@@ -7,13 +7,21 @@ import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.valueproviders.IntProvider;
 import rocks.minestom.worldgen.random.RandomSource;
 
-public record RandomizedIntStateProvider(String property, BlockStateProvider source, IntProvider values) implements BlockStateProvider {
-    public static final Codec<RandomizedIntStateProvider> CODEC = StructCodec.struct(
-            "property", Codec.STRING, RandomizedIntStateProvider::property,
-            "source", BlockStateProviders.CODEC, RandomizedIntStateProvider::source,
-            "values", IntProvider.CODEC, RandomizedIntStateProvider::values,
-            RandomizedIntStateProvider::new
-    );
+public record RandomizedIntStateProvider(
+        String property, BlockStateProvider source, IntProvider values)
+        implements BlockStateProvider {
+    public static final Codec<RandomizedIntStateProvider> CODEC =
+            StructCodec.struct(
+                    "property",
+                    Codec.STRING,
+                    RandomizedIntStateProvider::property,
+                    "source",
+                    BlockStateProviders.CODEC,
+                    RandomizedIntStateProvider::source,
+                    "values",
+                    IntProvider.CODEC,
+                    RandomizedIntStateProvider::values,
+                    RandomizedIntStateProvider::new);
 
     @Override
     public Block getState(RandomSource random, BlockVec position) {
@@ -29,4 +37,3 @@ public record RandomizedIntStateProvider(String property, BlockStateProvider sou
         return base.withProperty(this.property, Integer.toString(sampled));
     }
 }
-

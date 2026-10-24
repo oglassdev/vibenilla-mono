@@ -3,19 +3,19 @@ package rocks.minestom.worldgen.feature;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.BlockBlobConfiguration;
 
-/**
- * Port of vanilla's {@code BlockBlobFeature} (used by {@code forest_rock}).
- */
+/** Port of vanilla's {@code BlockBlobFeature} (used by {@code forest_rock}). */
 public final class BlockBlobFeature implements Feature<BlockBlobConfiguration> {
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<BlockBlobConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<BlockBlobConfiguration, T> context) {
         var origin = context.origin();
         var level = context.accessor();
         var random = context.random();
         var config = context.config();
         var predicateContext = Feature.predicateContext(level, context.minY(), context.maxY());
 
-        while (origin.blockY() > context.minY() + 3 && !config.canPlaceOn().test(predicateContext, origin.sub(0, 1, 0))) {
+        while (origin.blockY() > context.minY() + 3
+                && !config.canPlaceOn().test(predicateContext, origin.sub(0, 1, 0))) {
             origin = origin.sub(0, 1, 0);
         }
 

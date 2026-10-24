@@ -5,13 +5,20 @@ import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import rocks.minestom.worldgen.random.RandomSource;
 
-public record TrapezoidIntProvider(int minInclusive, int maxInclusive, int plateau) implements IntProvider {
-    public static final Codec<TrapezoidIntProvider> CODEC = StructCodec.struct(
-            "min", Codec.INT, TrapezoidIntProvider::minInclusive,
-            "max", Codec.INT, TrapezoidIntProvider::maxInclusive,
-            "plateau", Codec.INT, TrapezoidIntProvider::plateau,
-            TrapezoidIntProvider::new
-    );
+public record TrapezoidIntProvider(int minInclusive, int maxInclusive, int plateau)
+        implements IntProvider {
+    public static final Codec<TrapezoidIntProvider> CODEC =
+            StructCodec.struct(
+                    "min",
+                    Codec.INT,
+                    TrapezoidIntProvider::minInclusive,
+                    "max",
+                    Codec.INT,
+                    TrapezoidIntProvider::maxInclusive,
+                    "plateau",
+                    Codec.INT,
+                    TrapezoidIntProvider::plateau,
+                    TrapezoidIntProvider::new);
 
     @Override
     public Key type() {
@@ -41,6 +48,8 @@ public record TrapezoidIntProvider(int minInclusive, int maxInclusive, int plate
 
         var plateauStart = (range - this.plateau) / 2;
         var plateauEnd = range - plateauStart;
-        return this.minInclusive + random.nextInt(plateauEnd + 1) + random.nextInt(plateauStart + 1);
+        return this.minInclusive
+                + random.nextInt(plateauEnd + 1)
+                + random.nextInt(plateauStart + 1);
     }
 }

@@ -1,20 +1,19 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.BitSet;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.OreConfiguration;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.BitSet;
-
 /**
- * Port of vanilla {@code OreFeature}. The random call order matches vanilla
- * exactly, which is required for block-for-block parity.
+ * Port of vanilla {@code OreFeature}. The random call order matches vanilla exactly, which is
+ * required for block-for-block parity.
  */
 public final class OreFeature implements Feature<OreConfiguration> {
     /**
-     * Vanilla {@code Mth.SIN} lookup table, required because vanilla uses the
-     * quantized sine for the strand radius computation.
+     * Vanilla {@code Mth.SIN} lookup table, required because vanilla uses the quantized sine for
+     * the strand radius computation.
      */
     private static final float[] SIN = new float[65536];
 
@@ -25,7 +24,8 @@ public final class OreFeature implements Feature<OreConfiguration> {
     }
 
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<OreConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<OreConfiguration, T> context) {
         var random = context.random();
         var origin = context.origin();
         var level = context.accessor();
@@ -50,13 +50,21 @@ public final class OreFeature implements Feature<OreConfiguration> {
             for (var zprobe = zStart; zprobe <= zStart + sizeXZ; zprobe++) {
                 if (yStart <= getHeight(level, context, xprobe, zprobe)) {
                     if (debugProbe) {
-                        System.out.println("OREPROBE origin=" + origin + " yStart=" + yStart
-                                + " pass=" + xprobe + "," + zprobe
-                                + " height=" + getHeight(level, context, xprobe, zprobe));
+                        System.out.println(
+                                "OREPROBE origin="
+                                        + origin
+                                        + " yStart="
+                                        + yStart
+                                        + " pass="
+                                        + xprobe
+                                        + ","
+                                        + zprobe
+                                        + " height="
+                                        + getHeight(level, context, xprobe, zprobe));
                     }
-                    return this.doPlace(level, random, context, config,
-                            x0, x1, z0, z1, y0, y1,
-                            xStart, yStart, zStart, sizeXZ, sizeY);
+                    return this.doPlace(
+                            level, random, context, config, x0, x1, z0, z1, y0, y1, xStart, yStart,
+                            zStart, sizeXZ, sizeY);
                 }
             }
         }
@@ -82,8 +90,7 @@ public final class OreFeature implements Feature<OreConfiguration> {
             int yStart,
             int zStart,
             int sizeXZ,
-            int sizeY
-    ) {
+            int sizeY) {
         var placed = 0;
         var tested = new BitSet(sizeXZ * sizeY * sizeXZ);
         var size = config.size();
@@ -144,15 +151,26 @@ public final class OreFeature implements Feature<OreConfiguration> {
                                 for (var z = zMin; z <= zMax; z++) {
                                     var zd = (z + 0.5 - zz) / r;
                                     if (xd * xd + yd * yd + zd * zd < 1.0
-                                            && y >= context.minY() && y <= context.maxY()) {
-                                        var bitSetIndex = x - xStart + (y - yStart) * sizeXZ + (z - zStart) * sizeXZ * sizeY;
+                                            && y >= context.minY()
+                                            && y <= context.maxY()) {
+                                        var bitSetIndex =
+                                                x
+                                                        - xStart
+                                                        + (y - yStart) * sizeXZ
+                                                        + (z - zStart) * sizeXZ * sizeY;
                                         if (!tested.get(bitSetIndex)) {
                                             tested.set(bitSetIndex);
                                             var orePos = new BlockVec(x, y, z);
                                             var blockState = level.getBlock(x, y, z);
 
                                             for (var targetState : config.targetStates()) {
-                                                if (canPlaceOre(blockState, level, random, config, targetState, orePos)) {
+                                                if (canPlaceOre(
+                                                        blockState,
+                                                        level,
+                                                        random,
+                                                        config,
+                                                        targetState,
+                                                        orePos)) {
                                                     level.setBlock(x, y, z, targetState.state());
                                                     placed++;
                                                     break;
@@ -177,21 +195,23 @@ public final class OreFeature implements Feature<OreConfiguration> {
             RandomSource random,
             OreConfiguration config,
             OreConfiguration.TargetBlockState targetState,
-            BlockVec orePos
-    ) {
+            BlockVec orePos) {
         if (!targetState.target().test(blockState, random)) {
             return false;
         }
 
-        return shouldSkipAirCheck(random, config.discardChanceOnAirExposure()) || !isAdjacentToAir(blockGetter, orePos);
+        return shouldSkipAirCheck(random, config.discardChanceOnAirExposure())
+                || !isAdjacentToAir(blockGetter, orePos);
     }
 
-    private static boolean shouldSkipAirCheck(RandomSource random, float discardChanceOnAirExposure) {
+    private static boolean shouldSkipAirCheck(
+            RandomSource random, float discardChanceOnAirExposure) {
         if (discardChanceOnAirExposure <= 0.0F) {
             return true;
         }
 
-        return !(discardChanceOnAirExposure >= 1.0F) && random.nextFloat() >= discardChanceOnAirExposure;
+        return !(discardChanceOnAirExposure >= 1.0F)
+                && random.nextFloat() >= discardChanceOnAirExposure;
     }
 
     private static boolean isAdjacentToAir(Block.Getter blockGetter, BlockVec pos) {
@@ -204,7 +224,8 @@ public final class OreFeature implements Feature<OreConfiguration> {
                 || blockGetter.getBlock(pos.blockX() + 1, pos.blockY(), pos.blockZ()).air();
     }
 
-    private static int getHeight(Block.Getter level, FeaturePlaceContext<?, ?> context, int x, int z) {
+    private static int getHeight(
+            Block.Getter level, FeaturePlaceContext<?, ?> context, int x, int z) {
         // Vanilla OCEAN_FLOOR_WG: frozen post-carver terrain, blind to
         // structure and feature writes
         if (level instanceof GenerationUnitAdapter adapter) {

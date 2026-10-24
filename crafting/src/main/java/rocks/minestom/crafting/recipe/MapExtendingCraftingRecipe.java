@@ -50,9 +50,11 @@ public final class MapExtendingCraftingRecipe implements CraftingRecipe {
             return null;
         }
 
-        var result = filledMapSlot.item()
-                .withAmount(1)
-                .with(DataComponents.MAP_POST_PROCESSING, MapPostProcessing.SCALE);
+        var result =
+                filledMapSlot
+                        .item()
+                        .withAmount(1)
+                        .with(DataComponents.MAP_POST_PROCESSING, MapPostProcessing.SCALE);
 
         return new CraftingRecipeMatch(this, result, usage, craftingGrid);
     }

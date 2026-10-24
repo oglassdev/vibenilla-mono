@@ -1,5 +1,8 @@
 package rocks.minestom.worldgen.feature.trunkplacers;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiConsumer;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.coordinate.BlockVec;
@@ -8,17 +11,20 @@ import rocks.minestom.worldgen.feature.configurations.TreeConfiguration;
 import rocks.minestom.worldgen.feature.foliageplacers.FoliagePlacer;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.BiConsumer;
-
-public record MegaJungleTrunkPlacer(int baseHeight, int heightRandA, int heightRandB) implements TrunkPlacer {
-    public static final Codec<MegaJungleTrunkPlacer> CODEC = StructCodec.struct(
-            "base_height", Codec.INT, MegaJungleTrunkPlacer::baseHeight,
-            "height_rand_a", Codec.INT, MegaJungleTrunkPlacer::heightRandA,
-            "height_rand_b", Codec.INT, MegaJungleTrunkPlacer::heightRandB,
-            MegaJungleTrunkPlacer::new
-    );
+public record MegaJungleTrunkPlacer(int baseHeight, int heightRandA, int heightRandB)
+        implements TrunkPlacer {
+    public static final Codec<MegaJungleTrunkPlacer> CODEC =
+            StructCodec.struct(
+                    "base_height",
+                    Codec.INT,
+                    MegaJungleTrunkPlacer::baseHeight,
+                    "height_rand_a",
+                    Codec.INT,
+                    MegaJungleTrunkPlacer::heightRandA,
+                    "height_rand_b",
+                    Codec.INT,
+                    MegaJungleTrunkPlacer::heightRandB,
+                    MegaJungleTrunkPlacer::new);
 
     @Override
     public List<FoliagePlacer.FoliageAttachment> placeTrunk(
@@ -27,13 +33,15 @@ public record MegaJungleTrunkPlacer(int baseHeight, int heightRandA, int heightR
             RandomSource random,
             int freeTreeHeight,
             BlockVec basePos,
-            TreeConfiguration config
-    ) {
+            TreeConfiguration config) {
         var foliageAttachments = new ArrayList<FoliagePlacer.FoliageAttachment>();
-        foliageAttachments.addAll(new GiantTrunkPlacer(this.baseHeight, this.heightRandA, this.heightRandB)
-                .placeTrunk(getter, logSetter, random, freeTreeHeight, basePos, config));
+        foliageAttachments.addAll(
+                new GiantTrunkPlacer(this.baseHeight, this.heightRandA, this.heightRandB)
+                        .placeTrunk(getter, logSetter, random, freeTreeHeight, basePos, config));
 
-        for (var branchBase = freeTreeHeight - 2 - random.nextInt(4); branchBase > freeTreeHeight / 2; branchBase -= 2 + random.nextInt(4)) {
+        for (var branchBase = freeTreeHeight - 2 - random.nextInt(4);
+                branchBase > freeTreeHeight / 2;
+                branchBase -= 2 + random.nextInt(4)) {
             var angle = random.nextFloat() * (float) (Math.PI * 2.0D);
             var offsetX = 0;
             var offsetZ = 0;
@@ -45,7 +53,9 @@ public record MegaJungleTrunkPlacer(int baseHeight, int heightRandA, int heightR
                 this.placeLog(getter, logSetter, random, logPos, config);
             }
 
-            foliageAttachments.add(new FoliagePlacer.FoliageAttachment(basePos.add(offsetX, branchBase, offsetZ), -2, false));
+            foliageAttachments.add(
+                    new FoliagePlacer.FoliageAttachment(
+                            basePos.add(offsetX, branchBase, offsetZ), -2, false));
         }
 
         return foliageAttachments;
@@ -53,7 +63,8 @@ public record MegaJungleTrunkPlacer(int baseHeight, int heightRandA, int heightR
 
     @Override
     public int getTreeHeight(RandomSource random) {
-        return this.baseHeight + random.nextInt(this.heightRandA + 1) + random.nextInt(this.heightRandB + 1);
+        return this.baseHeight
+                + random.nextInt(this.heightRandA + 1)
+                + random.nextInt(this.heightRandB + 1);
     }
 }
-

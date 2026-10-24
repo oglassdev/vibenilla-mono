@@ -1,17 +1,14 @@
 package rocks.minestom.crafting;
 
-import net.minestom.server.item.ItemStack;
-import net.minestom.server.item.Material;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
+import net.minestom.server.item.ItemStack;
+import net.minestom.server.item.Material;
+import org.jetbrains.annotations.Nullable;
 
-/**
- * Simple ingredient implementation that only matches materials.
- */
+/** Simple ingredient implementation that only matches materials. */
 public final class Ingredient {
     private final Set<Material> materials;
 

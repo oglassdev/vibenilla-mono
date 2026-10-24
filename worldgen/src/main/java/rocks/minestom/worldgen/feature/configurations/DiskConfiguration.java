@@ -11,8 +11,8 @@ public record DiskConfiguration(
         BlockStateProvider stateProvider,
         PlacementModifiers.BlockPredicate target,
         IntProvider radius,
-        int halfHeight
-) implements FeatureConfiguration {
+        int halfHeight)
+        implements FeatureConfiguration {
 
     public static DiskConfiguration fromJson(JsonElement json) {
         var object = json.getAsJsonObject();

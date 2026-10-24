@@ -1,3 +1,4 @@
+import java.util.Objects;
 import net.minestom.server.Auth;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.GameMode;
@@ -6,8 +7,6 @@ import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.placement.Registrations;
-
-import java.util.Objects;
 
 private static InstanceContainer createInstance() {
     var instance = MinecraftServer.getInstanceManager().createInstanceContainer();
@@ -22,8 +21,12 @@ void main() {
     var instance = createInstance();
 
     MinecraftServer.getGlobalEventHandler()
-            .addListener(AsyncPlayerConfigurationEvent.class, event -> event.setSpawningInstance(instance))
-            .addListener(PlayerSpawnEvent.class, event -> event.getPlayer().setGameMode(GameMode.CREATIVE));
+            .addListener(
+                    AsyncPlayerConfigurationEvent.class,
+                    event -> event.setSpawningInstance(instance))
+            .addListener(
+                    PlayerSpawnEvent.class,
+                    event -> event.getPlayer().setGameMode(GameMode.CREATIVE));
 
     Registrations.registerAllVanilla(MinecraftServer.getBlockManager());
     server.start("0.0.0.0", 25565);

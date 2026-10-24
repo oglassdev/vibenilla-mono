@@ -6,11 +6,18 @@ import net.minestom.server.codec.StructCodec;
 import rocks.minestom.worldgen.random.RandomSource;
 
 public record TrapezoidFloatProvider(float min, float max, float plateau) implements FloatProvider {
-    public static final Codec<TrapezoidFloatProvider> CODEC = StructCodec.struct(
-            "min", Codec.FLOAT, TrapezoidFloatProvider::min,
-            "max", Codec.FLOAT, TrapezoidFloatProvider::max,
-            "plateau", Codec.FLOAT, TrapezoidFloatProvider::plateau,
-            TrapezoidFloatProvider::new);
+    public static final Codec<TrapezoidFloatProvider> CODEC =
+            StructCodec.struct(
+                    "min",
+                    Codec.FLOAT,
+                    TrapezoidFloatProvider::min,
+                    "max",
+                    Codec.FLOAT,
+                    TrapezoidFloatProvider::max,
+                    "plateau",
+                    Codec.FLOAT,
+                    TrapezoidFloatProvider::plateau,
+                    TrapezoidFloatProvider::new);
 
     @Override
     public Key type() {

@@ -27,16 +27,21 @@ public final class RedstoneWirePlacementRule extends BlockPlacementRule {
 
     @Override
     public Block blockUpdate(UpdateState updateState) {
-        var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+        var below =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
         if (!Utility.canSupportCenter(below, BlockFace.TOP)) {
             return Block.AIR;
         }
 
         var current = updateState.currentBlock();
-        return this.withConnections(current, updateState.instance(), updateState.blockPosition(), isDot(current));
+        return this.withConnections(
+                current, updateState.instance(), updateState.blockPosition(), isDot(current));
     }
 
-    Block withConnections(Block base, Block.Getter blockGetter, Point placePosition, boolean preserveDot) {
+    Block withConnections(
+            Block base, Block.Getter blockGetter, Point placePosition, boolean preserveDot) {
         var north = this.computeSide(blockGetter, placePosition, BlockFace.NORTH);
         var east = this.computeSide(blockGetter, placePosition, BlockFace.EAST);
         var south = this.computeSide(blockGetter, placePosition, BlockFace.SOUTH);
@@ -47,8 +52,7 @@ public final class RedstoneWirePlacementRule extends BlockPlacementRule {
         var westConnected = !"none".equals(west);
 
         if (preserveDot && !northConnected && !southConnected && !eastConnected && !westConnected) {
-            return base
-                    .withProperty("north", "none")
+            return base.withProperty("north", "none")
                     .withProperty("east", "none")
                     .withProperty("south", "none")
                     .withProperty("west", "none");
@@ -61,8 +65,7 @@ public final class RedstoneWirePlacementRule extends BlockPlacementRule {
         var resolvedEast = !eastConnected && northSouthEmpty ? "side" : east;
         var resolvedWest = !westConnected && northSouthEmpty ? "side" : west;
 
-        return base
-                .withProperty("north", resolvedNorth)
+        return base.withProperty("north", resolvedNorth)
                 .withProperty("east", resolvedEast)
                 .withProperty("south", resolvedSouth)
                 .withProperty("west", resolvedWest);

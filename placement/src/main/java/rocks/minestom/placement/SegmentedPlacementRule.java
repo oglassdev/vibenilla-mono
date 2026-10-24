@@ -35,7 +35,8 @@ public final class SegmentedPlacementRule extends BlockPlacementRule {
         var yaw = playerPosition == null ? 0.0F : playerPosition.yaw();
         var facing = BlockFace.fromYaw(yaw).getOppositeFace();
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withProperty("flower_amount", "1")
                 .withProperty("facing", facing.name().toLowerCase());
     }
@@ -46,7 +47,10 @@ public final class SegmentedPlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+        var below =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
 
         if (!supportsVegetation(below)) {
             return Block.AIR;

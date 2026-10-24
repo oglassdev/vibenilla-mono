@@ -22,7 +22,8 @@ public final class DirectionalPlacementRule extends BlockPlacementRule {
         this(block, false, handler);
     }
 
-    public DirectionalPlacementRule(Block block, boolean awayFromPlayer, @Nullable BlockHandler handler) {
+    public DirectionalPlacementRule(
+            Block block, boolean awayFromPlayer, @Nullable BlockHandler handler) {
         super(block);
         this.awayFromPlayer = awayFromPlayer;
         this.handler = handler;
@@ -33,16 +34,27 @@ public final class DirectionalPlacementRule extends BlockPlacementRule {
         var playerPosition = placementState.playerPosition();
         var yaw = playerPosition == null ? 0.0F : playerPosition.yaw();
         var pitch = playerPosition == null ? 0.0F : playerPosition.pitch();
-        var nearest = playerPosition == null
-                ? new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST, BlockFace.TOP, BlockFace.BOTTOM}
-                : orderedByNearest(yaw, pitch);
+        var nearest =
+                playerPosition == null
+                        ? new BlockFace[] {
+                            BlockFace.NORTH,
+                            BlockFace.EAST,
+                            BlockFace.SOUTH,
+                            BlockFace.WEST,
+                            BlockFace.TOP,
+                            BlockFace.BOTTOM
+                        }
+                        : orderedByNearest(yaw, pitch);
         var facing = nearest[0];
 
         if (!this.awayFromPlayer) {
             facing = facing.getOppositeFace();
         }
 
-        var result = this.handler == null ? placementState.block() : placementState.block().withHandler(this.handler);
+        var result =
+                this.handler == null
+                        ? placementState.block()
+                        : placementState.block().withHandler(this.handler);
         return result.withProperty("facing", facingName(facing));
     }
 
@@ -96,7 +108,15 @@ public final class DirectionalPlacementRule extends BlockPlacementRule {
         return makeDirectionArray(axisZ, axisY, axisX);
     }
 
-    private static BlockFace[] makeDirectionArray(BlockFace first, BlockFace second, BlockFace third) {
-        return new BlockFace[]{first, second, third, third.getOppositeFace(), second.getOppositeFace(), first.getOppositeFace()};
+    private static BlockFace[] makeDirectionArray(
+            BlockFace first, BlockFace second, BlockFace third) {
+        return new BlockFace[] {
+            first,
+            second,
+            third,
+            third.getOppositeFace(),
+            second.getOppositeFace(),
+            first.getOppositeFace()
+        };
     }
 }

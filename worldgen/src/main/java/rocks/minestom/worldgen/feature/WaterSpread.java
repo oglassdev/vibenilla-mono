@@ -1,29 +1,25 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Map;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Map;
-
 /**
- * Single-round emulation of vanilla water scheduled ticks after chunk
- * generation: every feature-placed water block gets one {@code
- * FlowingFluid.tick} (spread down or to slope-weighted sides, converting
- * spread targets with two adjacent sources into new sources), and the blocks
- * that spread creates never tick themselves. This mirrors the pregen ladder,
- * where a chunk block-ticks only for the short dwell of its own forceload:
- * the initially scheduled fluid ticks run once and the follow-up ticks they
- * schedule are dropped when the chunk stops ticking.
+ * Single-round emulation of vanilla water scheduled ticks after chunk generation: every
+ * feature-placed water block gets one {@code FlowingFluid.tick} (spread down or to slope-weighted
+ * sides, converting spread targets with two adjacent sources into new sources), and the blocks that
+ * spread creates never tick themselves. This mirrors the pregen ladder, where a chunk block-ticks
+ * only for the short dwell of its own forceload: the initially scheduled fluid ticks run once and
+ * the follow-up ticks they schedule are dropped when the chunk stops ticking.
  */
 public final class WaterSpread {
     private static final int SLOPE_FIND_DISTANCE = 4;
     private static final int DROP_OFF = 1;
 
-    private WaterSpread() {
-    }
+    private WaterSpread() {}
 
     /** Source fluid (amount 8), flowing (amount 1-7), or falling. */
     private record Fluid(int amount, boolean falling, boolean source, boolean lava) {
@@ -53,11 +49,10 @@ public final class WaterSpread {
     }
 
     /**
-     * Vanilla {@code LevelChunk.postProcessGeneration} for a marked position
-     * above a placed magma_block / soul_sand: the water there gets its fluid
-     * tick, then {@code LiquidBlock.tick} runs
-     * {@code BubbleColumnBlock.updateColumn}, converting the whole source
-     * water column above the column-enabling block in one synchronous pass.
+     * Vanilla {@code LevelChunk.postProcessGeneration} for a marked position above a placed
+     * magma_block / soul_sand: the water there gets its fluid tick, then {@code LiquidBlock.tick}
+     * runs {@code BubbleColumnBlock.updateColumn}, converting the whole source water column above
+     * the column-enabling block in one synchronous pass.
      */
     public static void postProcessMarked(GenerationUnitAdapter level, BlockVec position) {
         var state = blockAt(level, position);
@@ -126,27 +121,39 @@ public final class WaterSpread {
     private static boolean isFloorPlant(Block state) {
         var key = state.key().value();
         return switch (key) {
-            case "seagrass", "tall_seagrass", "short_grass", "fern", "tall_grass", "large_fern",
-                    "firefly_bush", "bush", "dead_bush", "short_dry_grass", "tall_dry_grass",
-                    "red_mushroom", "brown_mushroom",
+            case "seagrass",
+                    "tall_seagrass",
+                    "short_grass",
+                    "fern",
+                    "tall_grass",
+                    "large_fern",
+                    "firefly_bush",
+                    "bush",
+                    "dead_bush",
+                    "short_dry_grass",
+                    "tall_dry_grass",
+                    "red_mushroom",
+                    "brown_mushroom",
                     // Vanilla BigDripleafBlock.updateShape folds an unsupported
                     // LEAF to air; the STEM only schedules a tick (which never
                     // fires while paused), so stems survive the fold
-                    "big_dripleaf", "small_dripleaf" -> true;
+                    "big_dripleaf",
+                    "small_dripleaf" ->
+                    true;
             default -> false;
         };
     }
 
     /**
-     * Vanilla canSurvive folded by {@code Block.updateFromNeighbourShapes} at
-     * a marked position: an upper double-plant half needs its lower half
-     * below; seagrass needs a sturdy top face outside cannot_support_seagrass
-     * (magma); vegetation needs a supports_vegetation floor and dry
-     * vegetation a supports_dry_vegetation one; a mushroom needs an
-     * overriding floor or raw brightness below 13, which at the lit
-     * post-process stage means it cannot be the column's sky-exposed top.
+     * Vanilla canSurvive folded by {@code Block.updateFromNeighbourShapes} at a marked position: an
+     * upper double-plant half needs its lower half below; seagrass needs a sturdy top face outside
+     * cannot_support_seagrass (magma); vegetation needs a supports_vegetation floor and dry
+     * vegetation a supports_dry_vegetation one; a mushroom needs an overriding floor or raw
+     * brightness below 13, which at the lit post-process stage means it cannot be the column's
+     * sky-exposed top.
      */
-    private static boolean plantSurvives(GenerationUnitAdapter level, BlockVec position, Block state) {
+    private static boolean plantSurvives(
+            GenerationUnitAdapter level, BlockVec position, Block state) {
         var key = state.key().value();
         var below = blockAt(level, position.add(0, -1, 0));
         if ("upper".equals(state.getProperty("half"))) {
@@ -163,7 +170,8 @@ public final class WaterSpread {
         }
         return switch (key) {
             case "seagrass", "tall_seagrass" ->
-                    SturdyFaces.isFaceSturdy(below, BlockFace.TOP) && !below.compare(Block.MAGMA_BLOCK);
+                    SturdyFaces.isFaceSturdy(below, BlockFace.TOP)
+                            && !below.compare(Block.MAGMA_BLOCK);
             case "big_dripleaf" ->
                     below.key().value().equals("big_dripleaf_stem")
                             || below.key().value().equals("big_dripleaf")
@@ -174,14 +182,19 @@ public final class WaterSpread {
                     BlockSupports.isInTag("minecraft:supports_dry_vegetation", below);
             case "red_mushroom", "brown_mushroom" ->
                     !level.hasSkylight()
-                            || BlockSupports.isInTag("minecraft:overrides_mushroom_light_requirement", below)
-                            || level.heightmap(GenerationUnitAdapter.HeightmapType.WORLD_SURFACE,
-                                    position.blockX(), position.blockZ()) > position.blockY() + 1;
+                            || BlockSupports.isInTag(
+                                    "minecraft:overrides_mushroom_light_requirement", below)
+                            || level.heightmap(
+                                            GenerationUnitAdapter.HeightmapType.WORLD_SURFACE,
+                                            position.blockX(),
+                                            position.blockZ())
+                                    > position.blockY() + 1;
             default -> BlockSupports.isInTag("minecraft:supports_vegetation", below);
         };
     }
 
-    private static void destroyUnsupportedSeagrassNeighbors(GenerationUnitAdapter level, BlockVec position) {
+    private static void destroyUnsupportedSeagrassNeighbors(
+            GenerationUnitAdapter level, BlockVec position) {
         for (var direction : Direction.HORIZONTAL) {
             var neighborPos = position.add(direction.stepX(), direction.stepY(), direction.stepZ());
             var neighbor = blockAt(level, neighborPos);
@@ -193,12 +206,14 @@ public final class WaterSpread {
             // plant fails canSurvive next and is destroyed to water too
             var abovePos = neighborPos.add(0, 1, 0);
             var above = blockAt(level, abovePos);
-            if (above.key().value().equals("tall_seagrass") && "upper".equals(above.getProperty("half"))) {
+            if (above.key().value().equals("tall_seagrass")
+                    && "upper".equals(above.getProperty("half"))) {
                 level.setBlock(abovePos, Block.WATER);
             }
             var belowPos = neighborPos.add(0, -1, 0);
             var belowState = blockAt(level, belowPos);
-            if (belowState.key().value().equals("tall_seagrass") && "lower".equals(belowState.getProperty("half"))) {
+            if (belowState.key().value().equals("tall_seagrass")
+                    && "lower".equals(belowState.getProperty("half"))) {
                 level.setBlock(belowPos, Block.WATER);
             }
         }
@@ -209,12 +224,12 @@ public final class WaterSpread {
     }
 
     /**
-     * Vanilla {@code MultifaceBlock.updateShape} folded over all six
-     * neighbours ({@code Block.updateFromNeighbourShapes}): every grown face
-     * without an attachable support behind it is removed, and a growth left
-     * with no face at all becomes plain air (even when waterlogged).
+     * Vanilla {@code MultifaceBlock.updateShape} folded over all six neighbours ({@code
+     * Block.updateFromNeighbourShapes}): every grown face without an attachable support behind it
+     * is removed, and a growth left with no face at all becomes plain air (even when waterlogged).
      */
-    private static void stripUnsupportedFaces(GenerationUnitAdapter level, BlockVec position, Block state) {
+    private static void stripUnsupportedFaces(
+            GenerationUnitAdapter level, BlockVec position, Block state) {
         var key = state.key().value();
         if (!key.equals("glow_lichen") && !key.equals("sculk_vein") && !key.equals("resin_clump")) {
             return;
@@ -251,8 +266,17 @@ public final class WaterSpread {
         var state = level.getBlock(position.blockX(), position.blockY(), position.blockZ());
         var fluid = fluidOf(state);
         if (System.getProperty("worldgen.waterDebug") != null) {
-            System.out.println("WTICK " + position.blockX() + "," + position.blockY() + "," + position.blockZ()
-                    + " state=" + state.name() + " fluid=" + fluid);
+            System.out.println(
+                    "WTICK "
+                            + position.blockX()
+                            + ","
+                            + position.blockY()
+                            + ","
+                            + position.blockZ()
+                            + " state="
+                            + state.name()
+                            + " fluid="
+                            + fluid);
         }
         if (fluid.isEmpty()) {
             return;
@@ -274,7 +298,8 @@ public final class WaterSpread {
         spread(level, position, state, fluid);
     }
 
-    private static void spread(GenerationUnitAdapter level, BlockVec position, Block state, Fluid fluid) {
+    private static void spread(
+            GenerationUnitAdapter level, BlockVec position, Block state, Fluid fluid) {
         if (fluid.isEmpty()) {
             return;
         }
@@ -282,9 +307,11 @@ public final class WaterSpread {
         var belowPos = position.add(0, -1, 0);
         var belowState = blockAt(level, belowPos);
         var belowFluid = fluidOf(belowState);
-        if (canMaybePassThrough(level, position, state, Direction.DOWN, belowPos, belowState, belowFluid)) {
+        if (canMaybePassThrough(
+                level, position, state, Direction.DOWN, belowPos, belowState, belowFluid)) {
             var newBelowFluid = getNewLiquid(level, belowPos, belowState, fluid);
-            if (canReplaceWith(belowFluid, newBelowFluid, Direction.DOWN) && canHoldSpecificFluid(belowState)) {
+            if (canReplaceWith(belowFluid, newBelowFluid, Direction.DOWN)
+                    && canHoldSpecificFluid(belowState)) {
                 spreadTo(level, belowPos, belowState, newBelowFluid);
                 if (sourceNeighborCount(level, position) >= 3) {
                     spreadToSides(level, position, fluid, state);
@@ -298,7 +325,8 @@ public final class WaterSpread {
         }
     }
 
-    private static void spreadToSides(GenerationUnitAdapter level, BlockVec position, Fluid fluid, Block state) {
+    private static void spreadToSides(
+            GenerationUnitAdapter level, BlockVec position, Fluid fluid, Block state) {
         var neighborAmount = fluid.amount() - fluid.dropOff();
         if (fluid.falling()) {
             neighborAmount = 7;
@@ -315,8 +343,8 @@ public final class WaterSpread {
         }
     }
 
-    private static Map<Direction, Fluid> getSpread(GenerationUnitAdapter level, BlockVec position, Block state,
-            Fluid spreading) {
+    private static Map<Direction, Fluid> getSpread(
+            GenerationUnitAdapter level, BlockVec position, Block state, Fluid spreading) {
         var lowest = 1000;
         var result = new EnumMap<Direction, Fluid>(Direction.class);
         Map<BlockVec, Boolean> holeCache = null;
@@ -325,7 +353,8 @@ public final class WaterSpread {
             var testPos = position.add(direction.stepX(), direction.stepY(), direction.stepZ());
             var testState = blockAt(level, testPos);
             var testFluid = fluidOf(testState);
-            if (!canMaybePassThrough(level, position, state, direction, testPos, testState, testFluid)) {
+            if (!canMaybePassThrough(
+                    level, position, state, direction, testPos, testState, testFluid)) {
                 continue;
             }
 
@@ -342,7 +371,15 @@ public final class WaterSpread {
             if (isHole(level, testPos, holeCache)) {
                 distance = 0;
             } else {
-                distance = getSlopeDistance(level, testPos, 1, direction.opposite(), testState, holeCache, spreading);
+                distance =
+                        getSlopeDistance(
+                                level,
+                                testPos,
+                                1,
+                                direction.opposite(),
+                                testState,
+                                holeCache,
+                                spreading);
             }
 
             if (distance < lowest) {
@@ -359,8 +396,14 @@ public final class WaterSpread {
         return result;
     }
 
-    private static int getSlopeDistance(GenerationUnitAdapter level, BlockVec position, int pass,
-            Direction from, Block state, Map<BlockVec, Boolean> holeCache, Fluid spreading) {
+    private static int getSlopeDistance(
+            GenerationUnitAdapter level,
+            BlockVec position,
+            int pass,
+            Direction from,
+            Block state,
+            Map<BlockVec, Boolean> holeCache,
+            Fluid spreading) {
         var lowest = 1000;
         for (var direction : Direction.HORIZONTAL) {
             if (direction == from) {
@@ -376,7 +419,15 @@ public final class WaterSpread {
                 return pass;
             }
             if (pass < spreading.slopeFindDistance()) {
-                var value = getSlopeDistance(level, testPos, pass + 1, direction.opposite(), testState, holeCache, spreading);
+                var value =
+                        getSlopeDistance(
+                                level,
+                                testPos,
+                                pass + 1,
+                                direction.opposite(),
+                                testState,
+                                holeCache,
+                                spreading);
                 if (value < lowest) {
                     lowest = value;
                 }
@@ -385,31 +436,51 @@ public final class WaterSpread {
         return lowest;
     }
 
-    private static boolean isHole(GenerationUnitAdapter level, BlockVec position, Map<BlockVec, Boolean> holeCache) {
-        return holeCache.computeIfAbsent(position, pos -> {
-            var state = blockAt(level, pos);
-            var belowPos = pos.add(0, -1, 0);
-            var belowState = blockAt(level, belowPos);
-            return isWaterHole(level, pos, state, belowPos, belowState);
-        });
+    private static boolean isHole(
+            GenerationUnitAdapter level, BlockVec position, Map<BlockVec, Boolean> holeCache) {
+        return holeCache.computeIfAbsent(
+                position,
+                pos -> {
+                    var state = blockAt(level, pos);
+                    var belowPos = pos.add(0, -1, 0);
+                    var belowState = blockAt(level, belowPos);
+                    return isWaterHole(level, pos, state, belowPos, belowState);
+                });
     }
 
-    private static boolean isWaterHole(GenerationUnitAdapter level, BlockVec topPos, Block topState,
-            BlockVec bottomPos, Block bottomState) {
+    private static boolean isWaterHole(
+            GenerationUnitAdapter level,
+            BlockVec topPos,
+            Block topState,
+            BlockVec bottomPos,
+            Block bottomState) {
         if (!canPassThroughWall(Direction.DOWN, topState, bottomState)) {
             return false;
         }
         return !fluidOf(bottomState).isEmpty() || canHoldFluid(bottomState);
     }
 
-    private static boolean canPassThrough(GenerationUnitAdapter level, BlockVec sourcePos, Block sourceState,
-            Direction direction, BlockVec testPos, Block testState, Fluid testFluid) {
-        return canMaybePassThrough(level, sourcePos, sourceState, direction, testPos, testState, testFluid)
+    private static boolean canPassThrough(
+            GenerationUnitAdapter level,
+            BlockVec sourcePos,
+            Block sourceState,
+            Direction direction,
+            BlockVec testPos,
+            Block testState,
+            Fluid testFluid) {
+        return canMaybePassThrough(
+                        level, sourcePos, sourceState, direction, testPos, testState, testFluid)
                 && canHoldSpecificFluid(testState);
     }
 
-    private static boolean canMaybePassThrough(GenerationUnitAdapter level, BlockVec sourcePos, Block sourceState,
-            Direction direction, BlockVec testPos, Block testState, Fluid testFluid) {
+    private static boolean canMaybePassThrough(
+            GenerationUnitAdapter level,
+            BlockVec sourcePos,
+            Block sourceState,
+            Direction direction,
+            BlockVec testPos,
+            Block testState,
+            Fluid testFluid) {
         // Vanilla isSourceBlockOfThisType: only a SAME-type source stops the
         // spread scan - a lava source in a water spread's path is still a
         // candidate (LavaFluid.canBeReplacedWith accepts water)
@@ -435,10 +506,20 @@ public final class WaterSpread {
         return direction == Direction.DOWN;
     }
 
-    private static void spreadTo(GenerationUnitAdapter level, BlockVec position, Block state, Fluid fluid) {
+    private static void spreadTo(
+            GenerationUnitAdapter level, BlockVec position, Block state, Fluid fluid) {
         if (System.getProperty("worldgen.waterDebug") != null) {
-            System.out.println("WSPREAD " + position.blockX() + "," + position.blockY() + "," + position.blockZ()
-                    + " " + fluid + " over " + state.name());
+            System.out.println(
+                    "WSPREAD "
+                            + position.blockX()
+                            + ","
+                            + position.blockY()
+                            + ","
+                            + position.blockZ()
+                            + " "
+                            + fluid
+                            + " over "
+                            + state.name());
         }
         if (state.getProperty("waterlogged") != null) {
             // Vanilla SimpleWaterloggedBlock.placeLiquid only accepts
@@ -446,8 +527,10 @@ public final class WaterSpread {
             // waterloggable block is chosen as a spread target but the
             // placement is a silent no-op; only a source (via the two-source
             // conversion) actually waterlogs.
-            if (fluid.source() && !fluid.lava()
-                    && "false".equals(state.getProperty("waterlogged")) && WaterStates.canBeWaterlogged(state)) {
+            if (fluid.source()
+                    && !fluid.lava()
+                    && "false".equals(state.getProperty("waterlogged"))
+                    && WaterStates.canBeWaterlogged(state)) {
                 level.setBlock(position, state.withProperty("waterlogged", "true"));
             }
             return;
@@ -471,21 +554,21 @@ public final class WaterSpread {
     }
 
     /**
-     * Vanilla {@code LiquidBlock.shouldSpreadLiquid}, triggered by the
-     * neighbor updates of a block change (water placement or a conversion):
-     * an updated lava block scans its OWN up and horizontal neighbors for
-     * water - so lava sitting under a long-present water source converts as
-     * soon as ANY adjacent change pokes it - and solidifies to obsidian for
-     * a source, cobblestone for flowing. The conversion is a
-     * {@code setBlockAndUpdate}, so it propagates updates to ITS neighbors
-     * in turn (chained conversions).
+     * Vanilla {@code LiquidBlock.shouldSpreadLiquid}, triggered by the neighbor updates of a block
+     * change (water placement or a conversion): an updated lava block scans its OWN up and
+     * horizontal neighbors for water - so lava sitting under a long-present water source converts
+     * as soon as ANY adjacent change pokes it - and solidifies to obsidian for a source,
+     * cobblestone for flowing. The conversion is a {@code setBlockAndUpdate}, so it propagates
+     * updates to ITS neighbors in turn (chained conversions).
      */
-    private static void solidifyAdjacentLava(GenerationUnitAdapter level, BlockVec changedPosition) {
-        var neighbors = new BlockVec[] {
-                changedPosition.add(0, -1, 0), changedPosition.add(0, 1, 0),
-                changedPosition.add(1, 0, 0), changedPosition.add(-1, 0, 0),
-                changedPosition.add(0, 0, 1), changedPosition.add(0, 0, -1)
-        };
+    private static void solidifyAdjacentLava(
+            GenerationUnitAdapter level, BlockVec changedPosition) {
+        var neighbors =
+                new BlockVec[] {
+                    changedPosition.add(0, -1, 0), changedPosition.add(0, 1, 0),
+                    changedPosition.add(1, 0, 0), changedPosition.add(-1, 0, 0),
+                    changedPosition.add(0, 0, 1), changedPosition.add(0, 0, -1)
+                };
         for (var lavaPosition : neighbors) {
             var state = blockAt(level, lavaPosition);
             if (!state.key().value().equals("lava")) {
@@ -494,18 +577,23 @@ public final class WaterSpread {
             if (!hasWaterAboveOrBeside(level, lavaPosition)) {
                 continue;
             }
-            level.setBlock(lavaPosition, fluidOf(state).source() ? Block.OBSIDIAN : Block.COBBLESTONE);
+            level.setBlock(
+                    lavaPosition, fluidOf(state).source() ? Block.OBSIDIAN : Block.COBBLESTONE);
             solidifyAdjacentLava(level, lavaPosition);
         }
     }
 
     /** The water scan of {@code shouldSpreadLiquid}: up and the four horizontals, never down. */
-    private static boolean hasWaterAboveOrBeside(GenerationUnitAdapter level, BlockVec lavaPosition) {
-        var checks = new BlockVec[] {
-                lavaPosition.add(0, 1, 0),
-                lavaPosition.add(1, 0, 0), lavaPosition.add(-1, 0, 0),
-                lavaPosition.add(0, 0, 1), lavaPosition.add(0, 0, -1)
-        };
+    private static boolean hasWaterAboveOrBeside(
+            GenerationUnitAdapter level, BlockVec lavaPosition) {
+        var checks =
+                new BlockVec[] {
+                    lavaPosition.add(0, 1, 0),
+                    lavaPosition.add(1, 0, 0),
+                    lavaPosition.add(-1, 0, 0),
+                    lavaPosition.add(0, 0, 1),
+                    lavaPosition.add(0, 0, -1)
+                };
         for (var check : checks) {
             var fluid = fluidOf(blockAt(level, check));
             if (!fluid.isEmpty() && !fluid.lava()) {
@@ -515,7 +603,8 @@ public final class WaterSpread {
         return false;
     }
 
-    private static Fluid getNewLiquid(GenerationUnitAdapter level, BlockVec position, Block state, Fluid forFluid) {
+    private static Fluid getNewLiquid(
+            GenerationUnitAdapter level, BlockVec position, Block state, Fluid forFluid) {
         var highestNeighbor = 0;
         var neighborSources = 0;
 
@@ -523,7 +612,8 @@ public final class WaterSpread {
             var relativePos = position.add(direction.stepX(), direction.stepY(), direction.stepZ());
             var neighborState = blockAt(level, relativePos);
             var neighborFluid = fluidOf(neighborState);
-            if (neighborFluid.isEmpty() || neighborFluid.lava() != forFluid.lava()
+            if (neighborFluid.isEmpty()
+                    || neighborFluid.lava() != forFluid.lava()
                     || !canPassThroughWall(direction, state, neighborState)) {
                 continue;
             }
@@ -544,7 +634,8 @@ public final class WaterSpread {
 
         var aboveState = blockAt(level, position.add(0, 1, 0));
         var aboveFluid = fluidOf(aboveState);
-        if (!aboveFluid.isEmpty() && aboveFluid.lava() == forFluid.lava()
+        if (!aboveFluid.isEmpty()
+                && aboveFluid.lava() == forFluid.lava()
                 && canPassThroughWall(Direction.UP, state, aboveState)) {
             return new Fluid(8, true, false, forFluid.lava());
         }
@@ -576,10 +667,14 @@ public final class WaterSpread {
             return false;
         }
         var key = state.key().value();
-        return !key.endsWith("_door") && !key.endsWith("_sign")
-                && !key.equals("ladder") && !key.equals("sugar_cane")
-                && !key.equals("bubble_column") && !key.equals("nether_portal")
-                && !key.equals("end_portal") && !key.equals("end_gateway")
+        return !key.endsWith("_door")
+                && !key.endsWith("_sign")
+                && !key.equals("ladder")
+                && !key.equals("sugar_cane")
+                && !key.equals("bubble_column")
+                && !key.equals("nether_portal")
+                && !key.equals("end_portal")
+                && !key.equals("end_gateway")
                 && !key.equals("structure_void");
     }
 
@@ -588,7 +683,8 @@ public final class WaterSpread {
         return waterlogged == null || waterlogged.equals("false");
     }
 
-    private static boolean canPassThroughWall(Direction direction, Block sourceState, Block targetState) {
+    private static boolean canPassThroughWall(
+            Direction direction, Block sourceState, Block targetState) {
         if (isFullCube(targetState) || isFullCube(sourceState)) {
             return false;
         }
@@ -596,13 +692,14 @@ public final class WaterSpread {
     }
 
     /**
-     * Vanilla {@code BlockStateBase.blocksMotion}: the legacy-solid flag
-     * minus cobweb and bamboo sapling. Collision-shape emptiness is the
-     * wrong test - a moss carpet has a collision box but water still flows
-     * into (and destroys) it.
+     * Vanilla {@code BlockStateBase.blocksMotion}: the legacy-solid flag minus cobweb and bamboo
+     * sapling. Collision-shape emptiness is the wrong test - a moss carpet has a collision box but
+     * water still flows into (and destroys) it.
      */
     private static boolean blocksMotion(Block state) {
-        return state.solid() && !state.compare(Block.COBWEB) && !state.compare(Block.BAMBOO_SAPLING);
+        return state.solid()
+                && !state.compare(Block.COBWEB)
+                && !state.compare(Block.BAMBOO_SAPLING);
     }
 
     private static boolean isFullCube(Block state) {

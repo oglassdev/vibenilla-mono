@@ -21,9 +21,7 @@ public final class SignBlockHandler implements BlockHandler {
     private static final Key KEY = Key.key("placement:sign");
     private static final Key HANGING_SIGNS = Key.key("minecraft:all_hanging_signs");
 
-    private SignBlockHandler() {
-
-    }
+    private SignBlockHandler() {}
 
     @Override
     public Key getKey() {
@@ -56,18 +54,24 @@ public final class SignBlockHandler implements BlockHandler {
             return true;
         }
 
-        player.sendPacket(new OpenSignEditorPacket(position, isFrontText ? SignTextSlot.FRONT : SignTextSlot.BACK));
+        player.sendPacket(
+                new OpenSignEditorPacket(
+                        position, isFrontText ? SignTextSlot.FRONT : SignTextSlot.BACK));
         return false;
     }
 
     private boolean applyItem(
-            Interaction interaction, ItemStack heldItem, boolean isFrontText, CompoundBinaryTag nbt) {
+            Interaction interaction,
+            ItemStack heldItem,
+            boolean isFrontText,
+            CompoundBinaryTag nbt) {
         var material = heldItem.material();
         var color = dyeColor(material);
-        var applicator = material == Material.HONEYCOMB
-                || material == Material.GLOW_INK_SAC
-                || material == Material.INK_SAC
-                || color != null;
+        var applicator =
+                material == Material.HONEYCOMB
+                        || material == Material.GLOW_INK_SAC
+                        || material == Material.INK_SAC
+                        || color != null;
 
         if (!applicator || !mayBuild(interaction.getPlayer())) {
             return true;
@@ -106,7 +110,8 @@ public final class SignBlockHandler implements BlockHandler {
 
         var instance = interaction.getInstance();
         var position = interaction.getBlockPosition();
-        instance.setBlock(position, interaction.getBlock().withNbt(updatedNbt).withHandler(INSTANCE));
+        instance.setBlock(
+                position, interaction.getBlock().withNbt(updatedNbt).withHandler(INSTANCE));
 
         if (material == Material.HONEYCOMB) {
             var packet = new WorldEventPacket(3003, position, 0, false);
@@ -130,12 +135,15 @@ public final class SignBlockHandler implements BlockHandler {
     }
 
     private void playWaxedFailure(Interaction interaction, Block block, Point position) {
-        var soundEvent = Utility.hasTag(block, HANGING_SIGNS)
-                ? SoundEvent.BLOCK_HANGING_SIGN_WAXED_INTERACT_FAIL
-                : SoundEvent.BLOCK_SIGN_WAXED_INTERACT_FAIL;
-        interaction.getInstance().playSound(
-                Sound.sound(soundEvent, Sound.Source.BLOCK, 1.0F, 1.0F),
-                position.add(0.5D, 0.5D, 0.5D));
+        var soundEvent =
+                Utility.hasTag(block, HANGING_SIGNS)
+                        ? SoundEvent.BLOCK_HANGING_SIGN_WAXED_INTERACT_FAIL
+                        : SoundEvent.BLOCK_SIGN_WAXED_INTERACT_FAIL;
+        interaction
+                .getInstance()
+                .playSound(
+                        Sound.sound(soundEvent, Sound.Source.BLOCK, 1.0F, 1.0F),
+                        position.add(0.5D, 0.5D, 0.5D));
     }
 
     private static String dyeColor(Material material) {
@@ -144,10 +152,12 @@ public final class SignBlockHandler implements BlockHandler {
     }
 
     private static boolean mayBuild(Player player) {
-        return player.getGameMode() != GameMode.ADVENTURE && player.getGameMode() != GameMode.SPECTATOR;
+        return player.getGameMode() != GameMode.ADVENTURE
+                && player.getGameMode() != GameMode.SPECTATOR;
     }
 
-    private static boolean isFacingFrontText(Block block, Player player, Point position, BlockFace clickedFace) {
+    private static boolean isFacingFrontText(
+            Block block, Player player, Point position, BlockFace clickedFace) {
         var facingName = block.getProperty("facing");
 
         if (facingName != null) {

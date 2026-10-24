@@ -4,6 +4,8 @@ import io.github.togar2.pvp.feature.FeatureType;
 import io.github.togar2.pvp.feature.RegistrableFeature;
 import io.github.togar2.pvp.feature.config.DefinedFeature;
 import io.github.togar2.pvp.feature.config.PlayerInitReason;
+import java.util.HashMap;
+import java.util.Map;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.EventNode;
@@ -14,18 +16,13 @@ import net.minestom.server.item.ItemStack;
 import net.minestom.server.network.packet.server.play.SetCooldownPacket;
 import net.minestom.server.tag.Tag;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
-/**
- * Vanilla implementation of {@link ItemCooldownFeature}
- */
+/** Vanilla implementation of {@link ItemCooldownFeature} */
 public class VanillaItemCooldownFeature implements ItemCooldownFeature, RegistrableFeature {
-    public static final DefinedFeature<VanillaItemCooldownFeature> DEFINED = new DefinedFeature<>(
-            FeatureType.ITEM_COOLDOWN, configuration -> new VanillaItemCooldownFeature(),
-            VanillaItemCooldownFeature::initPlayer
-    );
+    public static final DefinedFeature<VanillaItemCooldownFeature> DEFINED =
+            new DefinedFeature<>(
+                    FeatureType.ITEM_COOLDOWN,
+                    configuration -> new VanillaItemCooldownFeature(),
+                    VanillaItemCooldownFeature::initPlayer);
 
     public static final Tag<Map<String, Long>> COOLDOWN_END = Tag.Transient("cooldownEnd");
 
@@ -42,33 +39,38 @@ public class VanillaItemCooldownFeature implements ItemCooldownFeature, Registra
 
     @Override
     public void init(EventNode<EntityInstanceEvent> node) {
-        node.addListener(PlayerTickEvent.class, event -> {
-            var player = event.getPlayer();
-            var cooldown = player.getTag(COOLDOWN_END);
-            if (cooldown.isEmpty()) return;
-            var time = player.getAliveTicks();
+        node.addListener(
+                PlayerTickEvent.class,
+                event -> {
+                    var player = event.getPlayer();
+                    var cooldown = player.getTag(COOLDOWN_END);
+                    if (cooldown.isEmpty()) return;
+                    var time = player.getAliveTicks();
 
-            var iterator = cooldown.entrySet().iterator();
+                    var iterator = cooldown.entrySet().iterator();
 
-            while (iterator.hasNext()) {
-                Map.Entry<String, Long> entry = iterator.next();
-                if (entry.getValue() <= time) {
-                    iterator.remove();
-                    this.sendCooldownPacket(player, entry.getKey(), 0);
-                }
-            }
-        });
+                    while (iterator.hasNext()) {
+                        Map.Entry<String, Long> entry = iterator.next();
+                        if (entry.getValue() <= time) {
+                            iterator.remove();
+                            this.sendCooldownPacket(player, entry.getKey(), 0);
+                        }
+                    }
+                });
 
-        node.addListener(PlayerUseItemEvent.class, event -> {
-            if (this.hasCooldown(event.getPlayer(), event.getItemStack()))
-                event.setCancelled(true);
-        });
+        node.addListener(
+                PlayerUseItemEvent.class,
+                event -> {
+                    if (this.hasCooldown(event.getPlayer(), event.getItemStack()))
+                        event.setCancelled(true);
+                });
     }
 
     @Override
     public boolean hasCooldown(Player player, String cooldownGroup) {
         var cooldown = player.getTag(COOLDOWN_END);
-        return cooldown.containsKey(cooldownGroup) && cooldown.get(cooldownGroup) > player.getAliveTicks();
+        return cooldown.containsKey(cooldownGroup)
+                && cooldown.get(cooldownGroup) > player.getAliveTicks();
     }
 
     @Override

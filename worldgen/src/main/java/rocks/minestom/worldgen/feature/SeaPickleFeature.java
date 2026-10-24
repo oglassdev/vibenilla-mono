@@ -5,8 +5,8 @@ import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.CountConfiguration;
 
 /**
- * Port of vanilla {@code SeaPickleFeature}: scatters sea pickle clusters over
- * the ocean floor around the origin.
+ * Port of vanilla {@code SeaPickleFeature}: scatters sea pickle clusters over the ocean floor
+ * around the origin.
  */
 public final class SeaPickleFeature implements Feature<CountConfiguration> {
 
@@ -16,7 +16,8 @@ public final class SeaPickleFeature implements Feature<CountConfiguration> {
     }
 
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<CountConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<CountConfiguration, T> context) {
         var placed = 0;
         var random = context.random();
         var level = context.accessor();
@@ -30,9 +31,11 @@ public final class SeaPickleFeature implements Feature<CountConfiguration> {
             var z = origin.blockZ() + offsetZ;
             var y = oceanFloorHeight(level, x, z);
             var picklePosition = new BlockVec(x, y, z);
-            var pickleState = Block.SEA_PICKLE.withProperty("pickles", String.valueOf(random.nextInt(4) + 1));
+            var pickleState =
+                    Block.SEA_PICKLE.withProperty("pickles", String.valueOf(random.nextInt(4) + 1));
 
-            if (level.getBlock(picklePosition).compare(Block.WATER) && canSurvive(level, picklePosition)) {
+            if (level.getBlock(picklePosition).compare(Block.WATER)
+                    && canSurvive(level, picklePosition)) {
                 level.setBlock(picklePosition, pickleState);
                 placed++;
             }

@@ -1,8 +1,7 @@
 package rocks.minestom.worldgen.biome;
 
-import net.kyori.adventure.key.Key;
-
 import java.util.List;
+import net.kyori.adventure.key.Key;
 
 public record FixedBiomeSource(Key biome) implements BiomeSource {
     @Override
@@ -15,4 +14,3 @@ public record FixedBiomeSource(Key biome) implements BiomeSource {
         return List.of(this.biome);
     }
 }
-

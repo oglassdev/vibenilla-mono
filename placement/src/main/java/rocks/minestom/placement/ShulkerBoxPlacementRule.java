@@ -1,10 +1,9 @@
 package rocks.minestom.placement;
 
+import java.util.Objects;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
-
-import java.util.Objects;
 
 public final class ShulkerBoxPlacementRule extends BlockPlacementRule {
     public ShulkerBoxPlacementRule(Block block) {
@@ -15,7 +14,8 @@ public final class ShulkerBoxPlacementRule extends BlockPlacementRule {
     public Block blockPlace(PlacementState placementState) {
         var facing = Objects.requireNonNullElse(placementState.blockFace(), BlockFace.TOP);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withHandler(ConsumeInteractionBlockHandler.INSTANCE)
                 .withProperty("facing", facingName(facing));
     }

@@ -1,5 +1,6 @@
 package rocks.minestom.worldgen.feature.stateproviders;
 
+import java.util.List;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.coordinate.BlockVec;
@@ -7,13 +8,13 @@ import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.BlockCodec;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.List;
-
 public final class WeightedStateProvider implements BlockStateProvider {
-    public static final Codec<WeightedStateProvider> CODEC = StructCodec.struct(
-            "entries", Entry.CODEC.list(), provider -> provider.entries,
-            WeightedStateProvider::new
-    );
+    public static final Codec<WeightedStateProvider> CODEC =
+            StructCodec.struct(
+                    "entries",
+                    Entry.CODEC.list(),
+                    provider -> provider.entries,
+                    WeightedStateProvider::new);
 
     private final List<Entry> entries;
     private final int totalWeight;
@@ -46,10 +47,14 @@ public final class WeightedStateProvider implements BlockStateProvider {
     }
 
     public record Entry(Block data, int weight) {
-        public static final Codec<Entry> CODEC = StructCodec.struct(
-                "data", BlockCodec.CODEC, Entry::data,
-                "weight", Codec.INT, Entry::weight,
-                Entry::new
-        );
+        public static final Codec<Entry> CODEC =
+                StructCodec.struct(
+                        "data",
+                        BlockCodec.CODEC,
+                        Entry::data,
+                        "weight",
+                        Codec.INT,
+                        Entry::weight,
+                        Entry::new);
     }
 }

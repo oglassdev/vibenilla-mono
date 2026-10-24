@@ -2,20 +2,17 @@ package rocks.minestom.crafting;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.item.Material;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
-
-/**
- * Loads the vanilla item tag definitions and exposes them as resolved material sets.
- */
+/** Loads the vanilla item tag definitions and exposes them as resolved material sets. */
 public final class ItemTagManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(ItemTagManager.class);
 
@@ -36,16 +33,15 @@ public final class ItemTagManager {
             }
         }
 
-        var tagName = relativePath.toString()
-                .replace('\\', '/')
-                .replace(".json", "");
+        var tagName = relativePath.toString().replace('\\', '/').replace(".json", "");
 
         return Key.key("minecraft", tagName);
     }
 
     private void loadDefinitions(Path tagDirectory) {
         if (!Files.exists(tagDirectory)) {
-            LOGGER.warn("Item tag directory {} is missing, crafting tags will be empty.", tagDirectory);
+            LOGGER.warn(
+                    "Item tag directory {} is missing, crafting tags will be empty.", tagDirectory);
             return;
         }
 

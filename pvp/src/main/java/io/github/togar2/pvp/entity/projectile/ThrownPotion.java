@@ -3,23 +3,20 @@ package io.github.togar2.pvp.entity.projectile;
 import io.github.togar2.pvp.entity.AreaEffectCloud;
 import io.github.togar2.pvp.feature.effect.EffectFeature;
 import io.github.togar2.pvp.utils.EffectUtil;
-import net.minestom.server.collision.BoundingBox;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.*;
-import net.minestom.server.instance.block.Block;
 import net.minestom.server.entity.metadata.item.LingeringPotionMeta;
 import net.minestom.server.entity.metadata.item.SplashPotionMeta;
+import net.minestom.server.instance.block.Block;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.component.PotionContents;
-import net.minestom.server.potion.Potion;
 import net.minestom.server.potion.PotionType;
 import net.minestom.server.worldevent.WorldEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class ThrownPotion extends CustomEntityProjectile implements ItemHoldingProjectile {
     private final EffectFeature effectFeature;
@@ -60,15 +57,19 @@ public class ThrownPotion extends CustomEntityProjectile implements ItemHoldingP
 
         var potionContents = item.get(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
         var potions = this.effectFeature.getAllPotions(potionContents);
-        var waterPotion = potionContents.potion() == PotionType.WATER && potionContents.customEffects().isEmpty();
+        var waterPotion =
+                potionContents.potion() == PotionType.WATER
+                        && potionContents.customEffects().isEmpty();
 
         if (waterPotion) {
             this.applyWaterSplash(entity);
             this.dowseFireBlocks();
         } else if (!potions.isEmpty()) {
             if (this.lingering) {
-                var areaEffectCloud = new AreaEffectCloud(potionContents, this.getShooter(), this.effectFeature);
-                areaEffectCloud.setInstance(Objects.requireNonNull(this.getInstance()), this.getPosition());
+                var areaEffectCloud =
+                        new AreaEffectCloud(potionContents, this.getShooter(), this.effectFeature);
+                areaEffectCloud.setInstance(
+                        Objects.requireNonNull(this.getInstance()), this.getPosition());
             } else {
                 this.applySplash(potionContents, entity);
             }
@@ -84,22 +85,36 @@ public class ThrownPotion extends CustomEntityProjectile implements ItemHoldingP
             }
         }
 
-        var effect = instantEffect ? WorldEvent.PARTICLES_INSTANT_POTION_SPLASH : WorldEvent.PARTICLES_SPELL_POTION_SPLASH;
+        var effect =
+                instantEffect
+                        ? WorldEvent.PARTICLES_INSTANT_POTION_SPLASH
+                        : WorldEvent.PARTICLES_SPELL_POTION_SPLASH;
         EffectUtil.sendNearby(
-                Objects.requireNonNull(this.getInstance()), effect, position.blockX(),
-                position.blockY(), position.blockZ(), this.effectFeature.getPotionColor(potionContents),
-                64.0, false
-        );
+                Objects.requireNonNull(this.getInstance()),
+                effect,
+                position.blockX(),
+                position.blockY(),
+                position.blockZ(),
+                this.effectFeature.getPotionColor(potionContents),
+                64.0,
+                false);
     }
 
     private void applyWaterSplash(@Nullable Entity hitEntity) {
         var boundingBox = this.getBoundingBox().expand(8.0, 4.0, 8.0);
-        var entities = Objects.requireNonNull(this.getInstance()).getEntities().stream()
-                .filter(entity -> boundingBox.intersectEntity(this.getPosition().add(0, -2, 0), entity))
-                .filter(entity -> entity instanceof LivingEntity)
-                .filter(entity -> !(entity instanceof Player player) || player.getGameMode() != GameMode.SPECTATOR)
-                .map(entity -> (LivingEntity) entity)
-                .collect(Collectors.toList());
+        var entities =
+                Objects.requireNonNull(this.getInstance()).getEntities().stream()
+                        .filter(
+                                entity ->
+                                        boundingBox.intersectEntity(
+                                                this.getPosition().add(0, -2, 0), entity))
+                        .filter(entity -> entity instanceof LivingEntity)
+                        .filter(
+                                entity ->
+                                        !(entity instanceof Player player)
+                                                || player.getGameMode() != GameMode.SPECTATOR)
+                        .map(entity -> (LivingEntity) entity)
+                        .collect(Collectors.toList());
 
         if (hitEntity instanceof LivingEntity livingEntity && !entities.contains(livingEntity)) {
             entities.add(livingEntity);
@@ -115,12 +130,19 @@ public class ThrownPotion extends CustomEntityProjectile implements ItemHoldingP
 
     private void applySplash(PotionContents potionContents, @Nullable Entity hitEntity) {
         var boundingBox = this.getBoundingBox().expand(8.0, 4.0, 8.0);
-        var entities = Objects.requireNonNull(this.getInstance()).getEntities().stream()
-                .filter(entity -> boundingBox.intersectEntity(this.getPosition().add(0, -2, 0), entity))
-                .filter(entity -> entity instanceof LivingEntity)
-                .filter(entity -> !(entity instanceof Player player) || player.getGameMode() != GameMode.SPECTATOR)
-                .map(entity -> (LivingEntity) entity)
-                .collect(Collectors.toList());
+        var entities =
+                Objects.requireNonNull(this.getInstance()).getEntities().stream()
+                        .filter(
+                                entity ->
+                                        boundingBox.intersectEntity(
+                                                this.getPosition().add(0, -2, 0), entity))
+                        .filter(entity -> entity instanceof LivingEntity)
+                        .filter(
+                                entity ->
+                                        !(entity instanceof Player player)
+                                                || player.getGameMode() != GameMode.SPECTATOR)
+                        .map(entity -> (LivingEntity) entity)
+                        .collect(Collectors.toList());
 
         if (hitEntity instanceof LivingEntity && !entities.contains(hitEntity)) {
             entities.add((LivingEntity) hitEntity);
@@ -136,7 +158,8 @@ public class ThrownPotion extends CustomEntityProjectile implements ItemHoldingP
             if (distanceSquared >= 16.0) continue;
 
             var proximity = 1.0 - Math.sqrt(distanceSquared) / 4.0;
-            this.effectFeature.addSplashPotionEffects(entity, potionContents, proximity, this, this.getShooter());
+            this.effectFeature.addSplashPotionEffects(
+                    entity, potionContents, proximity, this, this.getShooter());
         }
     }
 
@@ -146,12 +169,24 @@ public class ThrownPotion extends CustomEntityProjectile implements ItemHoldingP
         var otherBox = entity.getBoundingBox();
         var otherPosition = entity.getPosition();
 
-        var dx = axisGap(position.x() + box.minX(), position.x() + box.maxX(),
-                otherPosition.x() + otherBox.minX() - inflate, otherPosition.x() + otherBox.maxX() + inflate);
-        var dy = axisGap(position.y() + box.minY(), position.y() + box.maxY(),
-                otherPosition.y() + otherBox.minY() - inflate, otherPosition.y() + otherBox.maxY() + inflate);
-        var dz = axisGap(position.z() + box.minZ(), position.z() + box.maxZ(),
-                otherPosition.z() + otherBox.minZ() - inflate, otherPosition.z() + otherBox.maxZ() + inflate);
+        var dx =
+                axisGap(
+                        position.x() + box.minX(),
+                        position.x() + box.maxX(),
+                        otherPosition.x() + otherBox.minX() - inflate,
+                        otherPosition.x() + otherBox.maxX() + inflate);
+        var dy =
+                axisGap(
+                        position.y() + box.minY(),
+                        position.y() + box.maxY(),
+                        otherPosition.y() + otherBox.minY() - inflate,
+                        otherPosition.y() + otherBox.maxY() + inflate);
+        var dz =
+                axisGap(
+                        position.z() + box.minZ(),
+                        position.z() + box.maxZ(),
+                        otherPosition.z() + otherBox.minZ() - inflate,
+                        otherPosition.z() + otherBox.maxZ() + inflate);
 
         return dx * dx + dy * dy + dz * dz;
     }
@@ -194,7 +229,8 @@ public class ThrownPotion extends CustomEntityProjectile implements ItemHoldingP
 
         if (!"true".equals(litProperty)) return;
 
-        if (block.compare(Block.CAMPFIRE) || block.compare(Block.SOUL_CAMPFIRE)
+        if (block.compare(Block.CAMPFIRE)
+                || block.compare(Block.SOUL_CAMPFIRE)
                 || block.key().value().contains("candle")) {
             instance.setBlock(position, block.withProperty("lit", "false"));
         }

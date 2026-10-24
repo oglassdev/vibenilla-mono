@@ -1,5 +1,7 @@
 package io.github.togar2.pvp.entity.projectile;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import io.github.togar2.pvp.feature.fall.FallFeature;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
@@ -8,8 +10,6 @@ import net.minestom.server.network.packet.server.play.PlayerPositionAndLookPacke
 import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @EnvTest
 public final class ThrownEnderpearlTest {
@@ -27,12 +27,13 @@ public final class ThrownEnderpearlTest {
         var packets = connection.trackIncoming(PlayerPositionAndLookPacket.class);
         pearl.onStuck();
 
-        packets.assertSingle(packet -> {
-            assertEquals(RelativeFlags.VIEW | RelativeFlags.DELTA_COORD, packet.flags());
-            assertEquals(Vec.ZERO, packet.delta());
-            assertEquals(0.0F, packet.yaw());
-            assertEquals(0.0F, packet.pitch());
-        });
+        packets.assertSingle(
+                packet -> {
+                    assertEquals(RelativeFlags.VIEW | RelativeFlags.DELTA_COORD, packet.flags());
+                    assertEquals(Vec.ZERO, packet.delta());
+                    assertEquals(0.0F, packet.yaw());
+                    assertEquals(0.0F, packet.pitch());
+                });
         assertEquals(velocity, player.getVelocity());
         assertEquals(90.0F, player.getPosition().yaw());
         assertEquals(10.0F, player.getPosition().pitch());

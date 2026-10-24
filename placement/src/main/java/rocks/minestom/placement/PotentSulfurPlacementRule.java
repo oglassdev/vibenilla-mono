@@ -7,8 +7,10 @@ import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
 
 public final class PotentSulfurPlacementRule extends BlockPlacementRule {
-    private static final Key CONTINUOUS_GEYSER_TAG = Key.key("minecraft:causes_continuous_geyser_eruptions");
-    private static final Key PERIODIC_GEYSER_TAG = Key.key("minecraft:causes_periodic_geyser_eruptions");
+    private static final Key CONTINUOUS_GEYSER_TAG =
+            Key.key("minecraft:causes_continuous_geyser_eruptions");
+    private static final Key PERIODIC_GEYSER_TAG =
+            Key.key("minecraft:causes_periodic_geyser_eruptions");
 
     public PotentSulfurPlacementRule(Block block) {
         super(block);

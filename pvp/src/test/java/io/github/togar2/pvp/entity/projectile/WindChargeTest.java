@@ -1,22 +1,22 @@
 package io.github.togar2.pvp.entity.projectile;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.github.togar2.pvp.feature.CombatFeatures;
 import io.github.togar2.pvp.feature.FeatureType;
-import io.github.togar2.pvp.feature.fall.VanillaFallFeature;
-import net.minestom.server.coordinate.Pos;
-import net.minestom.server.entity.GameMode;
 import io.github.togar2.pvp.feature.fall.FallFeature;
+import io.github.togar2.pvp.feature.fall.VanillaFallFeature;
 import net.minestom.server.ServerFlag;
+import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
+import net.minestom.server.entity.GameMode;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.network.packet.server.play.ParticlePacket;
 import net.minestom.server.particle.Particle;
 import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @EnvTest
 public final class WindChargeTest {
@@ -34,7 +34,10 @@ public final class WindChargeTest {
         var particles = connection.trackIncoming(ParticlePacket.class);
         for (var tick = 0; tick < 5; tick++) env.tick();
 
-        var bursts = particles.collect().stream().filter(packet -> packet.particle().equals(Particle.GUST_EMITTER_LARGE)).toList();
+        var bursts =
+                particles.collect().stream()
+                        .filter(packet -> packet.particle().equals(Particle.GUST_EMITTER_LARGE))
+                        .toList();
         assertEquals(1, bursts.size());
         assertTrue(bursts.getFirst().x() > 11.6, "explosion center x " + bursts.getFirst().x());
         assertTrue(viewer.isOnline());
@@ -42,10 +45,11 @@ public final class WindChargeTest {
 
     @Test
     public void explosionUsesCurrentPositionAsImpactPosition(Env env) {
-        var fallFeature = CombatFeatures.empty()
-                .add(CombatFeatures.VANILLA_FALL)
-                .build()
-                .get(FeatureType.FALL);
+        var fallFeature =
+                CombatFeatures.empty()
+                        .add(CombatFeatures.VANILLA_FALL)
+                        .build()
+                        .get(FeatureType.FALL);
 
         var instance = env.createFlatInstance();
         var player = env.createPlayer(instance, new Pos(0.0, 70.0, 0.0));
@@ -57,6 +61,7 @@ public final class WindChargeTest {
         windCharge.onHit(player);
 
         assertEquals(70.0, player.getTag(VanillaFallFeature.CURRENT_IMPULSE_IMPACT_Y));
-        assertEquals(40, player.getTag(VanillaFallFeature.CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME));
+        assertEquals(
+                40, player.getTag(VanillaFallFeature.CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME));
     }
 }

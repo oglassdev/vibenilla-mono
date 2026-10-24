@@ -8,12 +8,18 @@ import rocks.minestom.worldgen.feature.configurations.TreeConfiguration;
 import rocks.minestom.worldgen.random.RandomSource;
 
 public record MegaJungleFoliagePlacer(int radius, int offset, int height) implements FoliagePlacer {
-    public static final Codec<MegaJungleFoliagePlacer> CODEC = StructCodec.struct(
-            "radius", Codec.INT, MegaJungleFoliagePlacer::radius,
-            "offset", Codec.INT, MegaJungleFoliagePlacer::offset,
-            "height", Codec.INT, MegaJungleFoliagePlacer::height,
-            MegaJungleFoliagePlacer::new
-    );
+    public static final Codec<MegaJungleFoliagePlacer> CODEC =
+            StructCodec.struct(
+                    "radius",
+                    Codec.INT,
+                    MegaJungleFoliagePlacer::radius,
+                    "offset",
+                    Codec.INT,
+                    MegaJungleFoliagePlacer::offset,
+                    "height",
+                    Codec.INT,
+                    MegaJungleFoliagePlacer::height,
+                    MegaJungleFoliagePlacer::new);
 
     @Override
     public void createFoliage(
@@ -24,13 +30,20 @@ public record MegaJungleFoliagePlacer(int radius, int offset, int height) implem
             int maxFreeTreeHeight,
             FoliageAttachment attachment,
             int foliageHeight,
-            int foliageRadius
-    ) {
+            int foliageRadius) {
         var layerCount = attachment.doubleTrunk() ? foliageHeight : 1 + random.nextInt(2);
 
         for (var layerY = this.offset; layerY >= this.offset - layerCount; layerY--) {
             var layerRadius = foliageRadius + attachment.radiusOffset() + 1 - layerY;
-            this.placeLeavesRow(getter, foliageSetter, random, config, attachment.pos(), layerRadius, layerY, attachment.doubleTrunk());
+            this.placeLeavesRow(
+                    getter,
+                    foliageSetter,
+                    random,
+                    config,
+                    attachment.pos(),
+                    layerRadius,
+                    layerY,
+                    attachment.doubleTrunk());
         }
     }
 
@@ -52,14 +65,17 @@ public record MegaJungleFoliagePlacer(int radius, int offset, int height) implem
             BlockVec center,
             int radius,
             int yOffset,
-            boolean doubleTrunk
-    ) {
+            boolean doubleTrunk) {
         var widthOffset = doubleTrunk ? 1 : 0;
 
         for (var x = -radius; x <= radius + widthOffset; x++) {
             for (var z = -radius; z <= radius + widthOffset; z++) {
                 if (!this.shouldSkipLocationSigned(x, z, radius)) {
-                    var position = new BlockVec(center.blockX() + x, center.blockY() + yOffset, center.blockZ() + z);
+                    var position =
+                            new BlockVec(
+                                    center.blockX() + x,
+                                    center.blockY() + yOffset,
+                                    center.blockZ() + z);
                     FoliagePlacer.tryPlaceLeaf(getter, setter, random, config, position);
                 }
             }

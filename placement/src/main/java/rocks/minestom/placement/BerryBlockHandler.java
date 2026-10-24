@@ -1,5 +1,6 @@
 package rocks.minestom.placement;
 
+import java.util.concurrent.ThreadLocalRandom;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.minestom.server.entity.ItemEntity;
@@ -9,15 +10,11 @@ import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.sound.SoundEvent;
 
-import java.util.concurrent.ThreadLocalRandom;
-
 public final class BerryBlockHandler implements BlockHandler {
     public static final BerryBlockHandler INSTANCE = new BerryBlockHandler();
     private static final Key KEY = Key.key("placement:berries");
 
-    private BerryBlockHandler() {
-
-    }
+    private BerryBlockHandler() {}
 
     @Override
     public Key getKey() {
@@ -32,13 +29,18 @@ public final class BerryBlockHandler implements BlockHandler {
             return this.harvestSweetBerries(interaction);
         }
 
-        if (!"true".equals(block.getProperty("berries")) || Utility.shouldSkipInteract(interaction)) {
+        if (!"true".equals(block.getProperty("berries"))
+                || Utility.shouldSkipInteract(interaction)) {
             return true;
         }
 
-        this.harvest(interaction, Material.GLOW_BERRIES, 1, SoundEvent.BLOCK_CAVE_VINES_PICK_BERRIES);
-        interaction.getInstance().setBlock(
-                interaction.getBlockPosition(), block.withProperty("berries", "false").withHandler(INSTANCE));
+        this.harvest(
+                interaction, Material.GLOW_BERRIES, 1, SoundEvent.BLOCK_CAVE_VINES_PICK_BERRIES);
+        interaction
+                .getInstance()
+                .setBlock(
+                        interaction.getBlockPosition(),
+                        block.withProperty("berries", "false").withHandler(INSTANCE));
         return false;
     }
 
@@ -57,13 +59,20 @@ public final class BerryBlockHandler implements BlockHandler {
 
         var amount = ThreadLocalRandom.current().nextInt(1, 3) + (age == 3 ? 1 : 0);
         this.harvest(
-                interaction, Material.SWEET_BERRIES, amount, SoundEvent.BLOCK_SWEET_BERRY_BUSH_PICK_BERRIES);
-        interaction.getInstance().setBlock(
-                interaction.getBlockPosition(), block.withProperty("age", "1").withHandler(INSTANCE));
+                interaction,
+                Material.SWEET_BERRIES,
+                amount,
+                SoundEvent.BLOCK_SWEET_BERRY_BUSH_PICK_BERRIES);
+        interaction
+                .getInstance()
+                .setBlock(
+                        interaction.getBlockPosition(),
+                        block.withProperty("age", "1").withHandler(INSTANCE));
         return false;
     }
 
-    private void harvest(Interaction interaction, Material material, int amount, SoundEvent soundEvent) {
+    private void harvest(
+            Interaction interaction, Material material, int amount, SoundEvent soundEvent) {
         var instance = interaction.getInstance();
         var position = interaction.getBlockPosition();
         var itemEntity = new ItemEntity(ItemStack.of(material, amount));

@@ -1,30 +1,29 @@
 package io.github.togar2.pvp.feature.attack;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.github.togar2.pvp.events.FinalAttackEvent;
 import io.github.togar2.pvp.feature.CombatFeatures;
 import io.github.togar2.pvp.feature.FeatureType;
+import java.util.ArrayList;
+import java.util.List;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.LivingEntity;
 import net.minestom.server.entity.Player;
-import net.minestom.server.event.EventNode;
-import net.minestom.server.network.packet.client.play.ClientEntityActionPacket;
 import net.minestom.server.event.EventDispatcher;
+import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityAttackEvent;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
+import net.minestom.server.network.packet.client.play.ClientEntityActionPacket;
 import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @EnvTest
 public final class VanillaAttackFeatureTest {
@@ -34,8 +33,11 @@ public final class VanillaAttackFeatureTest {
         var attackFeature = featureSet.get(FeatureType.ATTACK);
         var node = featureSet.createNode();
         var sprintAttacks = new ArrayList<Boolean>();
-        var attackListener = EventNode.all("sprint-attack-listener")
-                .addListener(FinalAttackEvent.class, event -> sprintAttacks.add(event.isSprint()));
+        var attackListener =
+                EventNode.all("sprint-attack-listener")
+                        .addListener(
+                                FinalAttackEvent.class,
+                                event -> sprintAttacks.add(event.isSprint()));
 
         MinecraftServer.getGlobalEventHandler().addChild(node);
         MinecraftServer.getGlobalEventHandler().addChild(attackListener);
@@ -91,11 +93,7 @@ public final class VanillaAttackFeatureTest {
     }
 
     private void sprint(Player player, ClientEntityActionPacket.Action action) {
-        player.addPacketToQueue(new ClientEntityActionPacket(
-                player.getEntityId(),
-                action,
-                0
-        ));
+        player.addPacketToQueue(new ClientEntityActionPacket(player.getEntityId(), action, 0));
         player.interpretPacketQueue();
     }
 }

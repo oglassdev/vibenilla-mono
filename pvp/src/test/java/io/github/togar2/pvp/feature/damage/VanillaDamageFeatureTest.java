@@ -1,6 +1,11 @@
 package io.github.togar2.pvp.feature.damage;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.github.togar2.pvp.feature.CombatFeatures;
+import java.util.List;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.coordinate.Pos;
@@ -20,12 +25,6 @@ import net.minestom.server.sound.SoundEvent;
 import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @EnvTest
 public final class VanillaDamageFeatureTest {
@@ -84,16 +83,18 @@ public final class VanillaDamageFeatureTest {
                 env.tick();
             }
 
-            target.setItemInMainHand(ItemStack.of(Material.SHIELD).with(DataComponents.BLOCKS_ATTACKS,
-                    new BlocksAttacks(
-                            0.0F,
-                            1.0F,
-                            List.of(BlocksAttacks.DamageReduction.DEFAULT),
-                            BlocksAttacks.ItemDamageFunction.DEFAULT,
-                            null,
-                            null,
-                            null
-                    )));
+            target.setItemInMainHand(
+                    ItemStack.of(Material.SHIELD)
+                            .with(
+                                    DataComponents.BLOCKS_ATTACKS,
+                                    new BlocksAttacks(
+                                            0.0F,
+                                            1.0F,
+                                            List.of(BlocksAttacks.DamageReduction.DEFAULT),
+                                            BlocksAttacks.ItemDamageFunction.DEFAULT,
+                                            null,
+                                            null,
+                                            null)));
             var targetMeta = (LivingEntityMeta) target.getEntityMeta();
             targetMeta.setActiveHand(PlayerHand.MAIN);
             targetMeta.setHandActive(true);
@@ -120,9 +121,11 @@ public final class VanillaDamageFeatureTest {
             var sounds = connection.trackIncoming(SoundEffectPacket.class);
 
             assertTrue(target.damage(this.createDamage(attacker, 1.0F)));
-            assertEquals(1, sounds.collect().stream()
-                    .filter(packet -> packet.soundEvent() == SoundEvent.ENTITY_PLAYER_HURT)
-                    .count());
+            assertEquals(
+                    1,
+                    sounds.collect().stream()
+                            .filter(packet -> packet.soundEvent() == SoundEvent.ENTITY_PLAYER_HURT)
+                            .count());
         } finally {
             MinecraftServer.getGlobalEventHandler().removeChild(node);
         }

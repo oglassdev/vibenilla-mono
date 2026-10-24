@@ -1,5 +1,7 @@
 package rocks.minestom.worldgen.structure.pool;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.coordinate.BlockVec;
 import rocks.minestom.worldgen.random.RandomSource;
@@ -7,12 +9,9 @@ import rocks.minestom.worldgen.structure.StructureRng;
 import rocks.minestom.worldgen.structure.loader.StructureLoader;
 import rocks.minestom.worldgen.structure.template.Rotation;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * Vanilla {@code StructureTemplatePool}: elements expanded by weight into a
- * flat template list; picks and shuffles operate on that expanded list.
+ * Vanilla {@code StructureTemplatePool}: elements expanded by weight into a flat template list;
+ * picks and shuffles operate on that expanded list.
  */
 public final class TemplatePool {
     private final List<PoolElement> templates;
@@ -52,8 +51,8 @@ public final class TemplatePool {
     }
 
     /**
-     * Vanilla {@code getMaxSize}: tallest bounding box (Y span) among the
-     * expanded templates at no rotation, used by the expansion hack.
+     * Vanilla {@code getMaxSize}: tallest bounding box (Y span) among the expanded templates at no
+     * rotation, used by the expansion hack.
      */
     public int getMaxSize(StructureLoader loader) {
         if (this.maxSize == Integer.MIN_VALUE) {
@@ -71,6 +70,5 @@ public final class TemplatePool {
         return this.maxSize;
     }
 
-    public record PoolElementEntry(PoolElement element, int weight) {
-    }
+    public record PoolElementEntry(PoolElement element, int weight) {}
 }

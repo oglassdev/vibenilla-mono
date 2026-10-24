@@ -4,16 +4,15 @@ import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.NoneFeatureConfiguration;
 
 /**
- * Exact port of vanilla {@code EndIslandFeature}. Draws a small floating
- * blob of end stone below the origin: starting from a random radius of four
- * to six blocks, it fills a circular disc of end stone at each descending
- * layer, shrinking the radius by a random amount of half a block to two and
- * a half blocks between layers until the radius drops to half a block or
- * less.
+ * Exact port of vanilla {@code EndIslandFeature}. Draws a small floating blob of end stone below
+ * the origin: starting from a random radius of four to six blocks, it fills a circular disc of end
+ * stone at each descending layer, shrinking the radius by a random amount of half a block to two
+ * and a half blocks between layers until the radius drops to half a block or less.
  */
 public final class EndIslandFeature implements Feature<NoneFeatureConfiguration> {
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<NoneFeatureConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<NoneFeatureConfiguration, T> context) {
         var level = context.accessor();
         var random = context.random();
         var origin = context.origin();
@@ -27,7 +26,11 @@ public final class EndIslandFeature implements Feature<NoneFeatureConfiguration>
             for (var x = minX; x <= maxX; x++) {
                 for (var z = minZ; z <= maxZ; z++) {
                     if ((float) (x * x + z * z) <= (size + 1.0F) * (size + 1.0F)) {
-                        level.setBlock(origin.blockX() + x, origin.blockY() + y, origin.blockZ() + z, Block.END_STONE);
+                        level.setBlock(
+                                origin.blockX() + x,
+                                origin.blockY() + y,
+                                origin.blockZ() + z,
+                                Block.END_STONE);
                     }
                 }
             }

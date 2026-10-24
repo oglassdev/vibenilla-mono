@@ -15,9 +15,7 @@ public final class JukeboxBlockHandler implements BlockHandler {
     private static final Key KEY = Key.key("placement:jukebox");
     private static final String RECORD_ITEM = "RecordItem";
 
-    private JukeboxBlockHandler() {
-
-    }
+    private JukeboxBlockHandler() {}
 
     @Override
     public Key getKey() {
@@ -47,15 +45,13 @@ public final class JukeboxBlockHandler implements BlockHandler {
         }
 
         var record = heldItem.withAmount(1);
-        var nbt = CompoundBinaryTag.builder()
-                .put(block.nbtOrEmpty())
-                .put(RECORD_ITEM, record.toItemNBT(MinecraftServer.process().registries()))
-                .putLong("ticks_since_song_started", 0L)
-                .build();
-        var updated = block
-                .withProperty("has_record", "true")
-                .withNbt(nbt)
-                .withHandler(INSTANCE);
+        var nbt =
+                CompoundBinaryTag.builder()
+                        .put(block.nbtOrEmpty())
+                        .put(RECORD_ITEM, record.toItemNBT(MinecraftServer.process().registries()))
+                        .putLong("ticks_since_song_started", 0L)
+                        .build();
+        var updated = block.withProperty("has_record", "true").withNbt(nbt).withHandler(INSTANCE);
         var instance = interaction.getInstance();
         var position = interaction.getBlockPosition();
         instance.setBlock(position, updated);
@@ -73,15 +69,14 @@ public final class JukeboxBlockHandler implements BlockHandler {
     private void ejectRecord(Interaction interaction) {
         var block = interaction.getBlock();
         var recordTag = block.nbtOrEmpty().getCompound(RECORD_ITEM);
-        var clearedNbt = block.nbtOrEmpty()
-                .remove(RECORD_ITEM)
-                .remove("ticks_since_song_started");
+        var clearedNbt = block.nbtOrEmpty().remove(RECORD_ITEM).remove("ticks_since_song_started");
         var instance = interaction.getInstance();
         var position = interaction.getBlockPosition();
-        instance.setBlock(position, block
-                .withProperty("has_record", "false")
-                .withNbt(clearedNbt)
-                .withHandler(INSTANCE));
+        instance.setBlock(
+                position,
+                block.withProperty("has_record", "false")
+                        .withNbt(clearedNbt)
+                        .withHandler(INSTANCE));
 
         if (!recordTag.isEmpty()) {
             var record = ItemStack.fromItemNBT(recordTag, MinecraftServer.process().registries());

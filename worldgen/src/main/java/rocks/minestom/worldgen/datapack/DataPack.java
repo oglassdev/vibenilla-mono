@@ -2,14 +2,13 @@ package rocks.minestom.worldgen.datapack;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import net.kyori.adventure.key.Key;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import net.kyori.adventure.key.Key;
 
 public final class DataPack {
     private final Path rootPath;
@@ -77,7 +76,8 @@ public final class DataPack {
     }
 
     private Path resolve(String directory, Key id) {
-        return this.rootPath.resolve("data")
+        return this.rootPath
+                .resolve("data")
                 .resolve(id.namespace())
                 .resolve(directory)
                 .resolve(id.value() + ".json");

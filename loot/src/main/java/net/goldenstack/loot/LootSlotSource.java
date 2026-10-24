@@ -1,5 +1,7 @@
 package net.goldenstack.loot;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.goldenstack.loot.util.Template;
 import net.goldenstack.loot.util.predicate.ItemPredicate;
 import net.kyori.adventure.key.Key;
@@ -10,21 +12,28 @@ import net.minestom.server.item.ItemStack;
 import net.minestom.server.registry.DynamicRegistry;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @SuppressWarnings("UnstableApiUsage")
 public interface LootSlotSource {
 
-    @NotNull Codec<LootSlotSource> CODEC = Codec.RegistryTaggedUnion(registries -> {
-        class Holder {
-            static final @NotNull DynamicRegistry<StructCodec<? extends LootSlotSource>> CODEC = createDefaultRegistry();
-        }
-        return Holder.CODEC;
-    }, LootSlotSource::codec, "type").orElse(Codec.ForwardRef(() -> Group.INLINE_CODEC), value -> value);
+    @NotNull
+    Codec<LootSlotSource> CODEC =
+            Codec.RegistryTaggedUnion(
+                            registries -> {
+                                class Holder {
+                                    static final @NotNull DynamicRegistry<
+                                                    StructCodec<? extends LootSlotSource>>
+                                            CODEC = createDefaultRegistry();
+                                }
+                                return Holder.CODEC;
+                            },
+                            LootSlotSource::codec,
+                            "type")
+                    .orElse(Codec.ForwardRef(() -> Group.INLINE_CODEC), value -> value);
 
     static @NotNull DynamicRegistry<StructCodec<? extends LootSlotSource>> createDefaultRegistry() {
-        var registry = DynamicRegistry.<StructCodec<? extends LootSlotSource>>create(Key.key("loot_slot_sources"));
+        var registry =
+                DynamicRegistry.<StructCodec<? extends LootSlotSource>>create(
+                        Key.key("loot_slot_sources"));
         registry.register("contents", Contents.CODEC);
         registry.register("empty", Empty.CODEC);
         registry.register("filtered", Filtered.CODEC);
@@ -35,9 +44,11 @@ public interface LootSlotSource {
         return registry;
     }
 
-    @NotNull List<ItemStack> provide(@NotNull LootContext context);
+    @NotNull
+    List<ItemStack> provide(@NotNull LootContext context);
 
-    @NotNull StructCodec<? extends LootSlotSource> codec();
+    @NotNull
+    StructCodec<? extends LootSlotSource> codec();
 
     record Empty() implements LootSlotSource {
         public static final @NotNull StructCodec<Empty> CODEC = StructCodec.struct(Empty::new);
@@ -54,12 +65,10 @@ public interface LootSlotSource {
     }
 
     record Group(@NotNull List<LootSlotSource> terms) implements LootSlotSource {
-        public static final @NotNull StructCodec<Group> CODEC = StructCodec.struct(
-                "terms", LootSlotSource.CODEC.list(), Group::terms,
-                Group::new
-        );
-        public static final @NotNull Codec<Group> INLINE_CODEC = LootSlotSource.CODEC.list()
-                .transform(Group::new, Group::terms);
+        public static final @NotNull StructCodec<Group> CODEC =
+                StructCodec.struct("terms", LootSlotSource.CODEC.list(), Group::terms, Group::new);
+        public static final @NotNull Codec<Group> INLINE_CODEC =
+                LootSlotSource.CODEC.list().transform(Group::new, Group::terms);
 
         @Override
         public @NotNull List<ItemStack> provide(@NotNull LootContext context) {
@@ -76,13 +85,17 @@ public interface LootSlotSource {
         }
     }
 
-    record Filtered(@NotNull LootSlotSource slotSource,
-                    @NotNull ItemPredicate itemFilter) implements LootSlotSource {
-        public static final @NotNull StructCodec<Filtered> CODEC = StructCodec.struct(
-                "slot_source", LootSlotSource.CODEC, Filtered::slotSource,
-                "item_filter", ItemPredicate.CODEC, Filtered::itemFilter,
-                Filtered::new
-        );
+    record Filtered(@NotNull LootSlotSource slotSource, @NotNull ItemPredicate itemFilter)
+            implements LootSlotSource {
+        public static final @NotNull StructCodec<Filtered> CODEC =
+                StructCodec.struct(
+                        "slot_source",
+                        LootSlotSource.CODEC,
+                        Filtered::slotSource,
+                        "item_filter",
+                        ItemPredicate.CODEC,
+                        Filtered::itemFilter,
+                        Filtered::new);
 
         @Override
         public @NotNull List<ItemStack> provide(@NotNull LootContext context) {
@@ -98,13 +111,17 @@ public interface LootSlotSource {
     }
 
     record Limit(@NotNull LootSlotSource slotSource, int limit) implements LootSlotSource {
-        private static final @NotNull Codec<Integer> POSITIVE_CODEC = Codec.INT.transform(value -> {
-            if (value <= 0) {
-                throw new IllegalArgumentException("Slot source limit must be positive");
-            }
+        private static final @NotNull Codec<Integer> POSITIVE_CODEC =
+                Codec.INT.transform(
+                        value -> {
+                            if (value <= 0) {
+                                throw new IllegalArgumentException(
+                                        "Slot source limit must be positive");
+                            }
 
-            return value;
-        }, value -> value);
+                            return value;
+                        },
+                        value -> value);
 
         public Limit {
             if (limit <= 0) {
@@ -112,11 +129,15 @@ public interface LootSlotSource {
             }
         }
 
-        public static final @NotNull StructCodec<Limit> CODEC = StructCodec.struct(
-                "slot_source", LootSlotSource.CODEC, Limit::slotSource,
-                "limit", POSITIVE_CODEC, Limit::limit,
-                Limit::new
-        );
+        public static final @NotNull StructCodec<Limit> CODEC =
+                StructCodec.struct(
+                        "slot_source",
+                        LootSlotSource.CODEC,
+                        Limit::slotSource,
+                        "limit",
+                        POSITIVE_CODEC,
+                        Limit::limit,
+                        Limit::new);
 
         @Override
         public @NotNull List<ItemStack> provide(@NotNull LootContext context) {
@@ -130,13 +151,18 @@ public interface LootSlotSource {
         }
     }
 
-    record Contents(@NotNull LootSlotSource slotSource,
-                    @NotNull DataComponent<List<ItemStack>> component) implements LootSlotSource {
-        public static final @NotNull StructCodec<Contents> CODEC = StructCodec.struct(
-                "slot_source", LootSlotSource.CODEC, Contents::slotSource,
-                "component", Template.CONTAINER, Contents::component,
-                Contents::new
-        );
+    record Contents(
+            @NotNull LootSlotSource slotSource, @NotNull DataComponent<List<ItemStack>> component)
+            implements LootSlotSource {
+        public static final @NotNull StructCodec<Contents> CODEC =
+                StructCodec.struct(
+                        "slot_source",
+                        LootSlotSource.CODEC,
+                        Contents::slotSource,
+                        "component",
+                        Template.CONTAINER,
+                        Contents::component,
+                        Contents::new);
 
         @Override
         public @NotNull List<ItemStack> provide(@NotNull LootContext context) {
@@ -157,11 +183,15 @@ public interface LootSlotSource {
     }
 
     record Range(@NotNull String source, @NotNull List<Integer> slots) implements LootSlotSource {
-        public static final @NotNull StructCodec<Range> CODEC = StructCodec.struct(
-                "source", SlotRanges.SOURCE_CODEC.optional("container"), Range::source,
-                "slots", SlotRanges.CODEC, Range::slots,
-                Range::new
-        );
+        public static final @NotNull StructCodec<Range> CODEC =
+                StructCodec.struct(
+                        "source",
+                        SlotRanges.SOURCE_CODEC.optional("container"),
+                        Range::source,
+                        "slots",
+                        SlotRanges.CODEC,
+                        Range::slots,
+                        Range::new);
 
         @Override
         public @NotNull List<ItemStack> provide(@NotNull LootContext context) {
@@ -175,34 +205,34 @@ public interface LootSlotSource {
     }
 
     final class SlotRanges {
-        private static final @NotNull List<String> SOURCES = List.of(
-                "this",
-                "attacker",
-                "direct_attacker",
-                "attacking_player",
-                "target_entity",
-                "interacting_entity",
-                "block_entity",
-                "container"
-        );
+        private static final @NotNull List<String> SOURCES =
+                List.of(
+                        "this",
+                        "attacker",
+                        "direct_attacker",
+                        "attacking_player",
+                        "target_entity",
+                        "interacting_entity",
+                        "block_entity",
+                        "container");
 
         private static final @NotNull List<String> RANGE_NAMES = createRangeNames();
 
-        private static final @NotNull Codec<String> SOURCE_CODEC = Codec.STRING.transform(value -> {
-            if (!SOURCES.contains(value)) {
-                throw new IllegalArgumentException("Unknown slot source: " + value);
-            }
+        private static final @NotNull Codec<String> SOURCE_CODEC =
+                Codec.STRING.transform(
+                        value -> {
+                            if (!SOURCES.contains(value)) {
+                                throw new IllegalArgumentException("Unknown slot source: " + value);
+                            }
 
-            return value;
-        }, value -> value);
+                            return value;
+                        },
+                        value -> value);
 
-        private static final @NotNull Codec<List<Integer>> CODEC = Codec.STRING.transform(
-                SlotRanges::decode,
-                SlotRanges::encode
-        );
+        private static final @NotNull Codec<List<Integer>> CODEC =
+                Codec.STRING.transform(SlotRanges::decode, SlotRanges::encode);
 
-        private SlotRanges() {
-        }
+        private SlotRanges() {}
 
         private static @NotNull List<String> createRangeNames() {
             var names = new ArrayList<String>();
@@ -213,26 +243,27 @@ public interface LootSlotSource {
             addRangeNames(names, "enderchest.", 27);
             addRangeNames(names, "mob.inventory.", 8);
             addRangeNames(names, "horse.", 15);
-            names.addAll(List.of(
-                    "weapon",
-                    "weapon.mainhand",
-                    "weapon.offhand",
-                    "weapon.*",
-                    "armor.head",
-                    "armor.chest",
-                    "armor.legs",
-                    "armor.feet",
-                    "armor.body",
-                    "armor.*",
-                    "saddle",
-                    "horse.chest",
-                    "player.cursor"
-            ));
+            names.addAll(
+                    List.of(
+                            "weapon",
+                            "weapon.mainhand",
+                            "weapon.offhand",
+                            "weapon.*",
+                            "armor.head",
+                            "armor.chest",
+                            "armor.legs",
+                            "armor.feet",
+                            "armor.body",
+                            "armor.*",
+                            "saddle",
+                            "horse.chest",
+                            "player.cursor"));
             addRangeNames(names, "player.crafting.", 4);
             return List.copyOf(names);
         }
 
-        private static void addRangeNames(@NotNull List<String> names, @NotNull String prefix, int size) {
+        private static void addRangeNames(
+                @NotNull List<String> names, @NotNull String prefix, int size) {
             for (var slot = 0; slot < size; slot++) {
                 names.add(prefix + slot);
             }
@@ -279,37 +310,45 @@ public interface LootSlotSource {
         }
 
         private static @NotNull List<Integer> decodeNumbered(@NotNull String name) {
-            var prefix = switch (name) {
-                case String value when value.startsWith("container.") -> "container.";
-                case String value when value.startsWith("hotbar.") -> "hotbar.";
-                case String value when value.startsWith("inventory.") -> "inventory.";
-                case String value when value.startsWith("enderchest.") -> "enderchest.";
-                case String value when value.startsWith("mob.inventory.") -> "mob.inventory.";
-                case String value when value.startsWith("horse.") -> "horse.";
-                case String value when value.startsWith("player.crafting.") -> "player.crafting.";
-                default -> throw new IllegalArgumentException("Unknown slot range: " + name);
-            };
+            var prefix =
+                    switch (name) {
+                        case String value when value.startsWith("container.") -> "container.";
+                        case String value when value.startsWith("hotbar.") -> "hotbar.";
+                        case String value when value.startsWith("inventory.") -> "inventory.";
+                        case String value when value.startsWith("enderchest.") -> "enderchest.";
+                        case String value when value.startsWith("mob.inventory.") ->
+                                "mob.inventory.";
+                        case String value when value.startsWith("horse.") -> "horse.";
+                        case String value when value.startsWith("player.crafting.") ->
+                                "player.crafting.";
+                        default ->
+                                throw new IllegalArgumentException("Unknown slot range: " + name);
+                    };
             var slot = Integer.parseInt(name.substring(prefix.length()));
-            var offset = switch (prefix) {
-                case "container." -> 0;
-                case "hotbar." -> 0;
-                case "inventory." -> 9;
-                case "enderchest." -> 200;
-                case "mob.inventory." -> 300;
-                case "horse." -> 500;
-                case "player.crafting." -> 500;
-                default -> throw new IllegalArgumentException("Unknown slot range: " + name);
-            };
-            var size = switch (prefix) {
-                case "container." -> 54;
-                case "hotbar." -> 9;
-                case "inventory." -> 27;
-                case "enderchest." -> 27;
-                case "mob.inventory." -> 8;
-                case "horse." -> 15;
-                case "player.crafting." -> 4;
-                default -> throw new IllegalArgumentException("Unknown slot range: " + name);
-            };
+            var offset =
+                    switch (prefix) {
+                        case "container." -> 0;
+                        case "hotbar." -> 0;
+                        case "inventory." -> 9;
+                        case "enderchest." -> 200;
+                        case "mob.inventory." -> 300;
+                        case "horse." -> 500;
+                        case "player.crafting." -> 500;
+                        default ->
+                                throw new IllegalArgumentException("Unknown slot range: " + name);
+                    };
+            var size =
+                    switch (prefix) {
+                        case "container." -> 54;
+                        case "hotbar." -> 9;
+                        case "inventory." -> 27;
+                        case "enderchest." -> 27;
+                        case "mob.inventory." -> 8;
+                        case "horse." -> 15;
+                        case "player.crafting." -> 4;
+                        default ->
+                                throw new IllegalArgumentException("Unknown slot range: " + name);
+                    };
 
             if (slot < 0 || slot >= size) {
                 throw new IllegalArgumentException("Unknown slot range: " + name);
@@ -330,10 +369,8 @@ public interface LootSlotSource {
     }
 
     record Reference(@NotNull Key name) implements LootSlotSource {
-        public static final @NotNull StructCodec<Reference> CODEC = StructCodec.struct(
-                "name", Codec.KEY, Reference::name,
-                Reference::new
-        );
+        public static final @NotNull StructCodec<Reference> CODEC =
+                StructCodec.struct("name", Codec.KEY, Reference::name, Reference::new);
 
         @Override
         public @NotNull List<ItemStack> provide(@NotNull LootContext context) {

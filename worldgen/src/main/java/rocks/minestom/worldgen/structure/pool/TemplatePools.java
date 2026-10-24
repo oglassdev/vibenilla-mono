@@ -1,17 +1,15 @@
 package rocks.minestom.worldgen.structure.pool;
 
 import com.google.gson.JsonElement;
+import java.util.ArrayList;
+import java.util.List;
 import net.kyori.adventure.key.Key;
 import rocks.minestom.worldgen.structure.loader.StructureLoader;
 import rocks.minestom.worldgen.structure.processor.StructureProcessorList;
 import rocks.minestom.worldgen.structure.template.LiquidSettings;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public final class TemplatePools {
-    private TemplatePools() {
-    }
+    private TemplatePools() {}
 
     public static TemplatePool parseTemplatePool(JsonElement json, StructureLoader loader) {
         var obj = json.getAsJsonObject();
@@ -26,7 +24,8 @@ public final class TemplatePools {
                 if (element == null) {
                     continue;
                 }
-                elements.add(new TemplatePool.PoolElementEntry(element, entry.get("weight").getAsInt()));
+                elements.add(
+                        new TemplatePool.PoolElementEntry(element, entry.get("weight").getAsInt()));
             }
         }
 
@@ -40,16 +39,24 @@ public final class TemplatePools {
 
         var obj = json.getAsJsonObject();
         var type = obj.get("element_type").getAsString();
-        var projection = Projection.fromName(obj.has("projection") ? obj.get("projection").getAsString() : "rigid");
+        var projection =
+                Projection.fromName(
+                        obj.has("projection") ? obj.get("projection").getAsString() : "rigid");
 
         return switch (type) {
             case "minecraft:legacy_single_pool_element", "minecraft:single_pool_element" -> {
                 var location = Key.key(obj.get("location").getAsString());
                 var processors = loader.resolveProcessors(obj.get("processors"));
-                var overrideLiquidSettings = obj.has("override_liquid_settings")
-                        ? LiquidSettings.fromName(obj.get("override_liquid_settings").getAsString())
-                        : null;
-                yield new SinglePoolElement(location, processors, projection, overrideLiquidSettings,
+                var overrideLiquidSettings =
+                        obj.has("override_liquid_settings")
+                                ? LiquidSettings.fromName(
+                                        obj.get("override_liquid_settings").getAsString())
+                                : null;
+                yield new SinglePoolElement(
+                        location,
+                        processors,
+                        projection,
+                        overrideLiquidSettings,
                         type.equals("minecraft:legacy_single_pool_element"));
             }
             case "minecraft:feature_pool_element" ->
@@ -70,7 +77,8 @@ public final class TemplatePools {
     }
 
     /** Kept for callers that resolve processors from raw JSON. */
-    public static StructureProcessorList resolveProcessors(JsonElement json, StructureLoader loader) {
+    public static StructureProcessorList resolveProcessors(
+            JsonElement json, StructureLoader loader) {
         return loader.resolveProcessors(json);
     }
 }

@@ -6,9 +6,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Port of vanilla's {@code SequencedPriorityIterator}: yields items from the
- * highest priority first, FIFO within a priority, and supports interleaved
- * adds while iterating (26.2 placement priorities).
+ * Port of vanilla's {@code SequencedPriorityIterator}: yields items from the highest priority
+ * first, FIFO within a priority, and supports interleaved adds while iterating (26.2 placement
+ * priorities).
  */
 final class SequencedPriorityIterator<T> {
     private static final int MIN_PRIO = Integer.MIN_VALUE;

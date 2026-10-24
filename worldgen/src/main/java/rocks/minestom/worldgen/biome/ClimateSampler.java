@@ -16,8 +16,7 @@ public final class ClimateSampler {
             DensityFunction continentalness,
             DensityFunction erosion,
             DensityFunction depth,
-            DensityFunction weirdness
-    ) {
+            DensityFunction weirdness) {
         this.temperature = temperature;
         this.humidity = humidity;
         this.continentalness = continentalness;
@@ -58,8 +57,8 @@ public final class ClimateSampler {
     }
 
     /**
-     * Samples with a caller-managed context, allowing column-cached evaluation
-     * during chunk biome fills.
+     * Samples with a caller-managed context, allowing column-cached evaluation during chunk biome
+     * fills.
      */
     public Climate.TargetPoint sample(DensityFunction.Context context) {
         return Climate.target(
@@ -68,7 +67,6 @@ public final class ClimateSampler {
                 (float) this.continentalness.compute(context),
                 (float) this.erosion.compute(context),
                 (float) this.depth.compute(context),
-                (float) this.weirdness.compute(context)
-        );
+                (float) this.weirdness.compute(context));
     }
 }

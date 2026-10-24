@@ -6,14 +6,13 @@ import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.Direction;
 
 /**
- * Vanilla's {@code CocoaDecorator}: with the configured probability, cocoa
- * pods grow on the horizontal sides of the lowest trunk logs.
+ * Vanilla's {@code CocoaDecorator}: with the configured probability, cocoa pods grow on the
+ * horizontal sides of the lowest trunk logs.
  */
 public record CocoaDecorator(float probability) implements TreeDecorator {
-    public static final Codec<CocoaDecorator> CODEC = StructCodec.struct(
-            "probability", Codec.FLOAT, CocoaDecorator::probability,
-            CocoaDecorator::new
-    );
+    public static final Codec<CocoaDecorator> CODEC =
+            StructCodec.struct(
+                    "probability", Codec.FLOAT, CocoaDecorator::probability, CocoaDecorator::new);
 
     @Override
     public void place(TreeDecorator.Context context) {
@@ -38,9 +37,11 @@ public record CocoaDecorator(float probability) implements TreeDecorator {
                     var opposite = direction.opposite();
                     var cocoaPos = log.add(opposite.stepX(), 0, opposite.stepZ());
                     if (context.isAir(cocoaPos)) {
-                        context.setBlock(cocoaPos, Block.COCOA
-                                .withProperty("age", Integer.toString(random.nextInt(3)))
-                                .withProperty("facing", direction.name().toLowerCase()));
+                        context.setBlock(
+                                cocoaPos,
+                                Block.COCOA
+                                        .withProperty("age", Integer.toString(random.nextInt(3)))
+                                        .withProperty("facing", direction.name().toLowerCase()));
                     }
                 }
             }

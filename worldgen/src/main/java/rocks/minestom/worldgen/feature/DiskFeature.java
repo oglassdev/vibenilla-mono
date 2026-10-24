@@ -7,12 +7,13 @@ import rocks.minestom.worldgen.feature.placement.PlacementContext;
 import rocks.minestom.worldgen.random.RandomSource;
 
 /**
- * Port of vanilla {@code DiskFeature}: sand/gravel/clay disks on river and
- * ocean floors, replacing target blocks in a cylinder around the origin.
+ * Port of vanilla {@code DiskFeature}: sand/gravel/clay disks on river and ocean floors, replacing
+ * target blocks in a cylinder around the origin.
  */
 public final class DiskFeature implements Feature<DiskConfiguration> {
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<DiskConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<DiskConfiguration, T> context) {
         var config = context.config();
         var origin = context.origin();
         var level = context.accessor();
@@ -23,9 +24,21 @@ public final class DiskFeature implements Feature<DiskConfiguration> {
         var bottom = originY - config.halfHeight() - 1;
         var radius = config.radius().sample(random);
 
-        var predicateContext = new PlacementContext(
-                level, 0, 0, 0, 0, null, null,
-                context.minY(), context.maxY(), 0, null, null, null);
+        var predicateContext =
+                new PlacementContext(
+                        level,
+                        0,
+                        0,
+                        0,
+                        0,
+                        null,
+                        null,
+                        context.minY(),
+                        context.maxY(),
+                        0,
+                        null,
+                        null,
+                        null);
 
         // Vanilla BlockPos.betweenClosed iterates x fastest, then z
         for (var z = origin.blockZ() - radius; z <= origin.blockZ() + radius; z++) {
@@ -33,7 +46,9 @@ public final class DiskFeature implements Feature<DiskConfiguration> {
                 var dx = x - origin.blockX();
                 var dz = z - origin.blockZ();
                 if (dx * dx + dz * dz <= radius * radius) {
-                    placedAny |= this.placeColumn(config, level, random, predicateContext, top, bottom, x, z);
+                    placedAny |=
+                            this.placeColumn(
+                                    config, level, random, predicateContext, top, bottom, x, z);
                 }
             }
         }
@@ -41,8 +56,15 @@ public final class DiskFeature implements Feature<DiskConfiguration> {
         return placedAny;
     }
 
-    private <T extends Block.Getter & Block.Setter> boolean placeColumn(DiskConfiguration config, T level,
-            RandomSource random, PlacementContext predicateContext, int top, int bottom, int x, int z) {
+    private <T extends Block.Getter & Block.Setter> boolean placeColumn(
+            DiskConfiguration config,
+            T level,
+            RandomSource random,
+            PlacementContext predicateContext,
+            int top,
+            int bottom,
+            int x,
+            int z) {
         var placedAny = false;
         var placedAbove = false;
 

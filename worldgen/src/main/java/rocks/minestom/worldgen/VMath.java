@@ -3,8 +3,7 @@ package rocks.minestom.worldgen;
 import java.util.function.IntPredicate;
 
 public final class VMath {
-    private VMath() {
-    }
+    private VMath() {}
 
     public static int floor(double value) {
         var truncated = (int) value;
@@ -30,7 +29,13 @@ public final class VMath {
         return start + delta * (end - start);
     }
 
-    public static double lerp2(double deltaX, double deltaY, double value00, double value10, double value01, double value11) {
+    public static double lerp2(
+            double deltaX,
+            double deltaY,
+            double value00,
+            double value10,
+            double value01,
+            double value11) {
         return lerp(deltaY, lerp(deltaX, value00, value10), lerp(deltaX, value01, value11));
     }
 
@@ -45,9 +50,11 @@ public final class VMath {
             double value001,
             double value101,
             double value011,
-            double value111
-    ) {
-        return lerp(deltaZ, lerp2(deltaX, deltaY, value000, value100, value010, value110), lerp2(deltaX, deltaY, value001, value101, value011, value111));
+            double value111) {
+        return lerp(
+                deltaZ,
+                lerp2(deltaX, deltaY, value000, value100, value010, value110),
+                lerp2(deltaX, deltaY, value001, value101, value011, value111));
     }
 
     public static double smoothstep(double value) {
@@ -58,7 +65,8 @@ public final class VMath {
         return 30.0 * value * value * (value - 1.0) * (value - 1.0);
     }
 
-    public static double clampedMap(double value, double fromMin, double fromMax, double toMin, double toMax) {
+    public static double clampedMap(
+            double value, double fromMin, double fromMax, double toMin, double toMax) {
         var clamped = clamp(value, fromMin, fromMax);
         return lerp((clamped - fromMin) / (fromMax - fromMin), toMin, toMax);
     }

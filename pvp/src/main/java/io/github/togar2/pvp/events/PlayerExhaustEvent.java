@@ -7,52 +7,52 @@ import net.minestom.server.event.trait.PlayerEvent;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Called when a players' exhaustion level changes.
- * This is used to determine when their food level should change.
+ * Called when a players' exhaustion level changes. This is used to determine when their food level
+ * should change.
  */
 public class PlayerExhaustEvent implements PlayerEvent, EntityInstanceEvent, CancellableEvent {
 
-	private final Player player;
-	private float amount;
+    private final Player player;
+    private float amount;
 
-	private boolean cancelled;
+    private boolean cancelled;
 
-	public PlayerExhaustEvent(@NotNull Player player, float amount) {
-		this.player = player;
-		this.amount = amount;
-	}
+    public PlayerExhaustEvent(@NotNull Player player, float amount) {
+        this.player = player;
+        this.amount = amount;
+    }
 
-	@Override
-	public @NotNull Player getPlayer() {
-		return this.player;
-	}
+    @Override
+    public @NotNull Player getPlayer() {
+        return this.player;
+    }
 
-	/**
-	 * Returns the amount of exhaustion.
-	 *
-	 * @return the amount of exhaustion
-	 */
-	public float getAmount() {
-		return this.amount;
-	}
+    /**
+     * Returns the amount of exhaustion.
+     *
+     * @return the amount of exhaustion
+     */
+    public float getAmount() {
+        return this.amount;
+    }
 
-	/**
-	 * Sets the amount of exhaustion.
-	 * Example: One sprint jump applies 0.8 exhaustion in 1.8, and 0.2 in newer versions.
-	 *
-	 * @param amount the amount of exhaustion
-	 */
-	public void setAmount(float amount) {
-		this.amount = amount;
-	}
+    /**
+     * Sets the amount of exhaustion. Example: One sprint jump applies 0.8 exhaustion in 1.8, and
+     * 0.2 in newer versions.
+     *
+     * @param amount the amount of exhaustion
+     */
+    public void setAmount(float amount) {
+        this.amount = amount;
+    }
 
-	@Override
-	public boolean isCancelled() {
-		return this.cancelled;
-	}
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
 
-	@Override
-	public void setCancelled(boolean cancelled) {
-		this.cancelled = cancelled;
-	}
+    @Override
+    public void setCancelled(boolean cancelled) {
+        this.cancelled = cancelled;
+    }
 }

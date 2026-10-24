@@ -8,16 +8,19 @@ import rocks.minestom.worldgen.BlockCodec;
 import rocks.minestom.worldgen.random.RandomSource;
 
 /**
- * A block state provider that provides a block with random axis rotation.
- * Used for hay bales and other blocks that can be oriented on different axes.
+ * A block state provider that provides a block with random axis rotation. Used for hay bales and
+ * other blocks that can be oriented on different axes.
  */
 public record RotatedBlockProvider(Block state) implements BlockStateProvider {
 
-    public static final Codec<RotatedBlockProvider> CODEC = StructCodec.struct(
-            "state", BlockCodec.CODEC, RotatedBlockProvider::state,
-            RotatedBlockProvider::new);
+    public static final Codec<RotatedBlockProvider> CODEC =
+            StructCodec.struct(
+                    "state",
+                    BlockCodec.CODEC,
+                    RotatedBlockProvider::state,
+                    RotatedBlockProvider::new);
 
-    private static final String[] AXES = { "x", "y", "z" };
+    private static final String[] AXES = {"x", "y", "z"};
 
     @Override
     public Block getState(RandomSource random, BlockVec position) {

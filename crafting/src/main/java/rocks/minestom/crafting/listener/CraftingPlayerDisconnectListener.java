@@ -5,7 +5,8 @@ import net.minestom.server.event.player.PlayerDisconnectEvent;
 import org.jetbrains.annotations.NotNull;
 import rocks.minestom.crafting.CraftingManager;
 
-public final class CraftingPlayerDisconnectListener implements EventListener<@NotNull PlayerDisconnectEvent> {
+public final class CraftingPlayerDisconnectListener
+        implements EventListener<@NotNull PlayerDisconnectEvent> {
     private final CraftingManager craftingManager;
 
     public CraftingPlayerDisconnectListener(CraftingManager craftingManager) {

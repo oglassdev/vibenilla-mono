@@ -28,7 +28,9 @@ public final class CraftingGridListener implements EventListener<InventoryItemCh
         var slotIndex = event.getSlot();
 
         if (slotIndex == workspace.resultSlot()) {
-            if (!workspace.isUpdatingResult() && event.getNewItem().isAir() && !event.getPreviousItem().isAir()) {
+            if (!workspace.isUpdatingResult()
+                    && event.getNewItem().isAir()
+                    && !event.getPreviousItem().isAir()) {
                 workspace.craft(workspace.owner());
             }
 

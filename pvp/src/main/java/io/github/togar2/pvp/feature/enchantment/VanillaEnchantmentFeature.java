@@ -7,7 +7,12 @@ import io.github.togar2.pvp.feature.RegistrableFeature;
 import io.github.togar2.pvp.feature.config.DefinedFeature;
 import io.github.togar2.pvp.feature.config.FeatureConfiguration;
 import io.github.togar2.pvp.utils.RegistryTags;
+import java.util.*;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.ServerFlag;
 import net.minestom.server.component.DataComponent;
@@ -23,33 +28,28 @@ import net.minestom.server.event.entity.EntitySetFireEvent;
 import net.minestom.server.event.trait.EntityInstanceEvent;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
-import net.minestom.server.item.component.EnchantmentList;
 import net.minestom.server.item.enchant.ConditionalEffect;
 import net.minestom.server.item.enchant.EffectComponent;
-import net.minestom.server.item.enchant.EntityEffect;
 import net.minestom.server.item.enchant.Enchantment;
+import net.minestom.server.item.enchant.EntityEffect;
 import net.minestom.server.item.enchant.ValueEffect;
 import net.minestom.server.registry.RegistryKey;
 import net.minestom.server.tag.Tag;
-
-import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Vanilla implementation of {@link EnchantmentFeature}
- * <p>
- * Utilizes the enchantment classes in the {@link io.github.togar2.pvp.enchantment} package.
+ *
+ * <p>Utilizes the enchantment classes in the {@link io.github.togar2.pvp.enchantment} package.
  */
 public class VanillaEnchantmentFeature implements EnchantmentFeature, RegistrableFeature {
-    public static final DefinedFeature<VanillaEnchantmentFeature> DEFINED = new DefinedFeature<>(
-            FeatureType.ENCHANTMENT, VanillaEnchantmentFeature::new,
-            CombatEnchantments.getAllFeatureDependencies()
-    );
-    public static final Tag<Boolean> FIRE_DURATION_ALREADY_SCALED = Tag.Transient("fireDurationAlreadyScaled");
+    public static final DefinedFeature<VanillaEnchantmentFeature> DEFINED =
+            new DefinedFeature<>(
+                    FeatureType.ENCHANTMENT,
+                    VanillaEnchantmentFeature::new,
+                    CombatEnchantments.getAllFeatureDependencies());
+    public static final Tag<Boolean> FIRE_DURATION_ALREADY_SCALED =
+            Tag.Transient("fireDurationAlreadyScaled");
 
     private final FeatureConfiguration configuration;
 
@@ -60,26 +60,30 @@ public class VanillaEnchantmentFeature implements EnchantmentFeature, Registrabl
 
     @Override
     public void init(EventNode<EntityInstanceEvent> node) {
-        node.addListener(EntitySetFireEvent.class, event -> {
-            if (event.getEntity() instanceof LivingEntity living) {
-                var fireTicks = event.getFireTicks();
+        node.addListener(
+                EntitySetFireEvent.class,
+                event -> {
+                    if (event.getEntity() instanceof LivingEntity living) {
+                        var fireTicks = event.getFireTicks();
 
-                if (living.hasTag(FIRE_DURATION_ALREADY_SCALED)) {
-                    living.removeTag(FIRE_DURATION_ALREADY_SCALED);
-                } else {
-                    fireTicks = this.getFireDuration(living, fireTicks);
-                }
+                        if (living.hasTag(FIRE_DURATION_ALREADY_SCALED)) {
+                            living.removeTag(FIRE_DURATION_ALREADY_SCALED);
+                        } else {
+                            fireTicks = this.getFireDuration(living, fireTicks);
+                        }
 
-                if (living instanceof Player player && player.getGameMode().invulnerable()) {
-                    fireTicks = Math.min(fireTicks, 1);
-                }
+                        if (living instanceof Player player
+                                && player.getGameMode().invulnerable()) {
+                            fireTicks = Math.min(fireTicks, 1);
+                        }
 
-                event.setFireTicks(fireTicks);
-            }
-        });
+                        event.setFireTicks(fireTicks);
+                    }
+                });
     }
 
-    public static void forEachEnchantment(Iterable<ItemStack> stacks, BiConsumer<CombatEnchantment, Integer> consumer) {
+    public static void forEachEnchantment(
+            Iterable<ItemStack> stacks, BiConsumer<CombatEnchantment, Integer> consumer) {
         for (var itemStack : stacks) {
             var enchantmentList = itemStack.get(DataComponents.ENCHANTMENTS);
             var enchantments = enchantmentList.enchantments().keySet();
@@ -110,7 +114,8 @@ public class VanillaEnchantmentFeature implements EnchantmentFeature, Registrabl
     }
 
     @Override
-    public Map.Entry<EquipmentSlot, ItemStack> pickRandom(LivingEntity entity, RegistryKey<Enchantment> enchantment) {
+    public Map.Entry<EquipmentSlot, ItemStack> pickRandom(
+            LivingEntity entity, RegistryKey<Enchantment> enchantment) {
         var combatEnchantment = CombatEnchantments.get(enchantment);
         if (combatEnchantment == null) return null;
 
@@ -122,13 +127,15 @@ public class VanillaEnchantmentFeature implements EnchantmentFeature, Registrabl
         for (var entry : equipmentMap.entrySet()) {
             var itemStack = entry.getValue();
 
-            if (!itemStack.isAir() && itemStack.get(DataComponents.ENCHANTMENTS).level(enchantment) > 0) {
+            if (!itemStack.isAir()
+                    && itemStack.get(DataComponents.ENCHANTMENTS).level(enchantment) > 0) {
                 possibleStacks.add(entry);
             }
         }
 
-        return possibleStacks.isEmpty() ? null :
-                possibleStacks.get(ThreadLocalRandom.current().nextInt(possibleStacks.size()));
+        return possibleStacks.isEmpty()
+                ? null
+                : possibleStacks.get(ThreadLocalRandom.current().nextInt(possibleStacks.size()));
     }
 
     @Override
@@ -142,20 +149,34 @@ public class VanillaEnchantmentFeature implements EnchantmentFeature, Registrabl
             }
         }
 
-        forEachEnchantment(armorItems, (enchantment, level) ->
-                result.addAndGet(enchantment.getProtectionAmount(level, damageType, this, this.configuration)));
+        forEachEnchantment(
+                armorItems,
+                (enchantment, level) ->
+                        result.addAndGet(
+                                enchantment.getProtectionAmount(
+                                        level, damageType, this, this.configuration)));
         return result.get();
     }
 
     @Override
     public float getAttackDamage(ItemStack stack, @Nullable Entity target) {
         var result = new AtomicReference<>((float) 0);
-        stack.get(DataComponents.ENCHANTMENTS).enchantments().forEach((enchantment, level) -> {
-            var combatEnchantment = CombatEnchantments.get(enchantment);
-            if (combatEnchantment == null) return;
+        stack.get(DataComponents.ENCHANTMENTS)
+                .enchantments()
+                .forEach(
+                        (enchantment, level) -> {
+                            var combatEnchantment = CombatEnchantments.get(enchantment);
+                            if (combatEnchantment == null) return;
 
-            result.updateAndGet(v -> v + combatEnchantment.getAttackDamage(level, target, this, this.configuration));
-        });
+                            result.updateAndGet(
+                                    v ->
+                                            v
+                                                    + combatEnchantment.getAttackDamage(
+                                                            level,
+                                                            target,
+                                                            this,
+                                                            this.configuration));
+                        });
 
         return result.get();
     }
@@ -181,9 +202,7 @@ public class VanillaEnchantmentFeature implements EnchantmentFeature, Registrabl
     public double getKnockback(LivingEntity entity, ItemStack weapon) {
         var baseKnockback = (float) entity.getAttributeValue(Attribute.ATTACK_KNOCKBACK);
 
-        return this.modifyConditionalValue(
-                weapon, EffectComponent.KNOCKBACK, baseKnockback
-        ) / 2.0;
+        return this.modifyConditionalValue(weapon, EffectComponent.KNOCKBACK, baseKnockback) / 2.0;
     }
 
     @Override
@@ -197,13 +216,19 @@ public class VanillaEnchantmentFeature implements EnchantmentFeature, Registrabl
     }
 
     @Override
-    public float modifyConditionalValue(ItemStack stack, DataComponent<List<ConditionalEffect<ValueEffect>>> component, float base) {
+    public float modifyConditionalValue(
+            ItemStack stack,
+            DataComponent<List<ConditionalEffect<ValueEffect>>> component,
+            float base) {
         return this.modifyConditionalValue(stack, component, base, false);
     }
 
     @Override
-    public float modifyConditionalValue(ItemStack stack, DataComponent<List<ConditionalEffect<ValueEffect>>> component,
-                                        float base, boolean includeConditionalEffects) {
+    public float modifyConditionalValue(
+            ItemStack stack,
+            DataComponent<List<ConditionalEffect<ValueEffect>>> component,
+            float base,
+            boolean includeConditionalEffects) {
         var value = base;
         var enchantmentRegistry = MinecraftServer.getEnchantmentRegistry();
 
@@ -281,7 +306,10 @@ public class VanillaEnchantmentFeature implements EnchantmentFeature, Registrabl
             for (var effect : effects) {
                 if (effect.requirements() != null) continue;
 
-                ticks = Math.max(ticks, this.getProjectileIgniteTicks(effect.effect(), entry.getValue()));
+                ticks =
+                        Math.max(
+                                ticks,
+                                this.getProjectileIgniteTicks(effect.effect(), entry.getValue()));
             }
         }
 
@@ -290,7 +318,8 @@ public class VanillaEnchantmentFeature implements EnchantmentFeature, Registrabl
 
     private int getProjectileIgniteTicks(EntityEffect effect, int level) {
         if (effect instanceof EntityEffect.Ignite ignite) {
-            return (int) Math.floor(ignite.duration().calc(level) * ServerFlag.SERVER_TICKS_PER_SECOND);
+            return (int)
+                    Math.floor(ignite.duration().calc(level) * ServerFlag.SERVER_TICKS_PER_SECOND);
         }
 
         if (effect instanceof EntityEffect.AllOf allOf) {
@@ -311,9 +340,10 @@ public class VanillaEnchantmentFeature implements EnchantmentFeature, Registrabl
         var unbreakingLevel = stack.get(DataComponents.ENCHANTMENTS).level(Enchantment.UNBREAKING);
         if (unbreakingLevel <= 0) return false;
 
-        var chance = isArmorItem(stack.material())
-                ? (2.0 * unbreakingLevel) / (10.0 + 5.0 * (unbreakingLevel - 1))
-                : (double) unbreakingLevel / (2.0 + (unbreakingLevel - 1));
+        var chance =
+                isArmorItem(stack.material())
+                        ? (2.0 * unbreakingLevel) / (10.0 + 5.0 * (unbreakingLevel - 1))
+                        : (double) unbreakingLevel / (2.0 + (unbreakingLevel - 1));
 
         return ThreadLocalRandom.current().nextDouble() < chance;
     }
@@ -325,8 +355,11 @@ public class VanillaEnchantmentFeature implements EnchantmentFeature, Registrabl
     @Override
     public void onUserDamaged(LivingEntity user, LivingEntity attacker) {
         for (var slot : EquipmentSlot.values()) {
-            forEachEnchantment(List.of(user.getEquipment(slot)), (enchantment, level) ->
-                    enchantment.onUserDamaged(user, attacker, level, slot, this, this.configuration));
+            forEachEnchantment(
+                    List.of(user.getEquipment(slot)),
+                    (enchantment, level) ->
+                            enchantment.onUserDamaged(
+                                    user, attacker, level, slot, this, this.configuration));
         }
     }
 
@@ -337,7 +370,9 @@ public class VanillaEnchantmentFeature implements EnchantmentFeature, Registrabl
 
     @Override
     public void onTargetDamaged(LivingEntity user, Entity target, ItemStack weapon) {
-        forEachEnchantment(List.of(weapon), (enchantment, level) ->
-                enchantment.onTargetDamaged(user, target, level, this, this.configuration));
+        forEachEnchantment(
+                List.of(weapon),
+                (enchantment, level) ->
+                        enchantment.onTargetDamaged(user, target, level, this, this.configuration));
     }
 }

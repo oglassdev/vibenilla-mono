@@ -41,7 +41,10 @@ public final class TurtleEggPlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+        var below =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
         return isSand(below) ? updateState.currentBlock() : Block.AIR;
     }
 

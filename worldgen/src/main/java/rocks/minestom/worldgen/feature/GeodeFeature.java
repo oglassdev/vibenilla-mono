@@ -1,27 +1,24 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.ArrayList;
+import java.util.function.Predicate;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.GeodeConfiguration;
 import rocks.minestom.worldgen.noise.NormalNoise;
 import rocks.minestom.worldgen.random.LegacyRandomSource;
-import rocks.minestom.worldgen.random.RandomSource;
 import rocks.minestom.worldgen.random.WorldgenRandom;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Predicate;
 
 /**
  * Port of vanilla {@code GeodeFeature}: an amethyst geode carved as a set of
- * inverse-square-root-weighted layers around a handful of random points, with
- * an optional crack and crystal bud growths on the inner air pocket walls.
- * Random call order matches vanilla exactly.
+ * inverse-square-root-weighted layers around a handful of random points, with an optional crack and
+ * crystal bud growths on the inner air pocket walls. Random call order matches vanilla exactly.
  */
 public final class GeodeFeature implements Feature<GeodeConfiguration> {
 
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<GeodeConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<GeodeConfiguration, T> context) {
         var config = context.config();
         var random = context.random();
         var origin = context.origin();
@@ -31,9 +28,12 @@ public final class GeodeFeature implements Feature<GeodeConfiguration> {
         var points = new ArrayList<PointOffset>();
         var numPoints = config.distributionPoints().sample(random);
         var noiseRandom = new WorldgenRandom(new LegacyRandomSource(context.worldSeed()));
-        var noise = NormalNoise.create(noiseRandom, new NormalNoise.NoiseParameters(-4, new double[]{1.0}));
+        var noise =
+                NormalNoise.create(
+                        noiseRandom, new NormalNoise.NoiseParameters(-4, new double[] {1.0}));
         var crackPoints = new ArrayList<BlockVec>();
-        var crackSizeAdjustment = (double) numPoints / (double) config.outerWallDistance().maxValue();
+        var crackSizeAdjustment =
+                (double) numPoints / (double) config.outerWallDistance().maxValue();
         var layerSettings = config.geodeLayerSettings();
         var blockSettings = config.geodeBlockSettings();
         var crackSettings = config.geodeCrackSettings();
@@ -41,8 +41,12 @@ public final class GeodeFeature implements Feature<GeodeConfiguration> {
         var innermostBlockLayer = 1.0 / Math.sqrt(layerSettings.innerLayer() + crackSizeAdjustment);
         var innerCrust = 1.0 / Math.sqrt(layerSettings.middleLayer() + crackSizeAdjustment);
         var outerCrust = 1.0 / Math.sqrt(layerSettings.outerLayer() + crackSizeAdjustment);
-        var crackSize = 1.0 / Math.sqrt(crackSettings.baseCrackSize() + random.nextDouble() / 2.0
-                + (numPoints > 3 ? crackSizeAdjustment : 0.0));
+        var crackSize =
+                1.0
+                        / Math.sqrt(
+                                crackSettings.baseCrackSize()
+                                        + random.nextDouble() / 2.0
+                                        + (numPoints > 3 ? crackSizeAdjustment : 0.0));
         var shouldGenerateCrack = (double) random.nextFloat() < crackSettings.generateCrackChance();
         var numInvalidPoints = 0;
 
@@ -91,42 +95,86 @@ public final class GeodeFeature implements Feature<GeodeConfiguration> {
             for (var y = minGenOffset; y <= maxGenOffset; y++) {
                 for (var x = minGenOffset; x <= maxGenOffset; x++) {
                     var pointInside = origin.add(x, y, z);
-                    var noiseOffset = noise.getValue(pointInside.blockX(), pointInside.blockY(), pointInside.blockZ())
-                            * config.noiseMultiplier();
+                    var noiseOffset =
+                            noise.getValue(
+                                            pointInside.blockX(),
+                                            pointInside.blockY(),
+                                            pointInside.blockZ())
+                                    * config.noiseMultiplier();
                     var distSumShell = 0.0;
                     var distSumCrack = 0.0;
 
                     for (var point : points) {
-                        distSumShell += invSqrt(pointInside.distanceSquared(point.position()) + point.offset()) + noiseOffset;
+                        distSumShell +=
+                                invSqrt(
+                                                pointInside.distanceSquared(point.position())
+                                                        + point.offset())
+                                        + noiseOffset;
                     }
 
                     for (var point : crackPoints) {
-                        distSumCrack += invSqrt(pointInside.distanceSquared(point) + crackSettings.crackPointOffset()) + noiseOffset;
+                        distSumCrack +=
+                                invSqrt(
+                                                pointInside.distanceSquared(point)
+                                                        + crackSettings.crackPointOffset())
+                                        + noiseOffset;
                     }
 
                     if (!(distSumShell < outerCrust)) {
-                        if (shouldGenerateCrack && distSumCrack >= crackSize && distSumShell < innerAir) {
+                        if (shouldGenerateCrack
+                                && distSumCrack >= crackSize
+                                && distSumShell < innerAir) {
                             safeSetBlock(level, pointInside, Block.AIR, canReplace);
                         } else if (distSumShell >= innerAir) {
-                            safeSetBlock(level, pointInside, blockSettings.fillingProvider().getState(level, random, pointInside), canReplace);
+                            safeSetBlock(
+                                    level,
+                                    pointInside,
+                                    blockSettings
+                                            .fillingProvider()
+                                            .getState(level, random, pointInside),
+                                    canReplace);
                         } else if (distSumShell >= innermostBlockLayer) {
-                            var useAlternateLayer = (double) random.nextFloat() < config.useAlternateLayer0Chance();
+                            var useAlternateLayer =
+                                    (double) random.nextFloat() < config.useAlternateLayer0Chance();
                             if (useAlternateLayer) {
-                                safeSetBlock(level, pointInside,
-                                        blockSettings.alternateInnerLayerProvider().getState(level, random, pointInside), canReplace);
+                                safeSetBlock(
+                                        level,
+                                        pointInside,
+                                        blockSettings
+                                                .alternateInnerLayerProvider()
+                                                .getState(level, random, pointInside),
+                                        canReplace);
                             } else {
-                                safeSetBlock(level, pointInside,
-                                        blockSettings.innerLayerProvider().getState(level, random, pointInside), canReplace);
+                                safeSetBlock(
+                                        level,
+                                        pointInside,
+                                        blockSettings
+                                                .innerLayerProvider()
+                                                .getState(level, random, pointInside),
+                                        canReplace);
                             }
 
                             if ((!config.placementsRequireLayer0Alternate() || useAlternateLayer)
-                                    && (double) random.nextFloat() < config.usePotentialPlacementsChance()) {
+                                    && (double) random.nextFloat()
+                                            < config.usePotentialPlacementsChance()) {
                                 potentialCrystalPlacements.add(pointInside);
                             }
                         } else if (distSumShell >= innerCrust) {
-                            safeSetBlock(level, pointInside, blockSettings.middleLayerProvider().getState(level, random, pointInside), canReplace);
+                            safeSetBlock(
+                                    level,
+                                    pointInside,
+                                    blockSettings
+                                            .middleLayerProvider()
+                                            .getState(level, random, pointInside),
+                                    canReplace);
                         } else if (distSumShell >= outerCrust) {
-                            safeSetBlock(level, pointInside, blockSettings.outerLayerProvider().getState(level, random, pointInside), canReplace);
+                            safeSetBlock(
+                                    level,
+                                    pointInside,
+                                    blockSettings
+                                            .outerLayerProvider()
+                                            .getState(level, random, pointInside),
+                                    canReplace);
                         }
                     }
                 }
@@ -146,7 +194,9 @@ public final class GeodeFeature implements Feature<GeodeConfiguration> {
                 var placePos = direction.relative(crystalPos);
                 var placeState = level.getBlock(placePos);
                 if (blockState.getProperty("waterlogged") != null) {
-                    blockState = blockState.withProperty("waterlogged", String.valueOf(isSourceWater(placeState)));
+                    blockState =
+                            blockState.withProperty(
+                                    "waterlogged", String.valueOf(isSourceWater(placeState)));
                 }
 
                 if (canClusterGrowAtState(placeState)) {
@@ -159,7 +209,8 @@ public final class GeodeFeature implements Feature<GeodeConfiguration> {
         return true;
     }
 
-    private static <T extends Block.Getter & Block.Setter> void safeSetBlock(T level, BlockVec pos, Block state, Predicate<Block> canReplace) {
+    private static <T extends Block.Getter & Block.Setter> void safeSetBlock(
+            T level, BlockVec pos, Block state, Predicate<Block> canReplace) {
         if (canReplace.test(level.getBlock(pos))) {
             level.setBlock(pos, state);
         }
@@ -189,6 +240,5 @@ public final class GeodeFeature implements Feature<GeodeConfiguration> {
         return property == null ? 0 : Integer.parseInt(property);
     }
 
-    private record PointOffset(BlockVec position, int offset) {
-    }
+    private record PointOffset(BlockVec position, int offset) {}
 }

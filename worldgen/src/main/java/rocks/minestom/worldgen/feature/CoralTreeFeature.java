@@ -5,9 +5,9 @@ import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.random.RandomSource;
 
 /**
- * Port of vanilla's {@code CoralTreeFeature}: grows a one-to-three block
- * trunk, then two to four branches (in a shuffled horizontal direction each)
- * that climb two to six blocks, occasionally stepping sideways as they rise.
+ * Port of vanilla's {@code CoralTreeFeature}: grows a one-to-three block trunk, then two to four
+ * branches (in a shuffled horizontal direction each) that climb two to six blocks, occasionally
+ * stepping sideways as they rise.
  */
 public final class CoralTreeFeature extends CoralFeature {
     @Override

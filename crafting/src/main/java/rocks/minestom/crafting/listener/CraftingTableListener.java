@@ -7,7 +7,8 @@ import net.minestom.server.instance.block.Block;
 import org.jetbrains.annotations.NotNull;
 import rocks.minestom.crafting.CraftingManager;
 
-public final class CraftingTableListener implements EventListener<@NotNull PlayerBlockInteractEvent> {
+public final class CraftingTableListener
+        implements EventListener<@NotNull PlayerBlockInteractEvent> {
     private final CraftingManager craftingManager;
 
     public CraftingTableListener(CraftingManager craftingManager) {

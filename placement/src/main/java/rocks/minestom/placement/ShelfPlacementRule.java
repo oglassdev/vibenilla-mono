@@ -19,7 +19,8 @@ public final class ShelfPlacementRule extends BlockPlacementRule {
         var replaced = blockGetter.getBlock(position);
         var powered = VanillaPlacementUtils.hasNeighborSignal(blockGetter, position);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withProperty("facing", facing.name().toLowerCase())
                 .withProperty("powered", String.valueOf(powered))
                 .withProperty("side_chain", "unconnected")
@@ -29,8 +30,9 @@ public final class ShelfPlacementRule extends BlockPlacementRule {
     @Override
     public Block blockUpdate(UpdateState updateState) {
         var current = updateState.currentBlock();
-        var powered = VanillaPlacementUtils.hasNeighborSignal(
-                updateState.instance(), updateState.blockPosition());
+        var powered =
+                VanillaPlacementUtils.hasNeighborSignal(
+                        updateState.instance(), updateState.blockPosition());
 
         if (powered == "true".equals(current.getProperty("powered"))) {
             return current;

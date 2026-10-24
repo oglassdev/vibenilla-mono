@@ -4,9 +4,8 @@ import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.random.RandomSource;
 
 /**
- * Exact port of vanilla {@code NetherWorldCarver}: a cave carver with wider,
- * taller tunnels that skips the aquifer and floods everything below
- * {@code minY + 31} with lava.
+ * Exact port of vanilla {@code NetherWorldCarver}: a cave carver with wider, taller tunnels that
+ * skips the aquifer and floods everything below {@code minY + 31} with lava.
  */
 public final class NetherWorldCarver extends CaveWorldCarver {
 
@@ -26,8 +25,13 @@ public final class NetherWorldCarver extends CaveWorldCarver {
     }
 
     @Override
-    protected boolean carveBlock(CarvingContext context, CaveCarverConfiguration configuration, int blockX,
-            int blockY, int blockZ, MutableBoolean hasGrass) {
+    protected boolean carveBlock(
+            CarvingContext context,
+            CaveCarverConfiguration configuration,
+            int blockX,
+            int blockY,
+            int blockZ,
+            MutableBoolean hasGrass) {
         if (!configuration.base().canReplace(context.getBlock(blockX, blockY, blockZ))) {
             return false;
         }

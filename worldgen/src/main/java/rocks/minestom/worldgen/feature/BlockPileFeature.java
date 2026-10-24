@@ -7,11 +7,11 @@ import rocks.minestom.worldgen.random.RandomSource;
 
 public final class BlockPileFeature implements Feature<BlockPileConfiguration> {
 
-    public BlockPileFeature() {
-    }
+    public BlockPileFeature() {}
 
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<BlockPileConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<BlockPileConfiguration, T> context) {
         var origin = context.origin();
         if (origin.y() < context.minY() + 5) {
             return false;
@@ -55,11 +55,7 @@ public final class BlockPileFeature implements Feature<BlockPileConfiguration> {
     }
 
     private <T extends Block.Getter & Block.Setter> void tryPlaceBlock(
-            T accessor,
-            BlockVec position,
-            RandomSource random,
-            BlockPileConfiguration config
-    ) {
+            T accessor, BlockVec position, RandomSource random, BlockPileConfiguration config) {
         var currentBlock = accessor.getBlock(position);
         if (!currentBlock.air()) {
             return;

@@ -8,10 +8,10 @@ public final class EndPodiumFeature {
     private static final float INNER_RADIUS = 2.5F;
     private static final float OUTER_RADIUS = 3.5F;
 
-    private EndPodiumFeature() {
-    }
+    private EndPodiumFeature() {}
 
-    public static <T extends Block.Getter & Block.Setter> void place(T level, BlockVec origin, boolean active) {
+    public static <T extends Block.Getter & Block.Setter> void place(
+            T level, BlockVec origin, boolean active) {
         var originX = origin.blockX();
         var originY = origin.blockY();
         var originZ = origin.blockZ();

@@ -1,17 +1,17 @@
 package rocks.minestom.worldgen.feature;
 
-import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.NoneFeatureConfiguration;
 
 /**
  * Port of vanilla {@code GlowstoneFeature}: a seed glowstone block under
- * netherrack/basalt/blackstone, grown by 1500 random attach attempts that each
- * require exactly one glowstone neighbor.
+ * netherrack/basalt/blackstone, grown by 1500 random attach attempts that each require exactly one
+ * glowstone neighbor.
  */
 public final class GlowstoneFeature implements Feature<NoneFeatureConfiguration> {
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<NoneFeatureConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<NoneFeatureConfiguration, T> context) {
         var level = context.accessor();
         var origin = context.origin();
         var random = context.random();
@@ -20,7 +20,8 @@ public final class GlowstoneFeature implements Feature<NoneFeatureConfiguration>
         }
 
         var aboveState = level.getBlock(origin.add(0, 1, 0));
-        if (!aboveState.compare(Block.NETHERRACK) && !aboveState.compare(Block.BASALT)
+        if (!aboveState.compare(Block.NETHERRACK)
+                && !aboveState.compare(Block.BASALT)
                 && !aboveState.compare(Block.BLACKSTONE)) {
             return false;
         }
@@ -28,10 +29,11 @@ public final class GlowstoneFeature implements Feature<NoneFeatureConfiguration>
         level.setBlock(origin, Block.GLOWSTONE);
 
         for (var attempt = 0; attempt < 1500; attempt++) {
-            var placePos = origin.add(
-                    random.nextInt(8) - random.nextInt(8),
-                    -random.nextInt(12),
-                    random.nextInt(8) - random.nextInt(8));
+            var placePos =
+                    origin.add(
+                            random.nextInt(8) - random.nextInt(8),
+                            -random.nextInt(12),
+                            random.nextInt(8) - random.nextInt(8));
             if (level.getBlock(placePos).air()) {
                 var neighbours = 0;
 

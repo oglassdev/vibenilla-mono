@@ -14,7 +14,10 @@ public final class DirtPathPlacementRule extends BlockPlacementRule {
 
     @Override
     public Block blockPlace(PlacementState placementState) {
-        var above = placementState.instance().getBlock(placementState.placePosition().relative(BlockFace.TOP));
+        var above =
+                placementState
+                        .instance()
+                        .getBlock(placementState.placePosition().relative(BlockFace.TOP));
         return canSurvive(above) ? placementState.block() : Block.DIRT;
     }
 
@@ -24,7 +27,10 @@ public final class DirtPathPlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var above = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.TOP));
+        var above =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.TOP));
         return canSurvive(above) ? updateState.currentBlock() : Block.DIRT;
     }
 

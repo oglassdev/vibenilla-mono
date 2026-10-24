@@ -8,11 +8,15 @@ import rocks.minestom.worldgen.feature.configurations.TreeConfiguration;
 import rocks.minestom.worldgen.random.RandomSource;
 
 public record AcaciaFoliagePlacer(int radius, int offset) implements FoliagePlacer {
-    public static final Codec<AcaciaFoliagePlacer> CODEC = StructCodec.struct(
-            "radius", Codec.INT, AcaciaFoliagePlacer::radius,
-            "offset", Codec.INT, AcaciaFoliagePlacer::offset,
-            AcaciaFoliagePlacer::new
-    );
+    public static final Codec<AcaciaFoliagePlacer> CODEC =
+            StructCodec.struct(
+                    "radius",
+                    Codec.INT,
+                    AcaciaFoliagePlacer::radius,
+                    "offset",
+                    Codec.INT,
+                    AcaciaFoliagePlacer::offset,
+                    AcaciaFoliagePlacer::new);
 
     @Override
     public void createFoliage(
@@ -23,14 +27,37 @@ public record AcaciaFoliagePlacer(int radius, int offset) implements FoliagePlac
             int maxFreeTreeHeight,
             FoliageAttachment attachment,
             int foliageHeight,
-            int foliageRadius
-    ) {
+            int foliageRadius) {
         var doubleTrunk = attachment.doubleTrunk();
         var center = attachment.pos().add(0, this.offset, 0);
 
-        this.placeLeavesRow(getter, foliageSetter, random, config, center, foliageRadius + attachment.radiusOffset(), -1 - foliageHeight, doubleTrunk);
-        this.placeLeavesRow(getter, foliageSetter, random, config, center, foliageRadius - 1, -foliageHeight, doubleTrunk);
-        this.placeLeavesRow(getter, foliageSetter, random, config, center, foliageRadius + attachment.radiusOffset() - 1, 0, doubleTrunk);
+        this.placeLeavesRow(
+                getter,
+                foliageSetter,
+                random,
+                config,
+                center,
+                foliageRadius + attachment.radiusOffset(),
+                -1 - foliageHeight,
+                doubleTrunk);
+        this.placeLeavesRow(
+                getter,
+                foliageSetter,
+                random,
+                config,
+                center,
+                foliageRadius - 1,
+                -foliageHeight,
+                doubleTrunk);
+        this.placeLeavesRow(
+                getter,
+                foliageSetter,
+                random,
+                config,
+                center,
+                foliageRadius + attachment.radiusOffset() - 1,
+                0,
+                doubleTrunk);
     }
 
     @Override
@@ -51,14 +78,17 @@ public record AcaciaFoliagePlacer(int radius, int offset) implements FoliagePlac
             BlockVec center,
             int radius,
             int yOffset,
-            boolean doubleTrunk
-    ) {
+            boolean doubleTrunk) {
         var widthOffset = doubleTrunk ? 1 : 0;
 
         for (var x = -radius; x <= radius + widthOffset; x++) {
             for (var z = -radius; z <= radius + widthOffset; z++) {
                 if (!this.shouldSkipLocationSigned(random, x, yOffset, z, radius)) {
-                    var position = new BlockVec(center.blockX() + x, center.blockY() + yOffset, center.blockZ() + z);
+                    var position =
+                            new BlockVec(
+                                    center.blockX() + x,
+                                    center.blockY() + yOffset,
+                                    center.blockZ() + z);
                     FoliagePlacer.tryPlaceLeaf(getter, setter, random, config, position);
                 }
             }

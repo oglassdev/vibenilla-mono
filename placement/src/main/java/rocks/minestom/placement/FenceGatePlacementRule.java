@@ -1,15 +1,14 @@
 package rocks.minestom.placement;
 
+import java.util.concurrent.ThreadLocalRandom;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.sound.Sound;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Point;
+import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
-import net.minestom.server.instance.Instance;
-import net.kyori.adventure.sound.Sound;
-
-import java.util.concurrent.ThreadLocalRandom;
 import net.minestom.server.registry.RegistryTag;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,7 +27,8 @@ public final class FenceGatePlacementRule extends BlockPlacementRule {
         var inWall = isInWall(blockGetter, placePosition, facing);
         var powered = VanillaPlacementUtils.hasNeighborSignal(blockGetter, placePosition);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withHandler(FenceGateBlockHandler.INSTANCE)
                 .withProperty("facing", facing.name().toLowerCase())
                 .withProperty("in_wall", String.valueOf(inWall))
@@ -54,28 +54,33 @@ public final class FenceGatePlacementRule extends BlockPlacementRule {
             updated = updated.withProperty("in_wall", String.valueOf(inWall));
         }
 
-        var powered = VanillaPlacementUtils.hasNeighborSignal(
-                updateState.instance(), updateState.blockPosition());
+        var powered =
+                VanillaPlacementUtils.hasNeighborSignal(
+                        updateState.instance(), updateState.blockPosition());
 
         var wasPowered = "true".equals(current.getProperty("powered"));
 
         if (powered != wasPowered) {
             if (updateState.instance() instanceof Instance instance) {
                 instance.playSound(
-                        Sound.sound(FenceGateBlockHandler.soundEvent(current, powered), Sound.Source.BLOCK, 1.0F,
+                        Sound.sound(
+                                FenceGateBlockHandler.soundEvent(current, powered),
+                                Sound.Source.BLOCK,
+                                1.0F,
                                 ThreadLocalRandom.current().nextFloat() * 0.1F + 0.9F),
                         updateState.blockPosition().add(0.5D, 0.5D, 0.5D));
             }
 
-            updated = updated
-                    .withProperty("powered", String.valueOf(powered))
-                    .withProperty("open", String.valueOf(powered));
+            updated =
+                    updated.withProperty("powered", String.valueOf(powered))
+                            .withProperty("open", String.valueOf(powered));
         }
 
         return updated;
     }
 
-    private static boolean isInWall(Block.Getter blockGetter, Point placePosition, BlockFace facing) {
+    private static boolean isInWall(
+            Block.Getter blockGetter, Point placePosition, BlockFace facing) {
         var wallsTag = MinecraftServer.process().blocks().getTag(Key.key("minecraft:walls"));
 
         if (facing == BlockFace.NORTH || facing == BlockFace.SOUTH) {
@@ -87,7 +92,10 @@ public final class FenceGatePlacementRule extends BlockPlacementRule {
                 || isWall(blockGetter, placePosition.relative(BlockFace.SOUTH), wallsTag);
     }
 
-    private static boolean isWall(Block.Getter blockGetter, Point neighborPosition, @Nullable RegistryTag<Block> wallsTag) {
+    private static boolean isWall(
+            Block.Getter blockGetter,
+            Point neighborPosition,
+            @Nullable RegistryTag<Block> wallsTag) {
         var neighbor = blockGetter.getBlock(neighborPosition);
         return wallsTag != null && wallsTag.contains(neighbor);
     }

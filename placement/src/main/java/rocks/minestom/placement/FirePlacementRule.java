@@ -1,5 +1,6 @@
 package rocks.minestom.placement;
 
+import java.util.Set;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Point;
@@ -7,11 +8,11 @@ import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
 
-import java.util.Set;
-
 public final class FirePlacementRule extends BlockPlacementRule {
     private static final Key SOUL_FIRE_BASE_BLOCKS = Key.key("minecraft:soul_fire_base_blocks");
-    private static final Set<String> FLAMMABLE_BLOCKS = Set.of("""
+    private static final Set<String> FLAMMABLE_BLOCKS =
+            Set.of(
+                    """
             oak_planks spruce_planks birch_planks jungle_planks acacia_planks cherry_planks dark_oak_planks
             pale_oak_planks mangrove_planks bamboo_planks bamboo_mosaic oak_slab spruce_slab birch_slab jungle_slab
             acacia_slab cherry_slab dark_oak_slab pale_oak_slab mangrove_slab bamboo_slab bamboo_mosaic_slab
@@ -41,7 +42,8 @@ public final class FirePlacementRule extends BlockPlacementRule {
             spore_blossom azalea flowering_azalea big_dripleaf big_dripleaf_stem small_dripleaf hanging_roots
             glow_lichen firefly_bush bush acacia_shelf bamboo_shelf birch_shelf cherry_shelf dark_oak_shelf jungle_shelf
             mangrove_shelf oak_shelf pale_oak_shelf spruce_shelf
-            """.split("\\s+"));
+            """
+                            .split("\\s+"));
 
     public FirePlacementRule(Block block) {
         super(block);
@@ -89,12 +91,31 @@ public final class FirePlacementRule extends BlockPlacementRule {
             return result;
         }
 
-        return result
-                .withProperty("north", String.valueOf(this.canBurn(blockGetter.getBlock(position.relative(BlockFace.NORTH)))))
-                .withProperty("east", String.valueOf(this.canBurn(blockGetter.getBlock(position.relative(BlockFace.EAST)))))
-                .withProperty("south", String.valueOf(this.canBurn(blockGetter.getBlock(position.relative(BlockFace.SOUTH)))))
-                .withProperty("west", String.valueOf(this.canBurn(blockGetter.getBlock(position.relative(BlockFace.WEST)))))
-                .withProperty("up", String.valueOf(this.canBurn(blockGetter.getBlock(position.relative(BlockFace.TOP)))));
+        return result.withProperty(
+                        "north",
+                        String.valueOf(
+                                this.canBurn(
+                                        blockGetter.getBlock(position.relative(BlockFace.NORTH)))))
+                .withProperty(
+                        "east",
+                        String.valueOf(
+                                this.canBurn(
+                                        blockGetter.getBlock(position.relative(BlockFace.EAST)))))
+                .withProperty(
+                        "south",
+                        String.valueOf(
+                                this.canBurn(
+                                        blockGetter.getBlock(position.relative(BlockFace.SOUTH)))))
+                .withProperty(
+                        "west",
+                        String.valueOf(
+                                this.canBurn(
+                                        blockGetter.getBlock(position.relative(BlockFace.WEST)))))
+                .withProperty(
+                        "up",
+                        String.valueOf(
+                                this.canBurn(
+                                        blockGetter.getBlock(position.relative(BlockFace.TOP)))));
     }
 
     private boolean canSurvive(Block.Getter blockGetter, Point position) {

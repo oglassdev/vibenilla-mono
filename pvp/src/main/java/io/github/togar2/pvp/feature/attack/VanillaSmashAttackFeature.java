@@ -11,7 +11,6 @@ import io.github.togar2.pvp.player.CombatPlayer;
 import io.github.togar2.pvp.utils.ViewUtil;
 import net.kyori.adventure.sound.Sound;
 import net.minestom.server.ServerFlag;
-import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
@@ -28,14 +27,14 @@ import net.minestom.server.network.packet.server.play.WorldEventPacket;
 import net.minestom.server.particle.Particle;
 import net.minestom.server.sound.SoundEvent;
 
-/**
- * Vanilla implementation of {@link SmashAttackFeature}
- */
+/** Vanilla implementation of {@link SmashAttackFeature} */
 public class VanillaSmashAttackFeature implements SmashAttackFeature {
-    public static final DefinedFeature<VanillaSmashAttackFeature> DEFINED = new DefinedFeature<>(
-            FeatureType.SMASH_ATTACK, VanillaSmashAttackFeature::new,
-            FeatureType.FALL, FeatureType.ENCHANTMENT
-    );
+    public static final DefinedFeature<VanillaSmashAttackFeature> DEFINED =
+            new DefinedFeature<>(
+                    FeatureType.SMASH_ATTACK,
+                    VanillaSmashAttackFeature::new,
+                    FeatureType.FALL,
+                    FeatureType.ENCHANTMENT);
 
     private static final float SMASH_ATTACK_FALL_THRESHOLD = 1.5F;
     private static final float WIND_BURST_FALL_THRESHOLD = 1.5F;
@@ -89,9 +88,11 @@ public class VanillaSmashAttackFeature implements SmashAttackFeature {
             damage = 22.0 + (fallDistance - 8.0);
         }
 
-        var densityDamage = this.enchantmentFeature.modifyConditionalValue(
-                attacker.getItemInMainHand(), EffectComponent.SMASH_DAMAGE_PER_FALLEN_BLOCK, 0.0F
-        );
+        var densityDamage =
+                this.enchantmentFeature.modifyConditionalValue(
+                        attacker.getItemInMainHand(),
+                        EffectComponent.SMASH_DAMAGE_PER_FALLEN_BLOCK,
+                        0.0F);
         damage += densityDamage * fallDistance;
 
         return (float) damage;
@@ -118,16 +119,31 @@ public class VanillaSmashAttackFeature implements SmashAttackFeature {
                 this.fallFeature.setExtraFallParticles(attacker, true);
             }
 
-            var sound = heavySmash ? SoundEvent.ITEM_MACE_SMASH_GROUND_HEAVY : SoundEvent.ITEM_MACE_SMASH_GROUND;
-            ViewUtil.viewersAndSelf(attacker).playSound(Sound.sound(
-                    sound, attacker instanceof Player ? Sound.Source.PLAYER : Sound.Source.HOSTILE,
-                    1.0F, 1.0F
-            ), attacker);
+            var sound =
+                    heavySmash
+                            ? SoundEvent.ITEM_MACE_SMASH_GROUND_HEAVY
+                            : SoundEvent.ITEM_MACE_SMASH_GROUND;
+            ViewUtil.viewersAndSelf(attacker)
+                    .playSound(
+                            Sound.sound(
+                                    sound,
+                                    attacker instanceof Player
+                                            ? Sound.Source.PLAYER
+                                            : Sound.Source.HOSTILE,
+                                    1.0F,
+                                    1.0F),
+                            attacker);
         } else {
-            ViewUtil.viewersAndSelf(attacker).playSound(Sound.sound(
-                    SoundEvent.ITEM_MACE_SMASH_AIR, attacker instanceof Player ? Sound.Source.PLAYER : Sound.Source.HOSTILE,
-                    1.0F, 1.0F
-            ), attacker);
+            ViewUtil.viewersAndSelf(attacker)
+                    .playSound(
+                            Sound.sound(
+                                    SoundEvent.ITEM_MACE_SMASH_AIR,
+                                    attacker instanceof Player
+                                            ? Sound.Source.PLAYER
+                                            : Sound.Source.HOSTILE,
+                                    1.0F,
+                                    1.0F),
+                            attacker);
         }
 
         this.applySmashKnockback(attacker, target, heavySmash);
@@ -137,7 +153,8 @@ public class VanillaSmashAttackFeature implements SmashAttackFeature {
 
     @Override
     public void applyWindBurst(LivingEntity attacker) {
-        var windBurstLevel = this.enchantmentFeature.getEquipmentLevel(attacker, Enchantment.WIND_BURST);
+        var windBurstLevel =
+                this.enchantmentFeature.getEquipmentLevel(attacker, Enchantment.WIND_BURST);
         if (windBurstLevel <= 0) return;
         if (attacker instanceof Player player && player.isFlying()) return;
         if (this.fallFeature.getFallDistance(attacker) < WIND_BURST_FALL_THRESHOLD) return;
@@ -145,30 +162,51 @@ public class VanillaSmashAttackFeature implements SmashAttackFeature {
         var power = this.getWindBurstPower(windBurstLevel);
 
         var attackerPosition = attacker.getPosition();
-        attacker.sendPacketToViewersAndSelf(new ParticlePacket(
-                Particle.GUST_EMITTER_SMALL, false, false,
-                attackerPosition.x(), attackerPosition.y() + 0.5, attackerPosition.z(),
-                0.0F, 0.0F, 0.0F,
-                0.0F, 1
-        ));
-        attacker.sendPacketToViewersAndSelf(new ParticlePacket(
-                Particle.GUST_EMITTER_LARGE, false, false,
-                attackerPosition.x(), attackerPosition.y() + 0.5, attackerPosition.z(),
-                0.0F, 0.0F, 0.0F,
-                0.0F, 1
-        ));
+        attacker.sendPacketToViewersAndSelf(
+                new ParticlePacket(
+                        Particle.GUST_EMITTER_SMALL,
+                        false,
+                        false,
+                        attackerPosition.x(),
+                        attackerPosition.y() + 0.5,
+                        attackerPosition.z(),
+                        0.0F,
+                        0.0F,
+                        0.0F,
+                        0.0F,
+                        1));
+        attacker.sendPacketToViewersAndSelf(
+                new ParticlePacket(
+                        Particle.GUST_EMITTER_LARGE,
+                        false,
+                        false,
+                        attackerPosition.x(),
+                        attackerPosition.y() + 0.5,
+                        attackerPosition.z(),
+                        0.0F,
+                        0.0F,
+                        0.0F,
+                        0.0F,
+                        1));
 
-        ViewUtil.viewersAndSelf(attacker).playSound(Sound.sound(
-                SoundEvent.ENTITY_WIND_CHARGE_WIND_BURST, attacker instanceof Player ? Sound.Source.PLAYER : Sound.Source.HOSTILE,
-                1.0F, 1.0F
-        ), attacker);
+        ViewUtil.viewersAndSelf(attacker)
+                .playSound(
+                        Sound.sound(
+                                SoundEvent.ENTITY_WIND_CHARGE_WIND_BURST,
+                                attacker instanceof Player
+                                        ? Sound.Source.PLAYER
+                                        : Sound.Source.HOSTILE,
+                                1.0F,
+                                1.0F),
+                        attacker);
 
         assert attacker.getInstance() != null;
         var radius = WIND_BURST_RADIUS * 2.0;
 
         this.applyWindBurstKnockback(attackerPosition, power, attacker);
 
-        for (var nearbyEntity : attacker.getInstance().getNearbyEntities(attackerPosition, radius)) {
+        for (var nearbyEntity :
+                attacker.getInstance().getNearbyEntities(attackerPosition, radius)) {
             if (nearbyEntity == attacker) continue;
 
             this.applyWindBurstKnockback(attackerPosition, power, nearbyEntity);
@@ -180,16 +218,21 @@ public class VanillaSmashAttackFeature implements SmashAttackFeature {
             return WIND_BURST_POWER_BY_LEVEL[windBurstLevel - 1];
         }
 
-        return WIND_BURST_FALLBACK_BASE_POWER + WIND_BURST_FALLBACK_POWER_PER_LEVEL * (windBurstLevel - 1);
+        return WIND_BURST_FALLBACK_BASE_POWER
+                + WIND_BURST_FALLBACK_POWER_PER_LEVEL * (windBurstLevel - 1);
     }
 
     private void applyWindBurstKnockback(Pos attackerPosition, float power, Entity nearbyEntity) {
         if (this.isMarkerArmorStand(nearbyEntity)) return;
-        if (nearbyEntity instanceof Player player && player.getGameMode() == GameMode.SPECTATOR) return;
-        if (nearbyEntity instanceof Player player && player.getGameMode() == GameMode.CREATIVE && player.isFlying()) return;
+        if (nearbyEntity instanceof Player player && player.getGameMode() == GameMode.SPECTATOR)
+            return;
+        if (nearbyEntity instanceof Player player
+                && player.getGameMode() == GameMode.CREATIVE
+                && player.isFlying()) return;
 
         var originY = nearbyEntity.getPosition().y() + nearbyEntity.getEyeHeight();
-        var origin = new Vec(nearbyEntity.getPosition().x(), originY, nearbyEntity.getPosition().z());
+        var origin =
+                new Vec(nearbyEntity.getPosition().x(), originY, nearbyEntity.getPosition().z());
         var direction = origin.sub(attackerPosition.asVec());
         var directionLength = direction.length();
         var radius = WIND_BURST_RADIUS * 2.0;
@@ -198,55 +241,73 @@ public class VanillaSmashAttackFeature implements SmashAttackFeature {
         var exposure = VanillaExplosionSupplier.getExposure(attackerPosition, nearbyEntity);
         var knockbackFactor = (1.0 - directionLength / radius) * exposure * power;
         if (nearbyEntity instanceof LivingEntity nearbyLiving) {
-            knockbackFactor *= 1.0 - nearbyLiving.getAttributeValue(Attribute.EXPLOSION_KNOCKBACK_RESISTANCE);
+            knockbackFactor *=
+                    1.0 - nearbyLiving.getAttributeValue(Attribute.EXPLOSION_KNOCKBACK_RESISTANCE);
         }
         var knockbackVector = direction.normalize().mul(knockbackFactor);
-        nearbyEntity.setVelocity(nearbyEntity.getVelocity().add(knockbackVector.mul(ServerFlag.SERVER_TICKS_PER_SECOND)));
+        nearbyEntity.setVelocity(
+                nearbyEntity
+                        .getVelocity()
+                        .add(knockbackVector.mul(ServerFlag.SERVER_TICKS_PER_SECOND)));
 
-        if (nearbyEntity instanceof LivingEntity nearbyLiving) this.fallFeature.resetPostImpulseGraceTime(nearbyLiving);
+        if (nearbyEntity instanceof LivingEntity nearbyLiving)
+            this.fallFeature.resetPostImpulseGraceTime(nearbyLiving);
     }
 
-    private void applySmashKnockback(LivingEntity attacker, LivingEntity target, boolean heavySmash) {
+    private void applySmashKnockback(
+            LivingEntity attacker, LivingEntity target, boolean heavySmash) {
         var onPosition = target.getPosition().sub(0.0, 0.2, 0.0).asBlockVec();
-        target.sendPacketToViewersAndSelf(new WorldEventPacket(
-                SMASH_ATTACK_LEVEL_EVENT, onPosition, SMASH_ATTACK_PARTICLE_COUNT, false
-        ));
+        target.sendPacketToViewersAndSelf(
+                new WorldEventPacket(
+                        SMASH_ATTACK_LEVEL_EVENT, onPosition, SMASH_ATTACK_PARTICLE_COUNT, false));
 
         assert target.getInstance() != null;
         var tps = ServerFlag.SERVER_TICKS_PER_SECOND;
 
-        for (var nearbyEntity : target.getInstance().getNearbyEntities(target.getPosition(), SMASH_ATTACK_KNOCKBACK_RADIUS)) {
+        for (var nearbyEntity :
+                target.getInstance()
+                        .getNearbyEntities(target.getPosition(), SMASH_ATTACK_KNOCKBACK_RADIUS)) {
             this.applySmashKnockbackToEntity(attacker, target, heavySmash, tps, nearbyEntity);
         }
     }
 
-    private void applySmashKnockbackToEntity(LivingEntity attacker, LivingEntity target, boolean heavySmash, int tps, Entity nearbyEntity) {
+    private void applySmashKnockbackToEntity(
+            LivingEntity attacker,
+            LivingEntity target,
+            boolean heavySmash,
+            int tps,
+            Entity nearbyEntity) {
         if (nearbyEntity == attacker || nearbyEntity == target) return;
         if (!(nearbyEntity instanceof LivingEntity nearbyLiving)) return;
         if (this.isMarkerArmorStand(nearbyEntity)) return;
-        if (nearbyEntity instanceof Player nearbyPlayer && nearbyPlayer.getGameMode() == GameMode.SPECTATOR) return;
-        if (nearbyEntity instanceof Player nearbyPlayer && nearbyPlayer.getGameMode() == GameMode.CREATIVE && nearbyPlayer.isFlying()) return;
-        if (target.getPosition().distanceSquared(nearbyEntity.getPosition()) > SMASH_ATTACK_KNOCKBACK_RADIUS * SMASH_ATTACK_KNOCKBACK_RADIUS) return;
+        if (nearbyEntity instanceof Player nearbyPlayer
+                && nearbyPlayer.getGameMode() == GameMode.SPECTATOR) return;
+        if (nearbyEntity instanceof Player nearbyPlayer
+                && nearbyPlayer.getGameMode() == GameMode.CREATIVE
+                && nearbyPlayer.isFlying()) return;
+        if (target.getPosition().distanceSquared(nearbyEntity.getPosition())
+                > SMASH_ATTACK_KNOCKBACK_RADIUS * SMASH_ATTACK_KNOCKBACK_RADIUS) return;
 
         var direction = nearbyEntity.getPosition().asVec().sub(target.getPosition().asVec());
         var directionLength = direction.length();
         if (directionLength <= 0) return;
 
         var knockbackResistance = nearbyLiving.getAttributeValue(Attribute.KNOCKBACK_RESISTANCE);
-        var knockbackPower = (SMASH_ATTACK_KNOCKBACK_RADIUS - directionLength)
-                * SMASH_ATTACK_KNOCKBACK_POWER
-                * (heavySmash ? 2 : 1)
-                * (1.0 - knockbackResistance);
+        var knockbackPower =
+                (SMASH_ATTACK_KNOCKBACK_RADIUS - directionLength)
+                        * SMASH_ATTACK_KNOCKBACK_POWER
+                        * (heavySmash ? 2 : 1)
+                        * (1.0 - knockbackResistance);
 
         if (knockbackPower <= 0) return;
 
         var knockbackVector = direction.normalize().mul(knockbackPower);
         var nearbyVelocity = nearbyLiving.getVelocity();
-        nearbyLiving.setVelocity(new Vec(
-                nearbyVelocity.x() + knockbackVector.x() * tps,
-                nearbyVelocity.y() + SMASH_ATTACK_VERTICAL_KNOCKBACK * tps,
-                nearbyVelocity.z() + knockbackVector.z() * tps
-        ));
+        nearbyLiving.setVelocity(
+                new Vec(
+                        nearbyVelocity.x() + knockbackVector.x() * tps,
+                        nearbyVelocity.y() + SMASH_ATTACK_VERTICAL_KNOCKBACK * tps,
+                        nearbyVelocity.z() + knockbackVector.z() * tps));
 
         if (nearbyLiving instanceof CombatPlayer combatPlayer) {
             combatPlayer.sendImmediateVelocityUpdate();

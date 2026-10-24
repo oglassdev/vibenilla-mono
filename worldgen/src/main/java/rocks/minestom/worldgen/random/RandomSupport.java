@@ -8,8 +8,7 @@ public final class RandomSupport {
     public static final long GOLDEN_RATIO_64 = -7046029254386353131L;
     public static final long SILVER_RATIO_64 = 7640891576956012809L;
 
-    private RandomSupport() {
-    }
+    private RandomSupport() {}
 
     public static long mixStafford13(long seed) {
         seed = (seed ^ seed >>> 30) * -4658895280553007687L;

@@ -1,5 +1,7 @@
 package rocks.minestom.worldgen.structure.mineshaft;
 
+import java.util.List;
+import java.util.Set;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
@@ -7,15 +9,11 @@ import rocks.minestom.worldgen.biome.BiomeZoomer;
 import rocks.minestom.worldgen.feature.GenerationUnitAdapter;
 import rocks.minestom.worldgen.structure.StructureWrites;
 
-import java.util.List;
-import java.util.Set;
-
 /**
- * Chunk-local world view for mineshaft piece placement, mirroring the reads
- * vanilla pieces perform against the proto-chunk: real terrain (noise +
- * carvers), the structure's own writes so far, and a live ocean-floor
- * heightmap. All piece reads and writes are clamped to the generating chunk,
- * so a single chunk column buffer is enough.
+ * Chunk-local world view for mineshaft piece placement, mirroring the reads vanilla pieces perform
+ * against the proto-chunk: real terrain (noise + carvers), the structure's own writes so far, and a
+ * live ocean-floor heightmap. All piece reads and writes are clamped to the generating chunk, so a
+ * single chunk column buffer is enough.
  */
 final class MineshaftLevel {
     private final GenerationUnitAdapter adapter;
@@ -30,8 +28,16 @@ final class MineshaftLevel {
     private final int[] chunkHandle;
     private final List<BlockVec> shapeUpdatePositions;
 
-    MineshaftLevel(GenerationUnitAdapter adapter, Block[] blocks, int startX, int startZ,
-            int minY, int maxY, BiomeZoomer biomeZoomer, Set<Key> blockingBiomes, int[] chunkHandle,
+    MineshaftLevel(
+            GenerationUnitAdapter adapter,
+            Block[] blocks,
+            int startX,
+            int startZ,
+            int minY,
+            int maxY,
+            BiomeZoomer biomeZoomer,
+            Set<Key> blockingBiomes,
+            int[] chunkHandle,
             List<BlockVec> shapeUpdatePositions) {
         this.adapter = adapter;
         this.blocks = blocks;
@@ -69,11 +75,10 @@ final class MineshaftLevel {
     }
 
     /**
-     * Write without the connection-shape mark: vanilla only marks fences
-     * placed through {@code StructurePiece.placeBlock} (SHAPE_CHECK_BLOCKS);
-     * the pillar and chain-anchor fences written by
-     * {@code fillPillarDownOrChainUp} bypass it and keep their default
-     * unconnected state forever.
+     * Write without the connection-shape mark: vanilla only marks fences placed through {@code
+     * StructurePiece.placeBlock} (SHAPE_CHECK_BLOCKS); the pillar and chain-anchor fences written
+     * by {@code fillPillarDownOrChainUp} bypass it and keep their default unconnected state
+     * forever.
      */
     void setBlockRaw(int x, int y, int z, Block block) {
         var index = this.index(x, y, z);
@@ -86,10 +91,9 @@ final class MineshaftLevel {
     }
 
     /**
-     * Vanilla {@code StructurePiece.SHAPE_CHECK_BLOCKS}, restricted to the
-     * families mineshaft pieces actually place (fences): a position marked
-     * here has its connection shape recomputed against its final neighbors
-     * once every piece in the chunk has been placed.
+     * Vanilla {@code StructurePiece.SHAPE_CHECK_BLOCKS}, restricted to the families mineshaft
+     * pieces actually place (fences): a position marked here has its connection shape recomputed
+     * against its final neighbors once every piece in the chunk has been placed.
      */
     private static boolean isShapeCheckBlock(Block block) {
         var key = block.key().value();
@@ -97,10 +101,9 @@ final class MineshaftLevel {
     }
 
     /**
-     * Vanilla {@code OCEAN_FLOOR_WG} heightmap: frozen post-carver terrain.
-     * The WG heightmaps never see structure writes (heightmapsAfter switches
-     * to the live set at the carvers status), so a corridor digging cave_air
-     * through a column must NOT lower this value - a live scan skipped
+     * Vanilla {@code OCEAN_FLOOR_WG} heightmap: frozen post-carver terrain. The WG heightmaps never
+     * see structure writes (heightmapsAfter switches to the live set at the carvers status), so a
+     * corridor digging cave_air through a column must NOT lower this value - a live scan skipped
      * spider-corridor cobwebs whose isInterior test vanilla passed.
      */
     int oceanFloorHeight(int x, int z) {
@@ -139,7 +142,12 @@ final class MineshaftLevel {
         var localX = x - this.startX;
         var localZ = z - this.startZ;
         var yIndex = y - this.minY;
-        if (localX < 0 || localX >= 16 || localZ < 0 || localZ >= 16 || yIndex < 0 || yIndex >= this.height) {
+        if (localX < 0
+                || localX >= 16
+                || localZ < 0
+                || localZ >= 16
+                || yIndex < 0
+                || yIndex >= this.height) {
             return -1;
         }
         return (localX * 16 + localZ) * this.height + yIndex;

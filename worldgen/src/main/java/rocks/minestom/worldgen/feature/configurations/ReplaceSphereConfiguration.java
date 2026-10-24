@@ -8,11 +8,8 @@ import rocks.minestom.worldgen.feature.FeatureConfiguration;
 import rocks.minestom.worldgen.feature.valueproviders.IntProvider;
 
 /** Port of vanilla {@code ReplaceSphereConfiguration} (netherrack replace blobs). */
-public record ReplaceSphereConfiguration(
-        Block targetState,
-        Block replaceState,
-        IntProvider radius
-) implements FeatureConfiguration {
+public record ReplaceSphereConfiguration(Block targetState, Block replaceState, IntProvider radius)
+        implements FeatureConfiguration {
 
     public static ReplaceSphereConfiguration fromJson(JsonElement json) {
         var obj = json.getAsJsonObject();

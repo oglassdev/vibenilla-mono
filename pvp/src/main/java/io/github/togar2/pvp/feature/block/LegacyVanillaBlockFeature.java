@@ -19,20 +19,22 @@ import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.tag.Tag;
 
-/**
- * Vanilla implementation of {@link LegacyBlockFeature}
- */
+/** Vanilla implementation of {@link LegacyBlockFeature} */
 public class LegacyVanillaBlockFeature extends VanillaBlockFeature
         implements LegacyBlockFeature, RegistrableFeature {
-    public static final DefinedFeature<LegacyVanillaBlockFeature> SHIELD = new DefinedFeature<>(
-            FeatureType.LEGACY_BLOCK, configuration -> new LegacyVanillaBlockFeature(configuration, ItemStack.of(Material.SHIELD)),
-            LegacyVanillaBlockFeature::initPlayer,
-            FeatureType.ITEM_DAMAGE
-    );
+    public static final DefinedFeature<LegacyVanillaBlockFeature> SHIELD =
+            new DefinedFeature<>(
+                    FeatureType.LEGACY_BLOCK,
+                    configuration ->
+                            new LegacyVanillaBlockFeature(
+                                    configuration, ItemStack.of(Material.SHIELD)),
+                    LegacyVanillaBlockFeature::initPlayer,
+                    FeatureType.ITEM_DAMAGE);
 
     public static final Tag<Long> LAST_SWING_TIME = Tag.Long("lastSwingTime");
     public static final Tag<Boolean> BLOCKING_SWORD = Tag.Boolean("blockingSword");
-    public static final Tag<ItemStack> BLOCK_REPLACEMENT_ITEM = Tag.ItemStack("blockReplacementItem");
+    public static final Tag<ItemStack> BLOCK_REPLACEMENT_ITEM =
+            Tag.ItemStack("blockReplacementItem");
 
     private final ItemStack blockingItem;
 
@@ -55,10 +57,12 @@ public class LegacyVanillaBlockFeature extends VanillaBlockFeature
         node.addListener(PlayerSwapItemEvent.class, this::handleSwapItem);
         node.addListener(PlayerChangeHeldSlotEvent.class, this::handleChangeSlot);
 
-        node.addListener(PlayerHandAnimationEvent.class, event -> {
-            if (event.getHand() == PlayerHand.MAIN)
-                event.getPlayer().setTag(LAST_SWING_TIME, System.currentTimeMillis());
-        });
+        node.addListener(
+                PlayerHandAnimationEvent.class,
+                event -> {
+                    if (event.getHand() == PlayerHand.MAIN)
+                        event.getPlayer().setTag(LAST_SWING_TIME, System.currentTimeMillis());
+                });
     }
 
     @Override
@@ -90,7 +94,9 @@ public class LegacyVanillaBlockFeature extends VanillaBlockFeature
     private void handleUseItem(PlayerUseItemEvent event) {
         var player = event.getPlayer();
 
-        if (event.getHand() == PlayerHand.MAIN && !this.isBlocking(player) && this.canBlockWith(player, event.getItemStack())) {
+        if (event.getHand() == PlayerHand.MAIN
+                && !this.isBlocking(player)
+                && this.canBlockWith(player, event.getItemStack())) {
             var elapsedSwingTime = System.currentTimeMillis() - player.getTag(LAST_SWING_TIME);
             if (elapsedSwingTime < 50) {
                 return;

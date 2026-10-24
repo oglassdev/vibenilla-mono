@@ -28,8 +28,7 @@ public record NoiseGeneratorSettingsRuntime(
         ClimateSampler climateSampler,
         RandomState randomState,
         SurfaceSystem surfaceSystem,
-        SurfaceRules.RuleSource surfaceRule
-) {
+        SurfaceRules.RuleSource surfaceRule) {
     public int maxYInclusive() {
         return this.minY + this.height - 1;
     }

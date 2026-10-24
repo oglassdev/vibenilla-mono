@@ -1,12 +1,11 @@
 package rocks.minestom.worldgen.noise;
 
-import rocks.minestom.worldgen.VMath;
-import rocks.minestom.worldgen.random.RandomSource;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
+import rocks.minestom.worldgen.VMath;
+import rocks.minestom.worldgen.random.RandomSource;
 
 public final class PerlinNoise {
     private static final int ROUND_OFF = 33554432;
@@ -18,21 +17,28 @@ public final class PerlinNoise {
     private final double lowestFreqInputFactor;
     private final double maxValue;
 
-    public static PerlinNoise createLegacyForBlendedNoise(RandomSource randomSource, IntStream octaves) {
+    public static PerlinNoise createLegacyForBlendedNoise(
+            RandomSource randomSource, IntStream octaves) {
         var octaveList = octaves.boxed().toList();
         var pair = makeAmplitudes(octaveList);
         return new PerlinNoise(randomSource, pair.firstOctave, pair.amplitudes, false);
     }
 
-    public static PerlinNoise createLegacyForLegacyNetherBiome(RandomSource randomSource, int firstOctave, double[] amplitudes) {
+    public static PerlinNoise createLegacyForLegacyNetherBiome(
+            RandomSource randomSource, int firstOctave, double[] amplitudes) {
         return new PerlinNoise(randomSource, firstOctave, amplitudes, false);
     }
 
-    public static PerlinNoise create(RandomSource randomSource, int firstOctave, double[] amplitudes) {
+    public static PerlinNoise create(
+            RandomSource randomSource, int firstOctave, double[] amplitudes) {
         return new PerlinNoise(randomSource, firstOctave, amplitudes, true);
     }
 
-    private PerlinNoise(RandomSource randomSource, int firstOctave, double[] amplitudes, boolean usePositionalFactory) {
+    private PerlinNoise(
+            RandomSource randomSource,
+            int firstOctave,
+            double[] amplitudes,
+            boolean usePositionalFactory) {
         this.firstOctave = firstOctave;
         this.amplitudes = amplitudes;
         var octaveCount = amplitudes.length;
@@ -44,7 +50,9 @@ public final class PerlinNoise {
             for (var octaveIndex = 0; octaveIndex < octaveCount; octaveIndex++) {
                 if (amplitudes[octaveIndex] != 0.0) {
                     var octave = firstOctave + octaveIndex;
-                    this.noiseLevels[octaveIndex] = new ImprovedNoise(positionalRandomFactory.fromHashOf("octave_" + octave));
+                    this.noiseLevels[octaveIndex] =
+                            new ImprovedNoise(
+                                    positionalRandomFactory.fromHashOf("octave_" + octave));
                 }
             }
         } else {
@@ -69,8 +77,10 @@ public final class PerlinNoise {
                 }
             }
 
-            if (Arrays.stream(this.noiseLevels).filter(Objects::nonNull).count() != Arrays.stream(amplitudes).filter(amplitude -> amplitude != 0.0).count()) {
-                throw new IllegalStateException("Failed to create correct number of noise levels for given non-zero amplitudes");
+            if (Arrays.stream(this.noiseLevels).filter(Objects::nonNull).count()
+                    != Arrays.stream(amplitudes).filter(amplitude -> amplitude != 0.0).count()) {
+                throw new IllegalStateException(
+                        "Failed to create correct number of noise levels for given non-zero amplitudes");
             }
 
             if (zeroIndex < octaveCount - 1) {
@@ -79,7 +89,9 @@ public final class PerlinNoise {
         }
 
         this.lowestFreqInputFactor = Math.pow(2.0, (double) (-zeroIndex));
-        this.lowestFreqValueFactor = Math.pow(2.0, (double) (octaveCount - 1)) / (Math.pow(2.0, (double) octaveCount) - 1.0);
+        this.lowestFreqValueFactor =
+                Math.pow(2.0, (double) (octaveCount - 1))
+                        / (Math.pow(2.0, (double) octaveCount) - 1.0);
         this.maxValue = this.edgeValue(2.0);
     }
 
@@ -113,7 +125,8 @@ public final class PerlinNoise {
         return this.noiseLevels[this.noiseLevels.length - 1 - octaveIndex];
     }
 
-    public double getValue(double x, double y, double z, double yScale, double yMax, boolean useWrappedY) {
+    public double getValue(
+            double x, double y, double z, double yScale, double yMax, boolean useWrappedY) {
         var total = 0.0;
         var inputFactor = this.lowestFreqInputFactor;
         var valueFactor = this.lowestFreqValueFactor;
@@ -121,7 +134,13 @@ public final class PerlinNoise {
         for (var index = 0; index < this.noiseLevels.length; index++) {
             var noise = this.noiseLevels[index];
             if (noise != null) {
-                var sample = noise.noise(wrap(x * inputFactor), useWrappedY ? -noise.yo : wrap(y * inputFactor), wrap(z * inputFactor), yScale * inputFactor, yMax * inputFactor);
+                var sample =
+                        noise.noise(
+                                wrap(x * inputFactor),
+                                useWrappedY ? -noise.yo : wrap(y * inputFactor),
+                                wrap(z * inputFactor),
+                                yScale * inputFactor,
+                                yMax * inputFactor);
                 total += this.amplitudes[index] * sample * valueFactor;
             }
 
@@ -140,8 +159,7 @@ public final class PerlinNoise {
         return value - (double) VMath.lfloor(value / (double) ROUND_OFF + 0.5) * (double) ROUND_OFF;
     }
 
-    private record Octaves(int firstOctave, double[] amplitudes) {
-    }
+    private record Octaves(int firstOctave, double[] amplitudes) {}
 
     private static Octaves makeAmplitudes(List<Integer> octaves) {
         if (octaves.isEmpty()) {

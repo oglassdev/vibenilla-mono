@@ -3,10 +3,9 @@ package rocks.minestom.worldgen.feature;
 import net.minestom.server.coordinate.BlockVec;
 
 /**
- * Block position hashing like vanilla's {@code Vec3i}. Vanilla keeps tree
- * logs/leaves in JDK {@code HashSet}s whose iteration order leaks into
- * generation (decorator log ordering, the leaf distance update), so parity
- * requires hashing positions exactly like vanilla does.
+ * Block position hashing like vanilla's {@code Vec3i}. Vanilla keeps tree logs/leaves in JDK {@code
+ * HashSet}s whose iteration order leaks into generation (decorator log ordering, the leaf distance
+ * update), so parity requires hashing positions exactly like vanilla does.
  */
 public record VanillaPos(int x, int y, int z) {
     public static VanillaPos of(BlockVec position) {

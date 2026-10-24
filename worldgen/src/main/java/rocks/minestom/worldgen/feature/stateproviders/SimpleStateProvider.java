@@ -9,10 +9,12 @@ import rocks.minestom.worldgen.random.RandomSource;
 
 public record SimpleStateProvider(Block state) implements BlockStateProvider {
 
-    public static final Codec<SimpleStateProvider> CODEC = StructCodec.struct(
-            "state", BlockCodec.CODEC, SimpleStateProvider::state,
-            SimpleStateProvider::new
-    );
+    public static final Codec<SimpleStateProvider> CODEC =
+            StructCodec.struct(
+                    "state",
+                    BlockCodec.CODEC,
+                    SimpleStateProvider::state,
+                    SimpleStateProvider::new);
 
     @Override
     public Block getState(RandomSource random, BlockVec position) {

@@ -5,10 +5,10 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Mutable result of a swept collision test.
- * <p>
- * Minestom's equivalent declares no accessors and keeps every field package private, so it cannot
- * be read from outside {@code net.minestom.server.collision}. This library therefore carries its
- * own.
+ *
+ * <p>Minestom's equivalent declares no accessors and keeps every field package private, so it
+ * cannot be read from outside {@code net.minestom.server.collision}. This library therefore carries
+ * its own.
  */
 public final class SweepResult {
     @Deprecated(forRemoval = true)
@@ -22,10 +22,18 @@ public final class SweepResult {
     int collidedBlockX, collidedBlockY, collidedBlockZ;
     @Nullable Shape collidedShape;
 
-    public SweepResult(double result, double normalX, double normalY, double normalZ,
-                       @Nullable Shape collidedShape,
-                       double collidedPositionX, double collidedPositionY, double collidedPositionZ,
-                       double collidedShapeX, double collidedShapeY, double collidedShapeZ) {
+    public SweepResult(
+            double result,
+            double normalX,
+            double normalY,
+            double normalZ,
+            @Nullable Shape collidedShape,
+            double collidedPositionX,
+            double collidedPositionY,
+            double collidedPositionZ,
+            double collidedShapeX,
+            double collidedShapeY,
+            double collidedShapeZ) {
         this.result = result;
         this.normalX = normalX;
         this.normalY = normalY;

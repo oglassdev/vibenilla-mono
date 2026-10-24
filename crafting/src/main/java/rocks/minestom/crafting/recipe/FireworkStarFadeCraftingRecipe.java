@@ -1,6 +1,8 @@
 package rocks.minestom.crafting.recipe;
 
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import java.util.ArrayList;
+import java.util.Map;
 import net.kyori.adventure.util.RGBLike;
 import net.minestom.server.color.DyeColor;
 import net.minestom.server.component.DataComponents;
@@ -8,28 +10,25 @@ import net.minestom.server.item.Material;
 import net.minestom.server.item.component.FireworkExplosion;
 import rocks.minestom.crafting.CraftingGrid;
 
-import java.util.ArrayList;
-import java.util.Map;
-
 public final class FireworkStarFadeCraftingRecipe implements CraftingRecipe {
-    private static final Map<Material, DyeColor> DYE_COLORS = Map.ofEntries(
-            Map.entry(Material.WHITE_DYE, DyeColor.WHITE),
-            Map.entry(Material.ORANGE_DYE, DyeColor.ORANGE),
-            Map.entry(Material.MAGENTA_DYE, DyeColor.MAGENTA),
-            Map.entry(Material.LIGHT_BLUE_DYE, DyeColor.LIGHT_BLUE),
-            Map.entry(Material.YELLOW_DYE, DyeColor.YELLOW),
-            Map.entry(Material.LIME_DYE, DyeColor.LIME),
-            Map.entry(Material.PINK_DYE, DyeColor.PINK),
-            Map.entry(Material.GRAY_DYE, DyeColor.GRAY),
-            Map.entry(Material.LIGHT_GRAY_DYE, DyeColor.LIGHT_GRAY),
-            Map.entry(Material.CYAN_DYE, DyeColor.CYAN),
-            Map.entry(Material.PURPLE_DYE, DyeColor.PURPLE),
-            Map.entry(Material.BLUE_DYE, DyeColor.BLUE),
-            Map.entry(Material.BROWN_DYE, DyeColor.BROWN),
-            Map.entry(Material.GREEN_DYE, DyeColor.GREEN),
-            Map.entry(Material.RED_DYE, DyeColor.RED),
-            Map.entry(Material.BLACK_DYE, DyeColor.BLACK)
-    );
+    private static final Map<Material, DyeColor> DYE_COLORS =
+            Map.ofEntries(
+                    Map.entry(Material.WHITE_DYE, DyeColor.WHITE),
+                    Map.entry(Material.ORANGE_DYE, DyeColor.ORANGE),
+                    Map.entry(Material.MAGENTA_DYE, DyeColor.MAGENTA),
+                    Map.entry(Material.LIGHT_BLUE_DYE, DyeColor.LIGHT_BLUE),
+                    Map.entry(Material.YELLOW_DYE, DyeColor.YELLOW),
+                    Map.entry(Material.LIME_DYE, DyeColor.LIME),
+                    Map.entry(Material.PINK_DYE, DyeColor.PINK),
+                    Map.entry(Material.GRAY_DYE, DyeColor.GRAY),
+                    Map.entry(Material.LIGHT_GRAY_DYE, DyeColor.LIGHT_GRAY),
+                    Map.entry(Material.CYAN_DYE, DyeColor.CYAN),
+                    Map.entry(Material.PURPLE_DYE, DyeColor.PURPLE),
+                    Map.entry(Material.BLUE_DYE, DyeColor.BLUE),
+                    Map.entry(Material.BROWN_DYE, DyeColor.BROWN),
+                    Map.entry(Material.GREEN_DYE, DyeColor.GREEN),
+                    Map.entry(Material.RED_DYE, DyeColor.RED),
+                    Map.entry(Material.BLACK_DYE, DyeColor.BLACK));
 
     @Override
     public CraftingRecipeMatch match(CraftingGrid craftingGrid) {
@@ -76,13 +75,13 @@ public final class FireworkStarFadeCraftingRecipe implements CraftingRecipe {
             return null;
         }
 
-        var newExplosion = new FireworkExplosion(
-                existingExplosion.shape(),
-                existingExplosion.colors(),
-                fadeColors,
-                existingExplosion.hasTrail(),
-                existingExplosion.hasTwinkle()
-        );
+        var newExplosion =
+                new FireworkExplosion(
+                        existingExplosion.shape(),
+                        existingExplosion.colors(),
+                        fadeColors,
+                        existingExplosion.hasTrail(),
+                        existingExplosion.hasTwinkle());
 
         var result = starItem.with(DataComponents.FIREWORK_EXPLOSION, newExplosion);
 

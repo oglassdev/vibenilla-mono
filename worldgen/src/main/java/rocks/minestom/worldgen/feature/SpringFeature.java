@@ -4,14 +4,14 @@ import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.SpringConfiguration;
 
 /**
- * Port of vanilla {@code SpringFeature}: places a single fluid source block on
- * cave/cliff faces with the configured number of solid ("rock") and air
- * ("hole") neighbors. Vanilla additionally schedules a fluid tick; block
- * output at generation time is identical without it.
+ * Port of vanilla {@code SpringFeature}: places a single fluid source block on cave/cliff faces
+ * with the configured number of solid ("rock") and air ("hole") neighbors. Vanilla additionally
+ * schedules a fluid tick; block output at generation time is identical without it.
  */
 public final class SpringFeature implements Feature<SpringConfiguration> {
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<SpringConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<SpringConfiguration, T> context) {
         var config = context.config();
         var level = context.accessor();
         var origin = context.origin();

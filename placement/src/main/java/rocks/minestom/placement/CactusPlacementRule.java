@@ -8,10 +8,7 @@ import net.minestom.server.instance.block.rule.BlockPlacementRule;
 
 public final class CactusPlacementRule extends BlockPlacementRule {
     private static final BlockFace[] HORIZONTAL_FACES = {
-            BlockFace.NORTH,
-            BlockFace.EAST,
-            BlockFace.SOUTH,
-            BlockFace.WEST
+        BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST
     };
 
     public CactusPlacementRule(Block block) {
@@ -37,7 +34,8 @@ public final class CactusPlacementRule extends BlockPlacementRule {
             return placementState.block();
         }
 
-        var supportsCactusTag = MinecraftServer.process().blocks().getTag(Key.key("minecraft:supports_cactus"));
+        var supportsCactusTag =
+                MinecraftServer.process().blocks().getTag(Key.key("minecraft:supports_cactus"));
 
         if (supportsCactusTag != null && supportsCactusTag.contains(supportBlock)) {
             return placementState.block();
@@ -73,7 +71,8 @@ public final class CactusPlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var supportsCactusTag = MinecraftServer.process().blocks().getTag(Key.key("minecraft:supports_cactus"));
+        var supportsCactusTag =
+                MinecraftServer.process().blocks().getTag(Key.key("minecraft:supports_cactus"));
 
         if (supportsCactusTag != null && supportsCactusTag.contains(below)) {
             return updateState.currentBlock();
@@ -83,6 +82,9 @@ public final class CactusPlacementRule extends BlockPlacementRule {
     }
 
     private static boolean isHorizontal(BlockFace face) {
-        return face == BlockFace.NORTH || face == BlockFace.SOUTH || face == BlockFace.EAST || face == BlockFace.WEST;
+        return face == BlockFace.NORTH
+                || face == BlockFace.SOUTH
+                || face == BlockFace.EAST
+                || face == BlockFace.WEST;
     }
 }

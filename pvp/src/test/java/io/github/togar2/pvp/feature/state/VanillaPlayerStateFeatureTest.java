@@ -1,5 +1,8 @@
 package io.github.togar2.pvp.feature.state;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.github.togar2.pvp.feature.CombatFeatures;
 import io.github.togar2.pvp.feature.FeatureType;
 import net.minestom.server.MinecraftServer;
@@ -19,17 +22,15 @@ import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 @EnvTest
 public final class VanillaPlayerStateFeatureTest {
     @Test
     public void knownMovementFollowsTheClientMovementPackets(Env env) {
-        var featureSet = CombatFeatures.empty()
-                .add(CombatFeatures.VANILLA_PLAYER_STATE)
-                .add(CombatFeatures.VANILLA_MISC_PROJECTILE)
-                .build();
+        var featureSet =
+                CombatFeatures.empty()
+                        .add(CombatFeatures.VANILLA_PLAYER_STATE)
+                        .add(CombatFeatures.VANILLA_MISC_PROJECTILE)
+                        .build();
         var node = featureSet.createNode();
         MinecraftServer.getGlobalEventHandler().addChild(node);
 
@@ -50,22 +51,33 @@ public final class VanillaPlayerStateFeatureTest {
             assertEquals(0.0, knownMovement.z(), 1.0E-6);
 
             player.setItemInMainHand(ItemStack.of(Material.ENDER_PEARL));
-            EventDispatcher.call(new PlayerUseItemEvent(player, PlayerHand.MAIN, player.getItemInMainHand(), 0L));
+            EventDispatcher.call(
+                    new PlayerUseItemEvent(
+                            player, PlayerHand.MAIN, player.getItemInMainHand(), 0L));
 
-            var pearl = instance.getEntities().stream()
-                    .filter(entity -> entity.getEntityType() == EntityType.ENDER_PEARL)
-                    .findFirst().orElseThrow();
-            assertTrue(pearl.getVelocity().x() > 0.28 * tps - 1.5, "pearl velocity " + pearl.getVelocity());
+            var pearl =
+                    instance.getEntities().stream()
+                            .filter(entity -> entity.getEntityType() == EntityType.ENDER_PEARL)
+                            .findFirst()
+                            .orElseThrow();
+            assertTrue(
+                    pearl.getVelocity().x() > 0.28 * tps - 1.5,
+                    "pearl velocity " + pearl.getVelocity());
 
             env.tick();
-            assertEquals(0.0, featureSet.get(FeatureType.PLAYER_STATE).getKnownMovement(player).x(), 1.0E-6);
+            assertEquals(
+                    0.0,
+                    featureSet.get(FeatureType.PLAYER_STATE).getKnownMovement(player).x(),
+                    1.0E-6);
         } finally {
             MinecraftServer.getGlobalEventHandler().removeChild(node);
         }
     }
 
     private void confirmTeleport(Player player) {
-        player.addPacketToQueue(new ClientTeleportConfirmPacket(player.getLastSentTeleportId(), player.getPosition()));
+        player.addPacketToQueue(
+                new ClientTeleportConfirmPacket(
+                        player.getLastSentTeleportId(), player.getPosition()));
         player.interpretPacketQueue();
     }
 

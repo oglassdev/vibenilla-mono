@@ -1,9 +1,19 @@
 package net.goldenstack.loot;
 
-import net.goldenstack.loot.util.LootNumberRange;
-import net.goldenstack.loot.util.VanillaInterface;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import net.goldenstack.loot.util.ListOperation;
+import net.goldenstack.loot.util.LootNumberRange;
 import net.goldenstack.loot.util.RelevantTarget;
+import net.goldenstack.loot.util.VanillaInterface;
 import net.goldenstack.loot.util.nbt.NBTPath;
 import net.goldenstack.loot.util.nbt.NBTReference;
 import net.goldenstack.loot.util.predicate.ItemPredicate;
@@ -16,23 +26,23 @@ import net.kyori.adventure.nbt.StringBinaryTag;
 import net.kyori.adventure.text.Component;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.adventure.MinestomAdventure;
+import net.minestom.server.codec.Transcoder;
 import net.minestom.server.color.Color;
 import net.minestom.server.component.DataComponentMap;
 import net.minestom.server.component.DataComponents;
-import net.minestom.server.codec.Transcoder;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
-import net.minestom.server.entity.EquipmentSlotGroup;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
+import net.minestom.server.entity.EquipmentSlotGroup;
 import net.minestom.server.entity.attribute.Attribute;
 import net.minestom.server.entity.attribute.AttributeOperation;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.predicate.DataComponentPredicates;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
-import net.minestom.server.item.component.EnchantmentList;
 import net.minestom.server.item.component.CustomData;
+import net.minestom.server.item.component.EnchantmentList;
 import net.minestom.server.item.component.PotionContents;
 import net.minestom.server.item.enchant.Enchantment;
 import net.minestom.server.potion.PotionType;
@@ -42,17 +52,6 @@ import net.minestom.server.registry.RegistryTranscoder;
 import net.minestom.server.registry.TagKey;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 class LootFunctionTest {
 
     @Test
@@ -60,11 +59,12 @@ class LootFunctionTest {
         MinecraftServer.init();
 
         var context = LootContext.from(VanillaInterface.defaults(), Map.of());
-        var predicate = new ItemPredicate(
-                null,
-                new LootNumberRange(new LootNumber.Constant(1.0), new LootNumber.Constant(1.0)),
-                DataComponentPredicates.EMPTY
-        );
+        var predicate =
+                new ItemPredicate(
+                        null,
+                        new LootNumberRange(
+                                new LootNumber.Constant(1.0), new LootNumber.Constant(1.0)),
+                        DataComponentPredicates.EMPTY);
         var onPass = new LootFunction.SetCount(List.of(), new LootNumber.Constant(3.0), false);
         var onFail = new LootFunction.SetCount(List.of(), new LootNumber.Constant(4.0), false);
         var function = new LootFunction.Filtered(List.of(), predicate, onPass, onFail);
@@ -103,8 +103,12 @@ class LootFunctionTest {
         var context = LootContext.from(VanillaInterface.defaults(), Map.of());
         var item = ItemStack.of(Material.STONE);
         var enchantment = RegistryKey.<Enchantment>of(Key.key("minecraft:fortune"));
-        var formula = new LootFunction.ApplyBonus.Formula.Wrapper(new LootFunction.ApplyBonus.Formula.OreDrops());
-        var function = new LootFunction.ApplyBonus(List.of(new LootPredicate.AnyOf(List.of())), enchantment, formula);
+        var formula =
+                new LootFunction.ApplyBonus.Formula.Wrapper(
+                        new LootFunction.ApplyBonus.Formula.OreDrops());
+        var function =
+                new LootFunction.ApplyBonus(
+                        List.of(new LootPredicate.AnyOf(List.of())), enchantment, formula);
 
         assertSame(item, function.apply(item, context));
     }
@@ -114,9 +118,9 @@ class LootFunctionTest {
         MinecraftServer.init();
 
         var context = LootContext.from(VanillaInterface.defaults(), Map.of());
-        var floats = new ListOperation.WithValues<LootNumber>(
-                new ListOperation.ReplaceAll(), List.of(new LootNumber.Constant(1.5))
-        );
+        var floats =
+                new ListOperation.WithValues<LootNumber>(
+                        new ListOperation.ReplaceAll(), List.of(new LootNumber.Constant(1.5)));
         var function = new LootFunction.SetCustomModelData(List.of(), floats, null, null, null);
         var result = function.apply(ItemStack.of(Material.STONE), context);
 
@@ -127,7 +131,10 @@ class LootFunctionTest {
     void customModelDataColorsAcceptVanillaRgbVectors() throws Exception {
         MinecraftServer.init();
 
-        var input = MinestomAdventure.tagStringIO().asTag("""
+        var input =
+                MinestomAdventure.tagStringIO()
+                        .asTag(
+                                """
                 {
                   colors: {
                     mode: "replace_all",
@@ -136,7 +143,8 @@ class LootFunctionTest {
                 }
                 """);
         var transcoder = new RegistryTranscoder<>(Transcoder.NBT, MinecraftServer.process());
-        var function = LootFunction.SetCustomModelData.CODEC.decode(transcoder, input).orElseThrow();
+        var function =
+                LootFunction.SetCustomModelData.CODEC.decode(transcoder, input).orElseThrow();
         var context = LootContext.from(VanillaInterface.defaults(), Map.of());
         var result = function.apply(ItemStack.of(Material.STONE), context);
         var color = result.get(DataComponents.CUSTOM_MODEL_DATA).colors().getFirst();
@@ -150,10 +158,9 @@ class LootFunctionTest {
     void randomFunctionsWriteTheirComponents() {
         MinecraftServer.init();
 
-        var context = LootContext.from(
-                VanillaInterface.defaults(),
-                Map.of(LootContext.RANDOM, new Random(1L))
-        );
+        var context =
+                LootContext.from(
+                        VanillaInterface.defaults(), Map.of(LootContext.RANDOM, new Random(1L)));
         var dyed = new LootFunction.SetRandomDyes(List.of(), new LootNumber.Constant(1.0));
         var potion = new LootFunction.SetRandomPotion(List.of(), null);
 
@@ -170,10 +177,12 @@ class LootFunctionTest {
         MinecraftServer.init();
 
         var serialized = MinestomAdventure.tagStringIO().asTag("\"item_name\"");
-        var target = LootFunction.SetName.Target.CODEC.decode(Transcoder.NBT, serialized).orElseThrow();
+        var target =
+                LootFunction.SetName.Target.CODEC.decode(Transcoder.NBT, serialized).orElseThrow();
 
         assertEquals(LootFunction.SetName.Target.ITEM_NAME, target);
-        var encoded = LootFunction.SetName.Target.CODEC.encode(Transcoder.NBT, target).orElseThrow();
+        var encoded =
+                LootFunction.SetName.Target.CODEC.encode(Transcoder.NBT, target).orElseThrow();
         assertEquals("item_name", ((StringBinaryTag) encoded).value());
     }
 
@@ -184,7 +193,8 @@ class LootFunctionTest {
         var context = LootContext.from(VanillaInterface.defaults(), Map.of());
         var setCount = new LootFunction.SetCount(List.of(), new LootNumber.Constant(70.0), false);
         var entry = new LootEntry.Item(List.of(), List.of(setCount), 1L, 0L, Material.STONE);
-        var setContents = new LootFunction.SetContents(List.of(), List.of(entry), DataComponents.CONTAINER);
+        var setContents =
+                new LootFunction.SetContents(List.of(), List.of(entry), DataComponents.CONTAINER);
         var container = setContents.apply(ItemStack.of(Material.BUNDLE), context);
         var contents = container.get(DataComponents.CONTAINER);
 
@@ -194,9 +204,13 @@ class LootFunctionTest {
         assertEquals(Material.STONE, contents.get(1).material());
         assertEquals(6, contents.get(1).amount());
 
-        var modifyContents = new LootFunction.ModifyContents(
-                List.of(), List.of(new LootFunction.SetCount(List.of(), new LootNumber.Constant(70.0), false)), DataComponents.CONTAINER
-        );
+        var modifyContents =
+                new LootFunction.ModifyContents(
+                        List.of(),
+                        List.of(
+                                new LootFunction.SetCount(
+                                        List.of(), new LootNumber.Constant(70.0), false)),
+                        DataComponents.CONTAINER);
         var modified = modifyContents.apply(container, context).get(DataComponents.CONTAINER);
 
         assertEquals(2, modified.size());
@@ -210,7 +224,10 @@ class LootFunctionTest {
     void setStewEffectRejectsDuplicateEffects() throws Exception {
         MinecraftServer.init();
 
-        var input = MinestomAdventure.tagStringIO().asTag("""
+        var input =
+                MinestomAdventure.tagStringIO()
+                        .asTag(
+                                """
                 {
                   conditions: [],
                   effects: [
@@ -220,14 +237,19 @@ class LootFunctionTest {
                 }
                 """);
 
-        assertThrows(IllegalArgumentException.class, () -> LootFunction.SetStewEffect.CODEC.decode(Transcoder.NBT, input).orElseThrow());
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> LootFunction.SetStewEffect.CODEC.decode(Transcoder.NBT, input).orElseThrow());
     }
 
     @Test
     void randomChanceWithEnchantedBonusRejectsChanceOutsideVanillaRange() throws Exception {
         MinecraftServer.init();
 
-        var input = MinestomAdventure.tagStringIO().asTag("""
+        var input =
+                MinestomAdventure.tagStringIO()
+                        .asTag(
+                                """
                 {
                   enchantment: "minecraft:looting",
                   unenchanted_chance: 1.1F,
@@ -235,7 +257,12 @@ class LootFunctionTest {
                 }
                 """);
 
-        assertThrows(IllegalArgumentException.class, () -> LootPredicate.RandomChanceWithEnchantedBonus.CODEC.decode(Transcoder.NBT, input).orElseThrow());
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        LootPredicate.RandomChanceWithEnchantedBonus.CODEC
+                                .decode(Transcoder.NBT, input)
+                                .orElseThrow());
     }
 
     @Test
@@ -244,9 +271,9 @@ class LootFunctionTest {
 
         var context = LootContext.from(VanillaInterface.defaults(), Map.of());
         var enchantment = RegistryKey.<Enchantment>of(Key.key("minecraft:sharpness"));
-        var function = new LootFunction.SetEnchantments(
-                List.of(), Map.of(enchantment, new LootNumber.Constant(300.0)), false
-        );
+        var function =
+                new LootFunction.SetEnchantments(
+                        List.of(), Map.of(enchantment, new LootNumber.Constant(300.0)), false);
         var result = function.apply(ItemStack.of(Material.BOOK), context);
         var enchantments = result.get(DataComponents.STORED_ENCHANTMENTS, EnchantmentList.EMPTY);
 
@@ -259,16 +286,24 @@ class LootFunctionTest {
         MinecraftServer.init();
 
         var attribute = Attribute.values().iterator().next();
-        var directive = new LootFunction.SetAttributes.AttributeDirective(
-                Key.key("minecraft:test"), attribute, AttributeOperation.ADD_VALUE,
-                new LootNumber.Constant(1.0), List.of(EquipmentSlotGroup.HAND)
-        );
+        var directive =
+                new LootFunction.SetAttributes.AttributeDirective(
+                        Key.key("minecraft:test"),
+                        attribute,
+                        AttributeOperation.ADD_VALUE,
+                        new LootNumber.Constant(1.0),
+                        List.of(EquipmentSlotGroup.HAND));
 
         assertEquals(List.of(EquipmentSlotGroup.HAND), directive.slots());
-        assertThrows(IllegalArgumentException.class, () -> new LootFunction.SetAttributes.AttributeDirective(
-                Key.key("minecraft:test"), attribute, AttributeOperation.ADD_VALUE,
-                new LootNumber.Constant(1.0), List.of()
-        ));
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        new LootFunction.SetAttributes.AttributeDirective(
+                                Key.key("minecraft:test"),
+                                attribute,
+                                AttributeOperation.ADD_VALUE,
+                                new LootNumber.Constant(1.0),
+                                List.of()));
     }
 
     @Test
@@ -276,10 +311,12 @@ class LootFunctionTest {
         MinecraftServer.init();
 
         var potion = PotionType.values().iterator().next();
-        var input = ItemStack.of(Material.POTION).with(
-                DataComponents.POTION_CONTENTS,
-                new PotionContents(potion, new Color(1, 2, 3), List.of(), "custom")
-        );
+        var input =
+                ItemStack.of(Material.POTION)
+                        .with(
+                                DataComponents.POTION_CONTENTS,
+                                new PotionContents(
+                                        potion, new Color(1, 2, 3), List.of(), "custom"));
         var function = new LootFunction.SetPotion(List.of(), potion.key());
         var context = LootContext.from(VanillaInterface.defaults(), Map.of());
         var result = function.apply(input, context).get(DataComponents.POTION_CONTENTS);
@@ -295,52 +332,57 @@ class LootFunctionTest {
         MinecraftServer.init();
 
         var defaults = VanillaInterface.defaults();
-        var vanilla = new VanillaInterface() {
-            @Override
-            public Integer score(Entity entity, String objective) {
-                return defaults.score(entity, objective);
-            }
+        var vanilla =
+                new VanillaInterface() {
+                    @Override
+                    public Integer score(Entity entity, String objective) {
+                        return defaults.score(entity, objective);
+                    }
 
-            @Override
-            public Integer score(String name, String objective) {
-                return defaults.score(name, objective);
-            }
+                    @Override
+                    public Integer score(String name, String objective) {
+                        return defaults.score(name, objective);
+                    }
 
-            @Override
-            public BinaryTag serializeEntity(Entity entity) {
-                return CompoundBinaryTag.empty();
-            }
+                    @Override
+                    public BinaryTag serializeEntity(Entity entity) {
+                        return CompoundBinaryTag.empty();
+                    }
 
-            @Override
-            public ItemStack enchant(Random random, ItemStack item, int levels, RegistryTag<Enchantment> enchantments) {
-                return item;
-            }
+                    @Override
+                    public ItemStack enchant(
+                            Random random,
+                            ItemStack item,
+                            int levels,
+                            RegistryTag<Enchantment> enchantments) {
+                        return item;
+                    }
 
-            @Override
-            public ItemStack smelt(ItemStack input) {
-                return ItemStack.of(Material.IRON_INGOT, 2);
-            }
+                    @Override
+                    public ItemStack smelt(ItemStack input) {
+                        return ItemStack.of(Material.IRON_INGOT, 2);
+                    }
 
-            @Override
-            public LootTable tableRegistry(Key key) {
-                return null;
-            }
+                    @Override
+                    public LootTable tableRegistry(Key key) {
+                        return null;
+                    }
 
-            @Override
-            public LootPredicate predicateRegistry(Key key) {
-                return null;
-            }
+                    @Override
+                    public LootPredicate predicateRegistry(Key key) {
+                        return null;
+                    }
 
-            @Override
-            public LootFunction functionRegistry(Key key) {
-                return null;
-            }
+                    @Override
+                    public LootFunction functionRegistry(Key key) {
+                        return null;
+                    }
 
-            @Override
-            public CompoundBinaryTag commandStorage(Key key) {
-                return null;
-            }
-        };
+                    @Override
+                    public CompoundBinaryTag commandStorage(Key key) {
+                        return null;
+                    }
+                };
         var context = LootContext.from(vanilla, Map.of());
         var input = ItemStack.of(Material.IRON_ORE, 3);
 
@@ -355,36 +397,59 @@ class LootFunctionTest {
     void setCustomDataMergesNestedCompounds() {
         MinecraftServer.init();
 
-        var current = CompoundBinaryTag.builder()
-                .put("keep", IntBinaryTag.intBinaryTag(1))
-                .put("nested", CompoundBinaryTag.builder().put("old", IntBinaryTag.intBinaryTag(2)).build())
-                .build();
-        var changes = CompoundBinaryTag.builder()
-                .put("nested", CompoundBinaryTag.builder().put("new", IntBinaryTag.intBinaryTag(3)).build())
-                .build();
-        var input = ItemStack.of(Material.STONE).with(DataComponents.CUSTOM_DATA, new CustomData(current));
+        var current =
+                CompoundBinaryTag.builder()
+                        .put("keep", IntBinaryTag.intBinaryTag(1))
+                        .put(
+                                "nested",
+                                CompoundBinaryTag.builder()
+                                        .put("old", IntBinaryTag.intBinaryTag(2))
+                                        .build())
+                        .build();
+        var changes =
+                CompoundBinaryTag.builder()
+                        .put(
+                                "nested",
+                                CompoundBinaryTag.builder()
+                                        .put("new", IntBinaryTag.intBinaryTag(3))
+                                        .build())
+                        .build();
+        var input =
+                ItemStack.of(Material.STONE)
+                        .with(DataComponents.CUSTOM_DATA, new CustomData(current));
         var function = new LootFunction.SetCustomData(List.of(), changes);
         var context = LootContext.from(VanillaInterface.defaults(), Map.of());
         var result = function.apply(input, context).get(DataComponents.CUSTOM_DATA).nbt();
 
         assertEquals(current.get("keep"), result.get("keep"));
-        assertEquals(IntBinaryTag.intBinaryTag(2), ((CompoundBinaryTag) result.get("nested")).get("old"));
-        assertEquals(IntBinaryTag.intBinaryTag(3), ((CompoundBinaryTag) result.get("nested")).get("new"));
+        assertEquals(
+                IntBinaryTag.intBinaryTag(2),
+                ((CompoundBinaryTag) result.get("nested")).get("old"));
+        assertEquals(
+                IntBinaryTag.intBinaryTag(3),
+                ((CompoundBinaryTag) result.get("nested")).get("new"));
     }
 
     @Test
     void copyCustomDataMergeAccumulatesAllSourceCompounds() {
         MinecraftServer.init();
 
-        var source = ListBinaryTag.builder()
-                .add(CompoundBinaryTag.builder().put("first", IntBinaryTag.intBinaryTag(1)).build())
-                .add(CompoundBinaryTag.builder().put("second", IntBinaryTag.intBinaryTag(2)).build())
-                .build();
-        var operation = new LootFunction.CopyCustomData.Operation(
-                new NBTPath(List.of(new NBTPath.Selector.EntireList())),
-                new NBTPath(List.of(new NBTPath.Selector.RootKey("merged"))),
-                LootFunction.CopyCustomData.Operator.MERGE
-        );
+        var source =
+                ListBinaryTag.builder()
+                        .add(
+                                CompoundBinaryTag.builder()
+                                        .put("first", IntBinaryTag.intBinaryTag(1))
+                                        .build())
+                        .add(
+                                CompoundBinaryTag.builder()
+                                        .put("second", IntBinaryTag.intBinaryTag(2))
+                                        .build())
+                        .build();
+        var operation =
+                new LootFunction.CopyCustomData.Operation(
+                        new NBTPath(List.of(new NBTPath.Selector.EntireList())),
+                        new NBTPath(List.of(new NBTPath.Selector.RootKey("merged"))),
+                        LootFunction.CopyCustomData.Operator.MERGE);
         var target = NBTReference.of(CompoundBinaryTag.empty());
 
         operation.execute(target, source);
@@ -398,13 +463,19 @@ class LootFunctionTest {
     void setComponentsAppliesAndRemovesComponents() {
         MinecraftServer.init();
 
-        var changes = DataComponentMap.patchBuilder()
-                .set(DataComponents.MAX_STACK_SIZE, 1)
-                .remove(DataComponents.CUSTOM_NAME)
-                .build();
-        var input = ItemStack.of(Material.STONE).with(builder -> builder
-                .set(DataComponents.MAX_STACK_SIZE, 64)
-                .set(DataComponents.CUSTOM_NAME, Component.text("stone")));
+        var changes =
+                DataComponentMap.patchBuilder()
+                        .set(DataComponents.MAX_STACK_SIZE, 1)
+                        .remove(DataComponents.CUSTOM_NAME)
+                        .build();
+        var input =
+                ItemStack.of(Material.STONE)
+                        .with(
+                                builder ->
+                                        builder.set(DataComponents.MAX_STACK_SIZE, 64)
+                                                .set(
+                                                        DataComponents.CUSTOM_NAME,
+                                                        Component.text("stone")));
         var function = new LootFunction.SetComponents(List.of(), changes);
         var context = LootContext.from(VanillaInterface.defaults(), Map.of());
         var result = function.apply(input, context);
@@ -418,9 +489,13 @@ class LootFunctionTest {
         MinecraftServer.init();
 
         var entity = new Entity(EntityType.ZOMBIE);
-        var input = ItemStack.of(Material.STONE).with(DataComponents.CUSTOM_NAME, Component.text("stone"));
+        var input =
+                ItemStack.of(Material.STONE)
+                        .with(DataComponents.CUSTOM_NAME, Component.text("stone"));
         var function = new LootFunction.CopyName(List.of(), RelevantTarget.THIS);
-        var context = LootContext.from(VanillaInterface.defaults(), Map.of(LootContext.THIS_ENTITY, entity));
+        var context =
+                LootContext.from(
+                        VanillaInterface.defaults(), Map.of(LootContext.THIS_ENTITY, entity));
 
         var result = function.apply(input, context);
 
@@ -442,7 +517,10 @@ class LootFunctionTest {
     void containerFunctionCodecsUseVanillaFields() throws Exception {
         MinecraftServer.init();
 
-        var setContentsInput = MinestomAdventure.tagStringIO().asTag("""
+        var setContentsInput =
+                MinestomAdventure.tagStringIO()
+                        .asTag(
+                                """
                 {
                   function: "set_contents",
                   conditions: [],
@@ -450,7 +528,10 @@ class LootFunctionTest {
                   entries: []
                 }
                 """);
-        var modifyContentsInput = MinestomAdventure.tagStringIO().asTag("""
+        var modifyContentsInput =
+                MinestomAdventure.tagStringIO()
+                        .asTag(
+                                """
                 {
                   function: "modify_contents",
                   conditions: [],
@@ -464,85 +545,115 @@ class LootFunctionTest {
                 """);
         var transcoder = new RegistryTranscoder<>(Transcoder.NBT, MinecraftServer.process());
 
-        assertInstanceOf(LootFunction.SetContents.class, LootFunction.CODEC.decode(transcoder, setContentsInput).orElseThrow());
-        assertInstanceOf(LootFunction.ModifyContents.class, LootFunction.CODEC.decode(transcoder, modifyContentsInput).orElseThrow());
+        assertInstanceOf(
+                LootFunction.SetContents.class,
+                LootFunction.CODEC.decode(transcoder, setContentsInput).orElseThrow());
+        assertInstanceOf(
+                LootFunction.ModifyContents.class,
+                LootFunction.CODEC.decode(transcoder, modifyContentsInput).orElseThrow());
     }
 
     @Test
     void explorationMapTargetsEmptyMaps() {
         MinecraftServer.init();
 
-        var vanilla = new VanillaInterface() {
-            @Override
-            public Integer score(Entity entity, String objective) {
-                return null;
-            }
+        var vanilla =
+                new VanillaInterface() {
+                    @Override
+                    public Integer score(Entity entity, String objective) {
+                        return null;
+                    }
 
-            @Override
-            public Integer score(String name, String objective) {
-                return null;
-            }
+                    @Override
+                    public Integer score(String name, String objective) {
+                        return null;
+                    }
 
-            @Override
-            public BinaryTag serializeEntity(Entity entity) {
-                return CompoundBinaryTag.empty();
-            }
+                    @Override
+                    public BinaryTag serializeEntity(Entity entity) {
+                        return CompoundBinaryTag.empty();
+                    }
 
-            @Override
-            public ItemStack enchant(Random random, ItemStack item, int levels, RegistryTag<Enchantment> enchantments) {
-                return item;
-            }
+                    @Override
+                    public ItemStack enchant(
+                            Random random,
+                            ItemStack item,
+                            int levels,
+                            RegistryTag<Enchantment> enchantments) {
+                        return item;
+                    }
 
-            @Override
-            public ItemStack smelt(ItemStack input) {
-                return null;
-            }
+                    @Override
+                    public ItemStack smelt(ItemStack input) {
+                        return null;
+                    }
 
-            @Override
-            public LootTable tableRegistry(Key key) {
-                return null;
-            }
+                    @Override
+                    public LootTable tableRegistry(Key key) {
+                        return null;
+                    }
 
-            @Override
-            public LootPredicate predicateRegistry(Key key) {
-                return null;
-            }
+                    @Override
+                    public LootPredicate predicateRegistry(Key key) {
+                        return null;
+                    }
 
-            @Override
-            public LootFunction functionRegistry(Key key) {
-                return null;
-            }
+                    @Override
+                    public LootFunction functionRegistry(Key key) {
+                        return null;
+                    }
 
-            @Override
-            public CompoundBinaryTag commandStorage(Key key) {
-                return null;
-            }
+                    @Override
+                    public CompoundBinaryTag commandStorage(Key key) {
+                        return null;
+                    }
 
-            @Override
-            public ItemStack explorationMap(ItemStack input, Instance world, Point origin, TagKey<?> destination,
-                                            Key decoration, byte zoom, int searchRadius, boolean skipExistingChunks) {
-                return ItemStack.of(Material.DIAMOND);
-            }
-        };
+                    @Override
+                    public ItemStack explorationMap(
+                            ItemStack input,
+                            Instance world,
+                            Point origin,
+                            TagKey<?> destination,
+                            Key decoration,
+                            byte zoom,
+                            int searchRadius,
+                            boolean skipExistingChunks) {
+                        return ItemStack.of(Material.DIAMOND);
+                    }
+                };
         var world = MinecraftServer.getInstanceManager().createInstanceContainer();
-        var context = LootContext.from(vanilla, Map.of(
-                LootContext.WORLD, world,
-                LootContext.ORIGIN, new Pos(0.0, 0.0, 0.0)
-        ));
-        var function = new LootFunction.ExplorationMap(
-                List.of(), TagKey.ofHash("#minecraft:on_treasure_maps"), Key.key("minecraft:woodland_mansion"),
-                (byte) 2, 50, true
-        );
+        var context =
+                LootContext.from(
+                        vanilla,
+                        Map.of(
+                                LootContext.WORLD,
+                                world,
+                                LootContext.ORIGIN,
+                                new Pos(0.0, 0.0, 0.0)));
+        var function =
+                new LootFunction.ExplorationMap(
+                        List.of(),
+                        TagKey.ofHash("#minecraft:on_treasure_maps"),
+                        Key.key("minecraft:woodland_mansion"),
+                        (byte) 2,
+                        50,
+                        true);
 
-        assertEquals(Material.DIAMOND, function.apply(ItemStack.of(Material.MAP), context).material());
-        assertEquals(Material.FILLED_MAP, function.apply(ItemStack.of(Material.FILLED_MAP), context).material());
+        assertEquals(
+                Material.DIAMOND, function.apply(ItemStack.of(Material.MAP), context).material());
+        assertEquals(
+                Material.FILLED_MAP,
+                function.apply(ItemStack.of(Material.FILLED_MAP), context).material());
     }
 
     @Test
     void setBookCoverEnforcesVanillaTitleLength() throws Exception {
         MinecraftServer.init();
 
-        var input = MinestomAdventure.tagStringIO().asTag("""
+        var input =
+                MinestomAdventure.tagStringIO()
+                        .asTag(
+                                """
                 {
                   conditions: [],
                   title: {raw: "123456789012345678901234567890123"},
@@ -550,14 +661,19 @@ class LootFunctionTest {
                 }
                 """);
 
-        assertThrows(IllegalArgumentException.class, () -> LootFunction.SetBookCover.CODEC.decode(Transcoder.NBT, input).orElseThrow());
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> LootFunction.SetBookCover.CODEC.decode(Transcoder.NBT, input).orElseThrow());
     }
 
     @Test
     void setLootTableDecodesTheVanillaBlockEntityType() throws Exception {
         MinecraftServer.init();
 
-        var input = MinestomAdventure.tagStringIO().asTag("""
+        var input =
+                MinestomAdventure.tagStringIO()
+                        .asTag(
+                                """
                 {
                   name: "minecraft:chests/simple_dungeon",
                   type: "minecraft:chest"
@@ -572,12 +688,16 @@ class LootFunctionTest {
     void setFireworkExplosionDecodesIntegerRgbColors() throws Exception {
         MinecraftServer.init();
 
-        var input = MinestomAdventure.tagStringIO().asTag("""
+        var input =
+                MinestomAdventure.tagStringIO()
+                        .asTag(
+                                """
                 {
                   colors: [1193046]
                 }
                 """);
-        var function = LootFunction.SetFireworkExplosion.CODEC.decode(Transcoder.NBT, input).orElseThrow();
+        var function =
+                LootFunction.SetFireworkExplosion.CODEC.decode(Transcoder.NBT, input).orElseThrow();
         var color = function.colors().getFirst();
 
         assertEquals(18, color.red());
@@ -590,9 +710,9 @@ class LootFunctionTest {
         MinecraftServer.init();
 
         var input = ItemStack.of(Material.DIAMOND_SWORD);
-        var function = new LootFunction.SetDamage(
-                List.of(), new LootNumber.Constant(0.2639333760409993), false
-        );
+        var function =
+                new LootFunction.SetDamage(
+                        List.of(), new LootNumber.Constant(0.2639333760409993), false);
         var context = LootContext.from(VanillaInterface.defaults(), Map.of());
         var result = function.apply(input, context);
 

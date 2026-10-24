@@ -15,7 +15,12 @@ public final class TransmuteCraftingRecipe implements CraftingRecipe {
     private final int resultCount;
     private final DataComponentMap componentPatch;
 
-    public TransmuteCraftingRecipe(Ingredient baseIngredient, Ingredient catalystIngredient, Material resultMaterial, int resultCount, DataComponentMap componentPatch) {
+    public TransmuteCraftingRecipe(
+            Ingredient baseIngredient,
+            Ingredient catalystIngredient,
+            Material resultMaterial,
+            int resultCount,
+            DataComponentMap componentPatch) {
         this.baseIngredient = baseIngredient;
         this.catalystIngredient = catalystIngredient;
         this.resultMaterial = resultMaterial;
@@ -48,7 +53,8 @@ public final class TransmuteCraftingRecipe implements CraftingRecipe {
 
         var resultStack = this.apply(baseIngredientSlot.item());
 
-        if (resultStack.isSimilar(baseIngredientSlot.item()) && resultStack.amount() == baseIngredientSlot.item().amount()) {
+        if (resultStack.isSimilar(baseIngredientSlot.item())
+                && resultStack.amount() == baseIngredientSlot.item().amount()) {
             return null;
         }
 
@@ -60,7 +66,8 @@ public final class TransmuteCraftingRecipe implements CraftingRecipe {
     }
 
     private ItemStack apply(ItemStack baseStack) {
-        var transformedStack = baseStack.withMaterial(this.resultMaterial).withAmount(this.resultCount);
+        var transformedStack =
+                baseStack.withMaterial(this.resultMaterial).withAmount(this.resultCount);
 
         if (this.componentPatch != null && !this.componentPatch.isEmpty()) {
             for (var entry : this.componentPatch.entrySet()) {

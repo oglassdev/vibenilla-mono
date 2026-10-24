@@ -27,11 +27,15 @@ public final class CropPlacementRule extends BlockPlacementRule {
         var instance = placementState.instance();
         var supportPosition = placementState.placePosition().relative(BlockFace.BOTTOM);
         var supportBlock = instance.getBlock(supportPosition);
-        var supportsCropsTag = MinecraftServer.process().blocks().getTag(Key.key("minecraft:supports_crops"));
+        var supportsCropsTag =
+                MinecraftServer.process().blocks().getTag(Key.key("minecraft:supports_crops"));
 
-        if (supportsCropsTag != null && supportsCropsTag.contains(supportBlock)
+        if (supportsCropsTag != null
+                && supportsCropsTag.contains(supportBlock)
                 && hasSufficientLight(instance, placementState.placePosition())) {
-        return this.handler == null ? placementState.block() : placementState.block().withHandler(this.handler);
+            return this.handler == null
+                    ? placementState.block()
+                    : placementState.block().withHandler(this.handler);
         }
 
         return null;
@@ -43,10 +47,15 @@ public final class CropPlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
-        var supportsCropsTag = MinecraftServer.process().blocks().getTag(Key.key("minecraft:supports_crops"));
+        var below =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+        var supportsCropsTag =
+                MinecraftServer.process().blocks().getTag(Key.key("minecraft:supports_crops"));
 
-        if (supportsCropsTag != null && supportsCropsTag.contains(below)
+        if (supportsCropsTag != null
+                && supportsCropsTag.contains(below)
                 && hasSufficientLight(updateState.instance(), updateState.blockPosition())) {
             return updateState.currentBlock();
         }

@@ -1,11 +1,10 @@
 package rocks.minestom.worldgen.density;
 
-import rocks.minestom.worldgen.VMath;
-import rocks.minestom.worldgen.density.DensityFunctions.Interpolated;
-
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
+import rocks.minestom.worldgen.VMath;
+import rocks.minestom.worldgen.density.DensityFunctions.Interpolated;
 
 public final class ChunkContext implements DensityFunction.Context {
     private final int cellWidth;
@@ -79,16 +78,34 @@ public final class ChunkContext implements DensityFunction.Context {
         var deltaY = (double) (y - y0) / (double) this.cellHeight;
         var deltaZ = (double) (z - z0) / (double) this.cellWidth;
 
-        var perFunction = this.interpolationCache.computeIfAbsent(interpolated, key -> new LongObjectCache<>());
+        var perFunction =
+                this.interpolationCache.computeIfAbsent(
+                        interpolated, key -> new LongObjectCache<>());
         var cellKey = pack(cellX, cellY, cellZ);
-        var corners = perFunction.getOrCompute(cellKey, () -> this.sampleCorners(interpolated, x0, y0, z0, x1, y1, z1));
+        var corners =
+                perFunction.getOrCompute(
+                        cellKey, () -> this.sampleCorners(interpolated, x0, y0, z0, x1, y1, z1));
 
-        return VMath.lerp3(deltaX, deltaY, deltaZ, corners[0], corners[1], corners[2], corners[3], corners[4], corners[5], corners[6], corners[7]);
+        return VMath.lerp3(
+                deltaX,
+                deltaY,
+                deltaZ,
+                corners[0],
+                corners[1],
+                corners[2],
+                corners[3],
+                corners[4],
+                corners[5],
+                corners[6],
+                corners[7]);
     }
 
     public double cacheOnceValue(DensityFunctions.CacheOnce function) {
         var state = this.cacheOnce.computeIfAbsent(function, key -> new CacheOnceState());
-        if (state.hasValue && state.blockX == this.blockX && state.blockY == this.blockY && state.blockZ == this.blockZ) {
+        if (state.hasValue
+                && state.blockX == this.blockX
+                && state.blockY == this.blockY
+                && state.blockZ == this.blockZ) {
             return state.value;
         }
 
@@ -130,7 +147,8 @@ public final class ChunkContext implements DensityFunction.Context {
     }
 
     public double cacheAllInCellValue(DensityFunctions.CacheAllInCell function) {
-        var perFunction = this.cacheAllInCell.computeIfAbsent(function, key -> new LongObjectCache<>());
+        var perFunction =
+                this.cacheAllInCell.computeIfAbsent(function, key -> new LongObjectCache<>());
         var cellX = Math.floorDiv(this.blockX, this.cellWidth);
         var cellY = Math.floorDiv(this.blockY, this.cellHeight);
         var cellZ = Math.floorDiv(this.blockZ, this.cellWidth);
@@ -138,7 +156,8 @@ public final class ChunkContext implements DensityFunction.Context {
         return perFunction.getOrCompute(cellKey, () -> function.argument().compute(this));
     }
 
-    private double[] sampleCorners(Interpolated interpolated, int x0, int y0, int z0, int x1, int y1, int z1) {
+    private double[] sampleCorners(
+            Interpolated interpolated, int x0, int y0, int z0, int x1, int y1, int z1) {
         var values = new double[8];
         values[0] = this.sample(interpolated.argument(), x0, y0, z0);
         values[1] = this.sample(interpolated.argument(), x1, y0, z0);

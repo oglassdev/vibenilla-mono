@@ -7,9 +7,7 @@ public final class DaylightDetectorBlockHandler implements BlockHandler {
     public static final DaylightDetectorBlockHandler INSTANCE = new DaylightDetectorBlockHandler();
     private static final Key KEY = Key.key("placement:daylight_detector");
 
-    private DaylightDetectorBlockHandler() {
-
-    }
+    private DaylightDetectorBlockHandler() {}
 
     @Override
     public Key getKey() {

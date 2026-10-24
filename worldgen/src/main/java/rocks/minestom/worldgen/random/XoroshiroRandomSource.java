@@ -9,7 +9,8 @@ public final class XoroshiroRandomSource implements RandomSource {
     private Xoroshiro128PlusPlus randomNumberGenerator;
 
     public XoroshiroRandomSource(long seed) {
-        this.randomNumberGenerator = new Xoroshiro128PlusPlus(RandomSupport.upgradeSeedTo128bit(seed));
+        this.randomNumberGenerator =
+                new Xoroshiro128PlusPlus(RandomSupport.upgradeSeedTo128bit(seed));
     }
 
     public XoroshiroRandomSource(long seedLo, long seedHi) {
@@ -18,17 +19,20 @@ public final class XoroshiroRandomSource implements RandomSource {
 
     @Override
     public RandomSource fork() {
-        return new XoroshiroRandomSource(this.randomNumberGenerator.nextLong(), this.randomNumberGenerator.nextLong());
+        return new XoroshiroRandomSource(
+                this.randomNumberGenerator.nextLong(), this.randomNumberGenerator.nextLong());
     }
 
     @Override
     public PositionalRandomFactory forkPositional() {
-        return new XoroshiroPositionalRandomFactory(this.randomNumberGenerator.nextLong(), this.randomNumberGenerator.nextLong());
+        return new XoroshiroPositionalRandomFactory(
+                this.randomNumberGenerator.nextLong(), this.randomNumberGenerator.nextLong());
     }
 
     @Override
     public void setSeed(long seed) {
-        this.randomNumberGenerator = new Xoroshiro128PlusPlus(RandomSupport.upgradeSeedTo128bit(seed));
+        this.randomNumberGenerator =
+                new Xoroshiro128PlusPlus(RandomSupport.upgradeSeedTo128bit(seed));
     }
 
     @Override
@@ -46,7 +50,9 @@ public final class XoroshiroRandomSource implements RandomSource {
         var product = value * (long) bound;
         var low = product & 0xFFFFFFFFL;
         if (low < (long) bound) {
-            for (var threshold = Integer.remainderUnsigned(~bound + 1, bound); low < (long) threshold; low = product & 0xFFFFFFFFL) {
+            for (var threshold = Integer.remainderUnsigned(~bound + 1, bound);
+                    low < (long) threshold;
+                    low = product & 0xFFFFFFFFL) {
                 value = Integer.toUnsignedLong(this.nextInt());
                 product = value * (long) bound;
             }

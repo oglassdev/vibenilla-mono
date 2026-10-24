@@ -7,9 +7,9 @@ import rocks.minestom.worldgen.density.DensityFunction;
 import rocks.minestom.worldgen.random.PositionalRandomFactory;
 
 /**
- * Port of vanilla's {@code OreVeinifier}. Places the large ore vein structures
- * (deepslate iron veins with tuff filler, copper veins with granite filler) driven
- * by the vein_toggle/vein_ridged/vein_gap router channels.
+ * Port of vanilla's {@code OreVeinifier}. Places the large ore vein structures (deepslate iron
+ * veins with tuff filler, copper veins with granite filler) driven by the
+ * vein_toggle/vein_ridged/vein_gap router channels.
  */
 public final class OreVeinifier {
     private static final float VEININESS_THRESHOLD = 0.4F;
@@ -22,12 +22,11 @@ public final class OreVeinifier {
     private static final float CHANCE_OF_RAW_ORE_BLOCK = 0.02F;
     private static final float SKIP_ORE_IF_GAP_NOISE_IS_BELOW = -0.3F;
 
-    private OreVeinifier() {
-    }
+    private OreVeinifier() {}
 
     /**
-     * Returns the vein block for the current position, or {@code null} when the
-     * default block should be used instead.
+     * Returns the vein block for the current position, or {@code null} when the default block
+     * should be used instead.
      */
     @FunctionalInterface
     public interface BlockFiller {
@@ -51,27 +50,39 @@ public final class OreVeinifier {
                 return null;
             }
             var distanceFromEdge = Math.min(distanceFromTop, distanceFromBottom);
-            var edgeRoundoff = clampedMap(distanceFromEdge, 0.0, EDGE_ROUNDOFF_BEGIN, -MAX_EDGE_ROUNDOFF, 0.0);
+            var edgeRoundoff =
+                    clampedMap(distanceFromEdge, 0.0, EDGE_ROUNDOFF_BEGIN, -MAX_EDGE_ROUNDOFF, 0.0);
             if (veininessRidged + edgeRoundoff < VEININESS_THRESHOLD) {
                 return null;
             }
-            var positionalRandom = oreVeinsPositionalRandomFactory.at(context.blockX(), posY, context.blockZ());
+            var positionalRandom =
+                    oreVeinsPositionalRandomFactory.at(context.blockX(), posY, context.blockZ());
             if (positionalRandom.nextFloat() > VEIN_SOLIDNESS) {
                 return null;
             }
             if (veinRidged.compute(context) >= 0.0) {
                 return null;
             }
-            var richness = clampedMap(veininessRidged, VEININESS_THRESHOLD, MAX_RICHNESS_THRESHOLD, MIN_RICHNESS, MAX_RICHNESS);
-            if (positionalRandom.nextFloat() < richness && veinGap.compute(context) > SKIP_ORE_IF_GAP_NOISE_IS_BELOW) {
-                return positionalRandom.nextFloat() < CHANCE_OF_RAW_ORE_BLOCK ? veinType.rawOreBlock : veinType.ore;
+            var richness =
+                    clampedMap(
+                            veininessRidged,
+                            VEININESS_THRESHOLD,
+                            MAX_RICHNESS_THRESHOLD,
+                            MIN_RICHNESS,
+                            MAX_RICHNESS);
+            if (positionalRandom.nextFloat() < richness
+                    && veinGap.compute(context) > SKIP_ORE_IF_GAP_NOISE_IS_BELOW) {
+                return positionalRandom.nextFloat() < CHANCE_OF_RAW_ORE_BLOCK
+                        ? veinType.rawOreBlock
+                        : veinType.ore;
             }
             return veinType.filler;
         };
     }
 
     // Exact port of Mth.clampedMap (clampedLerp over inverseLerp)
-    private static double clampedMap(double value, double fromMin, double fromMax, double toMin, double toMax) {
+    private static double clampedMap(
+            double value, double fromMin, double fromMax, double toMin, double toMax) {
         var delta = (value - fromMin) / (fromMax - fromMin);
         if (delta < 0.0) {
             return toMin;

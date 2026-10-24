@@ -1,5 +1,8 @@
 package io.github.togar2.pvp.feature.food;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.github.togar2.pvp.utils.BlockUtil;
 import io.github.togar2.pvp.utils.ChunkBlockGetter;
 import io.github.togar2.pvp.utils.RegistryTags;
@@ -10,9 +13,6 @@ import net.minestom.server.instance.block.Block;
 import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @EnvTest
 public final class ChorusFruitUtilTest {
@@ -41,7 +41,15 @@ public final class ChorusFruitUtilTest {
 
             teleports++;
             assertFalse(BlockUtil.hasCollision(blockGetter, position, entity.getBoundingBox()));
-            assertTrue(RegistryTags.contains(RegistryTags.BLOCKS_MOTION, blockGetter.getBlock(position.blockX(), position.blockY() - 1, position.blockZ()).registryKey()));
+            assertTrue(
+                    RegistryTags.contains(
+                            RegistryTags.BLOCKS_MOTION,
+                            blockGetter
+                                    .getBlock(
+                                            position.blockX(),
+                                            position.blockY() - 1,
+                                            position.blockZ())
+                                    .registryKey()));
         }
 
         assertTrue(teleports > 0);

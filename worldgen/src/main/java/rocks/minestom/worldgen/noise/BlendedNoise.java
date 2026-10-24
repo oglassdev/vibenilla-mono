@@ -1,9 +1,8 @@
 package rocks.minestom.worldgen.noise;
 
+import java.util.stream.IntStream;
 import rocks.minestom.worldgen.VMath;
 import rocks.minestom.worldgen.random.RandomSource;
-
-import java.util.stream.IntStream;
 
 public final class BlendedNoise {
     private final PerlinNoise minLimitNoise;
@@ -18,17 +17,24 @@ public final class BlendedNoise {
     private final double xzScale;
     private final double yScale;
 
-    public BlendedNoise(RandomSource randomSource, double xzScale, double yScale, double xzFactor, double yFactor, double smearScaleMultiplier) {
+    public BlendedNoise(
+            RandomSource randomSource,
+            double xzScale,
+            double yScale,
+            double xzFactor,
+            double yFactor,
+            double smearScaleMultiplier) {
         this(
-                PerlinNoise.createLegacyForBlendedNoise(randomSource, IntStream.rangeClosed(-15, 0)),
-                PerlinNoise.createLegacyForBlendedNoise(randomSource, IntStream.rangeClosed(-15, 0)),
+                PerlinNoise.createLegacyForBlendedNoise(
+                        randomSource, IntStream.rangeClosed(-15, 0)),
+                PerlinNoise.createLegacyForBlendedNoise(
+                        randomSource, IntStream.rangeClosed(-15, 0)),
                 PerlinNoise.createLegacyForBlendedNoise(randomSource, IntStream.rangeClosed(-7, 0)),
                 xzScale,
                 yScale,
                 xzFactor,
                 yFactor,
-                smearScaleMultiplier
-        );
+                smearScaleMultiplier);
     }
 
     private BlendedNoise(
@@ -39,8 +45,7 @@ public final class BlendedNoise {
             double yScale,
             double xzFactor,
             double yFactor,
-            double smearScaleMultiplier
-    ) {
+            double smearScaleMultiplier) {
         this.minLimitNoise = minLimitNoise;
         this.maxLimitNoise = maxLimitNoise;
         this.mainNoise = mainNoise;
@@ -55,7 +60,13 @@ public final class BlendedNoise {
     }
 
     public BlendedNoise withNewRandom(RandomSource randomSource) {
-        return new BlendedNoise(randomSource, this.xzScale, this.yScale, this.xzFactor, this.yFactor, this.smearScaleMultiplier);
+        return new BlendedNoise(
+                randomSource,
+                this.xzScale,
+                this.yScale,
+                this.xzFactor,
+                this.yFactor,
+                this.smearScaleMultiplier);
     }
 
     public double maxValue() {
@@ -81,13 +92,14 @@ public final class BlendedNoise {
             var octave = this.mainNoise.getOctaveNoise(octaveIndex);
 
             if (octave != null) {
-                mainTotal += octave.noise(
-                        PerlinNoise.wrap(scaledX * mainScale),
-                        PerlinNoise.wrap(scaledY * mainScale),
-                        PerlinNoise.wrap(scaledZ * mainScale),
-                        scaledSmearY * mainScale,
-                        scaledY * mainScale
-                ) / mainScale;
+                mainTotal +=
+                        octave.noise(
+                                        PerlinNoise.wrap(scaledX * mainScale),
+                                        PerlinNoise.wrap(scaledY * mainScale),
+                                        PerlinNoise.wrap(scaledZ * mainScale),
+                                        scaledSmearY * mainScale,
+                                        scaledY * mainScale)
+                                / mainScale;
             }
 
             mainScale /= 2.0;
@@ -111,7 +123,8 @@ public final class BlendedNoise {
                 var octave = this.minLimitNoise.getOctaveNoise(octaveIndex);
 
                 if (octave != null) {
-                    minTotal += octave.noise(wrapX, wrapY, wrapZ, yScaled, y * limitScale) / limitScale;
+                    minTotal +=
+                            octave.noise(wrapX, wrapY, wrapZ, yScaled, y * limitScale) / limitScale;
                 }
             }
 
@@ -119,7 +132,8 @@ public final class BlendedNoise {
                 var octave = this.maxLimitNoise.getOctaveNoise(octaveIndex);
 
                 if (octave != null) {
-                    maxTotal += octave.noise(wrapX, wrapY, wrapZ, yScaled, y * limitScale) / limitScale;
+                    maxTotal +=
+                            octave.noise(wrapX, wrapY, wrapZ, yScaled, y * limitScale) / limitScale;
                 }
             }
 

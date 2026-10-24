@@ -1,32 +1,29 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.FallenTreeConfiguration;
 import rocks.minestom.worldgen.feature.treedecorators.TreeDecorator;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 /**
- * Port of vanilla's {@code FallenTreeFeature}: a one-block stump plus a
- * horizontal log a couple blocks away, both run through their decorators.
+ * Port of vanilla's {@code FallenTreeFeature}: a one-block stump plus a horizontal log a couple
+ * blocks away, both run through their decorators.
  */
 public final class FallenTreeFeature implements Feature<FallenTreeConfiguration> {
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<FallenTreeConfiguration, T> context) {
-        this.placeFallenTree(context.config(), context.origin(), context.accessor(), context.random());
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<FallenTreeConfiguration, T> context) {
+        this.placeFallenTree(
+                context.config(), context.origin(), context.accessor(), context.random());
         return true;
     }
 
     private <T extends Block.Getter & Block.Setter> void placeFallenTree(
-            FallenTreeConfiguration config,
-            BlockVec origin,
-            T level,
-            RandomSource random
-    ) {
+            FallenTreeConfiguration config, BlockVec origin, T level, RandomSource random) {
         this.placeStump(config, level, random, origin);
 
         var direction = Direction.HORIZONTAL.get(random.nextInt(Direction.HORIZONTAL.size()));
@@ -51,16 +48,13 @@ public final class FallenTreeFeature implements Feature<FallenTreeConfiguration>
     }
 
     private <T extends Block.Getter & Block.Setter> void placeStump(
-            FallenTreeConfiguration config,
-            T level,
-            RandomSource random,
-            BlockVec stumpPos
-    ) {
+            FallenTreeConfiguration config, T level, RandomSource random, BlockVec stumpPos) {
         this.placeLogBlock(config, level, random, stumpPos, null);
         this.decorateLogs(level, random, Set.of(VanillaPos.of(stumpPos)), config.stumpDecorators());
     }
 
-    private boolean canPlaceEntireFallenLog(Block.Getter level, int logLength, BlockVec logStartPos, Direction direction) {
+    private boolean canPlaceEntireFallenLog(
+            Block.Getter level, int logLength, BlockVec logStartPos, Direction direction) {
         var gapInGround = 0;
         var cursor = logStartPos;
 
@@ -89,8 +83,7 @@ public final class FallenTreeFeature implements Feature<FallenTreeConfiguration>
             RandomSource random,
             int logLength,
             BlockVec logStartPos,
-            Direction direction
-    ) {
+            Direction direction) {
         var fallenLog = new HashSet<VanillaPos>();
         var cursor = logStartPos;
 
@@ -104,7 +97,8 @@ public final class FallenTreeFeature implements Feature<FallenTreeConfiguration>
     }
 
     private boolean mayPlaceOn(Block.Getter level, BlockVec position) {
-        return Feature.isValidTreePosition(level, position) && this.isOverSolidGround(level, position);
+        return Feature.isValidTreePosition(level, position)
+                && this.isOverSolidGround(level, position);
     }
 
     private boolean isOverSolidGround(Block.Getter level, BlockVec position) {
@@ -118,8 +112,7 @@ public final class FallenTreeFeature implements Feature<FallenTreeConfiguration>
             T level,
             RandomSource random,
             BlockVec position,
-            Direction sideways
-    ) {
+            Direction sideways) {
         var state = config.trunkProvider().getState(level, random, position);
         if (sideways != null) {
             var axis = sideways.stepX() != 0 ? "x" : "z";
@@ -129,29 +122,22 @@ public final class FallenTreeFeature implements Feature<FallenTreeConfiguration>
     }
 
     private <T extends Block.Getter & Block.Setter> void decorateLogs(
-            T level,
-            RandomSource random,
-            Set<VanillaPos> logs,
-            List<TreeDecorator> decorators
-    ) {
+            T level, RandomSource random, Set<VanillaPos> logs, List<TreeDecorator> decorators) {
         if (decorators.isEmpty()) {
             return;
         }
 
         var logList = logs.stream().map(VanillaPos::toBlockVec).toList();
-        var decoratorContext = new TreeDecorator.Context(
-                level,
-                level::setBlock,
-                random,
-                logList,
-                List.of(),
-                List.of());
+        var decoratorContext =
+                new TreeDecorator.Context(
+                        level, level::setBlock, random, logList, List.of(), List.of());
         for (var decorator : decorators) {
             decorator.place(decoratorContext);
         }
     }
 
     private static BlockVec relative(BlockVec position, Direction direction, int steps) {
-        return position.add(direction.stepX() * steps, direction.stepY() * steps, direction.stepZ() * steps);
+        return position.add(
+                direction.stepX() * steps, direction.stepY() * steps, direction.stepZ() * steps);
     }
 }

@@ -2,20 +2,18 @@ package rocks.minestom.worldgen.structure.processor;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.instance.block.Block;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
 public final class StructureProcessors {
     private static final Logger LOGGER = LoggerFactory.getLogger(StructureProcessors.class);
 
-    private StructureProcessors() {
-    }
+    private StructureProcessors() {}
 
     public static StructureProcessorList parseProcessorList(JsonElement json) {
         if (!json.isJsonObject()) {
@@ -52,10 +50,12 @@ public final class StructureProcessors {
         return switch (type) {
             case "minecraft:rule" -> parseRuleProcessor(obj);
             case "minecraft:block_rot" -> {
-                var rottable = obj.has("rottable_blocks") ? parseTag(obj.get("rottable_blocks")) : null;
+                var rottable =
+                        obj.has("rottable_blocks") ? parseTag(obj.get("rottable_blocks")) : null;
                 yield new BlockRotProcessor(rottable, obj.get("integrity").getAsFloat());
             }
-            case "minecraft:protected_blocks" -> new ProtectedBlockProcessor(parseTag(obj.get("value")));
+            case "minecraft:protected_blocks" ->
+                    new ProtectedBlockProcessor(parseTag(obj.get("value")));
             case "minecraft:capped" -> {
                 var delegate = parseProcessor(obj.get("delegate"));
                 if (delegate == null) {
@@ -79,9 +79,10 @@ public final class StructureProcessors {
                 var rule = ruleEntry.getAsJsonObject();
                 var input = parseRuleTest(rule.get("input_predicate"));
                 var location = parseRuleTest(rule.get("location_predicate"));
-                var position = rule.has("position_predicate")
-                        ? parsePosRuleTest(rule.get("position_predicate"))
-                        : PosRuleTest.PosAlwaysTrueTest.INSTANCE;
+                var position =
+                        rule.has("position_predicate")
+                                ? parsePosRuleTest(rule.get("position_predicate"))
+                                : PosRuleTest.PosAlwaysTrueTest.INSTANCE;
                 var output = parseBlockState(rule.get("output_state"));
                 rules.add(new ProcessorRule(input, location, position, output));
             }
@@ -99,13 +100,20 @@ public final class StructureProcessors {
         var type = obj.get("predicate_type").getAsString();
         return switch (type) {
             case "minecraft:always_true" -> RuleTest.AlwaysTrueTest.INSTANCE;
-            case "minecraft:block_match" -> new RuleTest.BlockMatchTest(Key.key(obj.get("block").getAsString()));
-            case "minecraft:blockstate_match" -> new RuleTest.BlockStateMatchTest(parseBlockState(obj.get("block_state")));
-            case "minecraft:random_block_match" -> new RuleTest.RandomBlockMatchTest(
-                    Key.key(obj.get("block").getAsString()), obj.get("probability").getAsFloat());
-            case "minecraft:random_blockstate_match" -> new RuleTest.RandomBlockStateMatchTest(
-                    parseBlockState(obj.get("block_state")), obj.get("probability").getAsFloat());
-            case "minecraft:tag_match" -> new RuleTest.TagMatchTest(Key.key(obj.get("tag").getAsString()));
+            case "minecraft:block_match" ->
+                    new RuleTest.BlockMatchTest(Key.key(obj.get("block").getAsString()));
+            case "minecraft:blockstate_match" ->
+                    new RuleTest.BlockStateMatchTest(parseBlockState(obj.get("block_state")));
+            case "minecraft:random_block_match" ->
+                    new RuleTest.RandomBlockMatchTest(
+                            Key.key(obj.get("block").getAsString()),
+                            obj.get("probability").getAsFloat());
+            case "minecraft:random_blockstate_match" ->
+                    new RuleTest.RandomBlockStateMatchTest(
+                            parseBlockState(obj.get("block_state")),
+                            obj.get("probability").getAsFloat());
+            case "minecraft:tag_match" ->
+                    new RuleTest.TagMatchTest(Key.key(obj.get("tag").getAsString()));
             default -> throw new IllegalArgumentException("Unsupported rule test: " + type);
         };
     }
@@ -119,24 +127,24 @@ public final class StructureProcessors {
         var type = obj.get("predicate_type").getAsString();
         return switch (type) {
             case "minecraft:always_true" -> PosRuleTest.PosAlwaysTrueTest.INSTANCE;
-            case "minecraft:linear_pos" -> new PosRuleTest.LinearPosTest(
-                    getFloat(obj, "min_chance", 0.0F),
-                    getFloat(obj, "max_chance", 0.0F),
-                    getInt(obj, "min_dist", 0),
-                    getInt(obj, "max_dist", 0));
-            case "minecraft:axis_aligned_linear_pos" -> new PosRuleTest.AxisAlignedLinearPosTest(
-                    getFloat(obj, "min_chance", 0.0F),
-                    getFloat(obj, "max_chance", 0.0F),
-                    getInt(obj, "min_dist", 0),
-                    getInt(obj, "max_dist", 0),
-                    obj.has("axis") ? obj.get("axis").getAsString() : "y");
+            case "minecraft:linear_pos" ->
+                    new PosRuleTest.LinearPosTest(
+                            getFloat(obj, "min_chance", 0.0F),
+                            getFloat(obj, "max_chance", 0.0F),
+                            getInt(obj, "min_dist", 0),
+                            getInt(obj, "max_dist", 0));
+            case "minecraft:axis_aligned_linear_pos" ->
+                    new PosRuleTest.AxisAlignedLinearPosTest(
+                            getFloat(obj, "min_chance", 0.0F),
+                            getFloat(obj, "max_chance", 0.0F),
+                            getInt(obj, "min_dist", 0),
+                            getInt(obj, "max_dist", 0),
+                            obj.has("axis") ? obj.get("axis").getAsString() : "y");
             default -> PosRuleTest.PosAlwaysTrueTest.INSTANCE;
         };
     }
 
-    /**
-     * Parses the vanilla block state JSON form {@code {"Name": ..., "Properties": {...}}}.
-     */
+    /** Parses the vanilla block state JSON form {@code {"Name": ..., "Properties": {...}}}. */
     private static Block parseBlockState(JsonElement json) {
         if (json == null || !json.isJsonObject()) {
             return Block.AIR;
@@ -163,8 +171,8 @@ public final class StructureProcessors {
     }
 
     /**
-     * The datapack tags used here are plain {@code #tag} or {@code tag}
-     * strings referencing block tags.
+     * The datapack tags used here are plain {@code #tag} or {@code tag} strings referencing block
+     * tags.
      */
     private static Key parseTag(JsonElement json) {
         var value = json.getAsString();
@@ -172,8 +180,8 @@ public final class StructureProcessors {
     }
 
     /**
-     * Capped limits in the vanilla datapack are constant ints (an int provider
-     * in general; constants never draw from the random).
+     * Capped limits in the vanilla datapack are constant ints (an int provider in general;
+     * constants never draw from the random).
      */
     private static int parseIntLimit(JsonElement json) {
         if (json.isJsonPrimitive()) {

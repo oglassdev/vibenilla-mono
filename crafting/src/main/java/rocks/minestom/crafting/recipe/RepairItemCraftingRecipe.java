@@ -29,20 +29,23 @@ public final class RepairItemCraftingRecipe implements CraftingRecipe {
         usage.addTo(firstSlot.slotIndex(), 1);
         usage.addTo(secondSlot.slotIndex(), 1);
 
-        var maxDamage = Math.max(
-                firstItem.get(DataComponents.MAX_DAMAGE),
-                secondItem.get(DataComponents.MAX_DAMAGE)
-        );
+        var maxDamage =
+                Math.max(
+                        firstItem.get(DataComponents.MAX_DAMAGE),
+                        secondItem.get(DataComponents.MAX_DAMAGE));
 
-        var firstDurability = firstItem.get(DataComponents.MAX_DAMAGE) - firstItem.get(DataComponents.DAMAGE);
-        var secondDurability = secondItem.get(DataComponents.MAX_DAMAGE) - secondItem.get(DataComponents.DAMAGE);
+        var firstDurability =
+                firstItem.get(DataComponents.MAX_DAMAGE) - firstItem.get(DataComponents.DAMAGE);
+        var secondDurability =
+                secondItem.get(DataComponents.MAX_DAMAGE) - secondItem.get(DataComponents.DAMAGE);
 
         var combinedDurability = firstDurability + secondDurability + maxDamage * 5 / 100;
         var newDamage = Math.max(maxDamage - combinedDurability, 0);
 
-        var result = ItemStack.of(firstItem.material())
-                .with(DataComponents.MAX_DAMAGE, maxDamage)
-                .with(DataComponents.DAMAGE, newDamage);
+        var result =
+                ItemStack.of(firstItem.material())
+                        .with(DataComponents.MAX_DAMAGE, maxDamage)
+                        .with(DataComponents.DAMAGE, newDamage);
 
         return new CraftingRecipeMatch(this, result, usage, craftingGrid);
     }

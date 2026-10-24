@@ -19,11 +19,13 @@ public final class MangrovePropagulePlacementRule extends BlockPlacementRule {
         var waterlogged = replaced.compare(Block.WATER);
         var aboveBlock = instance.getBlock(placePosition.relative(BlockFace.TOP));
         var registry = MinecraftServer.process().blocks();
-        var hangingSupportTag = registry.getTag(Key.key("minecraft:supports_hanging_mangrove_propagule"));
+        var hangingSupportTag =
+                registry.getTag(Key.key("minecraft:supports_hanging_mangrove_propagule"));
         var hanging = hangingSupportTag != null && hangingSupportTag.contains(aboveBlock);
 
         if (hanging) {
-            return placementState.block()
+            return placementState
+                    .block()
                     .withProperty("hanging", "true")
                     .withProperty("age", "4")
                     .withProperty("waterlogged", String.valueOf(waterlogged))
@@ -37,7 +39,8 @@ public final class MangrovePropagulePlacementRule extends BlockPlacementRule {
             return null;
         }
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withProperty("hanging", "false")
                 .withProperty("age", "4")
                 .withProperty("waterlogged", String.valueOf(waterlogged))
@@ -54,8 +57,14 @@ public final class MangrovePropagulePlacementRule extends BlockPlacementRule {
                 return currentBlock;
             }
 
-            var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
-            var supportTag = MinecraftServer.process().blocks().getTag(Key.key("minecraft:supports_mangrove_propagule"));
+            var below =
+                    updateState
+                            .instance()
+                            .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+            var supportTag =
+                    MinecraftServer.process()
+                            .blocks()
+                            .getTag(Key.key("minecraft:supports_mangrove_propagule"));
             return supportTag != null && supportTag.contains(below) ? currentBlock : Block.AIR;
         }
 
@@ -63,8 +72,14 @@ public final class MangrovePropagulePlacementRule extends BlockPlacementRule {
             return currentBlock;
         }
 
-        var above = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.TOP));
-        var hangingSupportTag = MinecraftServer.process().blocks().getTag(Key.key("minecraft:supports_hanging_mangrove_propagule"));
+        var above =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.TOP));
+        var hangingSupportTag =
+                MinecraftServer.process()
+                        .blocks()
+                        .getTag(Key.key("minecraft:supports_hanging_mangrove_propagule"));
 
         if (hangingSupportTag != null && hangingSupportTag.contains(above)) {
             return currentBlock;

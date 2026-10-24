@@ -1,5 +1,6 @@
 package rocks.minestom.worldgen.feature.stateproviders;
 
+import java.util.List;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.coordinate.BlockVec;
@@ -10,15 +11,22 @@ import rocks.minestom.worldgen.noise.NormalNoise;
 import rocks.minestom.worldgen.random.RandomSource;
 import rocks.minestom.worldgen.random.XoroshiroRandomSource;
 
-import java.util.List;
-
 public class NoiseProvider implements BlockStateProvider {
-    public static final Codec<NoiseProvider> CODEC = StructCodec.struct(
-            "seed", Codec.LONG, NoiseProvider::seed,
-            "noise", NoiseParameters.CODEC, NoiseProvider::noiseParameters,
-            "scale", Codec.FLOAT, NoiseProvider::scale,
-            "states", BlockCodec.CODEC.list(), NoiseProvider::states,
-            NoiseProvider::new);
+    public static final Codec<NoiseProvider> CODEC =
+            StructCodec.struct(
+                    "seed",
+                    Codec.LONG,
+                    NoiseProvider::seed,
+                    "noise",
+                    NoiseParameters.CODEC,
+                    NoiseProvider::noiseParameters,
+                    "scale",
+                    Codec.FLOAT,
+                    NoiseProvider::scale,
+                    "states",
+                    BlockCodec.CODEC.list(),
+                    NoiseProvider::states,
+                    NoiseProvider::new);
 
     protected final long seed;
     protected final NoiseParameters noiseParameters;
@@ -26,15 +34,20 @@ public class NoiseProvider implements BlockStateProvider {
     protected final List<Block> states;
     protected final NormalNoise noise;
 
-    public NoiseProvider(long seed, NoiseParameters noiseParameters, float scale, List<Block> states) {
+    public NoiseProvider(
+            long seed, NoiseParameters noiseParameters, float scale, List<Block> states) {
         this.seed = seed;
         this.noiseParameters = noiseParameters;
         this.scale = scale;
         this.states = List.copyOf(states);
-        this.noise = NormalNoise.create(new XoroshiroRandomSource(seed),
-                new NormalNoise.NoiseParameters(
-                        noiseParameters.firstOctave(),
-                        noiseParameters.amplitudes().stream().mapToDouble(Double::doubleValue).toArray()));
+        this.noise =
+                NormalNoise.create(
+                        new XoroshiroRandomSource(seed),
+                        new NormalNoise.NoiseParameters(
+                                noiseParameters.firstOctave(),
+                                noiseParameters.amplitudes().stream()
+                                        .mapToDouble(Double::doubleValue)
+                                        .toArray()));
     }
 
     public long seed() {
@@ -65,6 +78,9 @@ public class NoiseProvider implements BlockStateProvider {
     }
 
     protected double getNoiseValue(BlockVec position, float scaleValue) {
-        return this.noise.getValue(position.blockX() * scaleValue, position.blockY() * scaleValue, position.blockZ() * scaleValue);
+        return this.noise.getValue(
+                position.blockX() * scaleValue,
+                position.blockY() * scaleValue,
+                position.blockZ() * scaleValue);
     }
 }

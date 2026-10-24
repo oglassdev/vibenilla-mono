@@ -1,5 +1,10 @@
 package rocks.minestom.worldgen.structure.shipwreck;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.generator.GenerationUnit;
@@ -24,25 +29,18 @@ import rocks.minestom.worldgen.structure.template.StructureTemplate;
 import rocks.minestom.worldgen.terrain.TerrainData;
 import rocks.minestom.worldgen.terrain.TerrainGenerator;
 
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
- * Places shipwrecks with vanilla-exact seeding, mirroring
- * {@code rocks.minestom.worldgen.structure.oceanruin.OceanRuinPlacer}: the
- * start (rotation, template pick) is a pure function of the chunk, but unlike
- * ocean ruins, vanilla's {@code ShipwreckPiece.postProcess} does draw from
- * the decoration-time random for the beached height jitter, so this placer
- * replicates the {@code surface_structures} feature-seed draw the same way
+ * Places shipwrecks with vanilla-exact seeding, mirroring {@code
+ * rocks.minestom.worldgen.structure.oceanruin.OceanRuinPlacer}: the start (rotation, template pick)
+ * is a pure function of the chunk, but unlike ocean ruins, vanilla's {@code
+ * ShipwreckPiece.postProcess} does draw from the decoration-time random for the beached height
+ * jitter, so this placer replicates the {@code surface_structures} feature-seed draw the same way
  * {@code MonumentPlacer} and {@code ScatteredFeaturePlacer} do.
  */
 public final class ShipwreckPlacer {
     /** The largest shipwreck template stays well within 2 chunks. */
     private static final int REFERENCE_RADIUS = 2;
+
     /** GenerationStep.Decoration.SURFACE_STRUCTURES ordinal. */
     private static final int SURFACE_STRUCTURES_STEP = 4;
 
@@ -59,25 +57,40 @@ public final class ShipwreckPlacer {
 
     public boolean isShipwreckSet(StructureSet structureSet) {
         for (var entry : structureSet.structures()) {
-            if (this.structureLoader.getStructure(entry.structure()) instanceof ShipwreckStructure) {
+            if (this.structureLoader.getStructure(entry.structure())
+                    instanceof ShipwreckStructure) {
                 return true;
             }
         }
         return false;
     }
 
-    public void place(GenerationUnit unit, BiomeZoomer biomeZoomer, NoiseGeneratorSettingsRuntime settings,
-            StructureSet structureSet, int[] surfaceHeights) {
+    public void place(
+            GenerationUnit unit,
+            BiomeZoomer biomeZoomer,
+            NoiseGeneratorSettingsRuntime settings,
+            StructureSet structureSet,
+            int[] surfaceHeights) {
         var startX = unit.absoluteStart().blockX();
         var startZ = unit.absoluteStart().blockZ();
         var chunkX = Math.floorDiv(startX, 16);
         var chunkZ = Math.floorDiv(startZ, 16);
-        var chunkBounds = new BoundingBox(startX, settings.minY(), startZ,
-                startX + 15, settings.maxYInclusive(), startZ + 15);
+        var chunkBounds =
+                new BoundingBox(
+                        startX,
+                        settings.minY(),
+                        startZ,
+                        startX + 15,
+                        settings.maxYInclusive(),
+                        startZ + 15);
 
         var intersecting = new ArrayList<ShipwreckStart>();
-        for (var sourceX = chunkX - REFERENCE_RADIUS; sourceX <= chunkX + REFERENCE_RADIUS; sourceX++) {
-            for (var sourceZ = chunkZ - REFERENCE_RADIUS; sourceZ <= chunkZ + REFERENCE_RADIUS; sourceZ++) {
+        for (var sourceX = chunkX - REFERENCE_RADIUS;
+                sourceX <= chunkX + REFERENCE_RADIUS;
+                sourceX++) {
+            for (var sourceZ = chunkZ - REFERENCE_RADIUS;
+                    sourceZ <= chunkZ + REFERENCE_RADIUS;
+                    sourceZ++) {
                 var start = this.startAt(sourceX, sourceZ, structureSet, settings, biomeZoomer);
                 if (start != null && start.bounds().intersects(chunkBounds)) {
                     intersecting.add(start);
@@ -90,10 +103,19 @@ public final class ShipwreckPlacer {
         }
 
         var chunkBlocks = this.liveChunkBlocks(chunkX, chunkZ, surfaceHeights);
-        var adapter = chunkBlocks != null
-                ? new GenerationUnitAdapter(unit, startX, startZ, 16, 16, settings.minY(), chunkBlocks,
-                        settings.height(), StructureWrites.terrainLookup())
-                : new GenerationUnitAdapter(unit);
+        var adapter =
+                chunkBlocks != null
+                        ? new GenerationUnitAdapter(
+                                unit,
+                                startX,
+                                startZ,
+                                16,
+                                16,
+                                settings.minY(),
+                                chunkBlocks,
+                                settings.height(),
+                                StructureWrites.terrainLookup())
+                        : new GenerationUnitAdapter(unit);
 
         var connectionShapeUpdates = new ArrayList<BlockVec>();
 
@@ -106,20 +128,36 @@ public final class ShipwreckPlacer {
             // (a chunk-border fence connecting to this part), which the plain
             // chunk-bound adapter would silently drop; a one-chunk padded fork
             // applies those writes directly onto the neighbor.
-            var edgeUnit = unit.fork(
-                    new BlockVec(startX - 16, settings.minY(), startZ - 16),
-                    new BlockVec(startX + 32, settings.maxYInclusive() + 1, startZ + 32));
-            var edgeAdapter = chunkBlocks != null
-                    ? new GenerationUnitAdapter(edgeUnit, startX, startZ, 16, 16, settings.minY(), chunkBlocks,
-                            settings.height(), StructureWrites.terrainLookup())
-                    : new GenerationUnitAdapter(edgeUnit);
-            StructureShapeUpdater.updateEdges(edgeAdapter, this.structureLoader.blockTags(), connectionShapeUpdates);
-            StructureShapeUpdater.update(adapter, this.structureLoader.blockTags(), connectionShapeUpdates);
+            var edgeUnit =
+                    unit.fork(
+                            new BlockVec(startX - 16, settings.minY(), startZ - 16),
+                            new BlockVec(startX + 32, settings.maxYInclusive() + 1, startZ + 32));
+            var edgeAdapter =
+                    chunkBlocks != null
+                            ? new GenerationUnitAdapter(
+                                    edgeUnit,
+                                    startX,
+                                    startZ,
+                                    16,
+                                    16,
+                                    settings.minY(),
+                                    chunkBlocks,
+                                    settings.height(),
+                                    StructureWrites.terrainLookup())
+                            : new GenerationUnitAdapter(edgeUnit);
+            StructureShapeUpdater.updateEdges(
+                    edgeAdapter, this.structureLoader.blockTags(), connectionShapeUpdates);
+            StructureShapeUpdater.update(
+                    adapter, this.structureLoader.blockTags(), connectionShapeUpdates);
         }
     }
 
-    private void placeStart(ShipwreckStart start, GenerationUnitAdapter adapter, BoundingBox chunkBounds,
-            NoiseGeneratorSettingsRuntime settings, List<BlockVec> connectionShapeUpdates) {
+    private void placeStart(
+            ShipwreckStart start,
+            GenerationUnitAdapter adapter,
+            BoundingBox chunkBounds,
+            NoiseGeneratorSettingsRuntime settings,
+            List<BlockVec> connectionShapeUpdates) {
         var piece = start.piece();
         if (!start.bounds().intersects(chunkBounds)) {
             return;
@@ -132,28 +170,50 @@ public final class ShipwreckPlacer {
 
         var finalY = start.finalY();
         var position = new BlockVec(piece.position().blockX(), finalY, piece.position().blockZ());
-        var paletteSeedPosition = new BlockVec(start.origin().blockX(), finalY, start.origin().blockZ());
+        var paletteSeedPosition =
+                new BlockVec(start.origin().blockX(), finalY, start.origin().blockZ());
 
-        var processorContext = new StructureProcessorContext(
-                adapter, this.structureLoader.blockTags(), settings.randomState().seed(),
-                position, position, null);
-        var placementContext = new StructureTemplate.PlacementContext(
-                adapter, chunkBounds, processorContext, connectionShapeUpdates);
-        var processors = new StructureProcessorList(List.of(BlockIgnoreProcessor.STRUCTURE_AND_AIR));
-        template.place(placementContext, position, paletteSeedPosition, piece.rotation(), processors, false, false,
-                LiquidSettings.APPLY_WATERLOGGING, true);
+        var processorContext =
+                new StructureProcessorContext(
+                        adapter,
+                        this.structureLoader.blockTags(),
+                        settings.randomState().seed(),
+                        position,
+                        position,
+                        null);
+        var placementContext =
+                new StructureTemplate.PlacementContext(
+                        adapter, chunkBounds, processorContext, connectionShapeUpdates);
+        var processors =
+                new StructureProcessorList(List.of(BlockIgnoreProcessor.STRUCTURE_AND_AIR));
+        template.place(
+                placementContext,
+                position,
+                paletteSeedPosition,
+                piece.rotation(),
+                processors,
+                false,
+                false,
+                LiquidSettings.APPLY_WATERLOGGING,
+                true);
     }
 
     /**
-     * Vanilla {@code ShipwreckPiece.postProcess} runs once, in the piece's own
-     * start chunk, seeded from that chunk's {@code surface_structures} feature
-     * seed, so the result is computed here at start resolution and reused for
-     * every chunk the hull spills into.
+     * Vanilla {@code ShipwreckPiece.postProcess} runs once, in the piece's own start chunk, seeded
+     * from that chunk's {@code surface_structures} feature seed, so the result is computed here at
+     * start resolution and reused for every chunk the hull spills into.
      */
-    private int computeFinalY(Key structureKey, boolean beached, BlockVec origin, StructureTemplate template,
-            int chunkX, int chunkZ, NoiseGeneratorSettingsRuntime settings) {
+    private int computeFinalY(
+            Key structureKey,
+            boolean beached,
+            BlockVec origin,
+            StructureTemplate template,
+            int chunkX,
+            int chunkZ,
+            NoiseGeneratorSettingsRuntime settings) {
         var random = new WorldgenRandom(new XoroshiroRandomSource(0L));
-        var decorationSeed = random.setDecorationSeed(settings.randomState().seed(), chunkX << 4, chunkZ << 4);
+        var decorationSeed =
+                random.setDecorationSeed(settings.randomState().seed(), chunkX << 4, chunkZ << 4);
         var index = this.surfaceStructures().indexOf(structureKey);
         if (index >= 0) {
             random.setFeatureSeed(decorationSeed, index, SURFACE_STRUCTURES_STEP);
@@ -162,13 +222,16 @@ public final class ShipwreckPlacer {
     }
 
     /**
-     * Vanilla {@code ShipwreckPiece.postProcess}: the mean {@code OCEAN_FLOOR_WG}
-     * (or {@code WORLD_SURFACE_WG} when beached) height across the footprint,
-     * or - when beached - {@code minY - templateSizeY / 2 - random.nextInt(3)}
-     * drawn from the decoration-time random.
+     * Vanilla {@code ShipwreckPiece.postProcess}: the mean {@code OCEAN_FLOOR_WG} (or {@code
+     * WORLD_SURFACE_WG} when beached) height across the footprint, or - when beached - {@code minY
+     * - templateSizeY / 2 - random.nextInt(3)} drawn from the decoration-time random.
      */
-    private int resolveHeight(boolean beached, BlockVec origin, StructureTemplate template,
-            NoiseGeneratorSettingsRuntime settings, WorldgenRandom random) {
+    private int resolveHeight(
+            boolean beached,
+            BlockVec origin,
+            StructureTemplate template,
+            NoiseGeneratorSettingsRuntime settings,
+            WorldgenRandom random) {
         var size = template.size();
         var baseX = origin.blockX();
         var baseZ = origin.blockZ();
@@ -177,9 +240,10 @@ public final class ShipwreckPlacer {
         var count = 0;
         for (var x = baseX; x < baseX + size.blockX(); x++) {
             for (var z = baseZ; z < baseZ + size.blockZ(); z++) {
-                var height = beached
-                        ? this.worldSurfaceHeight(x, z, settings)
-                        : this.oceanFloorHeight(x, z, settings);
+                var height =
+                        beached
+                                ? this.worldSurfaceHeight(x, z, settings)
+                                : this.oceanFloorHeight(x, z, settings);
                 sum += height;
                 count++;
                 minY = Math.min(minY, height);
@@ -198,7 +262,8 @@ public final class ShipwreckPlacer {
         return (int) (sum / count);
     }
 
-    private net.minestom.server.instance.block.Block[] liveChunkBlocks(int chunkX, int chunkZ, int[] surfaceHeights) {
+    private net.minestom.server.instance.block.Block[] liveChunkBlocks(
+            int chunkX, int chunkZ, int[] surfaceHeights) {
         var lookup = StructureWrites.terrainLookup();
         if (lookup == null || surfaceHeights == null) {
             return null;
@@ -215,25 +280,44 @@ public final class ShipwreckPlacer {
         return (long) chunkX & 0xFFFFFFFFL | ((long) chunkZ & 0xFFFFFFFFL) << 32;
     }
 
-    private ShipwreckStart startAt(int chunkX, int chunkZ, StructureSet structureSet,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer) {
+    private ShipwreckStart startAt(
+            int chunkX,
+            int chunkZ,
+            StructureSet structureSet,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer) {
         var key = (long) chunkX << 32 ^ (chunkZ & 0xFFFFFFFFL);
-        return this.starts.computeIfAbsent(key,
-                unused -> Optional.ofNullable(this.computeStart(chunkX, chunkZ, structureSet, settings, biomeZoomer)))
+        return this.starts
+                .computeIfAbsent(
+                        key,
+                        unused ->
+                                Optional.ofNullable(
+                                        this.computeStart(
+                                                chunkX,
+                                                chunkZ,
+                                                structureSet,
+                                                settings,
+                                                biomeZoomer)))
                 .orElse(null);
     }
 
-    private ShipwreckStart computeStart(int chunkX, int chunkZ, StructureSet structureSet,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer) {
+    private ShipwreckStart computeStart(
+            int chunkX,
+            int chunkZ,
+            StructureSet structureSet,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer) {
         var seed = settings.randomState().seed();
         var placement = structureSet.placement();
-        if (!placement.isStartChunk(chunkX, chunkZ, seed, settings.randomState().legacyRandomSource())) {
+        if (!placement.isStartChunk(
+                chunkX, chunkZ, seed, settings.randomState().legacyRandomSource())) {
             return null;
         }
 
         var structures = structureSet.structures();
         if (structures.size() == 1) {
-            return this.tryGenerate(structures.getFirst().structure(), chunkX, chunkZ, settings, biomeZoomer);
+            return this.tryGenerate(
+                    structures.getFirst().structure(), chunkX, chunkZ, settings, biomeZoomer);
         }
 
         var options = new ArrayList<>(structures);
@@ -256,8 +340,11 @@ public final class ShipwreckPlacer {
             }
 
             var selected = options.get(index);
-            if (this.structureLoader.getStructure(selected.structure()) instanceof ShipwreckStructure) {
-                var start = this.tryGenerate(selected.structure(), chunkX, chunkZ, settings, biomeZoomer);
+            if (this.structureLoader.getStructure(selected.structure())
+                    instanceof ShipwreckStructure) {
+                var start =
+                        this.tryGenerate(
+                                selected.structure(), chunkX, chunkZ, settings, biomeZoomer);
                 if (start != null) {
                     return start;
                 }
@@ -270,22 +357,27 @@ public final class ShipwreckPlacer {
     }
 
     /**
-     * Vanilla {@code ShipwreckStructure.findGenerationPoint}: the biome check
-     * runs at the chunk-center height of whichever heightmap the variant
-     * uses, then {@code generatePieces} draws a rotation and the single
-     * random template pick, continuing the same random.
+     * Vanilla {@code ShipwreckStructure.findGenerationPoint}: the biome check runs at the
+     * chunk-center height of whichever heightmap the variant uses, then {@code generatePieces}
+     * draws a rotation and the single random template pick, continuing the same random.
      */
-    private ShipwreckStart tryGenerate(Key structureKey, int chunkX, int chunkZ,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer) {
-        if (!(this.structureLoader.getStructure(structureKey) instanceof ShipwreckStructure shipwreck)) {
+    private ShipwreckStart tryGenerate(
+            Key structureKey,
+            int chunkX,
+            int chunkZ,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer) {
+        if (!(this.structureLoader.getStructure(structureKey)
+                instanceof ShipwreckStructure shipwreck)) {
             return null;
         }
 
         var centerX = (chunkX << 4) + 8;
         var centerZ = (chunkZ << 4) + 8;
-        var centerY = shipwreck.isBeached()
-                ? this.worldSurfaceHeight(centerX, centerZ, settings)
-                : this.oceanFloorHeight(centerX, centerZ, settings);
+        var centerY =
+                shipwreck.isBeached()
+                        ? this.worldSurfaceHeight(centerX, centerZ, settings)
+                        : this.oceanFloorHeight(centerX, centerZ, settings);
         var biome = biomeZoomer.source().biome(centerX >> 2, centerY >> 2, centerZ >> 2);
         if (!shipwreck.biomes().matches(biome, this.structureLoader.biomeTags())) {
             return null;
@@ -296,7 +388,8 @@ public final class ShipwreckPlacer {
         random.setLargeFeatureSeed(seed, chunkX, chunkZ);
         var rotation = Rotation.getRandom(random);
         var position = new BlockVec(chunkX << 4, 90, chunkZ << 4);
-        var rawPiece = ShipwreckPieces.addRandomPiece(position, rotation, random, shipwreck.isBeached());
+        var rawPiece =
+                ShipwreckPieces.addRandomPiece(position, rotation, random, shipwreck.isBeached());
 
         var template = this.structureLoader.getTemplate(rawPiece.template());
         if (template == null) {
@@ -310,17 +403,31 @@ public final class ShipwreckPlacer {
         // rotate(pivot) + rotate(local), which matches vanilla's
         // rotate(local - pivot) + pivot once expanded.
         var pivotOffset = rotation.rotate(ShipwreckPieces.PIVOT, BlockVec.ZERO);
-        var adjustedPosition = rawPiece.position().add(
-                ShipwreckPieces.PIVOT.blockX() - pivotOffset.blockX(),
-                ShipwreckPieces.PIVOT.blockY() - pivotOffset.blockY(),
-                ShipwreckPieces.PIVOT.blockZ() - pivotOffset.blockZ());
+        var adjustedPosition =
+                rawPiece.position()
+                        .add(
+                                ShipwreckPieces.PIVOT.blockX() - pivotOffset.blockX(),
+                                ShipwreckPieces.PIVOT.blockY() - pivotOffset.blockY(),
+                                ShipwreckPieces.PIVOT.blockZ() - pivotOffset.blockZ());
         var piece = new ShipwreckPieces.Piece(rawPiece.template(), adjustedPosition, rotation);
 
-        var finalY = this.computeFinalY(structureKey, shipwreck.isBeached(), rawPiece.position(), template,
-                chunkX, chunkZ, settings);
+        var finalY =
+                this.computeFinalY(
+                        structureKey,
+                        shipwreck.isBeached(),
+                        rawPiece.position(),
+                        template,
+                        chunkX,
+                        chunkZ,
+                        settings);
         var bounds = template.getBoundingBox(piece.position(), piece.rotation());
-        return new ShipwreckStart(structureKey, shipwreck.isBeached(), piece, copyBounds(bounds),
-                rawPiece.position(), finalY);
+        return new ShipwreckStart(
+                structureKey,
+                shipwreck.isBeached(),
+                piece,
+                copyBounds(bounds),
+                rawPiece.position(),
+                finalY);
     }
 
     private List<Key> surfaceStructures() {
@@ -340,7 +447,6 @@ public final class ShipwreckPlacer {
         return this.structureLoader.structuresAtStep(step);
     }
 
-
     private int oceanFloorHeight(int blockX, int blockZ, NoiseGeneratorSettingsRuntime settings) {
         var chunkX = Math.floorDiv(blockX, 16);
         var chunkZ = Math.floorDiv(blockZ, 16);
@@ -351,25 +457,36 @@ public final class ShipwreckPlacer {
     }
 
     /**
-     * Vanilla {@code WORLD_SURFACE_WG}: one above the highest non-air block.
-     * Unlike {@code OCEAN_FLOOR_WG} this counts the water column, so for
-     * submerged columns it resolves to the sea surface rather than the floor.
+     * Vanilla {@code WORLD_SURFACE_WG}: one above the highest non-air block. Unlike {@code
+     * OCEAN_FLOOR_WG} this counts the water column, so for submerged columns it resolves to the sea
+     * surface rather than the floor.
      */
     private int worldSurfaceHeight(int blockX, int blockZ, NoiseGeneratorSettingsRuntime settings) {
         return Math.max(this.oceanFloorHeight(blockX, blockZ, settings), settings.seaLevel());
     }
 
-    private TerrainData terrainData(int chunkX, int chunkZ, NoiseGeneratorSettingsRuntime settings) {
-        return this.terrainCache.computeIfAbsent(packChunk(chunkX, chunkZ),
+    private TerrainData terrainData(
+            int chunkX, int chunkZ, NoiseGeneratorSettingsRuntime settings) {
+        return this.terrainCache.computeIfAbsent(
+                packChunk(chunkX, chunkZ),
                 unused -> new TerrainGenerator(settings).generate(chunkX, chunkZ));
     }
 
     private static BoundingBox copyBounds(BoundingBox bounds) {
-        return new BoundingBox(bounds.minX(), bounds.minY(), bounds.minZ(),
-                bounds.maxX(), bounds.maxY(), bounds.maxZ());
+        return new BoundingBox(
+                bounds.minX(),
+                bounds.minY(),
+                bounds.minZ(),
+                bounds.maxX(),
+                bounds.maxY(),
+                bounds.maxZ());
     }
 
-    private record ShipwreckStart(Key structureKey, boolean beached, ShipwreckPieces.Piece piece, BoundingBox bounds,
-            BlockVec origin, int finalY) {
-    }
+    private record ShipwreckStart(
+            Key structureKey,
+            boolean beached,
+            ShipwreckPieces.Piece piece,
+            BoundingBox bounds,
+            BlockVec origin,
+            int finalY) {}
 }

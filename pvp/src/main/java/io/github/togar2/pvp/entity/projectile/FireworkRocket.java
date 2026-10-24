@@ -3,6 +3,9 @@ package io.github.togar2.pvp.entity.projectile;
 import io.github.togar2.pvp.feature.explosion.VanillaExplosionSupplier;
 import io.github.togar2.pvp.player.CombatPlayer;
 import io.github.togar2.pvp.utils.ViewUtil;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.ThreadLocalRandom;
 import net.kyori.adventure.sound.Sound;
 import net.minestom.server.ServerFlag;
 import net.minestom.server.collision.Aerodynamics;
@@ -24,10 +27,6 @@ import net.minestom.server.item.component.FireworkList;
 import net.minestom.server.sound.SoundEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.ThreadLocalRandom;
 
 public final class FireworkRocket extends CustomEntityProjectile {
     private static final double HORIZONTAL_ACCELERATION = 1.15;
@@ -57,11 +56,12 @@ public final class FireworkRocket extends CustomEntityProjectile {
         var random = ThreadLocalRandom.current();
         this.shotAtAngle = shotAtAngle;
         this.lifetime = 10 * flightCount + random.nextInt(6) + random.nextInt(7);
-        this.setVelocity(new Vec(
-                0.002297 * (random.nextDouble() - random.nextDouble()),
-                0.05,
-                0.002297 * (random.nextDouble() - random.nextDouble())
-        ).mul(ServerFlag.SERVER_TICKS_PER_SECOND));
+        this.setVelocity(
+                new Vec(
+                                0.002297 * (random.nextDouble() - random.nextDouble()),
+                                0.05,
+                                0.002297 * (random.nextDouble() - random.nextDouble()))
+                        .mul(ServerFlag.SERVER_TICKS_PER_SECOND));
 
         var meta = (FireworkRocketMeta) this.getEntityMeta();
         meta.setShooter(null);
@@ -85,10 +85,14 @@ public final class FireworkRocket extends CustomEntityProjectile {
         super.update(time);
 
         if (this.life == 0 && !this.isSilent()) {
-            ViewUtil.viewersAndSelf(this).playSound(Sound.sound(
-                    SoundEvent.ENTITY_FIREWORK_ROCKET_LAUNCH, Sound.Source.AMBIENT,
-                    3.0F, 1.0F
-            ), this);
+            ViewUtil.viewersAndSelf(this)
+                    .playSound(
+                            Sound.sound(
+                                    SoundEvent.ENTITY_FIREWORK_ROCKET_LAUNCH,
+                                    Sound.Source.AMBIENT,
+                                    3.0F,
+                                    1.0F),
+                            this);
         }
 
         this.life++;
@@ -108,13 +112,18 @@ public final class FireworkRocket extends CustomEntityProjectile {
 
         if (!this.shotAtAngle) {
             var previousResult = this.getPreviousPhysicsResult();
-            var horizontalCollision = previousResult != null
-                    && (previousResult.collisionX() || previousResult.collisionZ());
+            var horizontalCollision =
+                    previousResult != null
+                            && (previousResult.collisionX() || previousResult.collisionZ());
             var horizontalAcceleration = horizontalCollision ? 1.0 : HORIZONTAL_ACCELERATION;
 
-            this.velocity = this.velocity
-                    .mul(horizontalAcceleration, 1.0, horizontalAcceleration)
-                    .add(0.0, VERTICAL_ACCELERATION * ServerFlag.SERVER_TICKS_PER_SECOND, 0.0);
+            this.velocity =
+                    this.velocity
+                            .mul(horizontalAcceleration, 1.0, horizontalAcceleration)
+                            .add(
+                                    0.0,
+                                    VERTICAL_ACCELERATION * ServerFlag.SERVER_TICKS_PER_SECOND,
+                                    0.0);
         }
 
         super.movementTick();
@@ -132,7 +141,8 @@ public final class FireworkRocket extends CustomEntityProjectile {
             if (this.attachedToEntity instanceof CombatPlayer custom) {
                 custom.setVelocityNoUpdate(velocity -> this.boost(velocity, look));
             } else if (!(this.attachedToEntity instanceof Player)) {
-                this.attachedToEntity.setVelocity(this.boost(this.attachedToEntity.getVelocity(), look));
+                this.attachedToEntity.setVelocity(
+                        this.boost(this.attachedToEntity.getVelocity(), look));
             }
         }
 
@@ -143,8 +153,7 @@ public final class FireworkRocket extends CustomEntityProjectile {
     private Vec boost(Vec velocity, Vec look) {
         var ticksPerSecond = (double) ServerFlag.SERVER_TICKS_PER_SECOND;
 
-        return velocity
-                .add(look.mul(0.1 * ticksPerSecond))
+        return velocity.add(look.mul(0.1 * ticksPerSecond))
                 .add(look.mul(1.5 * ticksPerSecond).sub(velocity).mul(0.5));
     }
 
@@ -186,7 +195,13 @@ public final class FireworkRocket extends CustomEntityProjectile {
 
         var damageAmount = 5.0F + explosions.size() * 2.0F;
         var shooter = this.getShooter();
-        var damage = new Damage(DamageType.FIREWORKS, this, Objects.requireNonNullElse(shooter, this), null, damageAmount);
+        var damage =
+                new Damage(
+                        DamageType.FIREWORKS,
+                        this,
+                        Objects.requireNonNullElse(shooter, this),
+                        null,
+                        damageAmount);
         var instance = this.getInstance();
 
         if (instance == null) {
@@ -211,7 +226,8 @@ public final class FireworkRocket extends CustomEntityProjectile {
                 continue;
             }
 
-            damage.setAmount(damageAmount * (float) Math.sqrt((radius - this.getDistance(entity)) / radius));
+            damage.setAmount(
+                    damageAmount * (float) Math.sqrt((radius - this.getDistance(entity)) / radius));
             livingEntity.damage(damage);
         }
     }
@@ -220,7 +236,8 @@ public final class FireworkRocket extends CustomEntityProjectile {
         var basePosition = entity.getPosition();
 
         for (var testStep = 0; testStep < 2; testStep++) {
-            var targetPosition = basePosition.add(0.0, entity.getBoundingBox().height() * 0.5 * testStep, 0.0);
+            var targetPosition =
+                    basePosition.add(0.0, entity.getBoundingBox().height() * 0.5 * testStep, 0.0);
 
             if (VanillaExplosionSupplier.noBlocking(entity.getInstance(), center, targetPosition)) {
                 return true;
@@ -245,9 +262,10 @@ public final class FireworkRocket extends CustomEntityProjectile {
     }
 
     public void setItemStack(ItemStack itemStack) {
-        this.itemStack = itemStack.material() == Material.FIREWORK_ROCKET
-                ? itemStack.withAmount(1)
-                : ItemStack.of(Material.FIREWORK_ROCKET);
+        this.itemStack =
+                itemStack.material() == Material.FIREWORK_ROCKET
+                        ? itemStack.withAmount(1)
+                        : ItemStack.of(Material.FIREWORK_ROCKET);
 
         ((FireworkRocketMeta) this.getEntityMeta()).setFireworkInfo(this.itemStack);
     }

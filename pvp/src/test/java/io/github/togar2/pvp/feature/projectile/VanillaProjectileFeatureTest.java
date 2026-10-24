@@ -1,5 +1,10 @@
 package io.github.togar2.pvp.feature.projectile;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import io.github.togar2.pvp.feature.FeatureType;
 import io.github.togar2.pvp.feature.config.FeatureConfiguration;
 import net.minestom.server.component.DataComponents;
@@ -12,11 +17,6 @@ import net.minestom.server.network.NetworkBuffer;
 import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @EnvTest
 public final class VanillaProjectileFeatureTest {
@@ -53,8 +53,9 @@ public final class VanillaProjectileFeatureTest {
     }
 
     private TestCrossbowFeature createCrossbowFeature() {
-        var configuration = new FeatureConfiguration()
-                .add(FeatureType.PROJECTILE_ITEM, new VanillaProjectileItemFeature());
+        var configuration =
+                new FeatureConfiguration()
+                        .add(FeatureType.PROJECTILE_ITEM, new VanillaProjectileItemFeature());
         var feature = new TestCrossbowFeature(configuration);
         feature.initDependencies();
         return feature;

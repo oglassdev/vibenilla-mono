@@ -14,18 +14,21 @@ public final class SkullPlacementRule extends BlockPlacementRule {
         var yaw = playerPosition == null ? 0.0F : playerPosition.yaw();
         var rotation = Math.round(yaw * 16.0F / 360.0F) & 15;
 
-        var powered = VanillaPlacementUtils.hasNeighborSignal(
-                placementState.instance(), placementState.placePosition());
+        var powered =
+                VanillaPlacementUtils.hasNeighborSignal(
+                        placementState.instance(), placementState.placePosition());
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withProperty("rotation", Integer.toString(rotation))
                 .withProperty("powered", String.valueOf(powered));
     }
 
     @Override
     public Block blockUpdate(UpdateState updateState) {
-        var powered = VanillaPlacementUtils.hasNeighborSignal(
-                updateState.instance(), updateState.blockPosition());
+        var powered =
+                VanillaPlacementUtils.hasNeighborSignal(
+                        updateState.instance(), updateState.blockPosition());
         return updateState.currentBlock().withProperty("powered", String.valueOf(powered));
     }
 }

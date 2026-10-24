@@ -1,6 +1,7 @@
 package rocks.minestom.worldgen.feature.configurations;
 
 import com.google.gson.JsonElement;
+import java.util.Set;
 import net.kyori.adventure.key.Key;
 import rocks.minestom.worldgen.feature.FeatureConfiguration;
 import rocks.minestom.worldgen.feature.FeatureLoader;
@@ -10,8 +11,6 @@ import rocks.minestom.worldgen.feature.stateproviders.BlockStateProvider;
 import rocks.minestom.worldgen.feature.stateproviders.BlockStateProviders;
 import rocks.minestom.worldgen.feature.valueproviders.IntProvider;
 import rocks.minestom.worldgen.structure.context.BlockTagManager;
-
-import java.util.Set;
 
 public record VegetationPatchConfiguration(
         Set<Key> replaceable,
@@ -24,15 +23,17 @@ public record VegetationPatchConfiguration(
         float vegetationChance,
         IntProvider xzRadius,
         float extraEdgeColumnChance,
-        FeatureLoader loader
-) implements FeatureConfiguration {
+        FeatureLoader loader)
+        implements FeatureConfiguration {
 
-    public static VegetationPatchConfiguration fromJson(JsonElement json, BlockTagManager blockTags) {
+    public static VegetationPatchConfiguration fromJson(
+            JsonElement json, BlockTagManager blockTags) {
         var object = json.getAsJsonObject();
         var replaceableValue = object.get("replaceable").getAsString();
-        var replaceable = replaceableValue.startsWith("#") && blockTags != null
-                ? blockTags.blocks(Key.key(replaceableValue.substring(1)))
-                : Set.of(Key.key(replaceableValue));
+        var replaceable =
+                replaceableValue.startsWith("#") && blockTags != null
+                        ? blockTags.blocks(Key.key(replaceableValue.substring(1)))
+                        : Set.of(Key.key(replaceableValue));
 
         return new VegetationPatchConfiguration(
                 replaceable,

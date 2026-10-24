@@ -1,21 +1,20 @@
 package rocks.minestom.worldgen.feature;
 
-import net.minestom.server.coordinate.BlockVec;
-import net.minestom.server.instance.block.Block;
-
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Predicate;
+import net.minestom.server.coordinate.BlockVec;
+import net.minestom.server.instance.block.Block;
 
 /**
- * Port of vanilla's {@code net.minecraft.world.level.levelgen.Column}, reduced
- * to the floor/ceiling scan used by speleothem clusters.
+ * Port of vanilla's {@code net.minecraft.world.level.levelgen.Column}, reduced to the floor/ceiling
+ * scan used by speleothem clusters.
  */
 public record Column(OptionalInt floor, OptionalInt ceiling) {
 
     /**
-     * Number of inside-column blocks between floor and ceiling, mirroring
-     * vanilla's {@code Column.Range#getHeight()}.
+     * Number of inside-column blocks between floor and ceiling, mirroring vanilla's {@code
+     * Column.Range#getHeight()}.
      */
     public OptionalInt height() {
         if (this.floor.isPresent() && this.ceiling.isPresent()) {
@@ -34,15 +33,16 @@ public record Column(OptionalInt floor, OptionalInt ceiling) {
             BlockVec position,
             int searchRange,
             Predicate<Block> insideColumn,
-            Predicate<Block> validEdge
-    ) {
+            Predicate<Block> validEdge) {
         if (!insideColumn.test(level.getBlock(position))) {
             return Optional.empty();
         }
 
         var startY = position.blockY();
-        var ceiling = scanDirection(level, position, searchRange, insideColumn, validEdge, startY, 1);
-        var floor = scanDirection(level, position, searchRange, insideColumn, validEdge, startY, -1);
+        var ceiling =
+                scanDirection(level, position, searchRange, insideColumn, validEdge, startY, 1);
+        var floor =
+                scanDirection(level, position, searchRange, insideColumn, validEdge, startY, -1);
         return Optional.of(new Column(floor, ceiling));
     }
 
@@ -53,10 +53,13 @@ public record Column(OptionalInt floor, OptionalInt ceiling) {
             Predicate<Block> insideColumn,
             Predicate<Block> validEdge,
             int startY,
-            int step
-    ) {
+            int step) {
         var y = startY;
-        for (var index = 1; index < searchRange && insideColumn.test(level.getBlock(position.blockX(), y, position.blockZ())); index++) {
+        for (var index = 1;
+                index < searchRange
+                        && insideColumn.test(
+                                level.getBlock(position.blockX(), y, position.blockZ()));
+                index++) {
             y += step;
         }
 

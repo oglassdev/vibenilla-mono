@@ -1,5 +1,20 @@
 package rocks.minestom.worldgen.demo;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -26,22 +41,6 @@ import net.minestom.server.world.DimensionType;
 import rocks.minestom.worldgen.WorldGenerator;
 import rocks.minestom.worldgen.WorldGenerators;
 import rocks.minestom.worldgen.biome.BiomeSource;
-
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.atomic.AtomicLong;
 
 public final class Demo {
     private static final int STRUCTURE_SEARCH_RADIUS_CHUNKS = 100;
@@ -89,15 +88,19 @@ public final class Demo {
 
         var spawn = dimensions.get("overworld").spawn();
         var events = MinecraftServer.getGlobalEventHandler();
-        events.addListener(AsyncPlayerConfigurationEvent.class, event -> {
-            event.setSpawningInstance(overworld);
-            event.getPlayer().setRespawnPoint(spawn);
-        });
-        events.addListener(PlayerSpawnEvent.class, event -> {
-            if (event.isFirstSpawn()) {
-                event.getPlayer().setGameMode(GameMode.CREATIVE);
-            }
-        });
+        events.addListener(
+                AsyncPlayerConfigurationEvent.class,
+                event -> {
+                    event.setSpawningInstance(overworld);
+                    event.getPlayer().setRespawnPoint(spawn);
+                });
+        events.addListener(
+                PlayerSpawnEvent.class,
+                event -> {
+                    if (event.isFirstSpawn()) {
+                        event.getPlayer().setGameMode(GameMode.CREATIVE);
+                    }
+                });
 
         var commands = MinecraftServer.getCommandManager();
         commands.register(new GamemodeCommand());
@@ -107,7 +110,8 @@ public final class Demo {
         commands.register(new ExecuteCommand(dimensions));
 
         server.start("0.0.0.0", port);
-        MinecraftServer.LOGGER.info("Demo server listening on port {}, seed {}, spawn at {}", port, seed, spawn);
+        MinecraftServer.LOGGER.info(
+                "Demo server listening on port {}, seed {}, spawn at {}", port, seed, spawn);
     }
 
     private static void freezeTime(Instance instance) {
@@ -152,7 +156,8 @@ public final class Demo {
         var ids = new ArrayList<String>();
         var dataDirectory = dataPackRoot.resolve("data");
         try (var namespaces = Files.list(dataDirectory)) {
-            for (var namespaceDirectory : (Iterable<Path>) namespaces.filter(Files::isDirectory)::iterator) {
+            for (var namespaceDirectory :
+                    (Iterable<Path>) namespaces.filter(Files::isDirectory)::iterator) {
                 var categoryDirectory = namespaceDirectory.resolve(category);
                 if (!Files.isDirectory(categoryDirectory)) {
                     continue;
@@ -162,7 +167,11 @@ public final class Demo {
                     for (var file : (Iterable<Path>) files::iterator) {
                         var fileName = file.getFileName().toString();
                         if (fileName.endsWith(".json")) {
-                            ids.add(namespace + ":" + fileName.substring(0, fileName.length() - ".json".length()));
+                            ids.add(
+                                    namespace
+                                            + ":"
+                                            + fileName.substring(
+                                                    0, fileName.length() - ".json".length()));
                         }
                     }
                 }
@@ -182,9 +191,11 @@ public final class Demo {
             var separator = id.indexOf(':');
             var namespace = id.substring(0, separator);
             var path = id.substring(separator + 1);
-            var matches = hasNamespace
-                    ? matchesSubString(remaining, id)
-                    : matchesSubString(remaining, namespace) || matchesSubString(remaining, path);
+            var matches =
+                    hasNamespace
+                            ? matchesSubString(remaining, id)
+                            : matchesSubString(remaining, namespace)
+                                    || matchesSubString(remaining, path);
             if (matches) {
                 suggestion.addEntry(new SuggestionEntry(id));
             }
@@ -209,14 +220,17 @@ public final class Demo {
         return true;
     }
 
-    private static Pos locateBiome(BiomeSource source, Key target, Pos origin, int minY, int maxYExclusive) {
+    private static Pos locateBiome(
+            BiomeSource source, Key target, Pos origin, int minY, int maxYExclusive) {
         if (!source.possibleBiomes().contains(target)) {
             return null;
         }
         var sampleRadius = Math.floorDiv(BIOME_SEARCH_RADIUS, BIOME_SAMPLE_RESOLUTION_HORIZONTAL);
-        var sampleYs = outFromOrigin(origin.blockY(), minY + 1, maxYExclusive, BIOME_SAMPLE_RESOLUTION_VERTICAL);
-        var directionsX = new int[]{1, 0, -1, 0};
-        var directionsZ = new int[]{0, 1, 0, -1};
+        var sampleYs =
+                outFromOrigin(
+                        origin.blockY(), minY + 1, maxYExclusive, BIOME_SAMPLE_RESOLUTION_VERTICAL);
+        var directionsX = new int[] {1, 0, -1, 0};
+        var directionsZ = new int[] {0, 1, 0, -1};
         var legs = 4 * sampleRadius;
         var leg = -1;
         var legIndex = 0;
@@ -255,7 +269,9 @@ public final class Demo {
         var cursor = clampedOrigin;
         while (true) {
             var distance = Math.abs(clampedOrigin - cursor);
-            var hasNext = clampedOrigin - distance >= lowerBound || clampedOrigin + distance <= upperBound;
+            var hasNext =
+                    clampedOrigin - distance >= lowerBound
+                            || clampedOrigin + distance <= upperBound;
             if (!hasNext) {
                 break;
             }
@@ -274,47 +290,64 @@ public final class Demo {
         return values.stream().mapToInt(Integer::intValue).toArray();
     }
 
-    private static Component locateResult(String name, Point found, int distance, boolean includeY) {
+    private static Component locateResult(
+            String name, Point found, int distance, boolean includeY) {
         var displayedY = includeY ? String.valueOf(found.blockY()) : "~";
-        var coordinates = Component.text(
-                        "[" + found.blockX() + ", " + displayedY + ", " + found.blockZ() + "]", NamedTextColor.GREEN)
-                .clickEvent(ClickEvent.runCommand(
-                        "/tp @s " + found.blockX() + " " + displayedY + " " + found.blockZ()))
-                .hoverEvent(HoverEvent.showText(Component.text("Click to teleport")));
+        var coordinates =
+                Component.text(
+                                "["
+                                        + found.blockX()
+                                        + ", "
+                                        + displayedY
+                                        + ", "
+                                        + found.blockZ()
+                                        + "]",
+                                NamedTextColor.GREEN)
+                        .clickEvent(
+                                ClickEvent.runCommand(
+                                        "/tp @s "
+                                                + found.blockX()
+                                                + " "
+                                                + displayedY
+                                                + " "
+                                                + found.blockZ()))
+                        .hoverEvent(HoverEvent.showText(Component.text("Click to teleport")));
         return Component.text("The nearest " + name + " is at ")
                 .append(coordinates)
                 .append(Component.text(" (" + distance + " blocks away)"));
     }
 
-    private record Dimension(Instance instance, Pos spawn) {
-    }
+    private record Dimension(Instance instance, Pos spawn) {}
 
-    private record Locatable(WorldGenerator generator, BiomeSource biomeSource) {
-    }
+    private record Locatable(WorldGenerator generator, BiomeSource biomeSource) {}
 
     /**
-     * Funnels chunk generation through a fixed worker pool draining a queue
-     * prioritized by distance to the nearest player (spawn when nobody is
-     * online), so the chunks a joining player stands on always generate
-     * first regardless of how the thousands of view-distance load requests
-     * are scheduled. This mirrors vanilla's distance-ordered chunk tickets.
+     * Funnels chunk generation through a fixed worker pool draining a queue prioritized by distance
+     * to the nearest player (spawn when nobody is online), so the chunks a joining player stands on
+     * always generate first regardless of how the thousands of view-distance load requests are
+     * scheduled. This mirrors vanilla's distance-ordered chunk tickets.
      */
     private static final class PrioritizedGenerator implements Generator {
-        private static final PriorityBlockingQueue<PendingGeneration> QUEUE = new PriorityBlockingQueue<>();
+        private static final PriorityBlockingQueue<PendingGeneration> QUEUE =
+                new PriorityBlockingQueue<>();
         private static final AtomicLong SEQUENCE = new AtomicLong();
 
         static {
             var workers = Math.max(2, Runtime.getRuntime().availableProcessors() - 2);
             for (var workerIndex = 0; workerIndex < workers; workerIndex++) {
-                Thread.ofPlatform().name("chunk-generation-" + workerIndex).daemon().start(() -> {
-                    while (true) {
-                        try {
-                            QUEUE.take().task().run();
-                        } catch (InterruptedException exception) {
-                            return;
-                        }
-                    }
-                });
+                Thread.ofPlatform()
+                        .name("chunk-generation-" + workerIndex)
+                        .daemon()
+                        .start(
+                                () -> {
+                                    while (true) {
+                                        try {
+                                            QUEUE.take().task().run();
+                                        } catch (InterruptedException exception) {
+                                            return;
+                                        }
+                                    }
+                                });
             }
         }
 
@@ -328,10 +361,12 @@ public final class Demo {
 
         @Override
         public void generate(GenerationUnit unit) {
-            var task = new FutureTask<Void>(() -> {
-                this.delegate.generate(unit);
-                return null;
-            });
+            var task =
+                    new FutureTask<Void>(
+                            () -> {
+                                this.delegate.generate(unit);
+                                return null;
+                            });
             QUEUE.add(new PendingGeneration(this.priority(unit), SEQUENCE.getAndIncrement(), task));
             try {
                 task.get();
@@ -351,9 +386,10 @@ public final class Demo {
             var best = Long.MAX_VALUE;
             for (var player : this.instance.getPlayers()) {
                 var position = player.getPosition();
-                var distance = Math.max(
-                        Math.abs(position.chunkX() - chunkX),
-                        Math.abs(position.chunkZ() - chunkZ));
+                var distance =
+                        Math.max(
+                                Math.abs(position.chunkX() - chunkX),
+                                Math.abs(position.chunkZ() - chunkZ));
                 best = Math.min(best, distance);
             }
             if (best == Long.MAX_VALUE) {
@@ -375,43 +411,67 @@ public final class Demo {
     private static final class GamemodeCommand extends Command {
         GamemodeCommand() {
             super("gamemode");
-            var mode = ArgumentType.Enum("mode", GameMode.class).setFormat(ArgumentEnum.Format.LOWER_CASED);
+            var mode =
+                    ArgumentType.Enum("mode", GameMode.class)
+                            .setFormat(ArgumentEnum.Format.LOWER_CASED);
             var targets = ArgumentType.Entity("targets").onlyPlayers(true);
-            setDefaultExecutor((sender, context) ->
-                    sender.sendMessage(Component.text("Usage: /gamemode <survival|creative|adventure|spectator> [targets]")));
+            setDefaultExecutor(
+                    (sender, context) ->
+                            sender.sendMessage(
+                                    Component.text(
+                                            "Usage: /gamemode <survival|creative|adventure|spectator> [targets]")));
 
-            addSyntax((sender, context) -> {
-                if (!(sender instanceof Player player)) {
-                    sender.sendMessage(Component.text("Only players can use this command"));
-                    return;
-                }
-                var gameMode = context.get(mode);
-                player.setGameMode(gameMode);
-                player.sendMessage(Component.text("Set own game mode to " + prettyName(gameMode) + " Mode"));
-            }, mode);
+            addSyntax(
+                    (sender, context) -> {
+                        if (!(sender instanceof Player player)) {
+                            sender.sendMessage(Component.text("Only players can use this command"));
+                            return;
+                        }
+                        var gameMode = context.get(mode);
+                        player.setGameMode(gameMode);
+                        player.sendMessage(
+                                Component.text(
+                                        "Set own game mode to " + prettyName(gameMode) + " Mode"));
+                    },
+                    mode);
 
-            addSyntax((sender, context) -> {
-                var gameMode = context.get(mode);
-                var found = context.get(targets).find(sender);
-                if (found.isEmpty()) {
-                    sender.sendMessage(Component.text("No player was found"));
-                    return;
-                }
-                for (var entity : found) {
-                    if (!(entity instanceof Player player)) {
-                        continue;
-                    }
-                    player.setGameMode(gameMode);
-                    if (player == sender) {
-                        sender.sendMessage(Component.text("Set own game mode to " + prettyName(gameMode) + " Mode"));
-                    } else {
-                        player.sendMessage(Component.text(
-                                "Your game mode has been updated to " + prettyName(gameMode) + " Mode"));
-                        sender.sendMessage(Component.text(
-                                "Set " + player.getUsername() + "'s game mode to " + prettyName(gameMode) + " Mode"));
-                    }
-                }
-            }, mode, targets);
+            addSyntax(
+                    (sender, context) -> {
+                        var gameMode = context.get(mode);
+                        var found = context.get(targets).find(sender);
+                        if (found.isEmpty()) {
+                            sender.sendMessage(Component.text("No player was found"));
+                            return;
+                        }
+                        for (var entity : found) {
+                            if (!(entity instanceof Player player)) {
+                                continue;
+                            }
+                            player.setGameMode(gameMode);
+                            if (player == sender) {
+                                sender.sendMessage(
+                                        Component.text(
+                                                "Set own game mode to "
+                                                        + prettyName(gameMode)
+                                                        + " Mode"));
+                            } else {
+                                player.sendMessage(
+                                        Component.text(
+                                                "Your game mode has been updated to "
+                                                        + prettyName(gameMode)
+                                                        + " Mode"));
+                                sender.sendMessage(
+                                        Component.text(
+                                                "Set "
+                                                        + player.getUsername()
+                                                        + "'s game mode to "
+                                                        + prettyName(gameMode)
+                                                        + " Mode"));
+                            }
+                        }
+                    },
+                    mode,
+                    targets);
         }
     }
 
@@ -421,106 +481,144 @@ public final class Demo {
             var position = ArgumentType.RelativeVec3("position");
             var yaw = ArgumentType.Float("yaw");
             var pitch = ArgumentType.Float("pitch");
-            var destination = ArgumentType.Entity("destination").onlyPlayers(true).singleEntity(true);
+            var destination =
+                    ArgumentType.Entity("destination").onlyPlayers(true).singleEntity(true);
             var targets = ArgumentType.Entity("targets").onlyPlayers(true);
-            setDefaultExecutor((sender, context) ->
-                    sender.sendMessage(Component.text("Usage: /teleport <target> or /teleport [targets] <x> <y> <z>")));
+            setDefaultExecutor(
+                    (sender, context) ->
+                            sender.sendMessage(
+                                    Component.text(
+                                            "Usage: /teleport <target> or /teleport [targets] <x> <y> <z>")));
 
-            addSyntax((sender, context) -> {
-                if (!(sender instanceof Player player)) {
-                    sender.sendMessage(Component.text("Only players can use this command"));
-                    return;
-                }
-                var point = context.get(position).from(player);
-                teleportPreservingRotation(player, point.x(), point.y(), point.z());
-                sender.sendMessage(locationFeedback(List.of(player), point.x(), point.y(), point.z()));
-            }, position);
+            addSyntax(
+                    (sender, context) -> {
+                        if (!(sender instanceof Player player)) {
+                            sender.sendMessage(Component.text("Only players can use this command"));
+                            return;
+                        }
+                        var point = context.get(position).from(player);
+                        teleportPreservingRotation(player, point.x(), point.y(), point.z());
+                        sender.sendMessage(
+                                locationFeedback(List.of(player), point.x(), point.y(), point.z()));
+                    },
+                    position);
 
-            addSyntax((sender, context) -> {
-                if (!(sender instanceof Player player)) {
-                    sender.sendMessage(Component.text("Only players can use this command"));
-                    return;
-                }
-                var target = context.get(destination).findFirstPlayer(sender);
-                if (target == null) {
-                    sender.sendMessage(Component.text("No player was found"));
-                    return;
-                }
-                teleportToEntity(player, target);
-                sender.sendMessage(Component.text(
-                        "Teleported " + player.getUsername() + " to " + target.getUsername()));
-            }, destination);
-
-            addSyntax((sender, context) -> {
-                var moved = new ArrayList<Player>();
-                var point = new double[3];
-                for (var entity : context.get(targets).find(sender)) {
-                    if (!(entity instanceof Player player)) {
-                        continue;
-                    }
-                    var resolved = context.get(position).from(player);
-                    point[0] = resolved.x();
-                    point[1] = resolved.y();
-                    point[2] = resolved.z();
-                    teleportPreservingRotation(player, resolved.x(), resolved.y(), resolved.z());
-                    moved.add(player);
-                }
-                if (moved.isEmpty()) {
-                    sender.sendMessage(Component.text("No player was found"));
-                    return;
-                }
-                sender.sendMessage(locationFeedback(moved, point[0], point[1], point[2]));
-            }, targets, position);
-
-            addSyntax((sender, context) -> {
-                var moved = new ArrayList<Player>();
-                var point = new double[3];
-                var rotationYaw = context.get(yaw);
-                var rotationPitch = context.get(pitch);
-                for (var entity : context.get(targets).find(sender)) {
-                    if (!(entity instanceof Player player)) {
-                        continue;
-                    }
-                    var resolved = context.get(position).from(player);
-                    point[0] = resolved.x();
-                    point[1] = resolved.y();
-                    point[2] = resolved.z();
-                    player.teleport(new Pos(
-                            resolved.x(), resolved.y(), resolved.z(), rotationYaw, rotationPitch));
-                    moved.add(player);
-                }
-                if (moved.isEmpty()) {
-                    sender.sendMessage(Component.text("No player was found"));
-                    return;
-                }
-                sender.sendMessage(locationFeedback(moved, point[0], point[1], point[2]));
-            }, targets, position, yaw, pitch);
-
-            addSyntax((sender, context) -> {
-                var target = context.get(destination).findFirstPlayer(sender);
-                if (target == null) {
-                    sender.sendMessage(Component.text("No player was found"));
-                    return;
-                }
-                var moved = new ArrayList<Player>();
-                for (var entity : context.get(targets).find(sender)) {
-                    if (entity instanceof Player player) {
+            addSyntax(
+                    (sender, context) -> {
+                        if (!(sender instanceof Player player)) {
+                            sender.sendMessage(Component.text("Only players can use this command"));
+                            return;
+                        }
+                        var target = context.get(destination).findFirstPlayer(sender);
+                        if (target == null) {
+                            sender.sendMessage(Component.text("No player was found"));
+                            return;
+                        }
                         teleportToEntity(player, target);
-                        moved.add(player);
-                    }
-                }
-                if (moved.isEmpty()) {
-                    sender.sendMessage(Component.text("No player was found"));
-                    return;
-                }
-                if (moved.size() == 1) {
-                    sender.sendMessage(Component.text(
-                            "Teleported " + moved.getFirst().getUsername() + " to " + target.getUsername()));
-                } else {
-                    sender.sendMessage(Component.text(
-                            "Teleported " + moved.size() + " entities to " + target.getUsername()));
-                }
-            }, targets, destination);
+                        sender.sendMessage(
+                                Component.text(
+                                        "Teleported "
+                                                + player.getUsername()
+                                                + " to "
+                                                + target.getUsername()));
+                    },
+                    destination);
+
+            addSyntax(
+                    (sender, context) -> {
+                        var moved = new ArrayList<Player>();
+                        var point = new double[3];
+                        for (var entity : context.get(targets).find(sender)) {
+                            if (!(entity instanceof Player player)) {
+                                continue;
+                            }
+                            var resolved = context.get(position).from(player);
+                            point[0] = resolved.x();
+                            point[1] = resolved.y();
+                            point[2] = resolved.z();
+                            teleportPreservingRotation(
+                                    player, resolved.x(), resolved.y(), resolved.z());
+                            moved.add(player);
+                        }
+                        if (moved.isEmpty()) {
+                            sender.sendMessage(Component.text("No player was found"));
+                            return;
+                        }
+                        sender.sendMessage(locationFeedback(moved, point[0], point[1], point[2]));
+                    },
+                    targets,
+                    position);
+
+            addSyntax(
+                    (sender, context) -> {
+                        var moved = new ArrayList<Player>();
+                        var point = new double[3];
+                        var rotationYaw = context.get(yaw);
+                        var rotationPitch = context.get(pitch);
+                        for (var entity : context.get(targets).find(sender)) {
+                            if (!(entity instanceof Player player)) {
+                                continue;
+                            }
+                            var resolved = context.get(position).from(player);
+                            point[0] = resolved.x();
+                            point[1] = resolved.y();
+                            point[2] = resolved.z();
+                            player.teleport(
+                                    new Pos(
+                                            resolved.x(),
+                                            resolved.y(),
+                                            resolved.z(),
+                                            rotationYaw,
+                                            rotationPitch));
+                            moved.add(player);
+                        }
+                        if (moved.isEmpty()) {
+                            sender.sendMessage(Component.text("No player was found"));
+                            return;
+                        }
+                        sender.sendMessage(locationFeedback(moved, point[0], point[1], point[2]));
+                    },
+                    targets,
+                    position,
+                    yaw,
+                    pitch);
+
+            addSyntax(
+                    (sender, context) -> {
+                        var target = context.get(destination).findFirstPlayer(sender);
+                        if (target == null) {
+                            sender.sendMessage(Component.text("No player was found"));
+                            return;
+                        }
+                        var moved = new ArrayList<Player>();
+                        for (var entity : context.get(targets).find(sender)) {
+                            if (entity instanceof Player player) {
+                                teleportToEntity(player, target);
+                                moved.add(player);
+                            }
+                        }
+                        if (moved.isEmpty()) {
+                            sender.sendMessage(Component.text("No player was found"));
+                            return;
+                        }
+                        if (moved.size() == 1) {
+                            sender.sendMessage(
+                                    Component.text(
+                                            "Teleported "
+                                                    + moved.getFirst().getUsername()
+                                                    + " to "
+                                                    + target.getUsername()));
+                        } else {
+                            sender.sendMessage(
+                                    Component.text(
+                                            "Teleported "
+                                                    + moved.size()
+                                                    + " entities to "
+                                                    + target.getUsername()));
+                        }
+                    },
+                    targets,
+                    destination);
         }
 
         private static void teleportToEntity(Player player, Player target) {
@@ -531,181 +629,312 @@ public final class Demo {
             }
         }
 
-        private static void teleportPreservingRotation(Player player, double x, double y, double z) {
+        private static void teleportPreservingRotation(
+                Player player, double x, double y, double z) {
             var current = player.getPosition();
             player.teleport(new Pos(x, y, z, current.yaw(), current.pitch()));
         }
 
-        private static Component locationFeedback(List<Player> moved, double x, double y, double z) {
+        private static Component locationFeedback(
+                List<Player> moved, double x, double y, double z) {
             var coordinates = String.format(Locale.ROOT, "%f, %f, %f", x, y, z);
             if (moved.size() == 1) {
-                return Component.text("Teleported " + moved.getFirst().getUsername() + " to " + coordinates);
+                return Component.text(
+                        "Teleported " + moved.getFirst().getUsername() + " to " + coordinates);
             }
             return Component.text("Teleported " + moved.size() + " entities to " + coordinates);
         }
     }
 
     private static final class LocateCommand extends Command {
-        LocateCommand(Map<Instance, Locatable> locatables, List<String> structureIds, List<String> biomeIds) {
+        LocateCommand(
+                Map<Instance, Locatable> locatables,
+                List<String> structureIds,
+                List<String> biomeIds) {
             super("locate");
             var structureLiteral = ArgumentType.Literal("structure");
             var structureId = ArgumentType.ResourceLocation("structure");
-            structureId.setSuggestionCallback((sender, context, suggestion) ->
-                    suggestResourceIds(suggestion, structureIds));
+            structureId.setSuggestionCallback(
+                    (sender, context, suggestion) -> suggestResourceIds(suggestion, structureIds));
             var biomeLiteral = ArgumentType.Literal("biome");
             var biomeId = ArgumentType.ResourceLocation("biome");
-            biomeId.setSuggestionCallback((sender, context, suggestion) ->
-                    suggestResourceIds(suggestion, biomeIds));
+            biomeId.setSuggestionCallback(
+                    (sender, context, suggestion) -> suggestResourceIds(suggestion, biomeIds));
 
-            setDefaultExecutor((sender, context) ->
-                    sender.sendMessage(Component.text("Usage: /locate structure <id> or /locate biome <id>")));
+            setDefaultExecutor(
+                    (sender, context) ->
+                            sender.sendMessage(
+                                    Component.text(
+                                            "Usage: /locate structure <id> or /locate biome <id>")));
 
-            addSyntax((sender, context) -> {
-                if (!(sender instanceof Player player)) {
-                    sender.sendMessage(Component.text("Only players can use this command"));
-                    return;
-                }
-                var locatable = locatables.get(player.getInstance());
-                if (locatable == null || locatable.generator() == null) {
-                    player.sendMessage(Component.text("This dimension has no locatable structures", NamedTextColor.RED));
-                    return;
-                }
-                var structureKey = Key.key(context.get(structureId).asString());
-                var origin = player.getPosition();
-                player.sendMessage(Component.text("Locating " + structureKey.asString() + "..."));
-                CompletableFuture
-                        .supplyAsync(() -> locatable.generator().locateStructure(
-                                structureKey, origin.blockX(), origin.blockZ(), STRUCTURE_SEARCH_RADIUS_CHUNKS))
-                        .whenComplete((found, throwable) -> {
-                            if (throwable != null) {
-                                player.sendMessage(Component.text("Locate failed: " + throwable.getMessage(),
-                                        NamedTextColor.RED));
-                                return;
-                            }
-                            if (found == null) {
-                                player.sendMessage(Component.text("Could not find a structure of type \""
-                                        + structureKey.asString() + "\" nearby", NamedTextColor.RED));
-                                return;
-                            }
-                            var distance = (int) Math.floor(Math.hypot(
-                                    found.x() - origin.x(), found.z() - origin.z()));
-                            player.sendMessage(locateResult(structureKey.asString(), found, distance, false));
-                        });
-            }, structureLiteral, structureId);
+            addSyntax(
+                    (sender, context) -> {
+                        if (!(sender instanceof Player player)) {
+                            sender.sendMessage(Component.text("Only players can use this command"));
+                            return;
+                        }
+                        var locatable = locatables.get(player.getInstance());
+                        if (locatable == null || locatable.generator() == null) {
+                            player.sendMessage(
+                                    Component.text(
+                                            "This dimension has no locatable structures",
+                                            NamedTextColor.RED));
+                            return;
+                        }
+                        var structureKey = Key.key(context.get(structureId).asString());
+                        var origin = player.getPosition();
+                        player.sendMessage(
+                                Component.text("Locating " + structureKey.asString() + "..."));
+                        CompletableFuture.supplyAsync(
+                                        () ->
+                                                locatable
+                                                        .generator()
+                                                        .locateStructure(
+                                                                structureKey,
+                                                                origin.blockX(),
+                                                                origin.blockZ(),
+                                                                STRUCTURE_SEARCH_RADIUS_CHUNKS))
+                                .whenComplete(
+                                        (found, throwable) -> {
+                                            if (throwable != null) {
+                                                player.sendMessage(
+                                                        Component.text(
+                                                                "Locate failed: "
+                                                                        + throwable.getMessage(),
+                                                                NamedTextColor.RED));
+                                                return;
+                                            }
+                                            if (found == null) {
+                                                player.sendMessage(
+                                                        Component.text(
+                                                                "Could not find a structure of type \""
+                                                                        + structureKey.asString()
+                                                                        + "\" nearby",
+                                                                NamedTextColor.RED));
+                                                return;
+                                            }
+                                            var distance =
+                                                    (int)
+                                                            Math.floor(
+                                                                    Math.hypot(
+                                                                            found.x() - origin.x(),
+                                                                            found.z()
+                                                                                    - origin.z()));
+                                            player.sendMessage(
+                                                    locateResult(
+                                                            structureKey.asString(),
+                                                            found,
+                                                            distance,
+                                                            false));
+                                        });
+                    },
+                    structureLiteral,
+                    structureId);
 
-            addSyntax((sender, context) -> {
-                if (!(sender instanceof Player player)) {
-                    sender.sendMessage(Component.text("Only players can use this command"));
-                    return;
-                }
-                var locatable = locatables.get(player.getInstance());
-                if (locatable == null) {
-                    player.sendMessage(Component.text("This dimension has no locatable biomes", NamedTextColor.RED));
-                    return;
-                }
-                var biomeKey = Key.key(context.get(biomeId).asString());
-                var origin = player.getPosition();
-                var dimensionType = player.getInstance().getCachedDimensionType();
-                var minY = dimensionType.minY();
-                var maxYExclusive = dimensionType.maxY();
-                player.sendMessage(Component.text("Locating " + biomeKey.asString() + "..."));
-                CompletableFuture
-                        .supplyAsync(() -> locateBiome(
-                                locatable.biomeSource(), biomeKey, origin, minY, maxYExclusive))
-                        .whenComplete((found, throwable) -> {
-                            if (throwable != null) {
-                                player.sendMessage(Component.text("Locate failed: " + throwable.getMessage(),
-                                        NamedTextColor.RED));
-                                return;
-                            }
-                            if (found == null) {
-                                player.sendMessage(Component.text("Could not find a biome of type \""
-                                        + biomeKey.asString() + "\" within a reasonable distance", NamedTextColor.RED));
-                                return;
-                            }
-                            var distance = (int) Math.floor(Math.sqrt(
-                                    Math.pow(found.x() - origin.blockX(), 2)
-                                            + Math.pow(found.y() - origin.blockY(), 2)
-                                            + Math.pow(found.z() - origin.blockZ(), 2)));
-                            player.sendMessage(locateResult(biomeKey.asString(), found, distance, true));
-                        });
-            }, biomeLiteral, biomeId);
+            addSyntax(
+                    (sender, context) -> {
+                        if (!(sender instanceof Player player)) {
+                            sender.sendMessage(Component.text("Only players can use this command"));
+                            return;
+                        }
+                        var locatable = locatables.get(player.getInstance());
+                        if (locatable == null) {
+                            player.sendMessage(
+                                    Component.text(
+                                            "This dimension has no locatable biomes",
+                                            NamedTextColor.RED));
+                            return;
+                        }
+                        var biomeKey = Key.key(context.get(biomeId).asString());
+                        var origin = player.getPosition();
+                        var dimensionType = player.getInstance().getCachedDimensionType();
+                        var minY = dimensionType.minY();
+                        var maxYExclusive = dimensionType.maxY();
+                        player.sendMessage(
+                                Component.text("Locating " + biomeKey.asString() + "..."));
+                        CompletableFuture.supplyAsync(
+                                        () ->
+                                                locateBiome(
+                                                        locatable.biomeSource(),
+                                                        biomeKey,
+                                                        origin,
+                                                        minY,
+                                                        maxYExclusive))
+                                .whenComplete(
+                                        (found, throwable) -> {
+                                            if (throwable != null) {
+                                                player.sendMessage(
+                                                        Component.text(
+                                                                "Locate failed: "
+                                                                        + throwable.getMessage(),
+                                                                NamedTextColor.RED));
+                                                return;
+                                            }
+                                            if (found == null) {
+                                                player.sendMessage(
+                                                        Component.text(
+                                                                "Could not find a biome of type \""
+                                                                        + biomeKey.asString()
+                                                                        + "\" within a reasonable distance",
+                                                                NamedTextColor.RED));
+                                                return;
+                                            }
+                                            var distance =
+                                                    (int)
+                                                            Math.floor(
+                                                                    Math.sqrt(
+                                                                            Math.pow(
+                                                                                            found
+                                                                                                            .x()
+                                                                                                    - origin
+                                                                                                            .blockX(),
+                                                                                            2)
+                                                                                    + Math.pow(
+                                                                                            found
+                                                                                                            .y()
+                                                                                                    - origin
+                                                                                                            .blockY(),
+                                                                                            2)
+                                                                                    + Math.pow(
+                                                                                            found
+                                                                                                            .z()
+                                                                                                    - origin
+                                                                                                            .blockZ(),
+                                                                                            2)));
+                                            player.sendMessage(
+                                                    locateResult(
+                                                            biomeKey.asString(),
+                                                            found,
+                                                            distance,
+                                                            true));
+                                        });
+                    },
+                    biomeLiteral,
+                    biomeId);
         }
     }
 
     private static final class DimensionCommand extends Command {
         DimensionCommand(Map<String, Dimension> dimensions) {
             super("dimension");
-            var dimension = ArgumentType.Word("dimension").from(dimensions.keySet().toArray(String[]::new));
-            setDefaultExecutor((sender, context) ->
-                    sender.sendMessage(Component.text("Usage: /dimension <" + String.join("|", dimensions.keySet()) + ">")));
-            addSyntax((sender, context) -> {
-                if (!(sender instanceof Player player)) {
-                    sender.sendMessage(Component.text("Only players can use this command"));
-                    return;
-                }
-                var name = context.get(dimension);
-                var destination = dimensions.get(name);
-                if (player.getInstance() == destination.instance()) {
-                    player.sendMessage(Component.text("You are already in the " + name));
-                    return;
-                }
-                player.setInstance(destination.instance(), destination.spawn())
-                        .thenRun(() -> player.sendMessage(Component.text("Teleported to the " + name)));
-            }, dimension);
+            var dimension =
+                    ArgumentType.Word("dimension").from(dimensions.keySet().toArray(String[]::new));
+            setDefaultExecutor(
+                    (sender, context) ->
+                            sender.sendMessage(
+                                    Component.text(
+                                            "Usage: /dimension <"
+                                                    + String.join("|", dimensions.keySet())
+                                                    + ">")));
+            addSyntax(
+                    (sender, context) -> {
+                        if (!(sender instanceof Player player)) {
+                            sender.sendMessage(Component.text("Only players can use this command"));
+                            return;
+                        }
+                        var name = context.get(dimension);
+                        var destination = dimensions.get(name);
+                        if (player.getInstance() == destination.instance()) {
+                            player.sendMessage(Component.text("You are already in the " + name));
+                            return;
+                        }
+                        player.setInstance(destination.instance(), destination.spawn())
+                                .thenRun(
+                                        () ->
+                                                player.sendMessage(
+                                                        Component.text(
+                                                                "Teleported to the " + name)));
+                    },
+                    dimension);
         }
     }
 
     /**
-     * Minimal /execute supporting only the F3+C clipboard shape
-     * {@code execute in <dimension> run tp @s <x> <y> <z> [<yaw> <pitch>]},
-     * so coordinates copied in game paste-and-run on the demo server.
+     * Minimal /execute supporting only the F3+C clipboard shape {@code execute in <dimension> run
+     * tp @s <x> <y> <z> [<yaw> <pitch>]}, so coordinates copied in game paste-and-run on the demo
+     * server.
      */
     private static final class ExecuteCommand extends Command {
-        private static final Map<String, String> DIMENSION_IDS = Map.of(
-                "minecraft:overworld", "overworld",
-                "minecraft:the_nether", "nether",
-                "minecraft:the_end", "end");
+        private static final Map<String, String> DIMENSION_IDS =
+                Map.of(
+                        "minecraft:overworld", "overworld",
+                        "minecraft:the_nether", "nether",
+                        "minecraft:the_end", "end");
 
         ExecuteCommand(Map<String, Dimension> dimensions) {
             super("execute");
             var inLiteral = ArgumentType.Literal("in");
             var dimensionId = ArgumentType.ResourceLocation("dimension");
-            dimensionId.setSuggestionCallback((sender, context, suggestion) ->
-                    suggestResourceIds(suggestion, DIMENSION_IDS.keySet().stream().sorted().toList()));
+            dimensionId.setSuggestionCallback(
+                    (sender, context, suggestion) ->
+                            suggestResourceIds(
+                                    suggestion, DIMENSION_IDS.keySet().stream().sorted().toList()));
             var runLiteral = ArgumentType.Literal("run");
             var teleportLiteral = ArgumentType.Literal("tp");
             var selfLiteral = ArgumentType.Literal("@s");
             var position = ArgumentType.RelativeVec3("position");
             var yaw = ArgumentType.Float("yaw");
             var pitch = ArgumentType.Float("pitch");
-            setDefaultExecutor((sender, context) -> sender.sendMessage(Component.text(
-                    "Usage: /execute in <dimension> run tp @s <x> <y> <z> [<yaw> <pitch>]")));
+            setDefaultExecutor(
+                    (sender, context) ->
+                            sender.sendMessage(
+                                    Component.text(
+                                            "Usage: /execute in <dimension> run tp @s <x> <y> <z> [<yaw> <pitch>]")));
 
-            addSyntax((sender, context) -> {
-                if (!(sender instanceof Player player)) {
-                    sender.sendMessage(Component.text("Only players can use this command"));
-                    return;
-                }
-                var destination = resolveDimension(sender, dimensions, context.get(dimensionId).asString());
-                if (destination == null) {
-                    return;
-                }
-                var current = player.getPosition();
-                execute(player, destination, context.get(position).from(player), current.yaw(), current.pitch());
-            }, inLiteral, dimensionId, runLiteral, teleportLiteral, selfLiteral, position);
+            addSyntax(
+                    (sender, context) -> {
+                        if (!(sender instanceof Player player)) {
+                            sender.sendMessage(Component.text("Only players can use this command"));
+                            return;
+                        }
+                        var destination =
+                                resolveDimension(
+                                        sender, dimensions, context.get(dimensionId).asString());
+                        if (destination == null) {
+                            return;
+                        }
+                        var current = player.getPosition();
+                        execute(
+                                player,
+                                destination,
+                                context.get(position).from(player),
+                                current.yaw(),
+                                current.pitch());
+                    },
+                    inLiteral,
+                    dimensionId,
+                    runLiteral,
+                    teleportLiteral,
+                    selfLiteral,
+                    position);
 
-            addSyntax((sender, context) -> {
-                if (!(sender instanceof Player player)) {
-                    sender.sendMessage(Component.text("Only players can use this command"));
-                    return;
-                }
-                var destination = resolveDimension(sender, dimensions, context.get(dimensionId).asString());
-                if (destination == null) {
-                    return;
-                }
-                execute(player, destination, context.get(position).from(player), context.get(yaw), context.get(pitch));
-            }, inLiteral, dimensionId, runLiteral, teleportLiteral, selfLiteral, position, yaw, pitch);
+            addSyntax(
+                    (sender, context) -> {
+                        if (!(sender instanceof Player player)) {
+                            sender.sendMessage(Component.text("Only players can use this command"));
+                            return;
+                        }
+                        var destination =
+                                resolveDimension(
+                                        sender, dimensions, context.get(dimensionId).asString());
+                        if (destination == null) {
+                            return;
+                        }
+                        execute(
+                                player,
+                                destination,
+                                context.get(position).from(player),
+                                context.get(yaw),
+                                context.get(pitch));
+                    },
+                    inLiteral,
+                    dimensionId,
+                    runLiteral,
+                    teleportLiteral,
+                    selfLiteral,
+                    position,
+                    yaw,
+                    pitch);
         }
 
         private static Dimension resolveDimension(
@@ -726,8 +955,17 @@ public final class Demo {
             } else {
                 player.teleport(target);
             }
-            player.sendMessage(Component.text("Teleported " + player.getUsername() + " to "
-                    + String.format(Locale.ROOT, "%f, %f, %f", point.x(), point.y(), point.z())));
+            player.sendMessage(
+                    Component.text(
+                            "Teleported "
+                                    + player.getUsername()
+                                    + " to "
+                                    + String.format(
+                                            Locale.ROOT,
+                                            "%f, %f, %f",
+                                            point.x(),
+                                            point.y(),
+                                            point.z())));
         }
     }
 }

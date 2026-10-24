@@ -32,7 +32,8 @@ public final class CandlePlacementRule extends BlockPlacementRule {
 
         var waterlogged = existingBlock.compare(Block.WATER);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withHandler(CandleBlockHandler.INSTANCE)
                 .withProperty("candles", "1")
                 .withProperty("lit", "false")
@@ -45,7 +46,10 @@ public final class CandlePlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+        var below =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
 
         if (!Utility.canSupportCenter(below, BlockFace.TOP)) {
             return Block.AIR;

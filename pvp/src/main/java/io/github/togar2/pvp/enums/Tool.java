@@ -1,10 +1,9 @@
 package io.github.togar2.pvp.enums;
 
-import net.minestom.server.item.Material;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.HashMap;
 import java.util.Map;
+import net.minestom.server.item.Material;
+import org.jetbrains.annotations.Nullable;
 
 public enum Tool {
     WOODEN_SWORD(Kind.SWORD),
@@ -90,7 +89,11 @@ public enum Tool {
     }
 
     private enum Kind {
-        SWORD, AXE, MACE, SPEAR, OTHER
+        SWORD,
+        AXE,
+        MACE,
+        SPEAR,
+        OTHER
     }
 
     static {

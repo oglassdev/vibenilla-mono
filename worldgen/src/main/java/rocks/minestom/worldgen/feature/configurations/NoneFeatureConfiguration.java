@@ -5,5 +5,6 @@ import net.minestom.server.codec.StructCodec;
 import rocks.minestom.worldgen.feature.FeatureConfiguration;
 
 public record NoneFeatureConfiguration() implements FeatureConfiguration {
-    public static final Codec<NoneFeatureConfiguration> CODEC = StructCodec.struct(NoneFeatureConfiguration::new);
+    public static final Codec<NoneFeatureConfiguration> CODEC =
+            StructCodec.struct(NoneFeatureConfiguration::new);
 }

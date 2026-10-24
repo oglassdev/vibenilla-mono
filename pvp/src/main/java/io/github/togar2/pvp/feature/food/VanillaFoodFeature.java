@@ -7,6 +7,10 @@ import io.github.togar2.pvp.feature.config.FeatureConfiguration;
 import io.github.togar2.pvp.feature.cooldown.ItemCooldownFeature;
 import io.github.togar2.pvp.utils.PotionFlags;
 import io.github.togar2.pvp.utils.ViewUtil;
+import java.util.List;
+import java.util.Objects;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import net.kyori.adventure.sound.Sound;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.entity.Entity;
@@ -24,7 +28,6 @@ import net.minestom.server.item.component.Consumable;
 import net.minestom.server.item.component.ConsumeEffect;
 import net.minestom.server.item.component.ConsumeEffect.*;
 import net.minestom.server.item.component.Food;
-import net.minestom.server.item.component.SuspiciousStewEffects;
 import net.minestom.server.potion.CustomPotionEffect;
 import net.minestom.server.potion.Potion;
 import net.minestom.server.potion.PotionEffect;
@@ -33,21 +36,15 @@ import net.minestom.server.registry.RegistryTag;
 import net.minestom.server.sound.SoundEvent;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
-
 /**
  * Vanilla implementation of {@link FoodFeature}
- * <p>
- * This also includes eating of food items.
+ *
+ * <p>This also includes eating of food items.
  */
 public class VanillaFoodFeature implements FoodFeature, RegistrableFeature {
-    public static final DefinedFeature<VanillaFoodFeature> DEFINED = new DefinedFeature<>(
-            FeatureType.FOOD, VanillaFoodFeature::new,
-            FeatureType.ITEM_COOLDOWN
-    );
+    public static final DefinedFeature<VanillaFoodFeature> DEFINED =
+            new DefinedFeature<>(
+                    FeatureType.FOOD, VanillaFoodFeature::new, FeatureType.ITEM_COOLDOWN);
 
     private final FeatureConfiguration configuration;
 
@@ -64,36 +61,45 @@ public class VanillaFoodFeature implements FoodFeature, RegistrableFeature {
 
     @Override
     public void init(EventNode<EntityInstanceEvent> node) {
-        node.addListener(PlayerBeginItemUseEvent.class, event -> {
-            if (!event.getItemStack().has(DataComponents.CONSUMABLE))
-                return;
-            @Nullable Food foodComponent = event.getItemStack().get(DataComponents.FOOD);
-            @Nullable Consumable consumableComponent = event.getItemStack().get(DataComponents.CONSUMABLE);
+        node.addListener(
+                PlayerBeginItemUseEvent.class,
+                event -> {
+                    if (!event.getItemStack().has(DataComponents.CONSUMABLE)) return;
+                    @Nullable Food foodComponent = event.getItemStack().get(DataComponents.FOOD);
+                    @Nullable
+                    Consumable consumableComponent =
+                            event.getItemStack().get(DataComponents.CONSUMABLE);
 
-            var alwaysEat = foodComponent == null || foodComponent.canAlwaysEat();
-            if (event.getPlayer().getGameMode() != GameMode.CREATIVE
-                    && !alwaysEat && event.getPlayer().getFood() == 20) {
-                event.setCancelled(true);
-                return;
-            }
+                    var alwaysEat = foodComponent == null || foodComponent.canAlwaysEat();
+                    if (event.getPlayer().getGameMode() != GameMode.CREATIVE
+                            && !alwaysEat
+                            && event.getPlayer().getFood() == 20) {
+                        event.setCancelled(true);
+                        return;
+                    }
 
-            if (consumableComponent != null) event.setItemUseDuration(consumableComponent.consumeTicks());
-        });
+                    if (consumableComponent != null)
+                        event.setItemUseDuration(consumableComponent.consumeTicks());
+                });
 
-        node.addListener(PlayerFinishItemUseEvent.class, event -> {
-            if (event.getItemStack().material() != Material.MILK_BUCKET
-                    && !(event.getItemStack().has(DataComponents.FOOD) || event.getItemStack().has(DataComponents.CONSUMABLE)))
-                return;
+        node.addListener(
+                PlayerFinishItemUseEvent.class,
+                event -> {
+                    if (event.getItemStack().material() != Material.MILK_BUCKET
+                            && !(event.getItemStack().has(DataComponents.FOOD)
+                                    || event.getItemStack().has(DataComponents.CONSUMABLE))) return;
 
-            this.onFinishEating(event.getPlayer(), event.getItemStack(), event.getHand());
-        });
+                    this.onFinishEating(event.getPlayer(), event.getItemStack(), event.getHand());
+                });
 
-        node.addListener(PlayerTickEvent.class, event -> {
-            var player = event.getPlayer();
-            if (player.isSilent() || !player.isEating()) return;
+        node.addListener(
+                PlayerTickEvent.class,
+                event -> {
+                    var player = event.getPlayer();
+                    if (player.isSilent() || !player.isEating()) return;
 
-            this.tickEatingSounds(player);
-        });
+                    this.tickEatingSounds(player);
+                });
     }
 
     protected void onFinishEating(Player player, ItemStack stack, PlayerHand hand) {
@@ -111,10 +117,14 @@ public class VanillaFoodFeature implements FoodFeature, RegistrableFeature {
         this.triggerEatingSound(player, consumable);
 
         if (food != null) {
-            ViewUtil.viewersAndSelf(player).playSound(Sound.sound(
-                    SoundEvent.ENTITY_PLAYER_BURP, Sound.Source.PLAYER,
-                    0.5F, random.nextFloat() * 0.1F + 0.9F
-            ), player);
+            ViewUtil.viewersAndSelf(player)
+                    .playSound(
+                            Sound.sound(
+                                    SoundEvent.ENTITY_PLAYER_BURP,
+                                    Sound.Source.PLAYER,
+                                    0.5F,
+                                    random.nextFloat() * 0.1F + 0.9F),
+                            player);
         }
 
         var effectList = consumable.effects();
@@ -127,7 +137,12 @@ public class VanillaFoodFeature implements FoodFeature, RegistrableFeature {
             var effects = stack.get(DataComponents.SUSPICIOUS_STEW_EFFECTS);
             assert effects != null;
             for (var effect : effects.effects()) {
-                player.addEffect(new Potion(effect.id(), (byte) 0, effect.durationTicks(), PotionFlags.defaultFlags()));
+                player.addEffect(
+                        new Potion(
+                                effect.id(),
+                                (byte) 0,
+                                effect.durationTicks(),
+                                PotionFlags.defaultFlags()));
             }
         }
 
@@ -150,7 +165,8 @@ public class VanillaFoodFeature implements FoodFeature, RegistrableFeature {
     @Override
     public void addFood(Player player, int food, float saturation) {
         player.setFood(Math.min(food + player.getFood(), 20));
-        player.setFoodSaturation(Math.min(player.getFoodSaturation() + saturation, player.getFood()));
+        player.setFoodSaturation(
+                Math.min(player.getFoodSaturation() + saturation, player.getFood()));
     }
 
     @Override
@@ -189,11 +205,14 @@ public class VanillaFoodFeature implements FoodFeature, RegistrableFeature {
 
     protected void triggerEatingSound(Player player, Consumable consumable) {
         var random = ThreadLocalRandom.current();
-        player.getViewersAsAudience().playSound(Sound.sound(
-                consumable.sound(), Sound.Source.PLAYER,
-                0.5F + 0.5F * random.nextInt(2),
-                (random.nextFloat() - random.nextFloat()) * 0.2F + 1.0F
-        ), player);
+        player.getViewersAsAudience()
+                .playSound(
+                        Sound.sound(
+                                consumable.sound(),
+                                Sound.Source.PLAYER,
+                                0.5F + 0.5F * random.nextInt(2),
+                                (random.nextFloat() - random.nextFloat()) * 0.2F + 1.0F),
+                        player);
     }
 
     public static void applyConsumeEffect(Entity entity, ConsumeEffect effect, Random random) {
@@ -201,28 +220,29 @@ public class VanillaFoodFeature implements FoodFeature, RegistrableFeature {
             case ApplyEffects(List<CustomPotionEffect> effects, float probability) -> {
                 if (random.nextFloat() >= probability) return;
                 for (var potionEffect : effects) {
-                    entity.addEffect(new Potion(
-                            potionEffect.id(), (byte)potionEffect.amplifier(),
-                            potionEffect.duration(),
-                            PotionFlags.create(
-                                    potionEffect.isAmbient(),
-                                    potionEffect.showParticles(),
-                                    potionEffect.showIcon()
-                            )
-                    ));
+                    entity.addEffect(
+                            new Potion(
+                                    potionEffect.id(),
+                                    (byte) potionEffect.amplifier(),
+                                    potionEffect.duration(),
+                                    PotionFlags.create(
+                                            potionEffect.isAmbient(),
+                                            potionEffect.showParticles(),
+                                            potionEffect.showIcon())));
                 }
             }
-            case RemoveEffects(RegistryTag<PotionEffect> potionEffects) -> entity.getActiveEffects().stream()
-                    .map(TimedPotion::potion)
-                    .map(Potion::effect)
-                    .filter(potionEffects::contains)
-                    .forEach(entity::removeEffect);
+            case RemoveEffects(RegistryTag<PotionEffect> potionEffects) ->
+                    entity.getActiveEffects().stream()
+                            .map(TimedPotion::potion)
+                            .map(Potion::effect)
+                            .filter(potionEffects::contains)
+                            .forEach(entity::removeEffect);
             case ClearAllEffects ignored -> entity.clearEffects();
-            case TeleportRandomly(float diameter, boolean _) -> ChorusFruitUtil.tryChorusTeleport(entity, diameter);
-            case PlaySound(SoundEvent sound) -> ViewUtil.viewersAndSelf(entity).playSound(Sound.sound(
-                    sound, Sound.Source.PLAYER,
-                    1.0F, 1.0F
-            ), entity);
+            case TeleportRandomly(float diameter, boolean _) ->
+                    ChorusFruitUtil.tryChorusTeleport(entity, diameter);
+            case PlaySound(SoundEvent sound) ->
+                    ViewUtil.viewersAndSelf(entity)
+                            .playSound(Sound.sound(sound, Sound.Source.PLAYER, 1.0F, 1.0F), entity);
             default -> throw new IllegalArgumentException("Unexpected value: " + effect);
         }
     }

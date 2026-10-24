@@ -1,5 +1,10 @@
 package rocks.minestom.worldgen.structure.monument;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.generator.GenerationUnit;
@@ -17,26 +22,20 @@ import rocks.minestom.worldgen.structure.loader.StructureLoader;
 import rocks.minestom.worldgen.structure.template.BoundingBox;
 import rocks.minestom.worldgen.terrain.TerrainGenerator;
 
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
- * Places the procedural ocean monument with vanilla-exact seeding, mirroring
- * {@code rocks.minestom.worldgen.structure.fortress.FortressPlacer}. Unlike
- * the fortress, vanilla's ocean monument structure registers a single top
- * piece ({@code MonumentBuilding}); that piece's own {@code postProcess}
- * dispatches to its child rooms internally, sharing one random draw sequence
+ * Places the procedural ocean monument with vanilla-exact seeding, mirroring {@code
+ * rocks.minestom.worldgen.structure.fortress.FortressPlacer}. Unlike the fortress, vanilla's ocean
+ * monument structure registers a single top piece ({@code MonumentBuilding}); that piece's own
+ * {@code postProcess} dispatches to its child rooms internally, sharing one random draw sequence
  * per generating chunk, so this placer only ever has one piece per start.
  */
 public final class MonumentPlacer {
     /** The 58-block building can reach a chunk from up to a few chunks away. */
     private static final int REFERENCE_RADIUS = 4;
+
     /** GenerationStep.Decoration.SURFACE_STRUCTURES ordinal. */
     private static final int SURFACE_STRUCTURES_STEP = 4;
+
     /** Vanilla {@code OceanMonumentPieces.MonumentBuilding.BIOME_RANGE_CHECK}. */
     private static final int BIOME_RANGE_CHECK = 29;
 
@@ -52,29 +51,36 @@ public final class MonumentPlacer {
 
     public boolean isMonumentSet(StructureSet structureSet) {
         for (var entry : structureSet.structures()) {
-            if (this.structureLoader.getStructure(entry.structure()) instanceof OceanMonumentStructure) {
+            if (this.structureLoader.getStructure(entry.structure())
+                    instanceof OceanMonumentStructure) {
                 return true;
             }
         }
         return false;
     }
 
-    public void place(GenerationUnit unit, BiomeZoomer biomeZoomer,
-            NoiseGeneratorSettingsRuntime settings, StructureSet structureSet, int[] surfaceHeights) {
+    public void place(
+            GenerationUnit unit,
+            BiomeZoomer biomeZoomer,
+            NoiseGeneratorSettingsRuntime settings,
+            StructureSet structureSet,
+            int[] surfaceHeights) {
         this.place(unit, biomeZoomer, settings, structureSet, surfaceHeights, null);
     }
 
     /**
-     * When a {@code featureAdapter} is given (the interleaved structure step
-     * inside feature decoration), writes go through the SAME fork as the
-     * chunk's feature placement, so structure and feature writes land in
-     * true chronological order - a monument water box no longer erases the
-     * kelp and seagrass a later step plants inside it, which is what
-     * happened with a separate fork (Minestom applies forks in creation
-     * order, and the feature fork is created first).
+     * When a {@code featureAdapter} is given (the interleaved structure step inside feature
+     * decoration), writes go through the SAME fork as the chunk's feature placement, so structure
+     * and feature writes land in true chronological order - a monument water box no longer erases
+     * the kelp and seagrass a later step plants inside it, which is what happened with a separate
+     * fork (Minestom applies forks in creation order, and the feature fork is created first).
      */
-    public void place(GenerationUnit unit, BiomeZoomer biomeZoomer,
-            NoiseGeneratorSettingsRuntime settings, StructureSet structureSet, int[] surfaceHeights,
+    public void place(
+            GenerationUnit unit,
+            BiomeZoomer biomeZoomer,
+            NoiseGeneratorSettingsRuntime settings,
+            StructureSet structureSet,
+            int[] surfaceHeights,
             GenerationUnitAdapter featureAdapter) {
         var startX = unit.absoluteStart().blockX();
         var startZ = unit.absoluteStart().blockZ();
@@ -82,16 +88,31 @@ public final class MonumentPlacer {
         var chunkZ = Math.floorDiv(startZ, 16);
 
         var intersecting = new ArrayList<Reference>();
-        for (var sourceX = chunkX - REFERENCE_RADIUS; sourceX <= chunkX + REFERENCE_RADIUS; sourceX++) {
-            for (var sourceZ = chunkZ - REFERENCE_RADIUS; sourceZ <= chunkZ + REFERENCE_RADIUS; sourceZ++) {
+        for (var sourceX = chunkX - REFERENCE_RADIUS;
+                sourceX <= chunkX + REFERENCE_RADIUS;
+                sourceX++) {
+            for (var sourceZ = chunkZ - REFERENCE_RADIUS;
+                    sourceZ <= chunkZ + REFERENCE_RADIUS;
+                    sourceZ++) {
                 var start = this.startAt(sourceX, sourceZ, structureSet, settings, biomeZoomer);
                 if (System.getProperty("worldgen.monumentDebug") != null && start != null) {
-                    System.out.println("MSTART source=" + sourceX + "," + sourceZ
-                            + " box=" + start.building().boundingBox()
-                            + " forChunk=" + chunkX + "," + chunkZ
-                            + " intersects=" + intersectsColumn(start.building().boundingBox(), startX, startZ));
+                    System.out.println(
+                            "MSTART source="
+                                    + sourceX
+                                    + ","
+                                    + sourceZ
+                                    + " box="
+                                    + start.building().boundingBox()
+                                    + " forChunk="
+                                    + chunkX
+                                    + ","
+                                    + chunkZ
+                                    + " intersects="
+                                    + intersectsColumn(
+                                            start.building().boundingBox(), startX, startZ));
                 }
-                if (start != null && intersectsColumn(start.building().boundingBox(), startX, startZ)) {
+                if (start != null
+                        && intersectsColumn(start.building().boundingBox(), startX, startZ)) {
                     intersecting.add(new Reference(start, packChunk(sourceX, sourceZ)));
                 }
             }
@@ -111,20 +132,36 @@ public final class MonumentPlacer {
         if (featureAdapter != null && usingLiveBuffer) {
             forkAdapter = featureAdapter;
         } else {
-            var forkUnit = unit.fork(
-                    new BlockVec(startX, settings.minY(), startZ),
-                    new BlockVec(startX + 16, settings.maxYInclusive() + 1, startZ + 16));
+            var forkUnit =
+                    unit.fork(
+                            new BlockVec(startX, settings.minY(), startZ),
+                            new BlockVec(startX + 16, settings.maxYInclusive() + 1, startZ + 16));
             forkAdapter = new GenerationUnitAdapter(forkUnit);
         }
 
         var replayHandle = usingLiveBuffer ? null : surfaceHeights;
-        var level = new MonumentLevel(forkAdapter, chunkBlocks, startX, startZ,
-                settings.minY(), settings.maxYInclusive(), settings.seaLevel(), replayHandle);
-        var chunkBB = new BoundingBox(startX, settings.minY() + 1, startZ,
-                startX + 15, settings.maxYInclusive(), startZ + 15);
+        var level =
+                new MonumentLevel(
+                        forkAdapter,
+                        chunkBlocks,
+                        startX,
+                        startZ,
+                        settings.minY(),
+                        settings.maxYInclusive(),
+                        settings.seaLevel(),
+                        replayHandle);
+        var chunkBB =
+                new BoundingBox(
+                        startX,
+                        settings.minY() + 1,
+                        startZ,
+                        startX + 15,
+                        settings.maxYInclusive(),
+                        startZ + 15);
 
         var random = new WorldgenRandom(new XoroshiroRandomSource(0L));
-        var decorationSeed = random.setDecorationSeed(settings.randomState().seed(), startX, startZ);
+        var decorationSeed =
+                random.setDecorationSeed(settings.randomState().seed(), startX, startZ);
         var index = this.surfaceStructures().indexOf(Key.key("minecraft:monument"));
         if (index < 0) {
             return;
@@ -140,11 +177,14 @@ public final class MonumentPlacer {
     }
 
     private static boolean intersectsColumn(BoundingBox bounds, int blockX, int blockZ) {
-        return bounds.maxX() >= blockX && bounds.minX() <= blockX + 15
-                && bounds.maxZ() >= blockZ && bounds.minZ() <= blockZ + 15;
+        return bounds.maxX() >= blockX
+                && bounds.minX() <= blockX + 15
+                && bounds.maxZ() >= blockZ
+                && bounds.minZ() <= blockZ + 15;
     }
 
-    private net.minestom.server.instance.block.Block[] liveChunkBlocks(int chunkX, int chunkZ, int[] surfaceHeights) {
+    private net.minestom.server.instance.block.Block[] liveChunkBlocks(
+            int chunkX, int chunkZ, int[] surfaceHeights) {
         var lookup = StructureWrites.terrainLookup();
         if (lookup == null || surfaceHeights == null) {
             return null;
@@ -161,7 +201,10 @@ public final class MonumentPlacer {
         return (long) chunkX & 0xFFFFFFFFL | ((long) chunkZ & 0xFFFFFFFFL) << 32;
     }
 
-    /** See {@code MineshaftPlacer.referenceIterationOrder}: emulates fastutil LongOpenHashSet iteration order. */
+    /**
+     * See {@code MineshaftPlacer.referenceIterationOrder}: emulates fastutil LongOpenHashSet
+     * iteration order.
+     */
     private static List<Reference> referenceIterationOrder(List<Reference> insertionOrder) {
         if (insertionOrder.size() <= 1) {
             return insertionOrder;
@@ -206,32 +249,50 @@ public final class MonumentPlacer {
         return hash ^ hash >>> 16;
     }
 
-    private MonumentStart startAt(int chunkX, int chunkZ, StructureSet structureSet,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer) {
+    private MonumentStart startAt(
+            int chunkX,
+            int chunkZ,
+            StructureSet structureSet,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer) {
         var key = (long) chunkX << 32 ^ (chunkZ & 0xFFFFFFFFL);
-        return this.starts.computeIfAbsent(key,
-                unused -> Optional.ofNullable(this.computeStart(chunkX, chunkZ, structureSet, settings, biomeZoomer))).orElse(null);
+        return this.starts
+                .computeIfAbsent(
+                        key,
+                        unused ->
+                                Optional.ofNullable(
+                                        this.computeStart(
+                                                chunkX,
+                                                chunkZ,
+                                                structureSet,
+                                                settings,
+                                                biomeZoomer)))
+                .orElse(null);
     }
 
     /**
-     * Replicates the same weighted, per-chunk large-feature draw as
-     * {@code StructurePlacer.computeStart} for this structure set. The
-     * {@code ocean_monuments} set only ever contains the single
-     * {@code minecraft:monument} structure in vanilla, but the weighted draw
-     * is still replicated for parity with sets that add extra weight
-     * entries.
+     * Replicates the same weighted, per-chunk large-feature draw as {@code
+     * StructurePlacer.computeStart} for this structure set. The {@code ocean_monuments} set only
+     * ever contains the single {@code minecraft:monument} structure in vanilla, but the weighted
+     * draw is still replicated for parity with sets that add extra weight entries.
      */
-    private MonumentStart computeStart(int chunkX, int chunkZ, StructureSet structureSet,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer) {
+    private MonumentStart computeStart(
+            int chunkX,
+            int chunkZ,
+            StructureSet structureSet,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer) {
         var seed = settings.randomState().seed();
         var placement = structureSet.placement();
-        if (!placement.isStartChunk(chunkX, chunkZ, seed, settings.randomState().legacyRandomSource())) {
+        if (!placement.isStartChunk(
+                chunkX, chunkZ, seed, settings.randomState().legacyRandomSource())) {
             return null;
         }
 
         var structures = structureSet.structures();
         if (structures.size() == 1) {
-            return this.tryGenerate(structures.getFirst().structure(), chunkX, chunkZ, settings, biomeZoomer);
+            return this.tryGenerate(
+                    structures.getFirst().structure(), chunkX, chunkZ, settings, biomeZoomer);
         }
 
         var options = new ArrayList<>(structures);
@@ -254,11 +315,13 @@ public final class MonumentPlacer {
             }
 
             var selected = options.get(index);
-            if (this.structureLoader.getStructure(selected.structure()) instanceof OceanMonumentStructure monument) {
+            if (this.structureLoader.getStructure(selected.structure())
+                    instanceof OceanMonumentStructure monument) {
                 return this.tryGenerateMonument(monument, chunkX, chunkZ, settings, biomeZoomer);
             }
 
-            if (this.biomeMatchesApprox(selected.structure(), chunkX, chunkZ, settings, biomeZoomer)) {
+            if (this.biomeMatchesApprox(
+                    selected.structure(), chunkX, chunkZ, settings, biomeZoomer)) {
                 return null;
             }
 
@@ -268,32 +331,42 @@ public final class MonumentPlacer {
         return null;
     }
 
-    private MonumentStart tryGenerate(Key structureKey, int chunkX, int chunkZ,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer) {
-        if (!(this.structureLoader.getStructure(structureKey) instanceof OceanMonumentStructure monument)) {
+    private MonumentStart tryGenerate(
+            Key structureKey,
+            int chunkX,
+            int chunkZ,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer) {
+        if (!(this.structureLoader.getStructure(structureKey)
+                instanceof OceanMonumentStructure monument)) {
             return null;
         }
         return this.tryGenerateMonument(monument, chunkX, chunkZ, settings, biomeZoomer);
     }
 
     /**
-     * Vanilla {@code OceanMonumentStructure.findGenerationPoint} plus
-     * {@code Structure.findValidGenerationPoint}: a 29-block-radius biome
-     * surrounding check (every biome must carry
-     * {@code required_ocean_monument_surrounding}), then a single biome
-     * check at the chunk-center column's {@code OCEAN_FLOOR_WG} height
-     * against the structure's own {@code biomes} predicate. Neither check
-     * consumes randomness; the room graph (which does) is only built after
-     * both succeed, matching vanilla's lazy generator.
+     * Vanilla {@code OceanMonumentStructure.findGenerationPoint} plus {@code
+     * Structure.findValidGenerationPoint}: a 29-block-radius biome surrounding check (every biome
+     * must carry {@code required_ocean_monument_surrounding}), then a single biome check at the
+     * chunk-center column's {@code OCEAN_FLOOR_WG} height against the structure's own {@code
+     * biomes} predicate. Neither check consumes randomness; the room graph (which does) is only
+     * built after both succeed, matching vanilla's lazy generator.
      */
-    private MonumentStart tryGenerateMonument(OceanMonumentStructure monument, int chunkX, int chunkZ,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer) {
+    private MonumentStart tryGenerateMonument(
+            OceanMonumentStructure monument,
+            int chunkX,
+            int chunkZ,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer) {
         var chunkMinX = chunkX << 4;
         var chunkMinZ = chunkZ << 4;
         var offsetX = chunkMinX + 9;
         var offsetZ = chunkMinZ + 9;
         var seaLevel = settings.seaLevel();
-        var requiredSurrounding = this.structureLoader.biomeTags().biomes(Key.key("minecraft:required_ocean_monument_surrounding"));
+        var requiredSurrounding =
+                this.structureLoader
+                        .biomeTags()
+                        .biomes(Key.key("minecraft:required_ocean_monument_surrounding"));
 
         var minQuartX = (offsetX - BIOME_RANGE_CHECK) >> 2;
         var maxQuartX = (offsetX + BIOME_RANGE_CHECK) >> 2;
@@ -325,15 +398,16 @@ public final class MonumentPlacer {
         var random = new WorldgenRandom(new LegacyRandomSource(0L));
         random.setLargeFeatureSeed(seed, chunkX, chunkZ);
         var direction = Direction.HORIZONTAL.get(random.nextInt(Direction.HORIZONTAL.size()));
-        var building = OceanMonumentPieces.generateBuilding(random, chunkMinX - 29, chunkMinZ - 29, direction);
+        var building =
+                OceanMonumentPieces.generateBuilding(
+                        random, chunkMinX - 29, chunkMinZ - 29, direction);
         return new MonumentStart(building);
     }
 
     /**
-     * Approximation of vanilla {@code getFirstOccupiedHeight} for
-     * {@code OCEAN_FLOOR_WG}: one above the highest solid block of the raw
-     * noise terrain, matching {@code ScatteredFeaturePlacer.worldSurfaceHeight}'s
-     * documented precedent.
+     * Approximation of vanilla {@code getFirstOccupiedHeight} for {@code OCEAN_FLOOR_WG}: one above
+     * the highest solid block of the raw noise terrain, matching {@code
+     * ScatteredFeaturePlacer.worldSurfaceHeight}'s documented precedent.
      */
     private int oceanFloorHeight(int blockX, int blockZ, NoiseGeneratorSettingsRuntime settings) {
         var chunkX = Math.floorDiv(blockX, 16);
@@ -344,8 +418,12 @@ public final class MonumentPlacer {
         return solidTop == Integer.MIN_VALUE ? settings.seaLevel() : solidTop + 1;
     }
 
-    private boolean biomeMatchesApprox(Key structureKey, int chunkX, int chunkZ,
-            NoiseGeneratorSettingsRuntime settings, BiomeZoomer biomeZoomer) {
+    private boolean biomeMatchesApprox(
+            Key structureKey,
+            int chunkX,
+            int chunkZ,
+            NoiseGeneratorSettingsRuntime settings,
+            BiomeZoomer biomeZoomer) {
         var structure = this.structureLoader.getStructure(structureKey);
         if (structure == null) {
             return false;
@@ -371,19 +449,15 @@ public final class MonumentPlacer {
     }
 
     /**
-     * The {@code surface_structures}-step structures in registry order
-     * (vanilla loads worldgen registries sorted by resource path), which
-     * determines each structure's feature-seed index for the step. See
-     * {@code ScatteredFeaturePlacer.loadStepStructures}.
+     * The {@code surface_structures}-step structures in registry order (vanilla loads worldgen
+     * registries sorted by resource path), which determines each structure's feature-seed index for
+     * the step. See {@code ScatteredFeaturePlacer.loadStepStructures}.
      */
     private List<Key> loadStepStructures(String step) {
         return this.structureLoader.structuresAtStep(step);
     }
 
+    private record MonumentStart(OceanMonumentPieces.MonumentBuilding building) {}
 
-    private record MonumentStart(OceanMonumentPieces.MonumentBuilding building) {
-    }
-
-    private record Reference(MonumentStart start, long packedChunk) {
-    }
+    private record Reference(MonumentStart start, long packedChunk) {}
 }

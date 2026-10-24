@@ -1,14 +1,12 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.List;
 import net.minestom.server.instance.block.Block;
 
-import java.util.List;
-
 /**
- * Port of vanilla's {@code WeightedRandomSelectorFeature}: picks one placed
- * feature from a weighted list and places it. Extends
- * {@link RandomSelectorFeature} so the world generator hands it the feature
- * loader for nested feature references.
+ * Port of vanilla's {@code WeightedRandomSelectorFeature}: picks one placed feature from a weighted
+ * list and places it. Extends {@link RandomSelectorFeature} so the world generator hands it the
+ * feature loader for nested feature references.
  */
 public final class WeightedRandomSelectorFeature extends RandomSelectorFeature {
     private final List<WeightedPlacedFeature> features;
@@ -26,7 +24,8 @@ public final class WeightedRandomSelectorFeature extends RandomSelectorFeature {
     }
 
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<FeatureConfiguration, T> context, FeatureLoader loader) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<FeatureConfiguration, T> context, FeatureLoader loader) {
         // Vanilla WeightedList.getRandom: no random is consumed when the list is empty.
         if (this.totalWeight <= 0) {
             return false;
@@ -43,6 +42,5 @@ public final class WeightedRandomSelectorFeature extends RandomSelectorFeature {
         return false;
     }
 
-    public record WeightedPlacedFeature(PlacedFeature feature, int weight) {
-    }
+    public record WeightedPlacedFeature(PlacedFeature feature, int weight) {}
 }

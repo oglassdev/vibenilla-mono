@@ -1,45 +1,42 @@
 package io.github.togar2.pvp.events;
 
-import org.jetbrains.annotations.NotNull;
-
 import net.minestom.server.entity.LivingEntity;
 import net.minestom.server.entity.PlayerHand;
 import net.minestom.server.event.trait.CancellableEvent;
 import net.minestom.server.event.trait.EntityInstanceEvent;
+import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a totem prevents an entity from dying.
- */
+/** Called when a totem prevents an entity from dying. */
 public class TotemUseEvent implements EntityInstanceEvent, CancellableEvent {
 
-	private final LivingEntity entity;
-	private final PlayerHand hand;
+    private final LivingEntity entity;
+    private final PlayerHand hand;
 
-	private boolean cancelled;
+    private boolean cancelled;
 
-	public TotemUseEvent(@NotNull LivingEntity entity, @NotNull PlayerHand hand) {
-		this.entity = entity;
-		this.hand = hand;
-	}
+    public TotemUseEvent(@NotNull LivingEntity entity, @NotNull PlayerHand hand) {
+        this.entity = entity;
+        this.hand = hand;
+    }
 
-	@NotNull
-	@Override
-	public LivingEntity getEntity() {
-		return this.entity;
-	}
+    @NotNull
+    @Override
+    public LivingEntity getEntity() {
+        return this.entity;
+    }
 
-	@NotNull
-	public PlayerHand getHand() {
-		return this.hand;
-	}
+    @NotNull
+    public PlayerHand getHand() {
+        return this.hand;
+    }
 
-	@Override
-	public boolean isCancelled() {
-		return this.cancelled;
-	}
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
 
-	@Override
-	public void setCancelled(boolean cancel) {
-		this.cancelled = cancel;
-	}
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
+    }
 }

@@ -1,21 +1,20 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.OptionalInt;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.SpeleothemClusterConfiguration;
 import rocks.minestom.worldgen.feature.valueproviders.ClampedNormalFloatProvider;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.OptionalInt;
-
 /**
- * Port of vanilla's {@code SpeleothemClusterFeature} (the generic version of
- * the old dripstone cluster feature). Random call order matches vanilla
- * exactly.
+ * Port of vanilla's {@code SpeleothemClusterFeature} (the generic version of the old dripstone
+ * cluster feature). Random call order matches vanilla exactly.
  */
 public final class SpeleothemClusterFeature implements Feature<SpeleothemClusterConfiguration> {
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<SpeleothemClusterConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<SpeleothemClusterConfiguration, T> context) {
         var level = context.accessor();
         var origin = context.origin();
         var config = context.config();
@@ -32,9 +31,20 @@ public final class SpeleothemClusterFeature implements Feature<SpeleothemCluster
 
         for (var dx = -xRadius; dx <= xRadius; dx++) {
             for (var dz = -zRadius; dz <= zRadius; dz++) {
-                var chanceOfStalagmiteOrStalactite = this.getChanceOfStalagmiteOrStalactite(xRadius, zRadius, dx, dz, config);
+                var chanceOfStalagmiteOrStalactite =
+                        this.getChanceOfStalagmiteOrStalactite(xRadius, zRadius, dx, dz, config);
                 var pos = origin.add(dx, 0, dz);
-                this.placeColumn(level, random, pos, dx, dz, wetness, chanceOfStalagmiteOrStalactite, height, density, config);
+                this.placeColumn(
+                        level,
+                        random,
+                        pos,
+                        dx,
+                        dz,
+                        wetness,
+                        chanceOfStalagmiteOrStalactite,
+                        height,
+                        density,
+                        config);
             }
         }
 
@@ -51,11 +61,14 @@ public final class SpeleothemClusterFeature implements Feature<SpeleothemCluster
             double chanceOfStalagmiteOrStalactite,
             int clusterHeight,
             float density,
-            SpeleothemClusterConfiguration config
-    ) {
-        var baseColumn = Column.scan(
-                level, pos, config.floorToCeilingSearchRange(),
-                SpeleothemUtils::isEmptyOrWater, SpeleothemUtils::isNeitherEmptyNorWater);
+            SpeleothemClusterConfiguration config) {
+        var baseColumn =
+                Column.scan(
+                        level,
+                        pos,
+                        config.floorToCeilingSearchRange(),
+                        SpeleothemUtils::isEmptyOrWater,
+                        SpeleothemUtils::isNeitherEmptyNorWater);
         if (baseColumn.isEmpty()) {
             return;
         }
@@ -68,7 +81,9 @@ public final class SpeleothemClusterFeature implements Feature<SpeleothemCluster
 
         var wantPool = random.nextFloat() < chanceOfWater;
         Column column;
-        if (wantPool && baseFloor.isPresent() && this.canPlacePool(level, atY(pos, baseFloor.getAsInt()), config)) {
+        if (wantPool
+                && baseFloor.isPresent()
+                && this.canPlacePool(level, atY(pos, baseFloor.getAsInt()), config)) {
             var baseFloorY = baseFloor.getAsInt();
             column = baseColumn.get().withFloor(OptionalInt.of(baseFloorY - 1));
             level.setBlock(atY(pos, baseFloorY), Block.WATER);
@@ -79,33 +94,47 @@ public final class SpeleothemClusterFeature implements Feature<SpeleothemCluster
         var floor = column.floor();
         var wantStalactite = random.nextDouble() < chanceOfStalagmiteOrStalactite;
         int stalactiteHeight;
-        if (ceiling.isPresent() && wantStalactite && !this.isLava(level, atY(pos, ceiling.getAsInt()))) {
+        if (ceiling.isPresent()
+                && wantStalactite
+                && !this.isLava(level, atY(pos, ceiling.getAsInt()))) {
             var ceilingThickness = config.speleothemBlockLayerThickness().sample(random);
-            this.replaceBlocksWithBaseBlocks(level, atY(pos, ceiling.getAsInt()), ceilingThickness, Direction.UP, config);
+            this.replaceBlocksWithBaseBlocks(
+                    level, atY(pos, ceiling.getAsInt()), ceilingThickness, Direction.UP, config);
             int maxHeightForThisColumn;
             if (floor.isPresent()) {
-                maxHeightForThisColumn = Math.min(clusterHeight, ceiling.getAsInt() - floor.getAsInt());
+                maxHeightForThisColumn =
+                        Math.min(clusterHeight, ceiling.getAsInt() - floor.getAsInt());
             } else {
                 maxHeightForThisColumn = clusterHeight;
             }
 
-            stalactiteHeight = this.getSpeleothemHeight(random, dx, dz, density, maxHeightForThisColumn, config);
+            stalactiteHeight =
+                    this.getSpeleothemHeight(
+                            random, dx, dz, density, maxHeightForThisColumn, config);
         } else {
             stalactiteHeight = 0;
         }
 
         var wantStalagmite = random.nextDouble() < chanceOfStalagmiteOrStalactite;
         int stalagmiteHeight;
-        if (floor.isPresent() && wantStalagmite && !this.isLava(level, atY(pos, floor.getAsInt()))) {
+        if (floor.isPresent()
+                && wantStalagmite
+                && !this.isLava(level, atY(pos, floor.getAsInt()))) {
             var floorThickness = config.speleothemBlockLayerThickness().sample(random);
-            this.replaceBlocksWithBaseBlocks(level, atY(pos, floor.getAsInt()), floorThickness, Direction.DOWN, config);
+            this.replaceBlocksWithBaseBlocks(
+                    level, atY(pos, floor.getAsInt()), floorThickness, Direction.DOWN, config);
             if (ceiling.isPresent()) {
-                stalagmiteHeight = Math.max(
-                        0,
-                        stalactiteHeight + randomBetweenInclusive(random,
-                                -config.maxStalagmiteStalactiteHeightDiff(), config.maxStalagmiteStalactiteHeightDiff()));
+                stalagmiteHeight =
+                        Math.max(
+                                0,
+                                stalactiteHeight
+                                        + randomBetweenInclusive(
+                                                random,
+                                                -config.maxStalagmiteStalactiteHeightDiff(),
+                                                config.maxStalagmiteStalactiteHeightDiff()));
             } else {
-                stalagmiteHeight = this.getSpeleothemHeight(random, dx, dz, density, clusterHeight, config);
+                stalagmiteHeight =
+                        this.getSpeleothemHeight(random, dx, dz, density, clusterHeight, config);
             }
         } else {
             stalagmiteHeight = 0;
@@ -113,12 +142,16 @@ public final class SpeleothemClusterFeature implements Feature<SpeleothemCluster
 
         int actualStalagmiteHeight;
         int actualStalactiteHeight;
-        if (ceiling.isPresent() && floor.isPresent() && ceiling.getAsInt() - stalactiteHeight <= floor.getAsInt() + stalagmiteHeight) {
+        if (ceiling.isPresent()
+                && floor.isPresent()
+                && ceiling.getAsInt() - stalactiteHeight <= floor.getAsInt() + stalagmiteHeight) {
             var floorY = floor.getAsInt();
             var ceilingY = ceiling.getAsInt();
             var lowestStalactiteBottom = Math.max(ceilingY - stalactiteHeight, floorY + 1);
             var highestStalagmiteTop = Math.min(floorY + stalagmiteHeight, ceilingY - 1);
-            var actualStalactiteBottom = randomBetweenInclusive(random, lowestStalactiteBottom, highestStalagmiteTop + 1);
+            var actualStalactiteBottom =
+                    randomBetweenInclusive(
+                            random, lowestStalactiteBottom, highestStalagmiteTop + 1);
             var actualStalagmiteTop = actualStalactiteBottom - 1;
             actualStalactiteHeight = ceilingY - actualStalactiteBottom;
             actualStalagmiteHeight = actualStalagmiteTop - floorY;
@@ -127,11 +160,13 @@ public final class SpeleothemClusterFeature implements Feature<SpeleothemCluster
             actualStalagmiteHeight = stalagmiteHeight;
         }
 
-        var mergeTips = random.nextBoolean()
-                && actualStalactiteHeight > 0
-                && actualStalagmiteHeight > 0
-                && column.height().isPresent()
-                && actualStalactiteHeight + actualStalagmiteHeight == column.height().getAsInt();
+        var mergeTips =
+                random.nextBoolean()
+                        && actualStalactiteHeight > 0
+                        && actualStalagmiteHeight > 0
+                        && column.height().isPresent()
+                        && actualStalactiteHeight + actualStalagmiteHeight
+                                == column.height().getAsInt();
         if (ceiling.isPresent()) {
             SpeleothemUtils.growSpeleothem(
                     level,
@@ -162,21 +197,35 @@ public final class SpeleothemClusterFeature implements Feature<SpeleothemCluster
     }
 
     private int getSpeleothemHeight(
-            RandomSource random, int dx, int dz, float density, int maxHeight, SpeleothemClusterConfiguration config
-    ) {
+            RandomSource random,
+            int dx,
+            int dz,
+            float density,
+            int maxHeight,
+            SpeleothemClusterConfiguration config) {
         if (random.nextFloat() > density) {
             return 0;
         }
 
         var distanceFromCenter = Math.abs(dx) + Math.abs(dz);
-        var heightMean = (float) clampedMap(
-                distanceFromCenter, 0.0D, config.maxDistanceFromCenterAffectingHeightBias(), maxHeight / 2.0D, 0.0D);
-        return (int) randomBetweenBiased(random, 0.0F, maxHeight, heightMean, config.heightDeviation());
+        var heightMean =
+                (float)
+                        clampedMap(
+                                distanceFromCenter,
+                                0.0D,
+                                config.maxDistanceFromCenterAffectingHeightBias(),
+                                maxHeight / 2.0D,
+                                0.0D);
+        return (int)
+                randomBetweenBiased(random, 0.0F, maxHeight, heightMean, config.heightDeviation());
     }
 
-    private <T extends Block.Getter & Block.Setter> boolean canPlacePool(T level, BlockVec pos, SpeleothemClusterConfiguration config) {
+    private <T extends Block.Getter & Block.Setter> boolean canPlacePool(
+            T level, BlockVec pos, SpeleothemClusterConfiguration config) {
         var state = level.getBlock(pos);
-        if (state.compare(Block.WATER) || state.compare(config.baseBlock()) || state.compare(config.pointedBlock())) {
+        if (state.compare(Block.WATER)
+                || state.compare(config.baseBlock())
+                || state.compare(config.pointedBlock())) {
             return false;
         }
 
@@ -193,18 +242,23 @@ public final class SpeleothemClusterFeature implements Feature<SpeleothemCluster
         return this.canBeAdjacentToWater(level, pos.sub(0, 1, 0), config);
     }
 
-    private boolean canBeAdjacentToWater(Block.Getter level, BlockVec pos, SpeleothemClusterConfiguration config) {
+    private boolean canBeAdjacentToWater(
+            Block.Getter level, BlockVec pos, SpeleothemClusterConfiguration config) {
         var state = level.getBlock(pos);
         return config.baseStoneBlocks().contains(state.key()) || SpeleothemUtils.isWater(state);
     }
 
     private <T extends Block.Getter & Block.Setter> void replaceBlocksWithBaseBlocks(
-            T level, BlockVec firstPos, int maxCount, Direction direction, SpeleothemClusterConfiguration config
-    ) {
+            T level,
+            BlockVec firstPos,
+            int maxCount,
+            Direction direction,
+            SpeleothemClusterConfiguration config) {
         var pos = firstPos;
 
         for (var index = 0; index < maxCount; index++) {
-            if (!SpeleothemUtils.placeBaseBlockIfPossible(level, pos, config.baseBlock(), config.replaceableBlocks())) {
+            if (!SpeleothemUtils.placeBaseBlockIfPossible(
+                    level, pos, config.baseBlock(), config.replaceableBlocks())) {
                 return;
             }
 
@@ -213,8 +267,7 @@ public final class SpeleothemClusterFeature implements Feature<SpeleothemCluster
     }
 
     private double getChanceOfStalagmiteOrStalactite(
-            int xRadius, int zRadius, int dx, int dz, SpeleothemClusterConfiguration config
-    ) {
+            int xRadius, int zRadius, int dx, int dz, SpeleothemClusterConfiguration config) {
         var xDistanceFromEdge = xRadius - Math.abs(dx);
         var zDistanceFromEdge = zRadius - Math.abs(dz);
         var distanceFromEdge = Math.min(xDistanceFromEdge, zDistanceFromEdge);
@@ -226,7 +279,8 @@ public final class SpeleothemClusterFeature implements Feature<SpeleothemCluster
                 1.0F);
     }
 
-    private static float randomBetweenBiased(RandomSource random, float min, float maxExclusive, float mean, float deviation) {
+    private static float randomBetweenBiased(
+            RandomSource random, float min, float maxExclusive, float mean, float deviation) {
         return ClampedNormalFloatProvider.sample(random, mean, deviation, min, maxExclusive);
     }
 
@@ -238,13 +292,15 @@ public final class SpeleothemClusterFeature implements Feature<SpeleothemCluster
         return random.nextInt(maxInclusive - min + 1) + min;
     }
 
-    private static double clampedMap(double value, double inMin, double inMax, double outMin, double outMax) {
+    private static double clampedMap(
+            double value, double inMin, double inMax, double outMin, double outMax) {
         var delta = (value - inMin) / (inMax - inMin);
         var clamped = Math.max(0.0D, Math.min(1.0D, delta));
         return outMin + clamped * (outMax - outMin);
     }
 
-    private static float clampedMap(float value, float inMin, float inMax, float outMin, float outMax) {
+    private static float clampedMap(
+            float value, float inMin, float inMax, float outMin, float outMax) {
         var delta = (value - inMin) / (inMax - inMin);
         var clamped = Math.max(0.0F, Math.min(1.0F, delta));
         return outMin + clamped * (outMax - outMin);

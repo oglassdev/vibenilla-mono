@@ -18,15 +18,16 @@ import net.minestom.server.event.trait.EntityInstanceEvent;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.world.Difficulty;
 
-/**
- * Vanilla implementation of {@link RegenerationFeature}
- */
+/** Vanilla implementation of {@link RegenerationFeature} */
 public class VanillaRegenerationFeature implements RegenerationFeature, RegistrableFeature {
-    public static final DefinedFeature<VanillaRegenerationFeature> DEFINED = new DefinedFeature<>(
-            FeatureType.REGENERATION, VanillaRegenerationFeature::new,
-            VanillaRegenerationFeature::initPlayer,
-            FeatureType.EXHAUSTION, FeatureType.DIFFICULTY, FeatureType.VERSION
-    );
+    public static final DefinedFeature<VanillaRegenerationFeature> DEFINED =
+            new DefinedFeature<>(
+                    FeatureType.REGENERATION,
+                    VanillaRegenerationFeature::new,
+                    VanillaRegenerationFeature::initPlayer,
+                    FeatureType.EXHAUSTION,
+                    FeatureType.DIFFICULTY,
+                    FeatureType.VERSION);
 
     public static final Tag<Integer> STARVATION_TICKS = Tag.Integer("starvationTicks");
 
@@ -65,15 +66,19 @@ public class VanillaRegenerationFeature implements RegenerationFeature, Registra
         var health = player.getHealth();
         var starvationTicks = player.getTag(STARVATION_TICKS);
 
-        if (this.version.modern() && player.getFoodSaturation() > 0 && health > 0
-                && health < player.getAttributeValue(Attribute.MAX_HEALTH) && food >= 20) {
+        if (this.version.modern()
+                && player.getFoodSaturation() > 0
+                && health > 0
+                && health < player.getAttributeValue(Attribute.MAX_HEALTH)
+                && food >= 20) {
             starvationTicks++;
             if (starvationTicks >= 10) {
                 var amount = Math.min(player.getFoodSaturation(), 6);
                 this.regenerate(player, amount / 6, amount);
                 starvationTicks = 0;
             }
-        } else if (food >= 18 && health > 0
+        } else if (food >= 18
+                && health > 0
                 && health < player.getAttributeValue(Attribute.MAX_HEALTH)) {
             starvationTicks++;
             if (starvationTicks >= 80) {
@@ -83,8 +88,10 @@ public class VanillaRegenerationFeature implements RegenerationFeature, Registra
         } else if (food <= 0) {
             starvationTicks++;
             if (starvationTicks >= 80) {
-                if (!player.getGameMode().invulnerable() && (health > 10 || difficulty == Difficulty.HARD
-                        || ((health > 1) && (difficulty == Difficulty.NORMAL)))) {
+                if (!player.getGameMode().invulnerable()
+                        && (health > 10
+                                || difficulty == Difficulty.HARD
+                                || ((health > 1) && (difficulty == Difficulty.NORMAL)))) {
                     player.damage(DamageType.STARVE, 1);
                 }
 
@@ -100,9 +107,11 @@ public class VanillaRegenerationFeature implements RegenerationFeature, Registra
     @Override
     public void regenerate(Player player, float health, float exhaustion) {
         var event = new PlayerRegenerateEvent(player, health, exhaustion);
-        EventDispatcher.callCancellable(event, () -> {
-            player.setHealth(player.getHealth() + event.getAmount());
-            this.exhaustionFeature.addExhaustion(player, event.getExhaustion());
-        });
+        EventDispatcher.callCancellable(
+                event,
+                () -> {
+                    player.setHealth(player.getHealth() + event.getAmount());
+                    this.exhaustionFeature.addExhaustion(player, event.getExhaustion());
+                });
     }
 }

@@ -1,19 +1,17 @@
 package rocks.minestom.worldgen.structure.mansion;
 
+import java.util.ArrayList;
+import java.util.List;
 import rocks.minestom.worldgen.feature.Direction;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * Port of vanilla {@code WoodlandMansionPieces.MansionGrid}: the flag-matrix
- * layout solver that lays out the mansion's three floors as an 11x11 grid of
- * corridor, room and blocked cells, then assigns rooms and doors.
+ * Port of vanilla {@code WoodlandMansionPieces.MansionGrid}: the flag-matrix layout solver that
+ * lays out the mansion's three floors as an 11x11 grid of corridor, room and blocked cells, then
+ * assigns rooms and doors.
  *
- * <p>Random call order matches vanilla exactly so a seeded random reproduces
- * vanilla layouts. All of this class's state and helpers are package-private;
- * only {@link MansionPiecePlacer} reads it.
+ * <p>Random call order matches vanilla exactly so a seeded random reproduces vanilla layouts. All
+ * of this class's state and helpers are package-private; only {@link MansionPiecePlacer} reads it.
  */
 final class MansionGrid {
     private static final int CLEAR = 0;
@@ -44,22 +42,42 @@ final class MansionGrid {
         this.entranceX = 7;
         this.entranceY = 4;
         this.baseGrid = new SimpleGrid(11, 11, BLOCKED);
-        this.baseGrid.set(this.entranceX, this.entranceY, this.entranceX + 1, this.entranceY + 1, START_ROOM);
-        this.baseGrid.set(this.entranceX - 1, this.entranceY, this.entranceX - 1, this.entranceY + 1, ROOM);
-        this.baseGrid.set(this.entranceX + 2, this.entranceY - 2, this.entranceX + 3, this.entranceY + 3, BLOCKED);
-        this.baseGrid.set(this.entranceX + 1, this.entranceY - 2, this.entranceX + 1, this.entranceY - 1, CORRIDOR);
-        this.baseGrid.set(this.entranceX + 1, this.entranceY + 2, this.entranceX + 1, this.entranceY + 3, CORRIDOR);
+        this.baseGrid.set(
+                this.entranceX, this.entranceY, this.entranceX + 1, this.entranceY + 1, START_ROOM);
+        this.baseGrid.set(
+                this.entranceX - 1, this.entranceY, this.entranceX - 1, this.entranceY + 1, ROOM);
+        this.baseGrid.set(
+                this.entranceX + 2,
+                this.entranceY - 2,
+                this.entranceX + 3,
+                this.entranceY + 3,
+                BLOCKED);
+        this.baseGrid.set(
+                this.entranceX + 1,
+                this.entranceY - 2,
+                this.entranceX + 1,
+                this.entranceY - 1,
+                CORRIDOR);
+        this.baseGrid.set(
+                this.entranceX + 1,
+                this.entranceY + 2,
+                this.entranceX + 1,
+                this.entranceY + 3,
+                CORRIDOR);
         this.baseGrid.set(this.entranceX - 1, this.entranceY - 1, CORRIDOR);
         this.baseGrid.set(this.entranceX - 1, this.entranceY + 2, CORRIDOR);
         this.baseGrid.set(0, 0, 11, 1, BLOCKED);
         this.baseGrid.set(0, 9, 11, 11, BLOCKED);
-        this.recursiveCorridor(this.baseGrid, this.entranceX, this.entranceY - 2, Direction.WEST, 6);
-        this.recursiveCorridor(this.baseGrid, this.entranceX, this.entranceY + 3, Direction.WEST, 6);
-        this.recursiveCorridor(this.baseGrid, this.entranceX - 2, this.entranceY - 1, Direction.WEST, 3);
-        this.recursiveCorridor(this.baseGrid, this.entranceX - 2, this.entranceY + 2, Direction.WEST, 3);
+        this.recursiveCorridor(
+                this.baseGrid, this.entranceX, this.entranceY - 2, Direction.WEST, 6);
+        this.recursiveCorridor(
+                this.baseGrid, this.entranceX, this.entranceY + 3, Direction.WEST, 6);
+        this.recursiveCorridor(
+                this.baseGrid, this.entranceX - 2, this.entranceY - 1, Direction.WEST, 3);
+        this.recursiveCorridor(
+                this.baseGrid, this.entranceX - 2, this.entranceY + 2, Direction.WEST, 3);
 
-        while (this.cleanEdges(this.baseGrid)) {
-        }
+        while (this.cleanEdges(this.baseGrid)) {}
 
         this.floorRooms = new SimpleGrid[3];
         this.floorRooms[0] = new SimpleGrid(11, 11, BLOCKED);
@@ -67,8 +85,18 @@ final class MansionGrid {
         this.floorRooms[2] = new SimpleGrid(11, 11, BLOCKED);
         this.identifyRooms(this.baseGrid, this.floorRooms[0]);
         this.identifyRooms(this.baseGrid, this.floorRooms[1]);
-        this.floorRooms[0].set(this.entranceX + 1, this.entranceY, this.entranceX + 1, this.entranceY + 1, ROOM_CORRIDOR_FLAG);
-        this.floorRooms[1].set(this.entranceX + 1, this.entranceY, this.entranceX + 1, this.entranceY + 1, ROOM_CORRIDOR_FLAG);
+        this.floorRooms[0].set(
+                this.entranceX + 1,
+                this.entranceY,
+                this.entranceX + 1,
+                this.entranceY + 1,
+                ROOM_CORRIDOR_FLAG);
+        this.floorRooms[1].set(
+                this.entranceX + 1,
+                this.entranceY,
+                this.entranceX + 1,
+                this.entranceY + 1,
+                ROOM_CORRIDOR_FLAG);
         this.thirdFloorGrid = new SimpleGrid(this.baseGrid.width, this.baseGrid.height, BLOCKED);
         this.setupThirdFloor();
         this.identifyRooms(this.thirdFloorGrid, this.floorRooms[2]);
@@ -85,7 +113,8 @@ final class MansionGrid {
 
     Direction get1x2RoomDirection(SimpleGrid grid, int x, int y, int floorNum, int roomId) {
         for (var direction : Direction.HORIZONTAL) {
-            if (this.isRoomId(grid, x + direction.stepX(), y + direction.stepZ(), floorNum, roomId)) {
+            if (this.isRoomId(
+                    grid, x + direction.stepX(), y + direction.stepZ(), floorNum, roomId)) {
                 return direction;
             }
         }
@@ -102,12 +131,18 @@ final class MansionGrid {
 
         for (var attempt = 0; attempt < 8; attempt++) {
             var nextDir = Direction.from2DDataValue(this.random.nextInt(4));
-            if (nextDir != heading.opposite() && (nextDir != Direction.EAST || !this.random.nextBoolean())) {
+            if (nextDir != heading.opposite()
+                    && (nextDir != Direction.EAST || !this.random.nextBoolean())) {
                 var nx = x + heading.stepX();
                 var ny = y + heading.stepZ();
                 if (grid.get(nx + nextDir.stepX(), ny + nextDir.stepZ()) == CLEAR
                         && grid.get(nx + nextDir.stepX() * 2, ny + nextDir.stepZ() * 2) == CLEAR) {
-                    this.recursiveCorridor(grid, x + heading.stepX() + nextDir.stepX(), y + heading.stepZ() + nextDir.stepZ(), nextDir, depth - 1);
+                    this.recursiveCorridor(
+                            grid,
+                            x + heading.stepX() + nextDir.stepX(),
+                            y + heading.stepZ() + nextDir.stepZ(),
+                            nextDir,
+                            depth - 1);
                     break;
                 }
             }
@@ -118,7 +153,8 @@ final class MansionGrid {
         grid.setif(x + cw.stepX(), y + cw.stepZ(), CLEAR, ROOM);
         grid.setif(x + ccw.stepX(), y + ccw.stepZ(), CLEAR, ROOM);
         grid.setif(x + heading.stepX() + cw.stepX(), y + heading.stepZ() + cw.stepZ(), CLEAR, ROOM);
-        grid.setif(x + heading.stepX() + ccw.stepX(), y + heading.stepZ() + ccw.stepZ(), CLEAR, ROOM);
+        grid.setif(
+                x + heading.stepX() + ccw.stepX(), y + heading.stepZ() + ccw.stepZ(), CLEAR, ROOM);
         grid.setif(x + heading.stepX() * 2, y + heading.stepZ() * 2, CLEAR, ROOM);
         grid.setif(x + cw.stepX() * 2, y + cw.stepZ() * 2, CLEAR, ROOM);
         grid.setif(x + ccw.stepX() * 2, y + ccw.stepZ() * 2, CLEAR, ROOM);
@@ -173,14 +209,17 @@ final class MansionGrid {
         }
 
         if (potentialRooms.isEmpty()) {
-            this.thirdFloorGrid.set(0, 0, this.thirdFloorGrid.width, this.thirdFloorGrid.height, BLOCKED);
+            this.thirdFloorGrid.set(
+                    0, 0, this.thirdFloorGrid.width, this.thirdFloorGrid.height, BLOCKED);
             return;
         }
 
         var roomPos = potentialRooms.get(this.random.nextInt(potentialRooms.size()));
         var roomData = floor.get(roomPos.x(), roomPos.y());
         floor.set(roomPos.x(), roomPos.y(), roomData | ROOM_STAIRS_FLAG);
-        var roomDir = this.get1x2RoomDirection(this.baseGrid, roomPos.x(), roomPos.y(), 1, roomData & ROOM_ID_MASK);
+        var roomDir =
+                this.get1x2RoomDirection(
+                        this.baseGrid, roomPos.x(), roomPos.y(), 1, roomData & ROOM_ID_MASK);
         var roomEndX = roomPos.x() + roomDir.stepX();
         var roomEndY = roomPos.y() + roomDir.stepZ();
 
@@ -199,22 +238,28 @@ final class MansionGrid {
 
         var potentialCorridors = new ArrayList<Direction>();
         for (var direction : Direction.HORIZONTAL) {
-            if (this.thirdFloorGrid.get(roomEndX + direction.stepX(), roomEndY + direction.stepZ()) == CLEAR) {
+            if (this.thirdFloorGrid.get(roomEndX + direction.stepX(), roomEndY + direction.stepZ())
+                    == CLEAR) {
                 potentialCorridors.add(direction);
             }
         }
 
         if (potentialCorridors.isEmpty()) {
-            this.thirdFloorGrid.set(0, 0, this.thirdFloorGrid.width, this.thirdFloorGrid.height, BLOCKED);
+            this.thirdFloorGrid.set(
+                    0, 0, this.thirdFloorGrid.width, this.thirdFloorGrid.height, BLOCKED);
             floor.set(roomPos.x(), roomPos.y(), roomData);
             return;
         }
 
         var corridorDir = potentialCorridors.get(this.random.nextInt(potentialCorridors.size()));
-        this.recursiveCorridor(this.thirdFloorGrid, roomEndX + corridorDir.stepX(), roomEndY + corridorDir.stepZ(), corridorDir, 4);
+        this.recursiveCorridor(
+                this.thirdFloorGrid,
+                roomEndX + corridorDir.stepX(),
+                roomEndY + corridorDir.stepZ(),
+                corridorDir,
+                4);
 
-        while (this.cleanEdges(this.thirdFloorGrid)) {
-        }
+        while (this.cleanEdges(this.thirdFloorGrid)) {}
     }
 
     private void identifyRooms(SimpleGrid fromGrid, SimpleGrid roomGrid) {
@@ -328,8 +373,7 @@ final class MansionGrid {
         }
     }
 
-    private record GridPos(int x, int y) {
-    }
+    private record GridPos(int x, int y) {}
 
     /** Port of vanilla {@code WoodlandMansionPieces.SimpleGrid}. */
     static final class SimpleGrid {
@@ -360,7 +404,9 @@ final class MansionGrid {
         }
 
         int get(int x, int y) {
-            return x >= 0 && x < this.width && y >= 0 && y < this.height ? this.grid[x][y] : this.valueIfOutside;
+            return x >= 0 && x < this.width && y >= 0 && y < this.height
+                    ? this.grid[x][y]
+                    : this.valueIfOutside;
         }
 
         void setif(int x, int y, int ifValue, int value) {
@@ -370,8 +416,10 @@ final class MansionGrid {
         }
 
         boolean edgesTo(int x, int y, int ifValue) {
-            return this.get(x - 1, y) == ifValue || this.get(x + 1, y) == ifValue
-                    || this.get(x, y + 1) == ifValue || this.get(x, y - 1) == ifValue;
+            return this.get(x - 1, y) == ifValue
+                    || this.get(x + 1, y) == ifValue
+                    || this.get(x, y + 1) == ifValue
+                    || this.get(x, y - 1) == ifValue;
         }
     }
 }

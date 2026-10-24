@@ -4,13 +4,14 @@ import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.LakeConfiguration;
 
 /**
- * Port of vanilla's {@code LakeFeature}. Random call order matches vanilla
- * exactly. The biome-driven ice pass for freezing water lake surfaces is not
- * applied (it consumes no random calls in vanilla).
+ * Port of vanilla's {@code LakeFeature}. Random call order matches vanilla exactly. The
+ * biome-driven ice pass for freezing water lake surfaces is not applied (it consumes no random
+ * calls in vanilla).
  */
 public final class LakeFeature implements Feature<LakeConfiguration> {
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<LakeConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<LakeConfiguration, T> context) {
         var origin = context.origin();
         var level = context.accessor();
         var random = context.random();
@@ -52,13 +53,14 @@ public final class LakeFeature implements Feature<LakeConfiguration> {
         for (var xx = 0; xx < 16; xx++) {
             for (var zz = 0; zz < 16; zz++) {
                 for (var yy = 0; yy < 8; yy++) {
-                    var isBorder = !grid[(xx * 16 + zz) * 8 + yy]
-                            && (xx < 15 && grid[((xx + 1) * 16 + zz) * 8 + yy]
-                                    || xx > 0 && grid[((xx - 1) * 16 + zz) * 8 + yy]
-                                    || zz < 15 && grid[(xx * 16 + zz + 1) * 8 + yy]
-                                    || zz > 0 && grid[(xx * 16 + (zz - 1)) * 8 + yy]
-                                    || yy < 7 && grid[(xx * 16 + zz) * 8 + yy + 1]
-                                    || yy > 0 && grid[(xx * 16 + zz) * 8 + (yy - 1)]);
+                    var isBorder =
+                            !grid[(xx * 16 + zz) * 8 + yy]
+                                    && (xx < 15 && grid[((xx + 1) * 16 + zz) * 8 + yy]
+                                            || xx > 0 && grid[((xx - 1) * 16 + zz) * 8 + yy]
+                                            || zz < 15 && grid[(xx * 16 + zz + 1) * 8 + yy]
+                                            || zz > 0 && grid[(xx * 16 + (zz - 1)) * 8 + yy]
+                                            || yy < 7 && grid[(xx * 16 + zz) * 8 + yy + 1]
+                                            || yy > 0 && grid[(xx * 16 + zz) * 8 + (yy - 1)]);
                     if (!isBorder) {
                         continue;
                     }
@@ -69,7 +71,9 @@ public final class LakeFeature implements Feature<LakeConfiguration> {
                         return false;
                     }
 
-                    if (yy < 4 && !blockState.solid() && !blockState.compare(fluid, Block.Comparator.STATE)) {
+                    if (yy < 4
+                            && !blockState.solid()
+                            && !blockState.compare(fluid, Block.Comparator.STATE)) {
                         return false;
                     }
 
@@ -101,17 +105,20 @@ public final class LakeFeature implements Feature<LakeConfiguration> {
             for (var xx = 0; xx < 16; xx++) {
                 for (var zz = 0; zz < 16; zz++) {
                     for (var yy = 0; yy < 8; yy++) {
-                        var isBorder = !grid[(xx * 16 + zz) * 8 + yy]
-                                && (xx < 15 && grid[((xx + 1) * 16 + zz) * 8 + yy]
-                                        || xx > 0 && grid[((xx - 1) * 16 + zz) * 8 + yy]
-                                        || zz < 15 && grid[(xx * 16 + zz + 1) * 8 + yy]
-                                        || zz > 0 && grid[(xx * 16 + (zz - 1)) * 8 + yy]
-                                        || yy < 7 && grid[(xx * 16 + zz) * 8 + yy + 1]
-                                        || yy > 0 && grid[(xx * 16 + zz) * 8 + (yy - 1)]);
+                        var isBorder =
+                                !grid[(xx * 16 + zz) * 8 + yy]
+                                        && (xx < 15 && grid[((xx + 1) * 16 + zz) * 8 + yy]
+                                                || xx > 0 && grid[((xx - 1) * 16 + zz) * 8 + yy]
+                                                || zz < 15 && grid[(xx * 16 + zz + 1) * 8 + yy]
+                                                || zz > 0 && grid[(xx * 16 + (zz - 1)) * 8 + yy]
+                                                || yy < 7 && grid[(xx * 16 + zz) * 8 + yy + 1]
+                                                || yy > 0 && grid[(xx * 16 + zz) * 8 + (yy - 1)]);
                         if (isBorder && (yy < 4 || random.nextInt(2) != 0)) {
                             var offsetPos = origin.add(xx, yy, zz);
                             var blockState = level.getBlock(offsetPos);
-                            if (blockState.solid() && config.canReplaceWithBarrier().test(predicateContext, offsetPos)) {
+                            if (blockState.solid()
+                                    && config.canReplaceWithBarrier()
+                                            .test(predicateContext, offsetPos)) {
                                 level.setBlock(offsetPos, barrier);
                             }
                         }

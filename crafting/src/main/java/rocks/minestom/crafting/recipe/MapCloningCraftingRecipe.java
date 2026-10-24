@@ -1,13 +1,12 @@
 package rocks.minestom.crafting.recipe;
 
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import java.util.ArrayList;
+import java.util.List;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import rocks.minestom.crafting.CraftingGrid;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public final class MapCloningCraftingRecipe implements CraftingRecipe {
 

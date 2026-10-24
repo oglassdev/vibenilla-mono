@@ -1,14 +1,13 @@
 package rocks.minestom.worldgen.feature.treedecorators;
 
 /**
- * Vanilla's {@code TrunkVineDecorator}: each log has a 2/3 chance per
- * horizontal side to sprout a vine facing back at the trunk.
+ * Vanilla's {@code TrunkVineDecorator}: each log has a 2/3 chance per horizontal side to sprout a
+ * vine facing back at the trunk.
  */
 public final class TrunkVineDecorator implements TreeDecorator {
     public static final TrunkVineDecorator INSTANCE = new TrunkVineDecorator();
 
-    private TrunkVineDecorator() {
-    }
+    private TrunkVineDecorator() {}
 
     @Override
     public void place(TreeDecorator.Context context) {

@@ -24,12 +24,20 @@ public final class ChestPlacementRule extends BlockPlacementRule {
         var waterlogged = replaced.compare(Block.WATER);
         var type = "single";
 
-        if (shifting && clickedFace != null && clickedFace != BlockFace.TOP && clickedFace != BlockFace.BOTTOM) {
-            var neighborFacing = this.candidatePartnerFacing(instance, placePosition, clickedFace.getOppositeFace(), false, true);
+        if (shifting
+                && clickedFace != null
+                && clickedFace != BlockFace.TOP
+                && clickedFace != BlockFace.BOTTOM) {
+            var neighborFacing =
+                    this.candidatePartnerFacing(
+                            instance, placePosition, clickedFace.getOppositeFace(), false, true);
 
             if (neighborFacing != null && !neighborFacing.isSimilar(clickedFace)) {
                 facing = neighborFacing;
-                type = counterClockwise(neighborFacing) == clickedFace.getOppositeFace() ? "right" : "left";
+                type =
+                        counterClockwise(neighborFacing) == clickedFace.getOppositeFace()
+                                ? "right"
+                                : "left";
             }
         }
 
@@ -37,7 +45,8 @@ public final class ChestPlacementRule extends BlockPlacementRule {
             type = this.getChestType(instance, placePosition, facing, false, true);
         }
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withHandler(ConsumeInteractionBlockHandler.INSTANCE)
                 .withProperty("facing", facing.name().toLowerCase())
                 .withProperty("type", type)
@@ -50,7 +59,8 @@ public final class ChestPlacementRule extends BlockPlacementRule {
         var fromFace = updateState.fromFace();
         var type = currentBlock.getProperty("type");
 
-        if (fromFace == BlockFace.TOP || fromFace == BlockFace.BOTTOM
+        if (fromFace == BlockFace.TOP
+                || fromFace == BlockFace.BOTTOM
                 || (!"single".equals(type) && !"left".equals(type) && !"right".equals(type))) {
             return currentBlock;
         }
@@ -61,24 +71,45 @@ public final class ChestPlacementRule extends BlockPlacementRule {
             return currentBlock;
         }
 
-        var updatedType = this.getChestType(updateState.instance(), updateState.blockPosition(), facing, true, false);
+        var updatedType =
+                this.getChestType(
+                        updateState.instance(), updateState.blockPosition(), facing, true, false);
         return currentBlock.withProperty("type", updatedType);
     }
 
     private String getChestType(
-            Block.Getter blockGetter, Point position, BlockFace facing, boolean allowDoublePartner, boolean allowSinglePartner) {
-        if (facing == this.candidatePartnerFacing(blockGetter, position, clockwise(facing), allowDoublePartner, allowSinglePartner)) {
+            Block.Getter blockGetter,
+            Point position,
+            BlockFace facing,
+            boolean allowDoublePartner,
+            boolean allowSinglePartner) {
+        if (facing
+                == this.candidatePartnerFacing(
+                        blockGetter,
+                        position,
+                        clockwise(facing),
+                        allowDoublePartner,
+                        allowSinglePartner)) {
             return "left";
         }
 
-        return facing == this.candidatePartnerFacing(blockGetter, position, counterClockwise(facing), allowDoublePartner, allowSinglePartner)
+        return facing
+                        == this.candidatePartnerFacing(
+                                blockGetter,
+                                position,
+                                counterClockwise(facing),
+                                allowDoublePartner,
+                                allowSinglePartner)
                 ? "right"
                 : "single";
     }
 
     private @Nullable BlockFace candidatePartnerFacing(
-            Block.Getter blockGetter, Point position, BlockFace neighborDirection,
-            boolean allowDoublePartner, boolean allowSinglePartner) {
+            Block.Getter blockGetter,
+            Point position,
+            BlockFace neighborDirection,
+            boolean allowDoublePartner,
+            boolean allowSinglePartner) {
         var neighborBlock = blockGetter.getBlock(position.relative(neighborDirection));
 
         if (!neighborBlock.compare(this.block)) {
@@ -91,14 +122,16 @@ public final class ChestPlacementRule extends BlockPlacementRule {
             if (!allowSinglePartner) {
                 return null;
             }
-        } else if (!allowDoublePartner || !isCompatibleDoublePartner(neighborType, neighborDirection, neighborBlock)) {
+        } else if (!allowDoublePartner
+                || !isCompatibleDoublePartner(neighborType, neighborDirection, neighborBlock)) {
             return null;
         }
 
         return parseFacing(neighborBlock.getProperty("facing"));
     }
 
-    private static boolean isCompatibleDoublePartner(String neighborType, BlockFace neighborDirection, Block neighborBlock) {
+    private static boolean isCompatibleDoublePartner(
+            String neighborType, BlockFace neighborDirection, Block neighborBlock) {
         var neighborFacing = parseFacing(neighborBlock.getProperty("facing"));
 
         if (neighborFacing == null) {
@@ -107,7 +140,8 @@ public final class ChestPlacementRule extends BlockPlacementRule {
 
         var directionToPartner = neighborDirection.getOppositeFace();
         return "left".equals(neighborType) && directionToPartner == clockwise(neighborFacing)
-                || "right".equals(neighborType) && directionToPartner == counterClockwise(neighborFacing);
+                || "right".equals(neighborType)
+                        && directionToPartner == counterClockwise(neighborFacing);
     }
 
     private static @Nullable BlockFace parseFacing(String facingName) {

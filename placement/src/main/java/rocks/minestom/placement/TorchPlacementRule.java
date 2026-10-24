@@ -11,7 +11,10 @@ public final class TorchPlacementRule extends BlockPlacementRule {
 
     @Override
     public Block blockPlace(PlacementState placementState) {
-        var below = placementState.instance().getBlock(placementState.placePosition().relative(BlockFace.BOTTOM));
+        var below =
+                placementState
+                        .instance()
+                        .getBlock(placementState.placePosition().relative(BlockFace.BOTTOM));
 
         if (!Utility.canSupportCenter(below, BlockFace.TOP)) {
             return null;
@@ -26,7 +29,12 @@ public final class TorchPlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
-        return Utility.canSupportCenter(below, BlockFace.TOP) ? updateState.currentBlock() : Block.AIR;
+        var below =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+        return Utility.canSupportCenter(below, BlockFace.TOP)
+                ? updateState.currentBlock()
+                : Block.AIR;
     }
 }

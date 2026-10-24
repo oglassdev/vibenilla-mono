@@ -1,5 +1,6 @@
 package io.github.togar2.pvp.player;
 
+import io.github.togar2.pvp.collision.PhysicsResult;
 import io.github.togar2.pvp.feature.state.VanillaPlayerStateFeature;
 import io.github.togar2.pvp.utils.BlockUtil;
 import io.github.togar2.pvp.utils.ChunkBlockGetter;
@@ -7,10 +8,10 @@ import io.github.togar2.pvp.utils.CollisionUtil;
 import io.github.togar2.pvp.utils.FluidUtil;
 import io.github.togar2.pvp.utils.FluidUtil.FluidHeights;
 import io.github.togar2.pvp.utils.ViewUtil;
+import java.util.function.Function;
 import net.kyori.adventure.sound.Sound;
 import net.minestom.server.ServerFlag;
 import net.minestom.server.collision.Aerodynamics;
-import io.github.togar2.pvp.collision.PhysicsResult;
 import net.minestom.server.collision.PhysicsUtils;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
@@ -23,12 +24,9 @@ import net.minestom.server.instance.block.Block;
 import net.minestom.server.network.player.GameProfile;
 import net.minestom.server.network.player.PlayerConnection;
 import net.minestom.server.potion.PotionEffect;
-import net.minestom.server.potion.TimedPotion;
 import net.minestom.server.sound.SoundEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.function.Function;
 
 public class CombatPlayerImpl extends Player implements CombatPlayer {
     private boolean velocityUpdate = false;
@@ -43,10 +41,12 @@ public class CombatPlayerImpl extends Player implements CombatPlayer {
     @Override
     public void setVelocity(@NotNull Vec velocity) {
         var entityVelocityEvent = new EntityVelocityEvent(this, velocity);
-        EventDispatcher.callCancellable(entityVelocityEvent, () -> {
-            this.velocity = entityVelocityEvent.getVelocity();
-            this.velocityUpdate = true;
-        });
+        EventDispatcher.callCancellable(
+                entityVelocityEvent,
+                () -> {
+                    this.velocity = entityVelocityEvent.getVelocity();
+                    this.velocityUpdate = true;
+                });
     }
 
     @Override
@@ -75,7 +75,8 @@ public class CombatPlayerImpl extends Player implements CombatPlayer {
         var position = this.position;
 
         var knownMovement = this.getTag(VanillaPlayerStateFeature.KNOWN_MOVEMENT);
-        if (knownMovement != null && knownMovement.lengthSquared() > velocity.lengthSquared()) velocity = knownMovement;
+        if (knownMovement != null && knownMovement.lengthSquared() > velocity.lengthSquared())
+            velocity = knownMovement;
 
         var aerodynamics = this.getAerodynamics();
         if (velocity.y() < 0 && this.hasEffect(PotionEffect.SLOW_FALLING))
@@ -85,8 +86,15 @@ public class CombatPlayerImpl extends Player implements CombatPlayer {
         var stuckSpeedMultiplier = this.stuckSpeedMultiplier;
         for (var tick = 0; tick < ticks; tick++) {
             var blockGetter = new ChunkBlockGetter(this.instance, this.currentChunk, Block.STONE);
-            var movementResult = this.simulateMovement(position, velocity, stuckSpeedMultiplier,
-                    aerodynamics, this.onGround, blockGetter, prevPhysicsResult);
+            var movementResult =
+                    this.simulateMovement(
+                            position,
+                            velocity,
+                            stuckSpeedMultiplier,
+                            aerodynamics,
+                            this.onGround,
+                            blockGetter,
+                            prevPhysicsResult);
             var physicsResult = movementResult.physicsResult();
             prevPhysicsResult = physicsResult;
             stuckSpeedMultiplier = movementResult.stuckSpeedMultiplier();
@@ -98,9 +106,11 @@ public class CombatPlayerImpl extends Player implements CombatPlayer {
 
             var levitation = this.getEffect(PotionEffect.LEVITATION);
             if (levitation != null) {
-                velocity = velocity.withY(
-                        ((0.05 * (double) (levitation.potion().amplifier() + 1) - (velocity.y())) * 0.2)
-                );
+                velocity =
+                        velocity.withY(
+                                ((0.05 * (double) (levitation.potion().amplifier() + 1)
+                                                - (velocity.y()))
+                                        * 0.2));
             }
         }
 
@@ -120,8 +130,15 @@ public class CombatPlayerImpl extends Player implements CombatPlayer {
             aerodynamics = aerodynamics.withGravity(0.01);
 
         var blockGetter = new ChunkBlockGetter(this.instance, this.currentChunk, Block.STONE);
-        var movementResult = this.simulateMovement(this.position, this.velocity.div(ticksPerSecond), this.stuckSpeedMultiplier,
-                aerodynamics, this.onGround, blockGetter, this.previousPhysicsResult);
+        var movementResult =
+                this.simulateMovement(
+                        this.position,
+                        this.velocity.div(ticksPerSecond),
+                        this.stuckSpeedMultiplier,
+                        aerodynamics,
+                        this.onGround,
+                        blockGetter,
+                        this.previousPhysicsResult);
         var physicsResult = movementResult.physicsResult();
         this.previousPhysicsResult = physicsResult;
         this.stuckSpeedMultiplier = movementResult.stuckSpeedMultiplier();
@@ -138,11 +155,12 @@ public class CombatPlayerImpl extends Player implements CombatPlayer {
 
         var levitation = this.getEffect(PotionEffect.LEVITATION);
         if (levitation != null) {
-            this.velocity = this.velocity.withY(
-                    ((0.05 * (double)
-                            (levitation.potion().amplifier() + 1)
-                            - (this.velocity.y() / ticksPerSecond)) * 0.2) * ticksPerSecond
-            );
+            this.velocity =
+                    this.velocity.withY(
+                            ((0.05 * (double) (levitation.potion().amplifier() + 1)
+                                                    - (this.velocity.y() / ticksPerSecond))
+                                            * 0.2)
+                                    * ticksPerSecond);
         }
 
         this.sendImmediateVelocityUpdate();
@@ -150,27 +168,45 @@ public class CombatPlayerImpl extends Player implements CombatPlayer {
 
     private record MovementResult(PhysicsResult physicsResult, Vec stuckSpeedMultiplier) {}
 
-    private MovementResult simulateMovement(Pos position, Vec velocity, Vec stuckSpeedMultiplier,
-                                            Aerodynamics aerodynamics, boolean onGround,
-                                            Block.Getter blockGetter, @Nullable PhysicsResult previousPhysicsResult) {
-        var fluidHeights = this.isFlying()
-                ? new FluidHeights(0.0, 0.0) : FluidUtil.getFluidHeights(blockGetter, position, this.boundingBox);
+    private MovementResult simulateMovement(
+            Pos position,
+            Vec velocity,
+            Vec stuckSpeedMultiplier,
+            Aerodynamics aerodynamics,
+            boolean onGround,
+            Block.Getter blockGetter,
+            @Nullable PhysicsResult previousPhysicsResult) {
+        var fluidHeights =
+                this.isFlying()
+                        ? new FluidHeights(0.0, 0.0)
+                        : FluidUtil.getFluidHeights(blockGetter, position, this.boundingBox);
         var gravity = this.hasNoGravity() ? 0.0 : aerodynamics.gravity();
         var isFalling = velocity.y() <= 0.0;
 
         var stuck = stuckSpeedMultiplier.lengthSquared() > 1.0E-7;
         var delta = stuck ? velocity.mul(stuckSpeedMultiplier) : velocity;
 
-        var gliding = this.isFlyingWithElytra() && fluidHeights.water() <= 0.0 && fluidHeights.lava() <= 0.0
-                && !BlockUtil.isClimbable(blockGetter, position);
+        var gliding =
+                this.isFlyingWithElytra()
+                        && fluidHeights.water() <= 0.0
+                        && fluidHeights.lava() <= 0.0
+                        && !BlockUtil.isClimbable(blockGetter, position);
         if (gliding) delta = this.updateFallFlyingMovement(delta, gravity);
 
-        var physicsResult = this.hasPhysics
-                ? CollisionUtil.handlePhysics(blockGetter, this.boundingBox, position, delta, previousPhysicsResult, false)
-                : CollisionUtil.blocklessCollision(position, delta);
+        var physicsResult =
+                this.hasPhysics
+                        ? CollisionUtil.handlePhysics(
+                                blockGetter,
+                                this.boundingBox,
+                                position,
+                                delta,
+                                previousPhysicsResult,
+                                false)
+                        : CollisionUtil.blocklessCollision(position, delta);
 
-        var newPosition = CollisionUtil.applyWorldBorder(this.instance.getWorldBorder(),
-                position, physicsResult.newPosition());
+        var newPosition =
+                CollisionUtil.applyWorldBorder(
+                        this.instance.getWorldBorder(), position, physicsResult.newPosition());
         var movedVelocity = stuck ? Vec.ZERO : physicsResult.newVelocity();
 
         Vec newVelocity;
@@ -178,27 +214,49 @@ public class CombatPlayerImpl extends Player implements CombatPlayer {
         if (fluidHeights.water() > 0.0) {
             var collidedHorizontally = physicsResult.collisionX() || physicsResult.collisionZ();
             var climbable = collidedHorizontally && BlockUtil.isClimbable(blockGetter, newPosition);
-            newVelocity = this.travelInWater(movedVelocity, gravity, isFalling, onGround, climbable);
+            newVelocity =
+                    this.travelInWater(movedVelocity, gravity, isFalling, onGround, climbable);
         } else if (fluidHeights.lava() > 0.0) {
             newVelocity = this.travelInLava(movedVelocity, gravity, isFalling, fluidHeights.lava());
         } else if (gliding) {
             newVelocity = movedVelocity;
         } else {
-            newVelocity = PhysicsUtils.updateVelocity(newPosition, movedVelocity, blockGetter, aerodynamics,
-                    !newPosition.samePoint(position), this.isFlying(), onGround, this.hasNoGravity());
+            newVelocity =
+                    PhysicsUtils.updateVelocity(
+                            newPosition,
+                            movedVelocity,
+                            blockGetter,
+                            aerodynamics,
+                            !newPosition.samePoint(position),
+                            this.isFlying(),
+                            onGround,
+                            this.hasNoGravity());
         }
 
-        if (physicsResult == previousPhysicsResult && newVelocity.samePoint(physicsResult.newVelocity())
+        if (physicsResult == previousPhysicsResult
+                && newVelocity.samePoint(physicsResult.newVelocity())
                 && newPosition.samePoint(physicsResult.newPosition())) {
-            return new MovementResult(physicsResult, this.collectStuckSpeedMultiplier(blockGetter, newPosition));
+            return new MovementResult(
+                    physicsResult, this.collectStuckSpeedMultiplier(blockGetter, newPosition));
         }
 
-        var newPhysicsResult = new PhysicsResult(newPosition, newVelocity, physicsResult.isOnGround(),
-                physicsResult.collisionX(), physicsResult.collisionY(), physicsResult.collisionZ(),
-                physicsResult.originalDelta(), physicsResult.collisionPoints(), physicsResult.collisionShapes(),
-                physicsResult.collisionShapePositions(), physicsResult.hasCollision(), physicsResult.collisionFraction());
+        var newPhysicsResult =
+                new PhysicsResult(
+                        newPosition,
+                        newVelocity,
+                        physicsResult.isOnGround(),
+                        physicsResult.collisionX(),
+                        physicsResult.collisionY(),
+                        physicsResult.collisionZ(),
+                        physicsResult.originalDelta(),
+                        physicsResult.collisionPoints(),
+                        physicsResult.collisionShapes(),
+                        physicsResult.collisionShapePositions(),
+                        physicsResult.hasCollision(),
+                        physicsResult.collisionFraction());
 
-        return new MovementResult(newPhysicsResult, this.collectStuckSpeedMultiplier(blockGetter, newPosition));
+        return new MovementResult(
+                newPhysicsResult, this.collectStuckSpeedMultiplier(blockGetter, newPosition));
     }
 
     private Vec updateFallFlyingMovement(Vec movement, double gravity) {
@@ -211,25 +269,35 @@ public class CombatPlayerImpl extends Player implements CombatPlayer {
         movement = movement.add(0.0, gravity * (-1.0 + lift * 0.75), 0.0);
         if (movement.y() < 0.0 && lookHorizontal > 0.0) {
             var convert = movement.y() * -0.1 * lift;
-            movement = movement.add(look.x() * convert / lookHorizontal, convert, look.z() * convert / lookHorizontal);
+            movement =
+                    movement.add(
+                            look.x() * convert / lookHorizontal,
+                            convert,
+                            look.z() * convert / lookHorizontal);
         }
 
         if (lean < 0.0 && lookHorizontal > 0.0) {
             var convert = moveHorizontal * -Math.sin(lean) * 0.04;
-            movement = movement.add(-look.x() * convert / lookHorizontal, convert * 3.2, -look.z() * convert / lookHorizontal);
+            movement =
+                    movement.add(
+                            -look.x() * convert / lookHorizontal,
+                            convert * 3.2,
+                            -look.z() * convert / lookHorizontal);
         }
 
         if (lookHorizontal > 0.0) {
-            movement = movement.add(
-                    (look.x() / lookHorizontal * moveHorizontal - movement.x()) * 0.1, 0.0,
-                    (look.z() / lookHorizontal * moveHorizontal - movement.z()) * 0.1
-            );
+            movement =
+                    movement.add(
+                            (look.x() / lookHorizontal * moveHorizontal - movement.x()) * 0.1,
+                            0.0,
+                            (look.z() / lookHorizontal * moveHorizontal - movement.z()) * 0.1);
         }
 
         return movement.mul(0.99F, 0.98F, 0.99F);
     }
 
-    private Vec travelInWater(Vec movement, double gravity, boolean isFalling, boolean onGround, boolean climbable) {
+    private Vec travelInWater(
+            Vec movement, double gravity, boolean isFalling, boolean onGround, boolean climbable) {
         var slowDown = this.isSprinting() ? 0.9F : 0.8F;
         var waterWalker = (float) this.getAttributeValue(Attribute.WATER_MOVEMENT_EFFICIENCY);
 
@@ -241,14 +309,17 @@ public class CombatPlayerImpl extends Player implements CombatPlayer {
 
         if (climbable) movement = movement.withY(0.2);
 
-        return this.applyFluidFallingAdjustment(movement.mul(slowDown, 0.8F, slowDown), gravity, isFalling);
+        return this.applyFluidFallingAdjustment(
+                movement.mul(slowDown, 0.8F, slowDown), gravity, isFalling);
     }
 
     private Vec travelInLava(Vec movement, double gravity, boolean isFalling, double lavaHeight) {
         var jumpThreshold = this.getEyeHeight() < 0.4 ? 0.0 : 0.4;
 
         if (lavaHeight <= jumpThreshold) {
-            movement = this.applyFluidFallingAdjustment(movement.mul(0.5, 0.8F, 0.5), gravity, isFalling);
+            movement =
+                    this.applyFluidFallingAdjustment(
+                            movement.mul(0.5, 0.8F, 0.5), gravity, isFalling);
         } else {
             movement = movement.mul(0.5);
         }
@@ -263,7 +334,8 @@ public class CombatPlayerImpl extends Player implements CombatPlayer {
 
         double verticalMovement;
 
-        if (isFalling && Math.abs(movement.y() - 0.005) >= 0.003
+        if (isFalling
+                && Math.abs(movement.y() - 0.005) >= 0.003
                 && Math.abs(movement.y() - gravity / 16.0) < 0.003) {
             verticalMovement = -0.003;
         } else {
@@ -276,10 +348,12 @@ public class CombatPlayerImpl extends Player implements CombatPlayer {
     private Vec collectStuckSpeedMultiplier(Block.Getter blockGetter, Pos position) {
         if (this.isFlying()) return Vec.ZERO;
 
-        return BlockUtil.getStuckSpeedMultiplier(blockGetter, position, this.boundingBox, this.hasEffect(PotionEffect.WEAVING));
+        return BlockUtil.getStuckSpeedMultiplier(
+                blockGetter, position, this.boundingBox, this.hasEffect(PotionEffect.WEAVING));
     }
 
-    private void handleFallFlyingCollision(PhysicsResult physicsResult, double oldHorizontalSpeed, double newHorizontalSpeed) {
+    private void handleFallFlyingCollision(
+            PhysicsResult physicsResult, double oldHorizontalSpeed, double newHorizontalSpeed) {
         if (!this.isFlyingWithElytra()) return;
         if (!physicsResult.collisionX() && !physicsResult.collisionZ()) return;
 
@@ -287,12 +361,16 @@ public class CombatPlayerImpl extends Player implements CombatPlayer {
         var damage = (float) (speedDifference * 10.0 - 3.0);
         if (!(damage > 0.0F)) return;
 
-        ViewUtil.viewersAndSelf(this).playSound(Sound.sound(
-                damage > 4.0F ? SoundEvent.ENTITY_PLAYER_BIG_FALL : SoundEvent.ENTITY_PLAYER_SMALL_FALL,
-                Sound.Source.PLAYER,
-                1.0F,
-                1.0F
-        ), this);
+        ViewUtil.viewersAndSelf(this)
+                .playSound(
+                        Sound.sound(
+                                damage > 4.0F
+                                        ? SoundEvent.ENTITY_PLAYER_BIG_FALL
+                                        : SoundEvent.ENTITY_PLAYER_SMALL_FALL,
+                                Sound.Source.PLAYER,
+                                1.0F,
+                                1.0F),
+                        this);
 
         this.damage(DamageType.FLY_INTO_WALL, damage);
     }

@@ -6,9 +6,13 @@ import rocks.minestom.worldgen.feature.configurations.SimpleBlockConfiguration;
 
 public final class SimpleBlockFeature implements Feature<SimpleBlockConfiguration> {
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<SimpleBlockConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<SimpleBlockConfiguration, T> context) {
         var targetPosition = context.origin();
-        var toPlace = context.config().toPlace().getState(context.accessor(), context.random(), targetPosition);
+        var toPlace =
+                context.config()
+                        .toPlace()
+                        .getState(context.accessor(), context.random(), targetPosition);
         if (!this.canSurvive(context.accessor(), targetPosition, toPlace)) {
             return false;
         }
@@ -29,10 +33,10 @@ public final class SimpleBlockFeature implements Feature<SimpleBlockConfiguratio
     }
 
     /**
-     * Approximation of vanilla's {@code state.canSurvive(level, pos)}: plants
-     * need plant ground below, other non-solid blocks need support, and full
-     * blocks survive anywhere. Vanilla does not require the target position to
-     * be empty here; that gating comes from the placement block predicates.
+     * Approximation of vanilla's {@code state.canSurvive(level, pos)}: plants need plant ground
+     * below, other non-solid blocks need support, and full blocks survive anywhere. Vanilla does
+     * not require the target position to be empty here; that gating comes from the placement block
+     * predicates.
      */
     private boolean canSurvive(Block.Getter accessor, BlockVec position, Block toPlace) {
         var key = toPlace.key().asString();
@@ -42,10 +46,11 @@ public final class SimpleBlockFeature implements Feature<SimpleBlockConfiguratio
 
         // Vanilla DryVegetationBlock.mayPlaceOn: supports_dry_vegetation
         // (sand, terracotta plus the vegetation substrates)
-        if (key.equals("minecraft:dead_bush") || key.equals("minecraft:short_dry_grass")
+        if (key.equals("minecraft:dead_bush")
+                || key.equals("minecraft:short_dry_grass")
                 || key.equals("minecraft:tall_dry_grass")) {
-            return BlockSupports.isInTag("minecraft:supports_dry_vegetation",
-                    accessor.getBlock(position.sub(0, 1, 0)));
+            return BlockSupports.isInTag(
+                    "minecraft:supports_dry_vegetation", accessor.getBlock(position.sub(0, 1, 0)));
         }
 
         // Vanilla MushroomBlock.canSurvive: an overriding floor (mycelium,
@@ -77,7 +82,8 @@ public final class SimpleBlockFeature implements Feature<SimpleBlockConfiguratio
         // canSupportCenter of the block above, not below - a mineshaft
         // cobweb ceiling is NOT support, and Minestom's isSolid says it is)
         if (key.equals("minecraft:spore_blossom") || key.equals("minecraft:hanging_roots")) {
-            return SturdyFaces.isFaceSturdy(accessor.getBlock(position.add(0, 1, 0)),
+            return SturdyFaces.isFaceSturdy(
+                    accessor.getBlock(position.add(0, 1, 0)),
                     net.minestom.server.instance.block.BlockFace.BOTTOM);
         }
 

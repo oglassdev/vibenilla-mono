@@ -1,16 +1,18 @@
 package rocks.minestom.worldgen.feature.valueproviders;
 
+import java.util.List;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.List;
-
 public final class WeightedListIntProvider implements IntProvider {
-    public static final Codec<WeightedListIntProvider> CODEC = StructCodec.struct(
-            "distribution", Entry.CODEC.list(), provider -> provider.distribution,
-            WeightedListIntProvider::new);
+    public static final Codec<WeightedListIntProvider> CODEC =
+            StructCodec.struct(
+                    "distribution",
+                    Entry.CODEC.list(),
+                    provider -> provider.distribution,
+                    WeightedListIntProvider::new);
 
     private final List<Entry> distribution;
     private final int totalWeight;
@@ -77,9 +79,14 @@ public final class WeightedListIntProvider implements IntProvider {
     }
 
     public record Entry(IntProvider data, int weight) {
-        public static final Codec<Entry> CODEC = StructCodec.struct(
-                "data", IntProvider.CODEC, Entry::data,
-                "weight", Codec.INT, Entry::weight,
-                Entry::new);
+        public static final Codec<Entry> CODEC =
+                StructCodec.struct(
+                        "data",
+                        IntProvider.CODEC,
+                        Entry::data,
+                        "weight",
+                        Codec.INT,
+                        Entry::weight,
+                        Entry::new);
     }
 }

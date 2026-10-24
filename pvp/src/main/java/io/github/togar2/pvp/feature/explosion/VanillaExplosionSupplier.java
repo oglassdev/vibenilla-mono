@@ -7,9 +7,10 @@ import io.github.togar2.pvp.feature.fall.FallFeature;
 import io.github.togar2.pvp.player.CombatPlayer;
 import io.github.togar2.pvp.utils.ChunkBlockGetter;
 import io.github.togar2.pvp.utils.CollisionUtil;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.minestom.server.ServerFlag;
-import net.minestom.server.collision.BoundingBox;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
@@ -31,15 +32,11 @@ import net.minestom.server.item.Material;
 import net.minestom.server.network.packet.server.play.ExplosionPacket;
 import net.minestom.server.particle.Particle;
 import net.minestom.server.sound.SoundEvent;
-
 import net.minestom.server.utils.WeightedList;
 import net.minestom.server.utils.WeightedList.Entry;
 import net.minestom.server.utils.time.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 
 public final class VanillaExplosionSupplier implements ExplosionSupplier {
     private static final float LIQUID_EXPLOSION_RESISTANCE = 100.0F;
@@ -49,26 +46,41 @@ public final class VanillaExplosionSupplier implements ExplosionSupplier {
     private final EnchantmentFeature enchantmentFeature;
     private final FallFeature fallFeature;
 
-    private final WeightedList<ExplosionPacket.BlockParticleInfo> PARTICLES = WeightedList.of(
-            new Entry<>(new ExplosionPacket.BlockParticleInfo(Particle.POOF, 0.5F, 1.0F), 1),
-            new Entry<>(new ExplosionPacket.BlockParticleInfo(Particle.SMOKE, 1.0F, 1.0F), 1)
-    );
+    private final WeightedList<ExplosionPacket.BlockParticleInfo> PARTICLES =
+            WeightedList.of(
+                    new Entry<>(
+                            new ExplosionPacket.BlockParticleInfo(Particle.POOF, 0.5F, 1.0F), 1),
+                    new Entry<>(
+                            new ExplosionPacket.BlockParticleInfo(Particle.SMOKE, 1.0F, 1.0F), 1));
 
-    VanillaExplosionSupplier(ExplosionFeature feature, EnchantmentFeature enchantmentFeature, FallFeature fallFeature) {
+    VanillaExplosionSupplier(
+            ExplosionFeature feature,
+            EnchantmentFeature enchantmentFeature,
+            FallFeature fallFeature) {
         this.feature = feature;
         this.enchantmentFeature = enchantmentFeature;
         this.fallFeature = fallFeature;
     }
 
     @Override
-    public Explosion createExplosion(float centerX, float centerY, float centerZ,
-                                     float strength, @Nullable CompoundBinaryTag additionalData) {
-        return this.createExplosion(centerX, centerY, centerZ, strength, additionalData, null, null);
+    public Explosion createExplosion(
+            float centerX,
+            float centerY,
+            float centerZ,
+            float strength,
+            @Nullable CompoundBinaryTag additionalData) {
+        return this.createExplosion(
+                centerX, centerY, centerZ, strength, additionalData, null, null);
     }
 
-    public Explosion createExplosion(float centerX, float centerY, float centerZ,
-                                     float strength, @Nullable CompoundBinaryTag additionalData,
-                                     @Nullable Entity sourceEntityOverride, @Nullable Entity causingEntityOverride) {
+    public Explosion createExplosion(
+            float centerX,
+            float centerY,
+            float centerZ,
+            float strength,
+            @Nullable CompoundBinaryTag additionalData,
+            @Nullable Entity sourceEntityOverride,
+            @Nullable Entity causingEntityOverride) {
         return new Explosion(centerX, centerY, centerZ, strength) {
             private final Map<Player, Vec> playerKnockback = new HashMap<>();
 
@@ -84,8 +96,12 @@ public final class VanillaExplosionSupplier implements ExplosionSupplier {
                 if (breakBlocks) {
                     var blockGetter = new ChunkBlockGetter(instance, null, Block.AIR);
 
-                    var anchorWater = additionalData != null && additionalData.getBoolean("anchorWater", false);
-                    var originBlock = new Vec(this.getCenterX(), this.getCenterY(), this.getCenterZ()).apply(Vec.Operator.FLOOR);
+                    var anchorWater =
+                            additionalData != null
+                                    && additionalData.getBoolean("anchorWater", false);
+                    var originBlock =
+                            new Vec(this.getCenterX(), this.getCenterY(), this.getCenterZ())
+                                    .apply(Vec.Operator.FLOOR);
 
                     for (var x = 0; x < 16; ++x) {
                         for (var y = 0; y < 16; ++y) {
@@ -94,7 +110,11 @@ public final class VanillaExplosionSupplier implements ExplosionSupplier {
                                     var xLength = (float) x / 15.0F * 2.0F - 1.0F;
                                     var yLength = (float) y / 15.0F * 2.0F - 1.0F;
                                     var zLength = (float) z / 15.0F * 2.0F - 1.0F;
-                                    var length = Math.sqrt(xLength * xLength + yLength * yLength + zLength * zLength);
+                                    var length =
+                                            Math.sqrt(
+                                                    xLength * xLength
+                                                            + yLength * yLength
+                                                            + zLength * zLength);
                                     xLength /= length;
                                     yLength /= length;
                                     zLength /= length;
@@ -102,18 +122,24 @@ public final class VanillaExplosionSupplier implements ExplosionSupplier {
                                     var centerY = this.getCenterY();
                                     var centerZ = this.getCenterZ();
 
-                                    var strengthLeft = this.getStrength() * (0.7F + random.nextFloat() * 0.6F);
+                                    var strengthLeft =
+                                            this.getStrength() * (0.7F + random.nextFloat() * 0.6F);
                                     for (; strengthLeft > 0.0F; strengthLeft -= 0.225F) {
                                         var position = new Vec(centerX, centerY, centerZ);
                                         var block = blockGetter.getBlock(position);
-                                        var anchorBlock = anchorWater && position.sameBlock(originBlock);
+                                        var anchorBlock =
+                                                anchorWater && position.sameBlock(originBlock);
 
                                         if (anchorBlock || !block.air()) {
-                                            var explosionResistance = anchorBlock ? LIQUID_EXPLOSION_RESISTANCE : this.getExplosionResistance(block);
+                                            var explosionResistance =
+                                                    anchorBlock
+                                                            ? LIQUID_EXPLOSION_RESISTANCE
+                                                            : this.getExplosionResistance(block);
                                             strengthLeft -= (explosionResistance + 0.3F) * 0.3F;
 
                                             if (strengthLeft > 0.0F && !block.air()) {
-                                                var blockPosition = position.apply(Vec.Operator.FLOOR);
+                                                var blockPosition =
+                                                        position.apply(Vec.Operator.FLOOR);
                                                 if (!blocks.contains(blockPosition)) {
                                                     blocks.add(blockPosition);
                                                 }
@@ -148,11 +174,21 @@ public final class VanillaExplosionSupplier implements ExplosionSupplier {
                 var centerPoint = new Vec(this.getCenterX(), this.getCenterY(), this.getCenterZ());
                 var sourceEntity = this.getSourceEntity(instance);
 
-                var entities = new ArrayList<>(instance.getEntities().stream()
-                        .filter(entity -> entity != sourceEntity)
-                        .filter(entity -> !(entity instanceof Player player) || player.getGameMode() != GameMode.SPECTATOR)
-                        .filter(entity -> this.intersectsEntity(minX, minY, minZ, maxX, maxY, maxZ, entity))
-                        .toList());
+                var entities =
+                        new ArrayList<>(
+                                instance.getEntities().stream()
+                                        .filter(entity -> entity != sourceEntity)
+                                        .filter(
+                                                entity ->
+                                                        !(entity instanceof Player player)
+                                                                || player.getGameMode()
+                                                                        != GameMode.SPECTATOR)
+                                        .filter(
+                                                entity ->
+                                                        this.intersectsEntity(
+                                                                minX, minY, minZ, maxX, maxY, maxZ,
+                                                                entity))
+                                        .toList());
 
                 var anchor = false;
                 if (additionalData != null && additionalData.keySet().contains("anchor")) {
@@ -161,11 +197,19 @@ public final class VanillaExplosionSupplier implements ExplosionSupplier {
 
                 Damage damageObj;
                 if (anchor) {
-                    damageObj = new Damage(DamageType.BAD_RESPAWN_POINT, null, null, centerPoint, 0);
+                    damageObj =
+                            new Damage(DamageType.BAD_RESPAWN_POINT, null, null, centerPoint, 0);
                 } else {
                     var causingEntity = this.getCausingEntity(instance);
-                    damageObj = new Damage(causingEntity == null || sourceEntity == null ? DamageType.EXPLOSION : DamageType.PLAYER_EXPLOSION,
-                            sourceEntity, causingEntity, null, 0);
+                    damageObj =
+                            new Damage(
+                                    causingEntity == null || sourceEntity == null
+                                            ? DamageType.EXPLOSION
+                                            : DamageType.PLAYER_EXPLOSION,
+                                    sourceEntity,
+                                    causingEntity,
+                                    null,
+                                    0);
                 }
 
                 var explosionEvent = new ExplosionEvent(instance, blocks, entities, damageObj);
@@ -176,13 +220,18 @@ public final class VanillaExplosionSupplier implements ExplosionSupplier {
                 for (var entity : entities) {
                     var distanceStrength = entity.getPosition().distance(centerPoint) / strength;
                     if (distanceStrength <= 1.0) {
-                        var originY = entity.getEntityType() == EntityType.TNT
-                                ? entity.getPosition().y()
-                                : entity.getPosition().y() + entity.getEyeHeight();
+                        var originY =
+                                entity.getEntityType() == EntityType.TNT
+                                        ? entity.getPosition().y()
+                                        : entity.getPosition().y() + entity.getEyeHeight();
                         var directionX = entity.getPosition().x() - this.getCenterX();
                         var directionY = originY - this.getCenterY();
                         var directionZ = entity.getPosition().z() - this.getCenterZ();
-                        var directionLength = Math.sqrt(directionX * directionX + directionY * directionY + directionZ * directionZ);
+                        var directionLength =
+                                Math.sqrt(
+                                        directionX * directionX
+                                                + directionY * directionY
+                                                + directionZ * directionZ);
 
                         if (directionLength != 0.0) {
                             directionX /= directionLength;
@@ -196,35 +245,52 @@ public final class VanillaExplosionSupplier implements ExplosionSupplier {
 
                         var exposure = getExposure(centerPoint, entity);
                         var impactStrength = (1.0 - distanceStrength) * exposure;
-                        var damageAmount = (float) ((impactStrength * impactStrength + impactStrength)
-                                / 2.0 * 7.0 * strength + 1.0);
+                        var damageAmount =
+                                (float)
+                                        ((impactStrength * impactStrength + impactStrength)
+                                                        / 2.0
+                                                        * 7.0
+                                                        * strength
+                                                + 1.0);
 
                         var knockback = impactStrength;
-                        var entityDamage = new Damage(damageObj.getType(), damageObj.getSource(),
-                                damageObj.getAttacker(), damageObj.getSourcePosition(), damageAmount);
+                        var entityDamage =
+                                new Damage(
+                                        damageObj.getType(),
+                                        damageObj.getSource(),
+                                        damageObj.getAttacker(),
+                                        damageObj.getSourcePosition(),
+                                        damageAmount);
 
                         if (entity instanceof LivingEntity living) {
-                            knockback = VanillaExplosionSupplier.this.enchantmentFeature.getExplosionKnockback(living, impactStrength);
-                            knockback *= 1.0 - living.getAttributeValue(Attribute.EXPLOSION_KNOCKBACK_RESISTANCE);
+                            knockback =
+                                    VanillaExplosionSupplier.this.enchantmentFeature
+                                            .getExplosionKnockback(living, impactStrength);
+                            knockback *=
+                                    1.0
+                                            - living.getAttributeValue(
+                                                    Attribute.EXPLOSION_KNOCKBACK_RESISTANCE);
                             living.damage(entityDamage);
                         } else if (entity instanceof CrystalEntity crystal) {
                             crystal.damage(entityDamage);
                         }
 
-                        var knockbackVec = new Vec(
-                                directionX * knockback,
-                                directionY * knockback,
-                                directionZ * knockback
-                        );
+                        var knockbackVec =
+                                new Vec(
+                                        directionX * knockback,
+                                        directionY * knockback,
+                                        directionZ * knockback);
 
                         var tps = ServerFlag.SERVER_TICKS_PER_SECOND;
                         if (entity instanceof Player player) {
-                            VanillaExplosionSupplier.this.fallFeature.resetPostImpulseGraceTime(player);
+                            VanillaExplosionSupplier.this.fallFeature.resetPostImpulseGraceTime(
+                                    player);
 
                             if (this.shouldApplyPlayerKnockback(player)) {
                                 this.playerKnockback.put(player, knockbackVec);
                                 if (player instanceof CombatPlayer custom) {
-                                    custom.setVelocityNoUpdate(velocity -> velocity.add(knockbackVec.mul(tps)));
+                                    custom.setVelocityNoUpdate(
+                                            velocity -> velocity.add(knockbackVec.mul(tps)));
                                 }
                             }
                         } else {
@@ -244,9 +310,12 @@ public final class VanillaExplosionSupplier implements ExplosionSupplier {
                 if (additionalData != null && additionalData.keySet().contains("tntExplodes"))
                     tntExplodes = additionalData.getBoolean("tntExplodes");
 
-                var dropBlocks = additionalData != null && additionalData.getBoolean("dropBlocks", false);
-                var dropChance = additionalData == null || additionalData.getBoolean("dropDecay", true)
-                        ? 1.0F / this.getStrength() : 1.0F;
+                var dropBlocks =
+                        additionalData != null && additionalData.getBoolean("dropBlocks", false);
+                var dropChance =
+                        additionalData == null || additionalData.getBoolean("dropDecay", true)
+                                ? 1.0F / this.getStrength()
+                                : 1.0F;
 
                 byte[] records = new byte[3 * blocks.size()];
                 for (var index = 0; index < blocks.size(); index++) {
@@ -254,7 +323,10 @@ public final class VanillaExplosionSupplier implements ExplosionSupplier {
                     var block = instance.getBlock(blockPosition);
                     if (tntExplodes && block.compare(Block.TNT)) {
                         var causingEntity = this.getCausingEntity(instance);
-                        VanillaExplosionSupplier.this.feature.primeExplosive(instance, blockPosition, new ExplosionFeature.IgnitionCause.Explosion(causingEntity),
+                        VanillaExplosionSupplier.this.feature.primeExplosive(
+                                instance,
+                                blockPosition,
+                                new ExplosionFeature.IgnitionCause.Explosion(causingEntity),
                                 ThreadLocalRandom.current().nextInt(20) + 10);
                     } else if (dropBlocks && ThreadLocalRandom.current().nextFloat() < dropChance) {
                         this.dropBlockItem(instance, blockPosition, block);
@@ -269,7 +341,8 @@ public final class VanillaExplosionSupplier implements ExplosionSupplier {
                 }
 
                 var centerPoint = new Vec(centerX, centerY, centerZ);
-                var explosionParticle = this.getStrength() < 2.0F ? Particle.EXPLOSION : Particle.EXPLOSION_EMITTER;
+                var explosionParticle =
+                        this.getStrength() < 2.0F ? Particle.EXPLOSION : Particle.EXPLOSION_EMITTER;
 
                 for (var player : instance.getPlayers()) {
                     if (player.getPosition().distanceSquared(centerPoint) >= 4096.0) continue;
@@ -284,9 +357,7 @@ public final class VanillaExplosionSupplier implements ExplosionSupplier {
                                     explosionParticle,
                                     SoundEvent.ENTITY_GENERIC_EXPLODE,
                                     VanillaExplosionSupplier.this.PARTICLES,
-                                    true
-                            )
-                    );
+                                    true));
                 }
                 this.playerKnockback.clear();
 
@@ -297,8 +368,7 @@ public final class VanillaExplosionSupplier implements ExplosionSupplier {
                             var belowBlock = instance.getBlock(point.sub(0, 1, 0));
                             if (random.nextInt(3) != 0
                                     || !instance.getBlock(point).air()
-                                    || !belowBlock.solid())
-                                continue;
+                                    || !belowBlock.solid()) continue;
 
                             instance.setBlock(point, this.getFireBlock(belowBlock));
                         }
@@ -331,7 +401,14 @@ public final class VanillaExplosionSupplier implements ExplosionSupplier {
                         && (player.getGameMode() != GameMode.CREATIVE || !player.isFlying());
             }
 
-            private boolean intersectsEntity(double minX, double minY, double minZ, double maxX, double maxY, double maxZ, Entity entity) {
+            private boolean intersectsEntity(
+                    double minX,
+                    double minY,
+                    double minZ,
+                    double maxX,
+                    double maxY,
+                    double maxZ,
+                    Entity entity) {
                 var boundingBox = entity.getBoundingBox();
                 var entityPosition = entity.getPosition();
 
@@ -356,7 +433,8 @@ public final class VanillaExplosionSupplier implements ExplosionSupplier {
                 var explosionResistance = block.explosionResistance();
 
                 if (block.liquid()) {
-                    explosionResistance = Math.max(explosionResistance, LIQUID_EXPLOSION_RESISTANCE);
+                    explosionResistance =
+                            Math.max(explosionResistance, LIQUID_EXPLOSION_RESISTANCE);
                 }
 
                 return explosionResistance;
@@ -392,7 +470,8 @@ public final class VanillaExplosionSupplier implements ExplosionSupplier {
                     var rayX = box.minX() + dx * box.width();
                     var rayY = box.minY() + dy * box.height();
                     var rayZ = box.minZ() + dz * box.depth();
-                    var point = new Vec(rayX + xOffset, rayY, rayZ + zOffset).add(entity.getPosition());
+                    var point =
+                            new Vec(rayX + xOffset, rayY, rayZ + zOffset).add(entity.getPosition());
                     if (noBlocking(entity.getInstance(), point, center)) exposedCount++;
                     rayCount++;
                     dz += zStep;

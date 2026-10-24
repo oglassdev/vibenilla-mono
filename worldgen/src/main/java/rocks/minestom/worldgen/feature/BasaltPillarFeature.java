@@ -6,13 +6,13 @@ import rocks.minestom.worldgen.feature.configurations.NoneFeatureConfiguration;
 import rocks.minestom.worldgen.random.RandomSource;
 
 /**
- * Port of vanilla {@code BasaltPillarFeature}: a basalt pillar hanging from
- * the ceiling down to the ground, with random side hang-offs and a scattered
- * base apron.
+ * Port of vanilla {@code BasaltPillarFeature}: a basalt pillar hanging from the ceiling down to the
+ * ground, with random side hang-offs and a scattered base apron.
  */
 public final class BasaltPillarFeature implements Feature<NoneFeatureConfiguration> {
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<NoneFeatureConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<NoneFeatureConfiguration, T> context) {
         var origin = context.origin();
         var level = context.accessor();
         var random = context.random();
@@ -83,13 +83,15 @@ public final class BasaltPillarFeature implements Feature<NoneFeatureConfigurati
         return true;
     }
 
-    private <T extends Block.Getter & Block.Setter> void placeBaseHangOff(T level, RandomSource random, BlockVec pos) {
+    private <T extends Block.Getter & Block.Setter> void placeBaseHangOff(
+            T level, RandomSource random, BlockVec pos) {
         if (random.nextBoolean()) {
             level.setBlock(pos, Block.BASALT);
         }
     }
 
-    private <T extends Block.Getter & Block.Setter> boolean placeHangOff(T level, RandomSource random, BlockVec pos) {
+    private <T extends Block.Getter & Block.Setter> boolean placeHangOff(
+            T level, RandomSource random, BlockVec pos) {
         if (random.nextInt(10) != 0) {
             level.setBlock(pos, Block.BASALT);
             return true;

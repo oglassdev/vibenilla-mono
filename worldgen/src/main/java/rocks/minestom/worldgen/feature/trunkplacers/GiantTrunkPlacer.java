@@ -1,5 +1,7 @@
 package rocks.minestom.worldgen.feature.trunkplacers;
 
+import java.util.List;
+import java.util.function.BiConsumer;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.coordinate.BlockVec;
@@ -8,16 +10,20 @@ import rocks.minestom.worldgen.feature.configurations.TreeConfiguration;
 import rocks.minestom.worldgen.feature.foliageplacers.FoliagePlacer;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.List;
-import java.util.function.BiConsumer;
-
-public record GiantTrunkPlacer(int baseHeight, int heightRandA, int heightRandB) implements TrunkPlacer {
-    public static final Codec<GiantTrunkPlacer> CODEC = StructCodec.struct(
-            "base_height", Codec.INT, GiantTrunkPlacer::baseHeight,
-            "height_rand_a", Codec.INT, GiantTrunkPlacer::heightRandA,
-            "height_rand_b", Codec.INT, GiantTrunkPlacer::heightRandB,
-            GiantTrunkPlacer::new
-    );
+public record GiantTrunkPlacer(int baseHeight, int heightRandA, int heightRandB)
+        implements TrunkPlacer {
+    public static final Codec<GiantTrunkPlacer> CODEC =
+            StructCodec.struct(
+                    "base_height",
+                    Codec.INT,
+                    GiantTrunkPlacer::baseHeight,
+                    "height_rand_a",
+                    Codec.INT,
+                    GiantTrunkPlacer::heightRandA,
+                    "height_rand_b",
+                    Codec.INT,
+                    GiantTrunkPlacer::heightRandB,
+                    GiantTrunkPlacer::new);
 
     @Override
     public List<FoliagePlacer.FoliageAttachment> placeTrunk(
@@ -26,8 +32,7 @@ public record GiantTrunkPlacer(int baseHeight, int heightRandA, int heightRandB)
             RandomSource random,
             int freeTreeHeight,
             BlockVec basePos,
-            TreeConfiguration config
-    ) {
+            TreeConfiguration config) {
         var below = basePos.sub(0, 1, 0);
         TrunkPlacer.setDirtAt(getter, logSetter, random, below, config);
         TrunkPlacer.setDirtAt(getter, logSetter, random, below.add(1, 0, 0), config);
@@ -43,12 +48,14 @@ public record GiantTrunkPlacer(int baseHeight, int heightRandA, int heightRandB)
             }
         }
 
-        return List.of(new FoliagePlacer.FoliageAttachment(basePos.add(0, freeTreeHeight, 0), 0, true));
+        return List.of(
+                new FoliagePlacer.FoliageAttachment(basePos.add(0, freeTreeHeight, 0), 0, true));
     }
 
     @Override
     public int getTreeHeight(RandomSource random) {
-        return this.baseHeight + random.nextInt(this.heightRandA + 1) + random.nextInt(this.heightRandB + 1);
+        return this.baseHeight
+                + random.nextInt(this.heightRandA + 1)
+                + random.nextInt(this.heightRandB + 1);
     }
 }
-

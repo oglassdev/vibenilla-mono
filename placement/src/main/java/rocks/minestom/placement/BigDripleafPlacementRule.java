@@ -16,10 +16,14 @@ public final class BigDripleafPlacementRule extends BlockPlacementRule {
         var instance = placementState.instance();
         var placePosition = placementState.placePosition();
         var belowBlock = instance.getBlock(placePosition.relative(BlockFace.BOTTOM));
-        var supportTag = MinecraftServer.process().blocks().getTag(Key.key("minecraft:supports_big_dripleaf"));
-        var validSupport = belowBlock.compare(Block.BIG_DRIPLEAF)
-                || belowBlock.compare(Block.BIG_DRIPLEAF_STEM)
-                || (supportTag != null && supportTag.contains(belowBlock));
+        var supportTag =
+                MinecraftServer.process()
+                        .blocks()
+                        .getTag(Key.key("minecraft:supports_big_dripleaf"));
+        var validSupport =
+                belowBlock.compare(Block.BIG_DRIPLEAF)
+                        || belowBlock.compare(Block.BIG_DRIPLEAF_STEM)
+                        || (supportTag != null && supportTag.contains(belowBlock));
 
         if (!validSupport) {
             return null;
@@ -31,7 +35,10 @@ public final class BigDripleafPlacementRule extends BlockPlacementRule {
 
         if (belowBlock.compare(Block.BIG_DRIPLEAF) || belowBlock.compare(Block.BIG_DRIPLEAF_STEM)) {
             var belowFacing = belowBlock.getProperty("facing");
-            facing = belowFacing == null ? BlockFace.fromYaw(yaw).getOppositeFace().name().toLowerCase() : belowFacing;
+            facing =
+                    belowFacing == null
+                            ? BlockFace.fromYaw(yaw).getOppositeFace().name().toLowerCase()
+                            : belowFacing;
         } else {
             facing = BlockFace.fromYaw(yaw).getOppositeFace().name().toLowerCase();
         }
@@ -39,7 +46,8 @@ public final class BigDripleafPlacementRule extends BlockPlacementRule {
         var replaced = instance.getBlock(placePosition);
         var waterlogged = replaced.compare(Block.WATER) && isWaterSource(replaced);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withProperty("facing", facing)
                 .withProperty("waterlogged", String.valueOf(waterlogged))
                 .withProperty("tilt", "none");
@@ -51,13 +59,19 @@ public final class BigDripleafPlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+        var below =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
 
         if (below.compare(Block.BIG_DRIPLEAF) || below.compare(Block.BIG_DRIPLEAF_STEM)) {
             return updateState.currentBlock();
         }
 
-        var supportTag = MinecraftServer.process().blocks().getTag(Key.key("minecraft:supports_big_dripleaf"));
+        var supportTag =
+                MinecraftServer.process()
+                        .blocks()
+                        .getTag(Key.key("minecraft:supports_big_dripleaf"));
 
         if (supportTag != null && supportTag.contains(below)) {
             return updateState.currentBlock();

@@ -8,15 +8,12 @@ import rocks.minestom.worldgen.feature.FeatureConfiguration;
 import rocks.minestom.worldgen.feature.placement.PlacementModifiers;
 import rocks.minestom.worldgen.structure.context.BlockTagManager;
 
-/**
- * Configuration for {@code minecraft:spike}, the generic version of the old
- * ice spike feature.
- */
+/** Configuration for {@code minecraft:spike}, the generic version of the old ice spike feature. */
 public record SpikeConfiguration(
         Block state,
         PlacementModifiers.BlockPredicate canPlaceOn,
-        PlacementModifiers.BlockPredicate canReplace
-) implements FeatureConfiguration {
+        PlacementModifiers.BlockPredicate canReplace)
+        implements FeatureConfiguration {
 
     public static SpikeConfiguration fromJson(JsonElement json, BlockTagManager blockTags) {
         if (!json.isJsonObject()) {
@@ -25,8 +22,12 @@ public record SpikeConfiguration(
 
         var obj = json.getAsJsonObject();
         var state = BlockCodec.CODEC.decode(Transcoder.JSON, obj.get("state")).orElseThrow();
-        var canPlaceOn = PlacementModifiers.parseBlockPredicate(obj.getAsJsonObject("can_place_on"), blockTags);
-        var canReplace = PlacementModifiers.parseBlockPredicate(obj.getAsJsonObject("can_replace"), blockTags);
+        var canPlaceOn =
+                PlacementModifiers.parseBlockPredicate(
+                        obj.getAsJsonObject("can_place_on"), blockTags);
+        var canReplace =
+                PlacementModifiers.parseBlockPredicate(
+                        obj.getAsJsonObject("can_replace"), blockTags);
         return new SpikeConfiguration(state, canPlaceOn, canReplace);
     }
 }

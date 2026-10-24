@@ -1,5 +1,7 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.instance.block.Block;
@@ -8,15 +10,13 @@ import rocks.minestom.worldgen.feature.configurations.EndSpikeConfiguration;
 import rocks.minestom.worldgen.random.LegacyRandomSource;
 import rocks.minestom.worldgen.structure.StructureRng;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public final class EndSpikeFeature implements Feature<EndSpikeConfiguration> {
     private static final int SPIKE_COUNT = 10;
     private static final int SPIKE_DISTANCE = 42;
 
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<EndSpikeConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<EndSpikeConfiguration, T> context) {
         var chunkStartX = context.origin().blockX() & ~15;
         var chunkStartZ = context.origin().blockZ() & ~15;
         var spikes = context.config().spikes();
@@ -40,7 +40,8 @@ public final class EndSpikeFeature implements Feature<EndSpikeConfiguration> {
         return placed;
     }
 
-    private <T extends Block.Getter & Block.Setter> void placeSpike(T level, int minY, int maxY, EndSpike spike) {
+    private <T extends Block.Getter & Block.Setter> void placeSpike(
+            T level, int minY, int maxY, EndSpike spike) {
         var radius = spike.radius();
         var centerX = spike.centerX();
         var centerZ = spike.centerZ();
@@ -94,13 +95,18 @@ public final class EndSpikeFeature implements Feature<EndSpikeConfiguration> {
                     var west = connectZ && offsetX != -2;
                     var east = connectZ && offsetX != 2;
 
-                    var block = Block.IRON_BARS
-                            .withProperty("north", Boolean.toString(north))
-                            .withProperty("south", Boolean.toString(south))
-                            .withProperty("west", Boolean.toString(west))
-                            .withProperty("east", Boolean.toString(east));
+                    var block =
+                            Block.IRON_BARS
+                                    .withProperty("north", Boolean.toString(north))
+                                    .withProperty("south", Boolean.toString(south))
+                                    .withProperty("west", Boolean.toString(west))
+                                    .withProperty("east", Boolean.toString(east));
 
-                    level.setBlock(spike.centerX() + offsetX, baseY + offsetY, spike.centerZ() + offsetZ, block);
+                    level.setBlock(
+                            spike.centerX() + offsetX,
+                            baseY + offsetY,
+                            spike.centerZ() + offsetZ,
+                            block);
                 }
             }
         }
@@ -131,18 +137,30 @@ public final class EndSpikeFeature implements Feature<EndSpikeConfiguration> {
     }
 
     public record EndSpike(int centerX, int centerZ, int radius, int height, boolean guarded) {
-        public static final Codec<EndSpike> CODEC = StructCodec.struct(
-                "centerX", Codec.INT.optional(0), EndSpike::centerX,
-                "centerZ", Codec.INT.optional(0), EndSpike::centerZ,
-                "radius", Codec.INT.optional(0), EndSpike::radius,
-                "height", Codec.INT.optional(0), EndSpike::height,
-                "guarded", Codec.BOOLEAN.optional(false), EndSpike::guarded,
-                EndSpike::new
-        );
+        public static final Codec<EndSpike> CODEC =
+                StructCodec.struct(
+                        "centerX",
+                        Codec.INT.optional(0),
+                        EndSpike::centerX,
+                        "centerZ",
+                        Codec.INT.optional(0),
+                        EndSpike::centerZ,
+                        "radius",
+                        Codec.INT.optional(0),
+                        EndSpike::radius,
+                        "height",
+                        Codec.INT.optional(0),
+                        EndSpike::height,
+                        "guarded",
+                        Codec.BOOLEAN.optional(false),
+                        EndSpike::guarded,
+                        EndSpike::new);
 
         public boolean isCenterWithinChunk(int chunkStartX, int chunkStartZ) {
-            return this.centerX >= chunkStartX && this.centerX < chunkStartX + 16
-                    && this.centerZ >= chunkStartZ && this.centerZ < chunkStartZ + 16;
+            return this.centerX >= chunkStartX
+                    && this.centerX < chunkStartX + 16
+                    && this.centerZ >= chunkStartZ
+                    && this.centerZ < chunkStartZ + 16;
         }
     }
 }

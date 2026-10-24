@@ -17,7 +17,8 @@ public final class CopperGolemStatuePlacementRule extends BlockPlacementRule {
         var replaced = placementState.instance().getBlock(placementState.placePosition());
         var waterlogged = replaced.compare(Block.WATER);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withProperty("facing", facing.name().toLowerCase())
                 .withProperty("waterlogged", waterlogged ? "true" : "false");
     }

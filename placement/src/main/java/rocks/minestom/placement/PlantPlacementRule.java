@@ -22,7 +22,10 @@ public final class PlantPlacementRule extends BlockPlacementRule {
 
     @Override
     public Block blockPlace(PlacementState placementState) {
-        var below = placementState.instance().getBlock(placementState.placePosition().relative(BlockFace.BOTTOM));
+        var below =
+                placementState
+                        .instance()
+                        .getBlock(placementState.placePosition().relative(BlockFace.BOTTOM));
         return supports(below) ? placementState.block() : null;
     }
 
@@ -32,7 +35,10 @@ public final class PlantPlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+        var below =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
         return supports(below) ? updateState.currentBlock() : Block.AIR;
     }
 

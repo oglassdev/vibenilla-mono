@@ -1,28 +1,29 @@
 package rocks.minestom.worldgen.feature.treedecorators;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.Direction;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * Vanilla's {@code BeehiveDecorator}: with the configured probability, a bee
- * nest facing south is attached next to a log one block below the lowest
- * leaves. The bee occupant rolls are consumed too, since they come from the
- * shared worldgen random.
+ * Vanilla's {@code BeehiveDecorator}: with the configured probability, a bee nest facing south is
+ * attached next to a log one block below the lowest leaves. The bee occupant rolls are consumed
+ * too, since they come from the shared worldgen random.
  */
 public record BeehiveDecorator(float probability) implements TreeDecorator {
-    public static final Codec<BeehiveDecorator> CODEC = StructCodec.struct(
-            "probability", Codec.FLOAT, BeehiveDecorator::probability,
-            BeehiveDecorator::new
-    );
+    public static final Codec<BeehiveDecorator> CODEC =
+            StructCodec.struct(
+                    "probability",
+                    Codec.FLOAT,
+                    BeehiveDecorator::probability,
+                    BeehiveDecorator::new);
 
     /** Horizontal directions minus north (the worldgen facing's opposite). */
-    private static final List<Direction> SPAWN_DIRECTIONS = List.of(Direction.EAST, Direction.SOUTH, Direction.WEST);
+    private static final List<Direction> SPAWN_DIRECTIONS =
+            List.of(Direction.EAST, Direction.SOUTH, Direction.WEST);
 
     @Override
     public void place(TreeDecorator.Context context) {
@@ -37,9 +38,12 @@ public record BeehiveDecorator(float probability) implements TreeDecorator {
             return;
         }
 
-        var hiveY = !leaves.isEmpty()
-                ? Math.max(leaves.getFirst().blockY() - 1, logs.getFirst().blockY() + 1)
-                : Math.min(logs.getFirst().blockY() + 1 + random.nextInt(3), logs.getLast().blockY());
+        var hiveY =
+                !leaves.isEmpty()
+                        ? Math.max(leaves.getFirst().blockY() - 1, logs.getFirst().blockY() + 1)
+                        : Math.min(
+                                logs.getFirst().blockY() + 1 + random.nextInt(3),
+                                logs.getLast().blockY());
 
         var hivePlacements = new ArrayList<BlockVec>();
         for (var log : logs) {

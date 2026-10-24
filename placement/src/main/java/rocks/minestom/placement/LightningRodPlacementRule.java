@@ -1,10 +1,9 @@
 package rocks.minestom.placement;
 
+import java.util.Objects;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
-
-import java.util.Objects;
 
 public final class LightningRodPlacementRule extends BlockPlacementRule {
     public LightningRodPlacementRule(Block block) {
@@ -15,7 +14,10 @@ public final class LightningRodPlacementRule extends BlockPlacementRule {
     public Block blockPlace(PlacementState placementState) {
         var facing = Objects.requireNonNullElse(placementState.blockFace(), BlockFace.TOP);
         var placePosition = placementState.placePosition();
-        var support = placementState.instance().getBlock(placePosition.relative(facing.getOppositeFace()));
+        var support =
+                placementState
+                        .instance()
+                        .getBlock(placePosition.relative(facing.getOppositeFace()));
 
         if (!Utility.canSupportCenter(support, facing)) {
             return null;
@@ -24,7 +26,8 @@ public final class LightningRodPlacementRule extends BlockPlacementRule {
         var replaced = placementState.instance().getBlock(placePosition);
         var waterlogged = replaced.compare(Block.WATER);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withProperty("facing", facingName(facing))
                 .withProperty("waterlogged", String.valueOf(waterlogged));
     }
@@ -38,8 +41,10 @@ public final class LightningRodPlacementRule extends BlockPlacementRule {
             return currentBlock;
         }
 
-        var support = updateState.instance().getBlock(
-                updateState.blockPosition().relative(facing.getOppositeFace()));
+        var support =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(facing.getOppositeFace()));
         return Utility.canSupportCenter(support, facing) ? currentBlock : Block.AIR;
     }
 

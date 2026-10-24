@@ -6,12 +6,12 @@ import net.minestom.server.instance.block.rule.BlockPlacementRule;
 
 public final class CoralWallFanPlacementRule extends BlockPlacementRule {
     private static final BlockFace[] DEFAULT_ORDER = {
-            BlockFace.NORTH,
-            BlockFace.EAST,
-            BlockFace.SOUTH,
-            BlockFace.WEST,
-            BlockFace.TOP,
-            BlockFace.BOTTOM
+        BlockFace.NORTH,
+        BlockFace.EAST,
+        BlockFace.SOUTH,
+        BlockFace.WEST,
+        BlockFace.TOP,
+        BlockFace.BOTTOM
     };
 
     public CoralWallFanPlacementRule(Block block) {
@@ -23,9 +23,10 @@ public final class CoralWallFanPlacementRule extends BlockPlacementRule {
         var instance = placementState.instance();
         var placePosition = placementState.placePosition();
         var playerPosition = placementState.playerPosition();
-        var nearest = playerPosition == null
-                ? DEFAULT_ORDER
-                : orderedByNearest(playerPosition.yaw(), playerPosition.pitch());
+        var nearest =
+                playerPosition == null
+                        ? DEFAULT_ORDER
+                        : orderedByNearest(playerPosition.yaw(), playerPosition.pitch());
         BlockFace facing = null;
 
         for (var direction : nearest) {
@@ -48,7 +49,8 @@ public final class CoralWallFanPlacementRule extends BlockPlacementRule {
         var replaced = instance.getBlock(placePosition);
         var waterlogged = replaced.compare(Block.WATER) && isWaterSource(replaced);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withProperty("facing", facing.name().toLowerCase())
                 .withProperty("waterlogged", waterlogged ? "true" : "false");
     }
@@ -68,7 +70,8 @@ public final class CoralWallFanPlacementRule extends BlockPlacementRule {
             return currentBlock;
         }
 
-        var supportBlock = updateState.instance().getBlock(updateState.blockPosition().relative(supportFace));
+        var supportBlock =
+                updateState.instance().getBlock(updateState.blockPosition().relative(supportFace));
 
         if (!supportBlock.registry().collisionShape().isFaceFull(facing)) {
             return Block.AIR;
@@ -93,7 +96,10 @@ public final class CoralWallFanPlacementRule extends BlockPlacementRule {
     }
 
     private static boolean isHorizontal(BlockFace face) {
-        return face == BlockFace.NORTH || face == BlockFace.SOUTH || face == BlockFace.EAST || face == BlockFace.WEST;
+        return face == BlockFace.NORTH
+                || face == BlockFace.SOUTH
+                || face == BlockFace.EAST
+                || face == BlockFace.WEST;
     }
 
     private static BlockFace[] orderedByNearest(float yawDegrees, float pitchDegrees) {
@@ -138,7 +144,15 @@ public final class CoralWallFanPlacementRule extends BlockPlacementRule {
         return makeDirectionArray(axisZ, axisY, axisX);
     }
 
-    private static BlockFace[] makeDirectionArray(BlockFace first, BlockFace second, BlockFace third) {
-        return new BlockFace[]{first, second, third, third.getOppositeFace(), second.getOppositeFace(), first.getOppositeFace()};
+    private static BlockFace[] makeDirectionArray(
+            BlockFace first, BlockFace second, BlockFace third) {
+        return new BlockFace[] {
+            first,
+            second,
+            third,
+            third.getOppositeFace(),
+            second.getOppositeFace(),
+            first.getOppositeFace()
+        };
     }
 }

@@ -9,42 +9,41 @@ import net.minestom.server.instance.block.rule.BlockPlacementRule;
 
 final class VanillaPlacementUtils {
     private static final BlockFace[] HORIZONTAL_FACES = {
-            BlockFace.NORTH,
-            BlockFace.EAST,
-            BlockFace.SOUTH,
-            BlockFace.WEST
+        BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST
     };
 
-    private VanillaPlacementUtils() {
+    private VanillaPlacementUtils() {}
 
-    }
-
-    static void scheduleHorizontalNeighborRuleUpdates(Block.Getter blockGetter, Point centerPosition) {
+    static void scheduleHorizontalNeighborRuleUpdates(
+            Block.Getter blockGetter, Point centerPosition) {
         if (!(blockGetter instanceof Instance instance)) {
             return;
         }
 
-        instance.scheduleNextTick(currentInstance -> {
-            for (var neighborFace : HORIZONTAL_FACES) {
-                var neighborPosition = centerPosition.relative(neighborFace);
-                var neighborBlock = currentInstance.getBlock(neighborPosition);
-                var placementRule = MinecraftServer.getBlockManager().getBlockPlacementRule(neighborBlock);
+        instance.scheduleNextTick(
+                currentInstance -> {
+                    for (var neighborFace : HORIZONTAL_FACES) {
+                        var neighborPosition = centerPosition.relative(neighborFace);
+                        var neighborBlock = currentInstance.getBlock(neighborPosition);
+                        var placementRule =
+                                MinecraftServer.getBlockManager()
+                                        .getBlockPlacementRule(neighborBlock);
 
-                if (placementRule == null) {
-                    continue;
-                }
+                        if (placementRule == null) {
+                            continue;
+                        }
 
-                var updateState = new BlockPlacementRule.UpdateState(
-                        currentInstance,
-                        neighborPosition,
-                        neighborBlock,
-                        neighborFace.getOppositeFace()
-                );
+                        var updateState =
+                                new BlockPlacementRule.UpdateState(
+                                        currentInstance,
+                                        neighborPosition,
+                                        neighborBlock,
+                                        neighborFace.getOppositeFace());
 
-                var updatedNeighbor = placementRule.blockUpdate(updateState);
-                currentInstance.setBlock(neighborPosition, updatedNeighbor, false);
-            }
-        });
+                        var updatedNeighbor = placementRule.blockUpdate(updateState);
+                        currentInstance.setBlock(neighborPosition, updatedNeighbor, false);
+                    }
+                });
     }
 
     static boolean hasNeighborSignal(Block.Getter blockGetter, Point position) {
@@ -106,14 +105,18 @@ final class VanillaPlacementUtils {
 
         if (block.compare(Block.REDSTONE_WALL_TORCH)) {
             return "true".equals(block.getProperty("lit"))
-                    && !faces(direction, block.getProperty("facing")) ? 15 : 0;
+                            && !faces(direction, block.getProperty("facing"))
+                    ? 15
+                    : 0;
         }
 
         if (block.compare(Block.REPEATER)
                 || block.compare(Block.COMPARATOR)
                 || block.compare(Block.OBSERVER)) {
             return "true".equals(block.getProperty("powered"))
-                    && faces(direction, block.getProperty("facing")) ? 15 : 0;
+                            && faces(direction, block.getProperty("facing"))
+                    ? 15
+                    : 0;
         }
 
         if (block.compare(Block.CALIBRATED_SCULK_SENSOR)
@@ -140,7 +143,9 @@ final class VanillaPlacementUtils {
         }
 
         if (block.compare(Block.REDSTONE_TORCH) || block.compare(Block.REDSTONE_WALL_TORCH)) {
-            return direction == BlockFace.BOTTOM && "true".equals(block.getProperty("lit")) ? 15 : 0;
+            return direction == BlockFace.BOTTOM && "true".equals(block.getProperty("lit"))
+                    ? 15
+                    : 0;
         }
 
         if (block.compare(Block.REPEATER)
@@ -149,14 +154,18 @@ final class VanillaPlacementUtils {
                 || block.compare(Block.TRIPWIRE_HOOK)
                 || block.key().value().endsWith("lightning_rod")) {
             return "true".equals(block.getProperty("powered"))
-                    && faces(direction, block.getProperty("facing")) ? 15 : 0;
+                            && faces(direction, block.getProperty("facing"))
+                    ? 15
+                    : 0;
         }
 
         var path = block.key().value();
 
         if (block.compare(Block.LEVER) || path.endsWith("_button")) {
             return "true".equals(block.getProperty("powered"))
-                    && faces(direction, connectedDirection(block)) ? 15 : 0;
+                            && faces(direction, connectedDirection(block))
+                    ? 15
+                    : 0;
         }
 
         if (path.endsWith("_pressure_plate")

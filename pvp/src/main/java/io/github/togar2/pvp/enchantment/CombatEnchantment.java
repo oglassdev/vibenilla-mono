@@ -3,6 +3,9 @@ package io.github.togar2.pvp.enchantment;
 import io.github.togar2.pvp.feature.FeatureType;
 import io.github.togar2.pvp.feature.config.FeatureConfiguration;
 import io.github.togar2.pvp.feature.enchantment.EnchantmentFeature;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EquipmentSlot;
 import net.minestom.server.entity.LivingEntity;
@@ -10,10 +13,6 @@ import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.enchant.Enchantment;
 import net.minestom.server.registry.RegistryKey;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 import org.jetbrains.annotations.Nullable;
 
 public class CombatEnchantment {
@@ -26,8 +25,10 @@ public class CombatEnchantment {
         this(enchantment, Set.of(), slotTypes);
     }
 
-    public CombatEnchantment(RegistryKey<Enchantment> enchantment,
-                             Set<FeatureType<?>> dependencies, EquipmentSlot... slotTypes) {
+    public CombatEnchantment(
+            RegistryKey<Enchantment> enchantment,
+            Set<FeatureType<?>> dependencies,
+            EquipmentSlot... slotTypes) {
         this.enchantment = enchantment;
         this.dependencies = dependencies;
         this.slotTypes = slotTypes;
@@ -54,19 +55,43 @@ public class CombatEnchantment {
         return map;
     }
 
-    public int getProtectionAmount(int level, DamageType damageType, EnchantmentFeature feature, FeatureConfiguration configuration) {
+    public int getProtectionAmount(
+            int level,
+            DamageType damageType,
+            EnchantmentFeature feature,
+            FeatureConfiguration configuration) {
         return 0;
     }
 
-    public float getAttackDamage(int level, @Nullable Entity target, EnchantmentFeature feature, FeatureConfiguration configuration) {
+    public float getAttackDamage(
+            int level,
+            @Nullable Entity target,
+            EnchantmentFeature feature,
+            FeatureConfiguration configuration) {
         return 0.0F;
     }
 
-    public void onTargetDamaged(LivingEntity user, Entity target, int level, EnchantmentFeature feature, FeatureConfiguration configuration) {}
-    public void onUserDamaged(LivingEntity user, LivingEntity attacker, int level, EnchantmentFeature feature, FeatureConfiguration configuration) {}
+    public void onTargetDamaged(
+            LivingEntity user,
+            Entity target,
+            int level,
+            EnchantmentFeature feature,
+            FeatureConfiguration configuration) {}
 
-    public void onUserDamaged(LivingEntity user, LivingEntity attacker, int level, EquipmentSlot slot,
-                              EnchantmentFeature feature, FeatureConfiguration configuration) {
+    public void onUserDamaged(
+            LivingEntity user,
+            LivingEntity attacker,
+            int level,
+            EnchantmentFeature feature,
+            FeatureConfiguration configuration) {}
+
+    public void onUserDamaged(
+            LivingEntity user,
+            LivingEntity attacker,
+            int level,
+            EquipmentSlot slot,
+            EnchantmentFeature feature,
+            FeatureConfiguration configuration) {
         this.onUserDamaged(user, attacker, level, feature, configuration);
     }
 }

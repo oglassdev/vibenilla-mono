@@ -9,14 +9,14 @@ import io.github.togar2.pvp.potion.item.CombatPotionTypes;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.attribute.Attribute;
-import net.minestom.server.entity.attribute.AttributeInstance;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.trait.EntityInstanceEvent;
 
 /**
  * The main class of MinestomPvP, which contains the {@link MinestomPvP#init()} method.
- * <p>
- * It can also be used to set legacy attack for a player, see {@link MinestomPvP#setLegacyAttack(Player, boolean)}.
+ *
+ * <p>It can also be used to set legacy attack for a player, see {@link
+ * MinestomPvP#setLegacyAttack(Player, boolean)}.
  */
 public class MinestomPvP {
     public static EventNode<EntityInstanceEvent> events() {

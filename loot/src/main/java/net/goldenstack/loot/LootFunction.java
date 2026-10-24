@@ -1,5 +1,7 @@
 package net.goldenstack.loot;
 
+import java.io.IOException;
+import java.util.*;
 import net.goldenstack.loot.util.*;
 import net.goldenstack.loot.util.nbt.NBTPath;
 import net.goldenstack.loot.util.nbt.NBTReference;
@@ -41,62 +43,83 @@ import net.minestom.server.registry.RegistryKey;
 import net.minestom.server.registry.RegistryTag;
 import net.minestom.server.registry.RegistryTranscoder;
 import net.minestom.server.registry.TagKey;
-import net.minestom.server.utils.Either;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-import java.util.*;
-
-/**
- * A function that allows loot to pass through it, potentially making modifications.
- */
+/** A function that allows loot to pass through it, potentially making modifications. */
 @SuppressWarnings("UnstableApiUsage")
 public interface LootFunction {
 
-    @NotNull Codec<LootFunction> CODEC = makeCodec().orElse(makeCodec().list().transform(Sequence::new, seq -> ((Sequence) seq).functions()));
+    @NotNull
+    Codec<LootFunction> CODEC =
+            makeCodec()
+                    .orElse(
+                            makeCodec()
+                                    .list()
+                                    .transform(Sequence::new, seq -> ((Sequence) seq).functions()));
 
     private static StructCodec<LootFunction> makeCodec() {
-        return Codec.RegistryTaggedUnion(registries -> {
-            class Holder {
-                static final @NotNull DynamicRegistry<StructCodec<? extends LootFunction>> CODEC = createDefaultRegistry();
-            }
-            return Holder.CODEC;
-        }, LootFunction::codec, "function");
+        return Codec.RegistryTaggedUnion(
+                registries -> {
+                    class Holder {
+                        static final @NotNull DynamicRegistry<StructCodec<? extends LootFunction>>
+                                CODEC = createDefaultRegistry();
+                    }
+                    return Holder.CODEC;
+                },
+                LootFunction::codec,
+                "function");
     }
 
     final class Codecs {
-        private static final @NotNull Codec<RGBLike> FIREWORK_COLOR_CODEC = Codec.INT.transform(
-                Color::new,
-                color -> Color.fromRGBLike(color).asRGB()
-        );
+        private static final @NotNull Codec<RGBLike> FIREWORK_COLOR_CODEC =
+                Codec.INT.transform(Color::new, color -> Color.fromRGBLike(color).asRGB());
 
-        private static final @NotNull Codec<LootNumber> CUSTOM_MODEL_DATA_COLOR_CODEC = LootNumber.CODEC.orElse(
-                Codec.VECTOR3D.transform(
-                        vector -> new LootNumber.Constant((double) new Color((float) vector.x(), (float) vector.y(), (float) vector.z()).asRGB()),
-                        value -> {
-                            var color = new Color(value.value().intValue());
-                            return new Vec(color.red() / 255.0, color.green() / 255.0, color.blue() / 255.0);
-                        }
-                ),
-                value -> value
-        );
+        private static final @NotNull Codec<LootNumber> CUSTOM_MODEL_DATA_COLOR_CODEC =
+                LootNumber.CODEC.orElse(
+                        Codec.VECTOR3D.transform(
+                                vector ->
+                                        new LootNumber.Constant(
+                                                (double)
+                                                        new Color(
+                                                                        (float) vector.x(),
+                                                                        (float) vector.y(),
+                                                                        (float) vector.z())
+                                                                .asRGB()),
+                                value -> {
+                                    var color = new Color(value.value().intValue());
+                                    return new Vec(
+                                            color.red() / 255.0,
+                                            color.green() / 255.0,
+                                            color.blue() / 255.0);
+                                }),
+                        value -> value);
 
-        private static final @NotNull Codec<FireworkExplosion> FIREWORK_EXPLOSION_CODEC = StructCodec.struct(
-                "shape", Codec.Enum(FireworkExplosion.Shape.class), FireworkExplosion::shape,
-                "colors", FIREWORK_COLOR_CODEC.list().optional(List.of()), FireworkExplosion::colors,
-                "fade_colors", FIREWORK_COLOR_CODEC.list().optional(List.of()), FireworkExplosion::fadeColors,
-                "has_trail", Codec.BOOLEAN.optional(false), FireworkExplosion::hasTrail,
-                "has_twinkle", Codec.BOOLEAN.optional(false), FireworkExplosion::hasTwinkle,
-                FireworkExplosion::new
-        );
+        private static final @NotNull Codec<FireworkExplosion> FIREWORK_EXPLOSION_CODEC =
+                StructCodec.struct(
+                        "shape",
+                        Codec.Enum(FireworkExplosion.Shape.class),
+                        FireworkExplosion::shape,
+                        "colors",
+                        FIREWORK_COLOR_CODEC.list().optional(List.of()),
+                        FireworkExplosion::colors,
+                        "fade_colors",
+                        FIREWORK_COLOR_CODEC.list().optional(List.of()),
+                        FireworkExplosion::fadeColors,
+                        "has_trail",
+                        Codec.BOOLEAN.optional(false),
+                        FireworkExplosion::hasTrail,
+                        "has_twinkle",
+                        Codec.BOOLEAN.optional(false),
+                        FireworkExplosion::hasTwinkle,
+                        FireworkExplosion::new);
 
-        private Codecs() {
-        }
+        private Codecs() {}
     }
 
     static @NotNull DynamicRegistry<StructCodec<? extends LootFunction>> createDefaultRegistry() {
-        final DynamicRegistry<StructCodec<? extends LootFunction>> registry = DynamicRegistry.create(Key.key("loot_functions"));
+        final DynamicRegistry<StructCodec<? extends LootFunction>> registry =
+                DynamicRegistry.create(Key.key("loot_functions"));
         registry.register("apply_bonus", ApplyBonus.CODEC);
         registry.register("copy_components", CopyComponents.CODEC);
         registry.register("copy_custom_data", CopyCustomData.CODEC);
@@ -145,25 +168,32 @@ public interface LootFunction {
 
     /**
      * Performs any mutations on the provided object and returns the result.
+     *
      * @param input the input item to this function
      * @param context the context object, to use if required
      * @return the modified form of the input
      */
-    @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context);
+    @NotNull
+    ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context);
 
     /**
      * @return the codec that can encode this function
      */
-    @NotNull StructCodec<? extends LootFunction> codec();
+    @NotNull
+    StructCodec<? extends LootFunction> codec();
 
     /**
      * Applies each function to the given item consecutively.
+     *
      * @param functions the functions to apply
      * @param item the item to modify
      * @param context the context to use
      * @return the modified item
      */
-    static @NotNull ItemStack apply(@NotNull Collection<LootFunction> functions, @NotNull ItemStack item, @NotNull LootContext context) {
+    static @NotNull ItemStack apply(
+            @NotNull Collection<LootFunction> functions,
+            @NotNull ItemStack item,
+            @NotNull LootContext context) {
         for (LootFunction function : functions) {
             item = function.apply(item, context);
         }
@@ -172,12 +202,16 @@ public interface LootFunction {
 
     /**
      * Applies each function to each of the given items consecutively.
+     *
      * @param functions the functions to apply
      * @param items the items to modify
      * @param context the context to use
      * @return the modified items
      */
-    static @NotNull List<ItemStack> apply(@NotNull Collection<LootFunction> functions, @NotNull List<ItemStack> items, @NotNull LootContext context) {
+    static @NotNull List<ItemStack> apply(
+            @NotNull Collection<LootFunction> functions,
+            @NotNull List<ItemStack> items,
+            @NotNull LootContext context) {
         List<ItemStack> newItems = new ArrayList<>(items.size());
         for (ItemStack item : items) {
             newItems.add(LootFunction.apply(functions, item, context));
@@ -186,22 +220,28 @@ public interface LootFunction {
     }
 
     private static @NotNull Codec<String> limitedStringCodec(int maximumLength) {
-        return Codec.STRING.transform(value -> {
-            if (value.length() > maximumLength) {
-                throw new IllegalArgumentException("String length exceeds " + maximumLength);
-            }
+        return Codec.STRING.transform(
+                value -> {
+                    if (value.length() > maximumLength) {
+                        throw new IllegalArgumentException(
+                                "String length exceeds " + maximumLength);
+                    }
 
-            return value;
-        }, value -> value);
+                    return value;
+                },
+                value -> value);
     }
 
     private static @NotNull Codec<FilteredText<String>> filteredStringCodec(int maximumLength) {
         var stringCodec = limitedStringCodec(maximumLength);
         return StructCodec.struct(
-                "raw", stringCodec, FilteredText::text,
-                "filtered", stringCodec.optional(), FilteredText::filtered,
-                FilteredText::new
-        );
+                "raw",
+                stringCodec,
+                FilteredText::text,
+                "filtered",
+                stringCodec.optional(),
+                FilteredText::filtered,
+                FilteredText::new);
     }
 
     private static void addStackSplits(@NotNull List<ItemStack> items, @NotNull ItemStack item) {
@@ -221,13 +261,23 @@ public interface LootFunction {
         }
     }
 
-    record ApplyBonus(@NotNull List<LootPredicate> predicates, @NotNull RegistryKey<Enchantment> enchantment, @NotNull Formula.Wrapper formula) implements LootFunction {
-        public static final @NotNull StructCodec<ApplyBonus> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), ApplyBonus::predicates,
-                "enchantment", RegistryKey.codec(Registries::enchantment), ApplyBonus::enchantment,
-                StructCodec.INLINE, Formula.CODEC, ApplyBonus::formula,
-                ApplyBonus::new
-        );
+    record ApplyBonus(
+            @NotNull List<LootPredicate> predicates,
+            @NotNull RegistryKey<Enchantment> enchantment,
+            @NotNull Formula.Wrapper formula)
+            implements LootFunction {
+        public static final @NotNull StructCodec<ApplyBonus> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        ApplyBonus::predicates,
+                        "enchantment",
+                        RegistryKey.codec(Registries::enchantment),
+                        ApplyBonus::enchantment,
+                        StructCodec.INLINE,
+                        Formula.CODEC,
+                        ApplyBonus::formula,
+                        ApplyBonus::new);
 
         public sealed interface Formula {
 
@@ -238,26 +288,36 @@ public interface LootFunction {
             }
 
             record Wrapper(Formula parameters) {
-                private static <T extends Formula> StructCodec<Wrapper> wrap(@NotNull StructCodec<T> codec) {
+                private static <T extends Formula> StructCodec<Wrapper> wrap(
+                        @NotNull StructCodec<T> codec) {
                     return StructCodec.struct(
-                            "parameters", codec.transform(a->a,a->(T)a), Wrapper::parameters,
-                            Wrapper::new
-                    );
+                            "parameters",
+                            codec.transform(a -> a, a -> (T) a),
+                            Wrapper::parameters,
+                            Wrapper::new);
                 }
 
-                private static final StructCodec<Wrapper> BINOMIAL_WITH_BONUS_COUNT = wrap(BinomialWithBonusCount.CODEC);
-                private static final StructCodec<Wrapper> ORE_DROPS = new StructCodec<>() {
-                    @Override
-                    public @NotNull <D> Result<Wrapper> decodeFromMap(@NotNull Transcoder<D> coder, Transcoder.@NotNull MapLike<D> map) {
-                        return new Result.Ok<>(new Wrapper(new OreDrops()));
-                    }
+                private static final StructCodec<Wrapper> BINOMIAL_WITH_BONUS_COUNT =
+                        wrap(BinomialWithBonusCount.CODEC);
+                private static final StructCodec<Wrapper> ORE_DROPS =
+                        new StructCodec<>() {
+                            @Override
+                            public @NotNull <D> Result<Wrapper> decodeFromMap(
+                                    @NotNull Transcoder<D> coder,
+                                    Transcoder.@NotNull MapLike<D> map) {
+                                return new Result.Ok<>(new Wrapper(new OreDrops()));
+                            }
 
-                    @Override
-                    public @NotNull <D> Result<D> encodeToMap(@NotNull Transcoder<D> coder, @NotNull Wrapper value, Transcoder.@NotNull MapBuilder<D> map) {
-                        return new Result.Ok<>(map.build());
-                    }
-                };
-                private static final StructCodec<Wrapper> UNIFORM_BONUS_COUNT = wrap(UniformBonusCount.CODEC);
+                            @Override
+                            public @NotNull <D> Result<D> encodeToMap(
+                                    @NotNull Transcoder<D> coder,
+                                    @NotNull Wrapper value,
+                                    Transcoder.@NotNull MapBuilder<D> map) {
+                                return new Result.Ok<>(map.build());
+                            }
+                        };
+                private static final StructCodec<Wrapper> UNIFORM_BONUS_COUNT =
+                        wrap(UniformBonusCount.CODEC);
 
                 public static @NotNull StructCodec<Wrapper> codec(@NotNull FormulaType type) {
                     return switch (type) {
@@ -268,24 +328,41 @@ public interface LootFunction {
                 }
             }
 
-            @NotNull Codec<Wrapper> CODEC = Codec.KEY.transform(key -> switch (key.asString()) {
-                case "minecraft:binomial_with_bonus_count" -> FormulaType.BINOMIAL_WITH_BONUS_COUNT;
-                case "minecraft:ore_drops" -> FormulaType.ORE_DROPS;
-                case "minecraft:uniform_bonus_count" -> FormulaType.UNIFORM_BONUS_COUNT;
-                default -> throw new IllegalArgumentException();
-            }, type -> Key.key(type.toString().toLowerCase())).unionType("formula", Wrapper::codec, (Wrapper formula) -> switch (formula.parameters()) {
-                case BinomialWithBonusCount ignored -> FormulaType.BINOMIAL_WITH_BONUS_COUNT;
-                case OreDrops ignored -> FormulaType.ORE_DROPS;
-                case UniformBonusCount ignored -> FormulaType.UNIFORM_BONUS_COUNT;
-            });
+            @NotNull
+            Codec<Wrapper> CODEC =
+                    Codec.KEY
+                            .transform(
+                                    key ->
+                                            switch (key.asString()) {
+                                                case "minecraft:binomial_with_bonus_count" ->
+                                                        FormulaType.BINOMIAL_WITH_BONUS_COUNT;
+                                                case "minecraft:ore_drops" -> FormulaType.ORE_DROPS;
+                                                case "minecraft:uniform_bonus_count" ->
+                                                        FormulaType.UNIFORM_BONUS_COUNT;
+                                                default -> throw new IllegalArgumentException();
+                                            },
+                                    type -> Key.key(type.toString().toLowerCase()))
+                            .unionType(
+                                    "formula",
+                                    Wrapper::codec,
+                                    (Wrapper formula) ->
+                                            switch (formula.parameters()) {
+                                                case BinomialWithBonusCount ignored ->
+                                                        FormulaType.BINOMIAL_WITH_BONUS_COUNT;
+                                                case OreDrops ignored -> FormulaType.ORE_DROPS;
+                                                case UniformBonusCount ignored ->
+                                                        FormulaType.UNIFORM_BONUS_COUNT;
+                                            });
 
             int calculate(@NotNull Random random, int count, int level);
 
             record UniformBonusCount(int bonusMultiplier) implements Formula {
-                public static final @NotNull StructCodec<UniformBonusCount> CODEC = StructCodec.struct(
-                        "bonusMultiplier", StructCodec.INT, UniformBonusCount::bonusMultiplier,
-                        UniformBonusCount::new
-                );
+                public static final @NotNull StructCodec<UniformBonusCount> CODEC =
+                        StructCodec.struct(
+                                "bonusMultiplier",
+                                StructCodec.INT,
+                                UniformBonusCount::bonusMultiplier,
+                                UniformBonusCount::new);
 
                 @Override
                 public int calculate(@NotNull Random random, int count, int level) {
@@ -294,7 +371,8 @@ public interface LootFunction {
             }
 
             record OreDrops() implements Formula {
-                public static final @NotNull StructCodec<OreDrops> CODEC = StructCodec.struct(OreDrops::new);
+                public static final @NotNull StructCodec<OreDrops> CODEC =
+                        StructCodec.struct(OreDrops::new);
 
                 @Override
                 public int calculate(@NotNull Random random, int count, int level) {
@@ -305,11 +383,15 @@ public interface LootFunction {
             }
 
             record BinomialWithBonusCount(float probability, int extra) implements Formula {
-                public static final @NotNull StructCodec<BinomialWithBonusCount> CODEC = StructCodec.struct(
-                        "probability", Codec.FLOAT, BinomialWithBonusCount::probability,
-                        "extra", Codec.INT, BinomialWithBonusCount::extra,
-                        BinomialWithBonusCount::new
-                );
+                public static final @NotNull StructCodec<BinomialWithBonusCount> CODEC =
+                        StructCodec.struct(
+                                "probability",
+                                Codec.FLOAT,
+                                BinomialWithBonusCount::probability,
+                                "extra",
+                                Codec.INT,
+                                BinomialWithBonusCount::extra,
+                                BinomialWithBonusCount::new);
 
                 @Override
                 public int calculate(@NotNull Random random, int count, int level) {
@@ -322,7 +404,6 @@ public interface LootFunction {
                     return count;
                 }
             }
-
         }
 
         @Override
@@ -335,7 +416,9 @@ public interface LootFunction {
             if (tool == null) return input;
 
             int level = EnchantmentUtils.level(tool, enchantment);
-            int newCount = formula.parameters().calculate(context.require(LootContext.RANDOM), input.amount(), level);
+            int newCount =
+                    formula.parameters()
+                            .calculate(context.require(LootContext.RANDOM), input.amount(), level);
 
             return input.withAmount(newCount);
         }
@@ -346,24 +429,52 @@ public interface LootFunction {
         }
     }
 
-    record CopyComponents(@NotNull List<LootPredicate> predicates, @NotNull RelevantTarget source,
-                          @Nullable List<DataComponent<?>> include, @Nullable List<DataComponent<?>> exclude) implements LootFunction {
-        public static final @NotNull StructCodec<CopyComponents> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), CopyComponents::predicates,
-                "source", RelevantTarget.CODEC, CopyComponents::source,
-                "include", Codec.KEY.<DataComponent<?>>transform(DataComponent::fromKey, DataComponent::key).list().optional(), CopyComponents::include,
-                "exclude", Codec.KEY.<DataComponent<?>>transform(DataComponent::fromKey, DataComponent::key).list().optional(), CopyComponents::exclude,
-                CopyComponents::new
-        );
+    record CopyComponents(
+            @NotNull List<LootPredicate> predicates,
+            @NotNull RelevantTarget source,
+            @Nullable List<DataComponent<?>> include,
+            @Nullable List<DataComponent<?>> exclude)
+            implements LootFunction {
+        public static final @NotNull StructCodec<CopyComponents> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        CopyComponents::predicates,
+                        "source",
+                        RelevantTarget.CODEC,
+                        CopyComponents::source,
+                        "include",
+                        Codec.KEY
+                                .<DataComponent<?>>transform(
+                                        DataComponent::fromKey, DataComponent::key)
+                                .list()
+                                .optional(),
+                        CopyComponents::include,
+                        "exclude",
+                        Codec.KEY
+                                .<DataComponent<?>>transform(
+                                        DataComponent::fromKey, DataComponent::key)
+                                .list()
+                                .optional(),
+                        CopyComponents::exclude,
+                        CopyComponents::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
             if (!LootPredicate.all(predicates, context)) return input;
 
-            DataComponentMap sourceComponents = switch (source) {
-                case BLOCK_ENTITY -> blockComponents(context.get(LootContext.BLOCK_STATE));
-                case THIS, ATTACKER, DIRECT_ATTACKER, ATTACKING_PLAYER, TOOL, TARGET_ENTITY, INTERACTING_ENTITY -> holderComponents(context.get(source.key()));
-            };
+            DataComponentMap sourceComponents =
+                    switch (source) {
+                        case BLOCK_ENTITY -> blockComponents(context.get(LootContext.BLOCK_STATE));
+                        case THIS,
+                                ATTACKER,
+                                DIRECT_ATTACKER,
+                                ATTACKING_PLAYER,
+                                TOOL,
+                                TARGET_ENTITY,
+                                INTERACTING_ENTITY ->
+                                holderComponents(context.get(source.key()));
+                    };
 
             if (sourceComponents == null) return input;
 
@@ -398,24 +509,29 @@ public interface LootFunction {
             BinaryTag components = block.nbt().get("components");
             if (!(components instanceof CompoundBinaryTag compound)) return DataComponentMap.EMPTY;
 
-            Transcoder<BinaryTag> coder = new RegistryTranscoder<>(Transcoder.NBT, MinecraftServer.process());
+            Transcoder<BinaryTag> coder =
+                    new RegistryTranscoder<>(Transcoder.NBT, MinecraftServer.process());
             Result<DataComponentMap> result = DataComponent.MAP_NBT_TYPE.decode(coder, compound);
 
-            return result instanceof Result.Ok(DataComponentMap componentMap) ? componentMap : DataComponentMap.EMPTY;
+            return result instanceof Result.Ok(DataComponentMap componentMap)
+                    ? componentMap
+                    : DataComponentMap.EMPTY;
         }
 
-        private static <T> void copyComponent(@NotNull DataComponentMap.Builder builder,
-                                               @NotNull DataComponent.Holder holder,
-                                               @NotNull DataComponent<T> component) {
+        private static <T> void copyComponent(
+                @NotNull DataComponentMap.Builder builder,
+                @NotNull DataComponent.Holder holder,
+                @NotNull DataComponent<T> component) {
             T value = holder.get(component);
 
             if (value != null) builder.set(component, value);
         }
 
         @SuppressWarnings("unchecked")
-        private static <T> void setComponent(@NotNull ItemStack.Builder builder,
-                                             @NotNull DataComponent<?> component,
-                                             @Nullable Object value) {
+        private static <T> void setComponent(
+                @NotNull ItemStack.Builder builder,
+                @NotNull DataComponent<?> component,
+                @Nullable Object value) {
             builder.set((DataComponent<T>) component, (T) value);
         }
 
@@ -424,22 +540,39 @@ public interface LootFunction {
             return CODEC;
         }
     }
-    
-    record CopyCustomData(@NotNull List<LootPredicate> predicates, @NotNull LootNBT source, @NotNull List<Operation> ops) implements LootFunction {
-        public static final @NotNull StructCodec<CopyCustomData> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), CopyCustomData::predicates,
-                "source", LootNBT.CODEC, CopyCustomData::source,
-                "ops", Operation.CODEC.list(), CopyCustomData::ops,
-                CopyCustomData::new
-        );
 
-        public record Operation(@NotNull NBTPath source, @NotNull NBTPath target, @NotNull Operator op) {
-            public static final @NotNull StructCodec<Operation> CODEC = StructCodec.struct(
-                    "source", NBTPath.CODEC, Operation::source,
-                    "target", NBTPath.CODEC, Operation::target,
-                    "op", Operator.SERIALIZER, Operation::op,
-                    Operation::new
-            );
+    record CopyCustomData(
+            @NotNull List<LootPredicate> predicates,
+            @NotNull LootNBT source,
+            @NotNull List<Operation> ops)
+            implements LootFunction {
+        public static final @NotNull StructCodec<CopyCustomData> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        CopyCustomData::predicates,
+                        "source",
+                        LootNBT.CODEC,
+                        CopyCustomData::source,
+                        "ops",
+                        Operation.CODEC.list(),
+                        CopyCustomData::ops,
+                        CopyCustomData::new);
+
+        public record Operation(
+                @NotNull NBTPath source, @NotNull NBTPath target, @NotNull Operator op) {
+            public static final @NotNull StructCodec<Operation> CODEC =
+                    StructCodec.struct(
+                            "source",
+                            NBTPath.CODEC,
+                            Operation::source,
+                            "target",
+                            NBTPath.CODEC,
+                            Operation::target,
+                            "op",
+                            Operator.SERIALIZER,
+                            Operation::op,
+                            Operation::new);
 
             public void execute(@NotNull NBTReference nbt, @NotNull BinaryTag sourceTag) {
                 List<BinaryTag> nbts = new ArrayList<>();
@@ -453,13 +586,19 @@ public interface LootFunction {
         public enum Operator {
             REPLACE() {
                 @Override
-                public void merge(@NotNull NBTReference nbt, @NotNull NBTPath target, @NotNull List<BinaryTag> source) {
+                public void merge(
+                        @NotNull NBTReference nbt,
+                        @NotNull NBTPath target,
+                        @NotNull List<BinaryTag> source) {
                     target.set(nbt, source.getLast());
                 }
             },
             APPEND() {
                 @Override
-                public void merge(@NotNull NBTReference nbt, @NotNull NBTPath target, @NotNull List<BinaryTag> source) {
+                public void merge(
+                        @NotNull NBTReference nbt,
+                        @NotNull NBTPath target,
+                        @NotNull List<BinaryTag> source) {
                     List<NBTReference> nbts = target.getWithDefaults(nbt, ListBinaryTag::empty);
 
                     for (var ref : nbts) {
@@ -469,7 +608,10 @@ public interface LootFunction {
             },
             MERGE() {
                 @Override
-                public void merge(@NotNull NBTReference nbt, @NotNull NBTPath target, @NotNull List<BinaryTag> source) {
+                public void merge(
+                        @NotNull NBTReference nbt,
+                        @NotNull NBTPath target,
+                        @NotNull List<BinaryTag> source) {
                     List<NBTReference> nbts = target.getWithDefaults(nbt, CompoundBinaryTag::empty);
 
                     for (var ref : nbts) {
@@ -490,7 +632,10 @@ public interface LootFunction {
 
             public static final @NotNull Codec<Operator> SERIALIZER = Codec.Enum(Operator.class);
 
-            public abstract void merge(@NotNull NBTReference nbt, @NotNull NBTPath target, @NotNull List<BinaryTag> source);
+            public abstract void merge(
+                    @NotNull NBTReference nbt,
+                    @NotNull NBTPath target,
+                    @NotNull List<BinaryTag> source);
         }
 
         @Override
@@ -500,7 +645,8 @@ public interface LootFunction {
             BinaryTag sourceNBT = source.getNBT(context);
             if (sourceNBT == null) return input;
 
-            NBTReference targetNBT = NBTReference.of(input.get(DataComponents.CUSTOM_DATA, CustomData.EMPTY).nbt());
+            NBTReference targetNBT =
+                    NBTReference.of(input.get(DataComponents.CUSTOM_DATA, CustomData.EMPTY).nbt());
 
             for (Operation operation : ops) {
                 operation.execute(targetNBT, sourceNBT);
@@ -518,13 +664,18 @@ public interface LootFunction {
             return CODEC;
         }
     }
-    
-    record CopyName(@NotNull List<LootPredicate> predicates, @NotNull RelevantTarget source) implements LootFunction {
-        public static final @NotNull StructCodec<CopyName> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), CopyName::predicates,
-                "source", RelevantTarget.ENTITY_OR_BLOCK_CODEC, CopyName::source,
-                CopyName::new
-        );
+
+    record CopyName(@NotNull List<LootPredicate> predicates, @NotNull RelevantTarget source)
+            implements LootFunction {
+        public static final @NotNull StructCodec<CopyName> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        CopyName::predicates,
+                        "source",
+                        RelevantTarget.ENTITY_OR_BLOCK_CODEC,
+                        CopyName::source,
+                        CopyName::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -536,12 +687,16 @@ public interface LootFunction {
 
             if (key instanceof Entity entity) {
                 var customName = entity.getCustomName();
-                return customName == null ? input.without(DataComponents.CUSTOM_NAME) : input.with(DataComponents.CUSTOM_NAME, customName);
+                return customName == null
+                        ? input.without(DataComponents.CUSTOM_NAME)
+                        : input.with(DataComponents.CUSTOM_NAME, customName);
             }
 
             if (key instanceof Block block && block.hasTag(VanillaInterface.CUSTOM_NAME)) {
                 var customName = block.getTag(VanillaInterface.CUSTOM_NAME);
-                return customName == null ? input.without(DataComponents.CUSTOM_NAME) : input.with(DataComponents.CUSTOM_NAME, customName);
+                return customName == null
+                        ? input.without(DataComponents.CUSTOM_NAME)
+                        : input.with(DataComponents.CUSTOM_NAME, customName);
             }
 
             return input;
@@ -553,13 +708,23 @@ public interface LootFunction {
         }
     }
 
-    record CopyState(@NotNull List<LootPredicate> predicates, @NotNull Block block, @NotNull List<String> properties) implements LootFunction {
-        public static final @NotNull StructCodec<CopyState> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), CopyState::predicates,
-                "block", Codec.KEY.transform(Block::fromKey, Block::key), CopyState::block,
-                "properties", Codec.STRING.list(), CopyState::properties,
-                CopyState::new
-        );
+    record CopyState(
+            @NotNull List<LootPredicate> predicates,
+            @NotNull Block block,
+            @NotNull List<String> properties)
+            implements LootFunction {
+        public static final @NotNull StructCodec<CopyState> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        CopyState::predicates,
+                        "block",
+                        Codec.KEY.transform(Block::fromKey, Block::key),
+                        CopyState::block,
+                        "properties",
+                        Codec.STRING.list(),
+                        CopyState::properties,
+                        CopyState::new);
 
         public CopyState {
             var validProperties = new ArrayList<>(properties);
@@ -602,15 +767,27 @@ public interface LootFunction {
         }
     }
 
-    record EnchantedCountIncrease(@NotNull List<LootPredicate> predicates, @NotNull RegistryKey<Enchantment> enchantment,
-                                  @NotNull LootNumber count, @Nullable Integer limit) implements LootFunction {
-        public static final @NotNull StructCodec<EnchantedCountIncrease> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), EnchantedCountIncrease::predicates,
-                "enchantment", RegistryKey.codec(Registries::enchantment), EnchantedCountIncrease::enchantment,
-                "count", LootNumber.CODEC, EnchantedCountIncrease::count,
-                "limit", Codec.INT.optional(), EnchantedCountIncrease::limit,
-                EnchantedCountIncrease::new
-        );
+    record EnchantedCountIncrease(
+            @NotNull List<LootPredicate> predicates,
+            @NotNull RegistryKey<Enchantment> enchantment,
+            @NotNull LootNumber count,
+            @Nullable Integer limit)
+            implements LootFunction {
+        public static final @NotNull StructCodec<EnchantedCountIncrease> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        EnchantedCountIncrease::predicates,
+                        "enchantment",
+                        RegistryKey.codec(Registries::enchantment),
+                        EnchantedCountIncrease::enchantment,
+                        "count",
+                        LootNumber.CODEC,
+                        EnchantedCountIncrease::count,
+                        "limit",
+                        Codec.INT.optional(),
+                        EnchantedCountIncrease::limit,
+                        EnchantedCountIncrease::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -624,7 +801,10 @@ public interface LootFunction {
             var addition = Math.round(level * (float) this.count.getDouble(context));
             var newAmount = input.amount() + addition;
 
-            return input.withAmount(this.limit != null && this.limit > 0 ? Math.min(this.limit, newAmount) : newAmount);
+            return input.withAmount(
+                    this.limit != null && this.limit > 0
+                            ? Math.min(this.limit, newAmount)
+                            : newAmount);
         }
 
         @Override
@@ -633,21 +813,34 @@ public interface LootFunction {
         }
     }
 
-    record EnchantRandomly(@NotNull List<LootPredicate> predicates, @Nullable RegistryTag<Enchantment> options,
-                           boolean onlyCompatible, boolean includeAdditionalCostComponent) implements LootFunction {
-        public EnchantRandomly(@NotNull List<LootPredicate> predicates,
-                               @Nullable RegistryTag<Enchantment> options,
-                               boolean onlyCompatible) {
+    record EnchantRandomly(
+            @NotNull List<LootPredicate> predicates,
+            @Nullable RegistryTag<Enchantment> options,
+            boolean onlyCompatible,
+            boolean includeAdditionalCostComponent)
+            implements LootFunction {
+        public EnchantRandomly(
+                @NotNull List<LootPredicate> predicates,
+                @Nullable RegistryTag<Enchantment> options,
+                boolean onlyCompatible) {
             this(predicates, options, onlyCompatible, false);
         }
 
-        public static final @NotNull StructCodec<EnchantRandomly> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), EnchantRandomly::predicates,
-                "options", RegistryTag.codec(Registries::enchantment).optional(), EnchantRandomly::options,
-                "only_compatible", Codec.BOOLEAN.optional(true), EnchantRandomly::onlyCompatible,
-                "include_additional_cost_component", Codec.BOOLEAN.optional(false), EnchantRandomly::includeAdditionalCostComponent,
-                EnchantRandomly::new
-        );
+        public static final @NotNull StructCodec<EnchantRandomly> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        EnchantRandomly::predicates,
+                        "options",
+                        RegistryTag.codec(Registries::enchantment).optional(),
+                        EnchantRandomly::options,
+                        "only_compatible",
+                        Codec.BOOLEAN.optional(true),
+                        EnchantRandomly::onlyCompatible,
+                        "include_additional_cost_component",
+                        Codec.BOOLEAN.optional(false),
+                        EnchantRandomly::includeAdditionalCostComponent,
+                        EnchantRandomly::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -661,7 +854,12 @@ public interface LootFunction {
             (this.options == null ? enchantmentRegistry.keys() : this.options).forEach(values::add);
 
             if (this.onlyCompatible && !input.material().equals(Material.BOOK)) {
-                values.removeIf(enchantment -> !enchantmentRegistry.get(enchantment).supportedItems().contains(input.material()));
+                values.removeIf(
+                        enchantment ->
+                                !enchantmentRegistry
+                                        .get(enchantment)
+                                        .supportedItems()
+                                        .contains(input.material()));
             }
 
             if (values.isEmpty()) {
@@ -675,8 +873,11 @@ public interface LootFunction {
             var level = random.nextInt(enchantmentRegistry.get(chosen).maxLevel()) + 1;
             var result = EnchantmentUtils.modifyItem(input, map -> map.put(chosen, level));
 
-            if (this.includeAdditionalCostComponent && context.has(LootContext.ADDITIONAL_COST_COMPONENT_ALLOWED)) {
-                return result.with(DataComponents.ADDITIONAL_TRADE_COST, 2 + random.nextInt(5 + level * 10) + 3 * level);
+            if (this.includeAdditionalCostComponent
+                    && context.has(LootContext.ADDITIONAL_COST_COMPONENT_ALLOWED)) {
+                return result.with(
+                        DataComponents.ADDITIONAL_TRADE_COST,
+                        2 + random.nextInt(5 + level * 10) + 3 * level);
             }
 
             return result;
@@ -688,21 +889,34 @@ public interface LootFunction {
         }
     }
 
-    record EnchantWithLevels(@NotNull List<LootPredicate> predicates, @NotNull LootNumber levels,
-                             @Nullable RegistryTag<Enchantment> options, boolean includeAdditionalCostComponent) implements LootFunction {
-        public EnchantWithLevels(@NotNull List<LootPredicate> predicates,
-                                 @NotNull LootNumber levels,
-                                 @Nullable RegistryTag<Enchantment> options) {
+    record EnchantWithLevels(
+            @NotNull List<LootPredicate> predicates,
+            @NotNull LootNumber levels,
+            @Nullable RegistryTag<Enchantment> options,
+            boolean includeAdditionalCostComponent)
+            implements LootFunction {
+        public EnchantWithLevels(
+                @NotNull List<LootPredicate> predicates,
+                @NotNull LootNumber levels,
+                @Nullable RegistryTag<Enchantment> options) {
             this(predicates, levels, options, false);
         }
 
-        public static final @NotNull StructCodec<EnchantWithLevels> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), EnchantWithLevels::predicates,
-                "levels", LootNumber.CODEC, EnchantWithLevels::levels,
-                "options", RegistryTag.codec(Registries::enchantment).optional(), EnchantWithLevels::options,
-                "include_additional_cost_component", Codec.BOOLEAN.optional(false), EnchantWithLevels::includeAdditionalCostComponent,
-                EnchantWithLevels::new
-        );
+        public static final @NotNull StructCodec<EnchantWithLevels> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        EnchantWithLevels::predicates,
+                        "levels",
+                        LootNumber.CODEC,
+                        EnchantWithLevels::levels,
+                        "options",
+                        RegistryTag.codec(Registries::enchantment).optional(),
+                        EnchantWithLevels::options,
+                        "include_additional_cost_component",
+                        Codec.BOOLEAN.optional(false),
+                        EnchantWithLevels::includeAdditionalCostComponent,
+                        EnchantWithLevels::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -711,7 +925,13 @@ public interface LootFunction {
             }
 
             var enchantmentCost = this.levels.getInt(context);
-            var result = context.vanilla().enchant(context.require(LootContext.RANDOM), input, enchantmentCost, this.options);
+            var result =
+                    context.vanilla()
+                            .enchant(
+                                    context.require(LootContext.RANDOM),
+                                    input,
+                                    enchantmentCost,
+                                    this.options);
 
             if (this.includeAdditionalCostComponent
                     && context.has(LootContext.ADDITIONAL_COST_COMPONENT_ALLOWED)
@@ -729,21 +949,37 @@ public interface LootFunction {
         }
     }
 
-    record ExplorationMap(@NotNull List<LootPredicate> predicates,
-                           @NotNull TagKey<Object> destination,
-                           @NotNull Key decoration,
-                           byte zoom,
-                           int searchRadius,
-                           boolean skipExistingChunks) implements LootFunction {
-        public static final @NotNull StructCodec<ExplorationMap> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), ExplorationMap::predicates,
-                "destination", Codec.STRING.transform(TagKey::ofHash, TagKey::hashedKey).optional(TagKey.ofHash("#minecraft:on_treasure_maps")), ExplorationMap::destination,
-                "decoration", Codec.KEY.optional(Key.key("minecraft:woodland_mansion")), ExplorationMap::decoration,
-                "zoom", Codec.BYTE.optional((byte) 2), ExplorationMap::zoom,
-                "search_radius", Codec.INT.optional(50), ExplorationMap::searchRadius,
-                "skip_existing_chunks", Codec.BOOLEAN.optional(true), ExplorationMap::skipExistingChunks,
-                ExplorationMap::new
-        );
+    record ExplorationMap(
+            @NotNull List<LootPredicate> predicates,
+            @NotNull TagKey<Object> destination,
+            @NotNull Key decoration,
+            byte zoom,
+            int searchRadius,
+            boolean skipExistingChunks)
+            implements LootFunction {
+        public static final @NotNull StructCodec<ExplorationMap> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        ExplorationMap::predicates,
+                        "destination",
+                        Codec.STRING
+                                .transform(TagKey::ofHash, TagKey::hashedKey)
+                                .optional(TagKey.ofHash("#minecraft:on_treasure_maps")),
+                        ExplorationMap::destination,
+                        "decoration",
+                        Codec.KEY.optional(Key.key("minecraft:woodland_mansion")),
+                        ExplorationMap::decoration,
+                        "zoom",
+                        Codec.BYTE.optional((byte) 2),
+                        ExplorationMap::zoom,
+                        "search_radius",
+                        Codec.INT.optional(50),
+                        ExplorationMap::searchRadius,
+                        "skip_existing_chunks",
+                        Codec.BOOLEAN.optional(true),
+                        ExplorationMap::skipExistingChunks,
+                        ExplorationMap::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -755,16 +991,16 @@ public interface LootFunction {
             var origin = context.get(LootContext.ORIGIN);
             if (world == null || origin == null) return input;
 
-            return context.vanilla().explorationMap(
-                    input,
-                    world,
-                    origin,
-                    this.destination,
-                    this.decoration,
-                    this.zoom,
-                    this.searchRadius,
-                    this.skipExistingChunks
-            );
+            return context.vanilla()
+                    .explorationMap(
+                            input,
+                            world,
+                            origin,
+                            this.destination,
+                            this.decoration,
+                            this.zoom,
+                            this.searchRadius,
+                            this.skipExistingChunks);
         }
 
         @Override
@@ -774,10 +1010,12 @@ public interface LootFunction {
     }
 
     record ExplosionDecay(@NotNull List<LootPredicate> predicates) implements LootFunction {
-        public static final @NotNull StructCodec<ExplosionDecay> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), ExplosionDecay::predicates,
-                ExplosionDecay::new
-        );
+        public static final @NotNull StructCodec<ExplosionDecay> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        ExplosionDecay::predicates,
+                        ExplosionDecay::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -808,12 +1046,17 @@ public interface LootFunction {
         }
     }
 
-    record FillPlayerHead(@NotNull List<LootPredicate> predicates, @NotNull RelevantEntity entity) implements LootFunction {
-        public static final @NotNull StructCodec<FillPlayerHead> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), FillPlayerHead::predicates,
-                "entity", RelevantEntity.CODEC, FillPlayerHead::entity,
-                FillPlayerHead::new
-        );
+    record FillPlayerHead(@NotNull List<LootPredicate> predicates, @NotNull RelevantEntity entity)
+            implements LootFunction {
+        public static final @NotNull StructCodec<FillPlayerHead> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        FillPlayerHead::predicates,
+                        "entity",
+                        RelevantEntity.CODEC,
+                        FillPlayerHead::entity,
+                        FillPlayerHead::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -834,16 +1077,28 @@ public interface LootFunction {
             return CODEC;
         }
     }
-    
-    record Filtered(@NotNull List<LootPredicate> predicates, @NotNull ItemPredicate predicate,
-                    @Nullable LootFunction onPass, @Nullable LootFunction onFail) implements LootFunction {
-        public static final @NotNull StructCodec<Filtered> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), Filtered::predicates,
-                "item_filter", ItemPredicate.CODEC, Filtered::predicate,
-                "on_pass", LootFunction.CODEC.optional(), Filtered::onPass,
-                "on_fail", LootFunction.CODEC.optional(), Filtered::onFail,
-                Filtered::new
-        );
+
+    record Filtered(
+            @NotNull List<LootPredicate> predicates,
+            @NotNull ItemPredicate predicate,
+            @Nullable LootFunction onPass,
+            @Nullable LootFunction onFail)
+            implements LootFunction {
+        public static final @NotNull StructCodec<Filtered> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        Filtered::predicates,
+                        "item_filter",
+                        ItemPredicate.CODEC,
+                        Filtered::predicate,
+                        "on_pass",
+                        LootFunction.CODEC.optional(),
+                        Filtered::onPass,
+                        "on_fail",
+                        LootFunction.CODEC.optional(),
+                        Filtered::onFail,
+                        Filtered::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -864,10 +1119,12 @@ public interface LootFunction {
     }
 
     record Discard(@NotNull List<LootPredicate> predicates) implements LootFunction {
-        public static final @NotNull StructCodec<Discard> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), Discard::predicates,
-                Discard::new
-        );
+        public static final @NotNull StructCodec<Discard> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        Discard::predicates,
+                        Discard::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -884,17 +1141,22 @@ public interface LootFunction {
             return CODEC;
         }
     }
-    
-    record FurnaceSmelt(@NotNull List<LootPredicate> predicates, boolean useInputCount) implements LootFunction {
+
+    record FurnaceSmelt(@NotNull List<LootPredicate> predicates, boolean useInputCount)
+            implements LootFunction {
         public FurnaceSmelt(@NotNull List<LootPredicate> predicates) {
             this(predicates, true);
         }
 
-        public static final @NotNull StructCodec<FurnaceSmelt> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), FurnaceSmelt::predicates,
-                "use_input_count", Codec.BOOLEAN.optional(true), FurnaceSmelt::useInputCount,
-                FurnaceSmelt::new
-        );
+        public static final @NotNull StructCodec<FurnaceSmelt> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        FurnaceSmelt::predicates,
+                        "use_input_count",
+                        Codec.BOOLEAN.optional(true),
+                        FurnaceSmelt::useInputCount,
+                        FurnaceSmelt::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -918,12 +1180,17 @@ public interface LootFunction {
         }
     }
 
-    record LimitCount(@NotNull List<LootPredicate> predicates, @NotNull LootNumberRange limit) implements LootFunction {
-        public static final @NotNull StructCodec<LimitCount> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), LimitCount::predicates,
-                "limit", LootNumberRange.CODEC, LimitCount::limit,
-                LimitCount::new
-        );
+    record LimitCount(@NotNull List<LootPredicate> predicates, @NotNull LootNumberRange limit)
+            implements LootFunction {
+        public static final @NotNull StructCodec<LimitCount> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        LimitCount::predicates,
+                        "limit",
+                        LootNumberRange.CODEC,
+                        LimitCount::limit,
+                        LimitCount::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -937,19 +1204,30 @@ public interface LootFunction {
         }
     }
 
-    record ModifyContents(@NotNull List<LootPredicate> predicates, @NotNull DataComponent<List<ItemStack>> component,
-                          @NotNull LootFunction modifier) implements LootFunction {
-        public ModifyContents(@NotNull List<LootPredicate> predicates, @NotNull List<LootFunction> modifier,
-                              @NotNull DataComponent<List<ItemStack>> component) {
+    record ModifyContents(
+            @NotNull List<LootPredicate> predicates,
+            @NotNull DataComponent<List<ItemStack>> component,
+            @NotNull LootFunction modifier)
+            implements LootFunction {
+        public ModifyContents(
+                @NotNull List<LootPredicate> predicates,
+                @NotNull List<LootFunction> modifier,
+                @NotNull DataComponent<List<ItemStack>> component) {
             this(predicates, component, new Sequence(modifier));
         }
 
-        public static final @NotNull StructCodec<ModifyContents> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), ModifyContents::predicates,
-                "component", Template.CONTAINER, ModifyContents::component,
-                "modifier", LootFunction.CODEC, ModifyContents::modifier,
-                ModifyContents::new
-        );
+        public static final @NotNull StructCodec<ModifyContents> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        ModifyContents::predicates,
+                        "component",
+                        Template.CONTAINER,
+                        ModifyContents::component,
+                        "modifier",
+                        LootFunction.CODEC,
+                        ModifyContents::modifier,
+                        ModifyContents::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -976,7 +1254,9 @@ public interface LootFunction {
                 }
 
                 var modifiedItem = this.modifier.apply(item, context);
-                updated.add(modifiedItem.withAmount(Math.min(modifiedItem.amount(), modifiedItem.maxStackSize())));
+                updated.add(
+                        modifiedItem.withAmount(
+                                Math.min(modifiedItem.amount(), modifiedItem.maxStackSize())));
             }
 
             return input.with(this.component, updated);
@@ -988,12 +1268,17 @@ public interface LootFunction {
         }
     }
 
-    record Reference(@NotNull List<LootPredicate> predicates, @NotNull Key name) implements LootFunction {
-        public static final @NotNull StructCodec<Reference> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), Reference::predicates,
-                "name", Codec.KEY, Reference::name,
-                Reference::new
-        );
+    record Reference(@NotNull List<LootPredicate> predicates, @NotNull Key name)
+            implements LootFunction {
+        public static final @NotNull StructCodec<Reference> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        Reference::predicates,
+                        "name",
+                        Codec.KEY,
+                        Reference::name,
+                        Reference::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -1010,42 +1295,71 @@ public interface LootFunction {
         }
     }
 
-    record SetAttributes(@NotNull List<LootPredicate> predicates, @NotNull List<AttributeDirective> modifiers, boolean replace) implements LootFunction {
-        public static final @NotNull StructCodec<SetAttributes> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetAttributes::predicates,
-                "modifiers", AttributeDirective.CODEC.list(), SetAttributes::modifiers,
-                "replace", Codec.BOOLEAN.optional(true), SetAttributes::replace,
-                SetAttributes::new
-        );
+    record SetAttributes(
+            @NotNull List<LootPredicate> predicates,
+            @NotNull List<AttributeDirective> modifiers,
+            boolean replace)
+            implements LootFunction {
+        public static final @NotNull StructCodec<SetAttributes> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetAttributes::predicates,
+                        "modifiers",
+                        AttributeDirective.CODEC.list(),
+                        SetAttributes::modifiers,
+                        "replace",
+                        Codec.BOOLEAN.optional(true),
+                        SetAttributes::replace,
+                        SetAttributes::new);
 
-        public record AttributeDirective(@NotNull Key id, @NotNull Attribute attribute, @NotNull AttributeOperation operation,
-                                         @NotNull LootNumber amount, @NotNull List<EquipmentSlotGroup> slots) {
+        public record AttributeDirective(
+                @NotNull Key id,
+                @NotNull Attribute attribute,
+                @NotNull AttributeOperation operation,
+                @NotNull LootNumber amount,
+                @NotNull List<EquipmentSlotGroup> slots) {
 
-            private static final @NotNull Codec<List<EquipmentSlotGroup>> SLOTS_CODEC = EquipmentSlotGroup.CODEC.listOrSingle(Integer.MAX_VALUE).transform(slots -> {
+            private static final @NotNull Codec<List<EquipmentSlotGroup>> SLOTS_CODEC =
+                    EquipmentSlotGroup.CODEC
+                            .listOrSingle(Integer.MAX_VALUE)
+                            .transform(
+                                    slots -> {
+                                        if (slots.isEmpty()) {
+                                            throw new IllegalArgumentException(
+                                                    "Attribute modifier slots must not be empty");
+                                        }
 
-                if (slots.isEmpty()) {
-                    throw new IllegalArgumentException("Attribute modifier slots must not be empty");
-                }
+                                        return slots;
+                                    },
+                                    slots -> slots);
 
-                return slots;
-            }, slots -> slots);
-
-            public static final @NotNull Codec<AttributeDirective> CODEC = StructCodec.struct(
-                    "id", Codec.KEY, AttributeDirective::id,
-                    "attribute", Attribute.CODEC, AttributeDirective::attribute,
-                    "operation", AttributeOperation.CODEC, AttributeDirective::operation,
-                    "amount", LootNumber.CODEC, AttributeDirective::amount,
-                    "slot", SLOTS_CODEC, AttributeDirective::slots,
-                    AttributeDirective::new
-            );
+            public static final @NotNull Codec<AttributeDirective> CODEC =
+                    StructCodec.struct(
+                            "id",
+                            Codec.KEY,
+                            AttributeDirective::id,
+                            "attribute",
+                            Attribute.CODEC,
+                            AttributeDirective::attribute,
+                            "operation",
+                            AttributeOperation.CODEC,
+                            AttributeDirective::operation,
+                            "amount",
+                            LootNumber.CODEC,
+                            AttributeDirective::amount,
+                            "slot",
+                            SLOTS_CODEC,
+                            AttributeDirective::slots,
+                            AttributeDirective::new);
 
             public AttributeDirective {
 
                 if (slots.isEmpty()) {
-                    throw new IllegalArgumentException("Attribute modifier slots must not be empty");
+                    throw new IllegalArgumentException(
+                            "Attribute modifier slots must not be empty");
                 }
             }
-
         }
 
         @Override
@@ -1056,16 +1370,23 @@ public interface LootFunction {
 
             var component = input.get(DataComponents.ATTRIBUTE_MODIFIERS, AttributeList.EMPTY);
 
-            var list = this.replace ? new ArrayList<AttributeList.Modifier>() : new ArrayList<>(component.modifiers());
+            var list =
+                    this.replace
+                            ? new ArrayList<AttributeList.Modifier>()
+                            : new ArrayList<>(component.modifiers());
 
             for (var modifier : this.modifiers) {
-                var attributeModifier = new AttributeModifier(
-                        modifier.id(),
-                        (float) modifier.amount().getDouble(context),
-                        modifier.operation()
-                );
+                var attributeModifier =
+                        new AttributeModifier(
+                                modifier.id(),
+                                (float) modifier.amount().getDouble(context),
+                                modifier.operation());
 
-                var slot = modifier.slots().get(context.require(LootContext.RANDOM).nextInt(modifier.slots().size()));
+                var slot =
+                        modifier.slots()
+                                .get(
+                                        context.require(LootContext.RANDOM)
+                                                .nextInt(modifier.slots().size()));
 
                 list.add(new AttributeList.Modifier(modifier.attribute(), attributeModifier, slot));
             }
@@ -1079,13 +1400,23 @@ public interface LootFunction {
         }
     }
 
-    record SetBannerPattern(@NotNull List<LootPredicate> predicates, @NotNull BannerPatterns patterns, boolean append) implements LootFunction {
-        public static final @NotNull StructCodec<SetBannerPattern> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetBannerPattern::predicates,
-                "patterns", BannerPatterns.CODEC, SetBannerPattern::patterns,
-                "append", Codec.BOOLEAN, SetBannerPattern::append,
-                SetBannerPattern::new
-        );
+    record SetBannerPattern(
+            @NotNull List<LootPredicate> predicates,
+            @NotNull BannerPatterns patterns,
+            boolean append)
+            implements LootFunction {
+        public static final @NotNull StructCodec<SetBannerPattern> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetBannerPattern::predicates,
+                        "patterns",
+                        BannerPatterns.CODEC,
+                        SetBannerPattern::patterns,
+                        "append",
+                        Codec.BOOLEAN,
+                        SetBannerPattern::append,
+                        SetBannerPattern::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -1109,9 +1440,14 @@ public interface LootFunction {
         }
     }
 
-    record SetBookCover(@NotNull List<LootPredicate> predicates, @Nullable FilteredText<String> title,
-                        @Nullable String author, @Nullable Integer generation) implements LootFunction {
-        private static final @NotNull Codec<FilteredText<String>> TITLE_CODEC = filteredStringCodec(32);
+    record SetBookCover(
+            @NotNull List<LootPredicate> predicates,
+            @Nullable FilteredText<String> title,
+            @Nullable String author,
+            @Nullable Integer generation)
+            implements LootFunction {
+        private static final @NotNull Codec<FilteredText<String>> TITLE_CODEC =
+                filteredStringCodec(32);
 
         public SetBookCover {
 
@@ -1120,27 +1456,36 @@ public interface LootFunction {
             }
         }
 
-        public static final @NotNull StructCodec<SetBookCover> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetBookCover::predicates,
-                "title", TITLE_CODEC.optional(), SetBookCover::title,
-                "author", Codec.STRING.optional(), SetBookCover::author,
-                "generation", Codec.INT.optional(), SetBookCover::generation,
-                SetBookCover::new
-        );
+        public static final @NotNull StructCodec<SetBookCover> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetBookCover::predicates,
+                        "title",
+                        TITLE_CODEC.optional(),
+                        SetBookCover::title,
+                        "author",
+                        Codec.STRING.optional(),
+                        SetBookCover::author,
+                        "generation",
+                        Codec.INT.optional(),
+                        SetBookCover::generation,
+                        SetBookCover::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
             if (!LootPredicate.all(predicates, context)) return input;
 
-            WrittenBookContent content = input.get(DataComponents.WRITTEN_BOOK_CONTENT, WrittenBookContent.EMPTY);
+            WrittenBookContent content =
+                    input.get(DataComponents.WRITTEN_BOOK_CONTENT, WrittenBookContent.EMPTY);
 
-            WrittenBookContent updated = new WrittenBookContent(
-                    title != null ? title : content.title(),
-                    author != null ? author : content.author(),
-                    generation != null ? generation : content.generation(),
-                    content.pages(),
-                    content.resolved()
-            );
+            WrittenBookContent updated =
+                    new WrittenBookContent(
+                            title != null ? title : content.title(),
+                            author != null ? author : content.author(),
+                            generation != null ? generation : content.generation(),
+                            content.pages(),
+                            content.resolved());
 
             return input.with(DataComponents.WRITTEN_BOOK_CONTENT, updated);
         }
@@ -1151,12 +1496,17 @@ public interface LootFunction {
         }
     }
 
-    record SetComponents(@NotNull List<LootPredicate> predicates, @NotNull DataComponentMap changes) implements LootFunction {
-        public static final @NotNull StructCodec<SetComponents> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetComponents::predicates,
-                "components", DataComponent.PATCH_CODEC, SetComponents::changes,
-                SetComponents::new
-        );
+    record SetComponents(@NotNull List<LootPredicate> predicates, @NotNull DataComponentMap changes)
+            implements LootFunction {
+        public static final @NotNull StructCodec<SetComponents> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetComponents::predicates,
+                        "components",
+                        DataComponent.PATCH_CODEC,
+                        SetComponents::changes,
+                        SetComponents::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -1164,19 +1514,23 @@ public interface LootFunction {
                 return input;
             }
 
-            return input.with(builder -> {
-                for (var entry : this.changes.entrySet()) {
-                    if (entry.value() == null) {
-                        builder.remove(entry.component());
-                    } else {
-                        this.setComponent(builder, entry.component(), entry.value());
-                    }
-                }
-            });
+            return input.with(
+                    builder -> {
+                        for (var entry : this.changes.entrySet()) {
+                            if (entry.value() == null) {
+                                builder.remove(entry.component());
+                            } else {
+                                this.setComponent(builder, entry.component(), entry.value());
+                            }
+                        }
+                    });
         }
 
         @SuppressWarnings("unchecked")
-        private <T> void setComponent(@NotNull ItemStack.Builder builder, @NotNull DataComponent<T> component, Object value) {
+        private <T> void setComponent(
+                @NotNull ItemStack.Builder builder,
+                @NotNull DataComponent<T> component,
+                Object value) {
             builder.set(component, (T) value);
         }
 
@@ -1186,19 +1540,30 @@ public interface LootFunction {
         }
     }
 
-    record SetContents(@NotNull List<LootPredicate> predicates, @NotNull DataComponent<List<ItemStack>> component,
-                       @NotNull List<LootEntry> entries) implements LootFunction {
-        public SetContents(@NotNull List<LootPredicate> predicates, @NotNull List<LootEntry> entries,
-                           @NotNull DataComponent<List<ItemStack>> component) {
+    record SetContents(
+            @NotNull List<LootPredicate> predicates,
+            @NotNull DataComponent<List<ItemStack>> component,
+            @NotNull List<LootEntry> entries)
+            implements LootFunction {
+        public SetContents(
+                @NotNull List<LootPredicate> predicates,
+                @NotNull List<LootEntry> entries,
+                @NotNull DataComponent<List<ItemStack>> component) {
             this(predicates, component, entries);
         }
 
-        public static final @NotNull StructCodec<SetContents> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetContents::predicates,
-                "component", Template.CONTAINER, SetContents::component,
-                "entries", LootEntry.CODEC.list(), SetContents::entries,
-                SetContents::new
-        );
+        public static final @NotNull StructCodec<SetContents> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetContents::predicates,
+                        "component",
+                        Template.CONTAINER,
+                        SetContents::component,
+                        "entries",
+                        LootEntry.CODEC.list(),
+                        SetContents::entries,
+                        SetContents::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -1229,13 +1594,20 @@ public interface LootFunction {
         }
     }
 
-    record SetCount(@NotNull List<LootPredicate> predicates, @NotNull LootNumber count, boolean add) implements LootFunction {
-        public static final @NotNull StructCodec<SetCount> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetCount::predicates,
-                "count", LootNumber.CODEC, SetCount::count,
-                "add", Codec.BOOLEAN.optional(false), SetCount::add,
-                SetCount::new
-        );
+    record SetCount(@NotNull List<LootPredicate> predicates, @NotNull LootNumber count, boolean add)
+            implements LootFunction {
+        public static final @NotNull StructCodec<SetCount> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetCount::predicates,
+                        "count",
+                        LootNumber.CODEC,
+                        SetCount::count,
+                        "add",
+                        Codec.BOOLEAN.optional(false),
+                        SetCount::add,
+                        SetCount::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -1249,18 +1621,25 @@ public interface LootFunction {
         }
     }
 
-    record SetCustomData(@NotNull List<LootPredicate> predicates, @NotNull CompoundBinaryTag tag) implements LootFunction {
-        public static final @NotNull StructCodec<SetCustomData> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetCustomData::predicates,
-                "tag", Codec.STRING.transform(s -> {
-                    try {
-                        return TagStringIO.tagStringIO().asCompound(s);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }, TagStringIO.tagStringIO()::asString), SetCustomData::tag,
-                SetCustomData::new
-        );
+    record SetCustomData(@NotNull List<LootPredicate> predicates, @NotNull CompoundBinaryTag tag)
+            implements LootFunction {
+        public static final @NotNull StructCodec<SetCustomData> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetCustomData::predicates,
+                        "tag",
+                        Codec.STRING.transform(
+                                s -> {
+                                    try {
+                                        return TagStringIO.tagStringIO().asCompound(s);
+                                    } catch (IOException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                },
+                                TagStringIO.tagStringIO()::asString),
+                        SetCustomData::tag,
+                        SetCustomData::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -1269,7 +1648,9 @@ public interface LootFunction {
             }
 
             var current = input.get(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
-            return input.with(DataComponents.CUSTOM_DATA, new CustomData(NBTUtils.merge(current.nbt(), this.tag)));
+            return input.with(
+                    DataComponents.CUSTOM_DATA,
+                    new CustomData(NBTUtils.merge(current.nbt(), this.tag)));
         }
 
         @Override
@@ -1278,62 +1659,93 @@ public interface LootFunction {
         }
     }
 
-    record SetCustomModelData(@NotNull List<LootPredicate> predicates,
-                              @Nullable ListOperation.WithValues<LootNumber> floats,
-                              @Nullable ListOperation.WithValues<Boolean> flags,
-                              @Nullable ListOperation.WithValues<String> strings,
-                              @Nullable ListOperation.WithValues<LootNumber> colors) implements LootFunction {
-        public static final @NotNull StructCodec<SetCustomModelData> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetCustomModelData::predicates,
-                "floats", ListOperation.WithValues.codec(LootNumber.CODEC).optional(), SetCustomModelData::floats,
-                "flags", ListOperation.WithValues.codec(Codec.BOOLEAN).optional(), SetCustomModelData::flags,
-                "strings", ListOperation.WithValues.codec(Codec.STRING).optional(), SetCustomModelData::strings,
-                "colors", ListOperation.WithValues.codec(Codecs.CUSTOM_MODEL_DATA_COLOR_CODEC).optional(), SetCustomModelData::colors,
-                SetCustomModelData::new
-        );
+    record SetCustomModelData(
+            @NotNull List<LootPredicate> predicates,
+            @Nullable ListOperation.WithValues<LootNumber> floats,
+            @Nullable ListOperation.WithValues<Boolean> flags,
+            @Nullable ListOperation.WithValues<String> strings,
+            @Nullable ListOperation.WithValues<LootNumber> colors)
+            implements LootFunction {
+        public static final @NotNull StructCodec<SetCustomModelData> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetCustomModelData::predicates,
+                        "floats",
+                        ListOperation.WithValues.codec(LootNumber.CODEC).optional(),
+                        SetCustomModelData::floats,
+                        "flags",
+                        ListOperation.WithValues.codec(Codec.BOOLEAN).optional(),
+                        SetCustomModelData::flags,
+                        "strings",
+                        ListOperation.WithValues.codec(Codec.STRING).optional(),
+                        SetCustomModelData::strings,
+                        "colors",
+                        ListOperation.WithValues.codec(Codecs.CUSTOM_MODEL_DATA_COLOR_CODEC)
+                                .optional(),
+                        SetCustomModelData::colors,
+                        SetCustomModelData::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
             if (!LootPredicate.all(predicates, context)) return input;
 
-            var current = input.get(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(List.of(), List.of(), List.of(), List.of()));
+            var current =
+                    input.get(
+                            DataComponents.CUSTOM_MODEL_DATA,
+                            new CustomModelData(List.of(), List.of(), List.of(), List.of()));
             var updatedFloats = applyFloats(this.floats, current.floats(), context);
             var updatedFlags = applyValues(this.flags, current.flags());
             var updatedStrings = applyValues(this.strings, current.strings());
             var updatedColors = applyColors(this.colors, current.colors(), context);
 
-            return input.with(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(updatedFloats, updatedFlags, updatedStrings, updatedColors));
+            return input.with(
+                    DataComponents.CUSTOM_MODEL_DATA,
+                    new CustomModelData(
+                            updatedFloats, updatedFlags, updatedStrings, updatedColors));
         }
 
-        private static @NotNull List<Float> applyFloats(@Nullable ListOperation.WithValues<LootNumber> operation,
-                                                        @NotNull List<Float> current,
-                                                        @NotNull LootContext context) {
+        private static @NotNull List<Float> applyFloats(
+                @Nullable ListOperation.WithValues<LootNumber> operation,
+                @NotNull List<Float> current,
+                @NotNull LootContext context) {
             if (operation == null) {
 
                 return current;
             }
 
-            return operation.operation().apply(
-                    operation.values().stream().map(value -> (float) value.getDouble(context)).toList(), current
-            );
+            return operation
+                    .operation()
+                    .apply(
+                            operation.values().stream()
+                                    .map(value -> (float) value.getDouble(context))
+                                    .toList(),
+                            current);
         }
 
-        private static @NotNull List<RGBLike> applyColors(@Nullable ListOperation.WithValues<LootNumber> operation,
-                                                          @NotNull List<RGBLike> current,
-                                                          @NotNull LootContext context) {
+        private static @NotNull List<RGBLike> applyColors(
+                @Nullable ListOperation.WithValues<LootNumber> operation,
+                @NotNull List<RGBLike> current,
+                @NotNull LootContext context) {
             if (operation == null) {
 
                 return current;
             }
 
-            return operation.operation().apply(
-                    operation.values().stream().map(value -> (RGBLike) new Color(value.getInt(context))).toList(), current
-            );
+            return operation
+                    .operation()
+                    .apply(
+                            operation.values().stream()
+                                    .map(value -> (RGBLike) new Color(value.getInt(context)))
+                                    .toList(),
+                            current);
         }
 
-        private static <T> @NotNull List<T> applyValues(@Nullable ListOperation.WithValues<T> operation,
-                                                        @NotNull List<T> current) {
-            return operation == null ? current : operation.operation().apply(operation.values(), current);
+        private static <T> @NotNull List<T> applyValues(
+                @Nullable ListOperation.WithValues<T> operation, @NotNull List<T> current) {
+            return operation == null
+                    ? current
+                    : operation.operation().apply(operation.values(), current);
         }
 
         @Override
@@ -1342,13 +1754,21 @@ public interface LootFunction {
         }
     }
 
-    record SetDamage(@NotNull List<LootPredicate> predicates, @NotNull LootNumber damage, boolean add) implements LootFunction {
-        public static final @NotNull StructCodec<SetDamage> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetDamage::predicates,
-                "damage", LootNumber.CODEC, SetDamage::damage,
-                "add", Codec.BOOLEAN.optional(false), SetDamage::add,
-                SetDamage::new
-        );
+    record SetDamage(
+            @NotNull List<LootPredicate> predicates, @NotNull LootNumber damage, boolean add)
+            implements LootFunction {
+        public static final @NotNull StructCodec<SetDamage> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetDamage::predicates,
+                        "damage",
+                        LootNumber.CODEC,
+                        SetDamage::damage,
+                        "add",
+                        Codec.BOOLEAN.optional(false),
+                        SetDamage::add,
+                        SetDamage::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -1363,9 +1783,14 @@ public interface LootFunction {
 
             var currentDamage = input.get(DataComponents.DAMAGE, 0);
             var base = this.add ? 1.0F - (float) currentDamage / (float) maxDamage : 0.0F;
-            var percentage = 1.0F - Math.max(0.0F, Math.min(1.0F, (float) this.damage.getDouble(context) + base));
+            var percentage =
+                    1.0F
+                            - Math.max(
+                                    0.0F,
+                                    Math.min(1.0F, (float) this.damage.getDouble(context) + base));
 
-            return input.with(DataComponents.DAMAGE, (int) Math.floor(percentage * (float) maxDamage));
+            return input.with(
+                    DataComponents.DAMAGE, (int) Math.floor(percentage * (float) maxDamage));
         }
 
         @Override
@@ -1374,13 +1799,25 @@ public interface LootFunction {
         }
     }
 
-    record SetEnchantments(@NotNull List<LootPredicate> predicates, @NotNull Map<RegistryKey<Enchantment>, LootNumber> enchantments, boolean add) implements LootFunction {
-        public static final @NotNull StructCodec<SetEnchantments> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetEnchantments::predicates,
-                "enchantments", RegistryKey.codec(Registries::enchantment).mapValue(LootNumber.CODEC).optional(Map.of()), SetEnchantments::enchantments,
-                "add", Codec.BOOLEAN.optional(false), SetEnchantments::add,
-                SetEnchantments::new
-        );
+    record SetEnchantments(
+            @NotNull List<LootPredicate> predicates,
+            @NotNull Map<RegistryKey<Enchantment>, LootNumber> enchantments,
+            boolean add)
+            implements LootFunction {
+        public static final @NotNull StructCodec<SetEnchantments> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetEnchantments::predicates,
+                        "enchantments",
+                        RegistryKey.codec(Registries::enchantment)
+                                .mapValue(LootNumber.CODEC)
+                                .optional(Map.of()),
+                        SetEnchantments::enchantments,
+                        "add",
+                        Codec.BOOLEAN.optional(false),
+                        SetEnchantments::add,
+                        SetEnchantments::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -1388,21 +1825,26 @@ public interface LootFunction {
                 return input;
             }
 
-            var item = input.material().equals(Material.BOOK)
-                    ? input.builder().material(Material.ENCHANTED_BOOK).build()
-                    : input;
+            var item =
+                    input.material().equals(Material.BOOK)
+                            ? input.builder().material(Material.ENCHANTED_BOOK).build()
+                            : input;
 
-            return EnchantmentUtils.modifyItem(item, enchantmentMap -> {
-                this.enchantments.forEach((enchantment, number) -> {
-                    var level = number.getInt(context);
+            return EnchantmentUtils.modifyItem(
+                    item,
+                    enchantmentMap -> {
+                        this.enchantments.forEach(
+                                (enchantment, number) -> {
+                                    var level = number.getInt(context);
 
-                    if (this.add) {
-                        level += enchantmentMap.getOrDefault(enchantment, 0);
-                    }
+                                    if (this.add) {
+                                        level += enchantmentMap.getOrDefault(enchantment, 0);
+                                    }
 
-                    enchantmentMap.put(enchantment, Math.max(0, Math.min(255, level)));
-                });
-            });
+                                    enchantmentMap.put(
+                                            enchantment, Math.max(0, Math.min(255, level)));
+                                });
+                    });
         }
 
         @Override
@@ -1411,20 +1853,39 @@ public interface LootFunction {
         }
     }
 
-    record SetFireworkExplosion(@NotNull List<LootPredicate> predicates, @Nullable FireworkExplosion.Shape shape,
-                                @Nullable List<RGBLike> colors, @Nullable List<RGBLike> fadeColors,
-                                @Nullable Boolean trail, @Nullable Boolean twinkle) implements LootFunction {
-        public static final @NotNull StructCodec<SetFireworkExplosion> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetFireworkExplosion::predicates,
-                "shape", Codec.Enum(FireworkExplosion.Shape.class).optional(), SetFireworkExplosion::shape,
-                "colors", Codecs.FIREWORK_COLOR_CODEC.list().optional(), SetFireworkExplosion::colors,
-                "fade_colors", Codecs.FIREWORK_COLOR_CODEC.list().optional(), SetFireworkExplosion::fadeColors,
-                "trail", Codec.BOOLEAN.optional(), SetFireworkExplosion::trail,
-                "twinkle", Codec.BOOLEAN.optional(), SetFireworkExplosion::twinkle,
-                SetFireworkExplosion::new
-        );
+    record SetFireworkExplosion(
+            @NotNull List<LootPredicate> predicates,
+            @Nullable FireworkExplosion.Shape shape,
+            @Nullable List<RGBLike> colors,
+            @Nullable List<RGBLike> fadeColors,
+            @Nullable Boolean trail,
+            @Nullable Boolean twinkle)
+            implements LootFunction {
+        public static final @NotNull StructCodec<SetFireworkExplosion> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetFireworkExplosion::predicates,
+                        "shape",
+                        Codec.Enum(FireworkExplosion.Shape.class).optional(),
+                        SetFireworkExplosion::shape,
+                        "colors",
+                        Codecs.FIREWORK_COLOR_CODEC.list().optional(),
+                        SetFireworkExplosion::colors,
+                        "fade_colors",
+                        Codecs.FIREWORK_COLOR_CODEC.list().optional(),
+                        SetFireworkExplosion::fadeColors,
+                        "trail",
+                        Codec.BOOLEAN.optional(),
+                        SetFireworkExplosion::trail,
+                        "twinkle",
+                        Codec.BOOLEAN.optional(),
+                        SetFireworkExplosion::twinkle,
+                        SetFireworkExplosion::new);
 
-        private static final @NotNull FireworkExplosion DEFAULT = new FireworkExplosion(FireworkExplosion.Shape.SMALL_BALL, List.of(), List.of(), false, false);
+        private static final @NotNull FireworkExplosion DEFAULT =
+                new FireworkExplosion(
+                        FireworkExplosion.Shape.SMALL_BALL, List.of(), List.of(), false, false);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -1432,13 +1893,13 @@ public interface LootFunction {
 
             FireworkExplosion firework = input.get(DataComponents.FIREWORK_EXPLOSION, DEFAULT);
 
-            FireworkExplosion updated = new FireworkExplosion(
-                    this.shape != null ? this.shape : firework.shape(),
-                    this.colors != null ? this.colors : firework.colors(),
-                    this.fadeColors != null ? this.fadeColors : firework.fadeColors(),
-                    this.trail != null ? this.trail : firework.hasTrail(),
-                    this.twinkle != null ? this.twinkle : firework.hasTwinkle()
-            );
+            FireworkExplosion updated =
+                    new FireworkExplosion(
+                            this.shape != null ? this.shape : firework.shape(),
+                            this.colors != null ? this.colors : firework.colors(),
+                            this.fadeColors != null ? this.fadeColors : firework.fadeColors(),
+                            this.trail != null ? this.trail : firework.hasTrail(),
+                            this.twinkle != null ? this.twinkle : firework.hasTwinkle());
 
             return input.with(DataComponents.FIREWORK_EXPLOSION, updated);
         }
@@ -1449,21 +1910,36 @@ public interface LootFunction {
         }
     }
 
-    record SetFireworks(@NotNull List<LootPredicate> predicates, @Nullable Integer flightDuration, @Nullable ListOperation.WithValues<FireworkExplosion> explosions) implements LootFunction {
-        private static final @NotNull Codec<Integer> UNSIGNED_BYTE_CODEC = Codec.INT.transform(value -> {
-            if (value < 0 || value > 255) {
-                throw new IllegalArgumentException("Flight duration must be an unsigned byte");
-            }
+    record SetFireworks(
+            @NotNull List<LootPredicate> predicates,
+            @Nullable Integer flightDuration,
+            @Nullable ListOperation.WithValues<FireworkExplosion> explosions)
+            implements LootFunction {
+        private static final @NotNull Codec<Integer> UNSIGNED_BYTE_CODEC =
+                Codec.INT.transform(
+                        value -> {
+                            if (value < 0 || value > 255) {
+                                throw new IllegalArgumentException(
+                                        "Flight duration must be an unsigned byte");
+                            }
 
-            return value;
-        }, value -> value);
+                            return value;
+                        },
+                        value -> value);
 
-        public static final @NotNull StructCodec<SetFireworks> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetFireworks::predicates,
-                "flight_duration", UNSIGNED_BYTE_CODEC.optional(), SetFireworks::flightDuration,
-                "explosions", ListOperation.WithValues.codec(Codecs.FIREWORK_EXPLOSION_CODEC, 256).optional(), SetFireworks::explosions,
-                SetFireworks::new
-        );
+        public static final @NotNull StructCodec<SetFireworks> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetFireworks::predicates,
+                        "flight_duration",
+                        UNSIGNED_BYTE_CODEC.optional(),
+                        SetFireworks::flightDuration,
+                        "explosions",
+                        ListOperation.WithValues.codec(Codecs.FIREWORK_EXPLOSION_CODEC, 256)
+                                .optional(),
+                        SetFireworks::explosions,
+                        SetFireworks::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -1471,10 +1947,16 @@ public interface LootFunction {
 
             FireworkList list = input.get(DataComponents.FIREWORKS, FireworkList.EMPTY);
 
-            FireworkList updated = new FireworkList(
-                    this.flightDuration != null ? this.flightDuration : list.flightDuration(),
-                    this.explosions == null ? list.explosions() : this.explosions.operation().apply(this.explosions.values(), list.explosions())
-            );
+            FireworkList updated =
+                    new FireworkList(
+                            this.flightDuration != null
+                                    ? this.flightDuration
+                                    : list.flightDuration(),
+                            this.explosions == null
+                                    ? list.explosions()
+                                    : this.explosions
+                                            .operation()
+                                            .apply(this.explosions.values(), list.explosions()));
 
             return input.with(DataComponents.FIREWORKS, updated);
         }
@@ -1485,12 +1967,18 @@ public interface LootFunction {
         }
     }
 
-    record SetInstrument(@NotNull List<LootPredicate> predicates, @NotNull RegistryTag<Instrument> options) implements LootFunction {
-        public static final @NotNull StructCodec<SetInstrument> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetInstrument::predicates,
-                "options", RegistryTag.codec(Registries::instrument), SetInstrument::options,
-                SetInstrument::new
-        );
+    record SetInstrument(
+            @NotNull List<LootPredicate> predicates, @NotNull RegistryTag<Instrument> options)
+            implements LootFunction {
+        public static final @NotNull StructCodec<SetInstrument> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetInstrument::predicates,
+                        "options",
+                        RegistryTag.codec(Registries::instrument),
+                        SetInstrument::options,
+                        SetInstrument::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -1513,12 +2001,17 @@ public interface LootFunction {
         }
     }
 
-    record SetItem(@NotNull List<LootPredicate> predicates, @NotNull Material item) implements LootFunction {
-        public static final @NotNull StructCodec<SetItem> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetItem::predicates,
-                "item", Material.CODEC, SetItem::item,
-                SetItem::new
-        );
+    record SetItem(@NotNull List<LootPredicate> predicates, @NotNull Material item)
+            implements LootFunction {
+        public static final @NotNull StructCodec<SetItem> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetItem::predicates,
+                        "item",
+                        Material.CODEC,
+                        SetItem::item,
+                        SetItem::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -1533,26 +2026,39 @@ public interface LootFunction {
         }
     }
 
-    record SetLootTable(@NotNull List<LootPredicate> predicates, @NotNull Key name, long seed,
-                        @Nullable Key type) implements LootFunction {
+    record SetLootTable(
+            @NotNull List<LootPredicate> predicates,
+            @NotNull Key name,
+            long seed,
+            @Nullable Key type)
+            implements LootFunction {
         public SetLootTable(@NotNull List<LootPredicate> predicates, @NotNull Key name, long seed) {
             this(predicates, name, seed, null);
         }
 
-        public static final @NotNull StructCodec<SetLootTable> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetLootTable::predicates,
-                "name", Codec.KEY, SetLootTable::name,
-                "seed", Codec.LONG.optional(0L), SetLootTable::seed,
-                "type", Codec.KEY, SetLootTable::type,
-                SetLootTable::new
-        );
+        public static final @NotNull StructCodec<SetLootTable> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetLootTable::predicates,
+                        "name",
+                        Codec.KEY,
+                        SetLootTable::name,
+                        "seed",
+                        Codec.LONG.optional(0L),
+                        SetLootTable::seed,
+                        "type",
+                        Codec.KEY,
+                        SetLootTable::type,
+                        SetLootTable::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
             if (!LootPredicate.all(predicates, context)) return input;
             if (input.isAir()) return input;
 
-            return input.with(DataComponents.CONTAINER_LOOT, new SeededContainerLoot(name.asString(), seed));
+            return input.with(
+                    DataComponents.CONTAINER_LOOT, new SeededContainerLoot(name.asString(), seed));
         }
 
         @Override
@@ -1561,15 +2067,27 @@ public interface LootFunction {
         }
     }
 
-    record SetLore(@NotNull List<LootPredicate> predicates, @NotNull List<Component> lore,
-                   @NotNull ListOperation operation, @Nullable RelevantEntity entity) implements LootFunction {
-        public static final @NotNull StructCodec<SetLore> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetLore::predicates,
-                "lore", Codec.COMPONENT.list(256), SetLore::lore,
-                StructCodec.INLINE, ListOperation.codec(256), SetLore::operation,
-                "entity", RelevantEntity.CODEC.optional(), SetLore::entity,
-                SetLore::new
-        );
+    record SetLore(
+            @NotNull List<LootPredicate> predicates,
+            @NotNull List<Component> lore,
+            @NotNull ListOperation operation,
+            @Nullable RelevantEntity entity)
+            implements LootFunction {
+        public static final @NotNull StructCodec<SetLore> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetLore::predicates,
+                        "lore",
+                        Codec.COMPONENT.list(256),
+                        SetLore::lore,
+                        StructCodec.INLINE,
+                        ListOperation.codec(256),
+                        SetLore::operation,
+                        "entity",
+                        RelevantEntity.CODEC.optional(),
+                        SetLore::entity,
+                        SetLore::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -1577,11 +2095,13 @@ public interface LootFunction {
 
             var components = input.get(DataComponents.LORE, List.of());
             var resolutionEntity = this.entity == null ? null : context.get(this.entity.key());
-            var resolvedLore = this.lore.stream()
-                    .map(line -> context.vanilla().resolveComponent(line, resolutionEntity))
-                    .toList();
+            var resolvedLore =
+                    this.lore.stream()
+                            .map(line -> context.vanilla().resolveComponent(line, resolutionEntity))
+                            .toList();
 
-            return input.with(DataComponents.LORE, this.operation.apply(resolvedLore, components, 256));
+            return input.with(
+                    DataComponents.LORE, this.operation.apply(resolvedLore, components, 256));
         }
 
         @Override
@@ -1590,25 +2110,43 @@ public interface LootFunction {
         }
     }
 
-    record SetName(@NotNull List<LootPredicate> predicates, @Nullable Component name,
-                   @Nullable RelevantEntity entity, @NotNull Target target) implements LootFunction {
-        public static final @NotNull StructCodec<SetName> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetName::predicates,
-                "name", Codec.COMPONENT.optional(), SetName::name,
-                "entity", RelevantEntity.CODEC.optional(), SetName::entity,
-                "target", Target.CODEC.optional(Target.CUSTOM_NAME), SetName::target,
-                SetName::new
-        );
+    record SetName(
+            @NotNull List<LootPredicate> predicates,
+            @Nullable Component name,
+            @Nullable RelevantEntity entity,
+            @NotNull Target target)
+            implements LootFunction {
+        public static final @NotNull StructCodec<SetName> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetName::predicates,
+                        "name",
+                        Codec.COMPONENT.optional(),
+                        SetName::name,
+                        "entity",
+                        RelevantEntity.CODEC.optional(),
+                        SetName::entity,
+                        "target",
+                        Target.CODEC.optional(Target.CUSTOM_NAME),
+                        SetName::target,
+                        SetName::new);
 
         public enum Target {
             ITEM_NAME("item_name", DataComponents.ITEM_NAME),
             CUSTOM_NAME("custom_name", DataComponents.CUSTOM_NAME);
 
-            public static final @NotNull Codec<Target> CODEC = Codec.STRING.transform(value -> switch (value) {
-                case "item_name" -> ITEM_NAME;
-                case "custom_name" -> CUSTOM_NAME;
-                default -> throw new IllegalArgumentException("Unknown set name target: " + value);
-            }, Target::id);
+            public static final @NotNull Codec<Target> CODEC =
+                    Codec.STRING.transform(
+                            value ->
+                                    switch (value) {
+                                        case "item_name" -> ITEM_NAME;
+                                        case "custom_name" -> CUSTOM_NAME;
+                                        default ->
+                                                throw new IllegalArgumentException(
+                                                        "Unknown set name target: " + value);
+                                    },
+                            Target::id);
 
             private final String id;
             private final DataComponent<Component> component;
@@ -1645,12 +2183,18 @@ public interface LootFunction {
         }
     }
 
-    record SetOminousBottleAmplifier(@NotNull List<LootPredicate> predicates, @NotNull LootNumber amplifier) implements LootFunction {
-        public static final @NotNull StructCodec<SetOminousBottleAmplifier> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetOminousBottleAmplifier::predicates,
-                "amplifier", LootNumber.CODEC, SetOminousBottleAmplifier::amplifier,
-                SetOminousBottleAmplifier::new
-        );
+    record SetOminousBottleAmplifier(
+            @NotNull List<LootPredicate> predicates, @NotNull LootNumber amplifier)
+            implements LootFunction {
+        public static final @NotNull StructCodec<SetOminousBottleAmplifier> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetOminousBottleAmplifier::predicates,
+                        "amplifier",
+                        LootNumber.CODEC,
+                        SetOminousBottleAmplifier::amplifier,
+                        SetOminousBottleAmplifier::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -1667,21 +2211,28 @@ public interface LootFunction {
         }
     }
 
-    record SetPotion(@NotNull List<LootPredicate> predicates, @NotNull Key id) implements LootFunction {
-        private static final @NotNull Codec<Key> POTION_CODEC = Codec.KEY.transform(key -> {
+    record SetPotion(@NotNull List<LootPredicate> predicates, @NotNull Key id)
+            implements LootFunction {
+        private static final @NotNull Codec<Key> POTION_CODEC =
+                Codec.KEY.transform(
+                        key -> {
+                            if (PotionType.fromKey(key) == null) {
+                                throw new IllegalArgumentException("Unknown potion: " + key);
+                            }
 
-            if (PotionType.fromKey(key) == null) {
-                throw new IllegalArgumentException("Unknown potion: " + key);
-            }
+                            return key;
+                        },
+                        key -> key);
 
-            return key;
-        }, key -> key);
-
-        public static final @NotNull StructCodec<SetPotion> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetPotion::predicates,
-                "id", POTION_CODEC, SetPotion::id,
-                SetPotion::new
-        );
+        public static final @NotNull StructCodec<SetPotion> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetPotion::predicates,
+                        "id",
+                        POTION_CODEC,
+                        SetPotion::id,
+                        SetPotion::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -1704,12 +2255,17 @@ public interface LootFunction {
         }
     }
 
-    record SetRandomDyes(@NotNull List<LootPredicate> predicates, @NotNull LootNumber numberOfDyes) implements LootFunction {
-        public static final @NotNull StructCodec<SetRandomDyes> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetRandomDyes::predicates,
-                "number_of_dyes", LootNumber.CODEC, SetRandomDyes::numberOfDyes,
-                SetRandomDyes::new
-        );
+    record SetRandomDyes(@NotNull List<LootPredicate> predicates, @NotNull LootNumber numberOfDyes)
+            implements LootFunction {
+        public static final @NotNull StructCodec<SetRandomDyes> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetRandomDyes::predicates,
+                        "number_of_dyes",
+                        LootNumber.CODEC,
+                        SetRandomDyes::numberOfDyes,
+                        SetRandomDyes::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -1723,7 +2279,12 @@ public interface LootFunction {
             var redTotal = currentColor == null ? 0 : currentColor.red();
             var greenTotal = currentColor == null ? 0 : currentColor.green();
             var blueTotal = currentColor == null ? 0 : currentColor.blue();
-            var intensityTotal = currentColor == null ? 0 : Math.max(currentColor.red(), Math.max(currentColor.green(), currentColor.blue()));
+            var intensityTotal =
+                    currentColor == null
+                            ? 0
+                            : Math.max(
+                                    currentColor.red(),
+                                    Math.max(currentColor.green(), currentColor.blue()));
             var colorCount = currentColor == null ? 0 : 1;
 
             for (var dyeCount = 0; dyeCount < count; dyeCount++) {
@@ -1753,12 +2314,18 @@ public interface LootFunction {
         }
     }
 
-    record SetRandomPotion(@NotNull List<LootPredicate> predicates, @Nullable RegistryTag<PotionType> options) implements LootFunction {
-        public static final @NotNull StructCodec<SetRandomPotion> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetRandomPotion::predicates,
-                "options", RegistryTag.codec(Registries::potionType).optional(), SetRandomPotion::options,
-                SetRandomPotion::new
-        );
+    record SetRandomPotion(
+            @NotNull List<LootPredicate> predicates, @Nullable RegistryTag<PotionType> options)
+            implements LootFunction {
+        public static final @NotNull StructCodec<SetRandomPotion> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetRandomPotion::predicates,
+                        "options",
+                        RegistryTag.codec(Registries::potionType).optional(),
+                        SetRandomPotion::options,
+                        SetRandomPotion::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -1786,24 +2353,32 @@ public interface LootFunction {
         }
     }
 
-    record SetStewEffect(@NotNull List<LootPredicate> predicates, @NotNull List<AddedEffect> effects) implements LootFunction {
-        private static final @NotNull Codec<List<AddedEffect>> EFFECTS_CODEC = AddedEffect.CODEC.list().transform(
-                SetStewEffect::validateEffects,
-                effects -> effects
-        );
+    record SetStewEffect(
+            @NotNull List<LootPredicate> predicates, @NotNull List<AddedEffect> effects)
+            implements LootFunction {
+        private static final @NotNull Codec<List<AddedEffect>> EFFECTS_CODEC =
+                AddedEffect.CODEC
+                        .list()
+                        .transform(SetStewEffect::validateEffects, effects -> effects);
 
-        public static final @NotNull StructCodec<SetStewEffect> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetStewEffect::predicates,
-                "effects", EFFECTS_CODEC.optional(List.of()), SetStewEffect::effects,
-                SetStewEffect::new
-        );
+        public static final @NotNull StructCodec<SetStewEffect> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetStewEffect::predicates,
+                        "effects",
+                        EFFECTS_CODEC.optional(List.of()),
+                        SetStewEffect::effects,
+                        SetStewEffect::new);
 
-        private static @NotNull List<AddedEffect> validateEffects(@NotNull List<AddedEffect> effects) {
+        private static @NotNull List<AddedEffect> validateEffects(
+                @NotNull List<AddedEffect> effects) {
             var seenEffects = new HashSet<PotionEffect>();
 
             for (var effect : effects) {
                 if (!seenEffects.add(effect.effect())) {
-                    throw new IllegalArgumentException("Encountered duplicate mob effect: '" + effect.effect() + "'");
+                    throw new IllegalArgumentException(
+                            "Encountered duplicate mob effect: '" + effect.effect() + "'");
                 }
             }
 
@@ -1811,11 +2386,15 @@ public interface LootFunction {
         }
 
         public record AddedEffect(@NotNull PotionEffect effect, @NotNull LootNumber duration) {
-            public static final @NotNull StructCodec<AddedEffect> CODEC = StructCodec.struct(
-                    "type", PotionEffect.CODEC, AddedEffect::effect,
-                    "duration", LootNumber.CODEC, AddedEffect::duration,
-                    AddedEffect::new
-            );
+            public static final @NotNull StructCodec<AddedEffect> CODEC =
+                    StructCodec.struct(
+                            "type",
+                            PotionEffect.CODEC,
+                            AddedEffect::effect,
+                            "duration",
+                            LootNumber.CODEC,
+                            AddedEffect::duration,
+                            AddedEffect::new);
         }
 
         @Override
@@ -1828,7 +2407,9 @@ public interface LootFunction {
                 return input;
             }
 
-            var effect = this.effects.get(context.require(LootContext.RANDOM).nextInt(this.effects.size()));
+            var effect =
+                    this.effects.get(
+                            context.require(LootContext.RANDOM).nextInt(this.effects.size()));
 
             var duration = effect.duration().getInt(context);
             if (!effect.effect().instantaneous()) {
@@ -1837,7 +2418,8 @@ public interface LootFunction {
 
             var added = new SuspiciousStewEffects.Effect(effect.effect(), duration);
 
-            var current = input.get(DataComponents.SUSPICIOUS_STEW_EFFECTS, SuspiciousStewEffects.EMPTY);
+            var current =
+                    input.get(DataComponents.SUSPICIOUS_STEW_EFFECTS, SuspiciousStewEffects.EMPTY);
             return input.with(DataComponents.SUSPICIOUS_STEW_EFFECTS, current.with(added));
         }
 
@@ -1847,23 +2429,37 @@ public interface LootFunction {
         }
     }
 
-    record SetWritableBookPages(@NotNull List<LootPredicate> predicates, @NotNull List<FilteredText<String>> pages, @NotNull ListOperation operation) implements LootFunction {
-        private static final @NotNull Codec<FilteredText<String>> PAGE_CODEC = filteredStringCodec(1024);
+    record SetWritableBookPages(
+            @NotNull List<LootPredicate> predicates,
+            @NotNull List<FilteredText<String>> pages,
+            @NotNull ListOperation operation)
+            implements LootFunction {
+        private static final @NotNull Codec<FilteredText<String>> PAGE_CODEC =
+                filteredStringCodec(1024);
 
-        public static final @NotNull StructCodec<SetWritableBookPages> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetWritableBookPages::predicates,
-                "pages", PAGE_CODEC.list(100), SetWritableBookPages::pages,
-                StructCodec.INLINE, ListOperation.codec(100), SetWritableBookPages::operation,
-                SetWritableBookPages::new
-        );
+        public static final @NotNull StructCodec<SetWritableBookPages> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetWritableBookPages::predicates,
+                        "pages",
+                        PAGE_CODEC.list(100),
+                        SetWritableBookPages::pages,
+                        StructCodec.INLINE,
+                        ListOperation.codec(100),
+                        SetWritableBookPages::operation,
+                        SetWritableBookPages::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
             if (!LootPredicate.all(predicates, context)) return input;
 
-            WritableBookContent content = input.get(DataComponents.WRITABLE_BOOK_CONTENT, WritableBookContent.EMPTY);
+            WritableBookContent content =
+                    input.get(DataComponents.WRITABLE_BOOK_CONTENT, WritableBookContent.EMPTY);
 
-            return input.with(DataComponents.WRITABLE_BOOK_CONTENT, new WritableBookContent(operation.apply(pages, content.pages(), 100)));
+            return input.with(
+                    DataComponents.WRITABLE_BOOK_CONTENT,
+                    new WritableBookContent(operation.apply(pages, content.pages(), 100)));
         }
 
         @Override
@@ -1872,20 +2468,37 @@ public interface LootFunction {
         }
     }
 
-    record SetWrittenBookPages(@NotNull List<LootPredicate> predicates, @NotNull List<FilteredText<Component>> pages, @NotNull ListOperation operation) implements LootFunction {
-        public static final @NotNull StructCodec<SetWrittenBookPages> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), SetWrittenBookPages::predicates,
-                "pages", FilteredText.COMPONENT_CODEC.list(100), SetWrittenBookPages::pages,
-                StructCodec.INLINE, ListOperation.CODEC, SetWrittenBookPages::operation,
-                SetWrittenBookPages::new
-        );
+    record SetWrittenBookPages(
+            @NotNull List<LootPredicate> predicates,
+            @NotNull List<FilteredText<Component>> pages,
+            @NotNull ListOperation operation)
+            implements LootFunction {
+        public static final @NotNull StructCodec<SetWrittenBookPages> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        SetWrittenBookPages::predicates,
+                        "pages",
+                        FilteredText.COMPONENT_CODEC.list(100),
+                        SetWrittenBookPages::pages,
+                        StructCodec.INLINE,
+                        ListOperation.CODEC,
+                        SetWrittenBookPages::operation,
+                        SetWrittenBookPages::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
             if (!LootPredicate.all(predicates, context)) return input;
 
-            WrittenBookContent content = input.get(DataComponents.WRITTEN_BOOK_CONTENT, WrittenBookContent.EMPTY);
-            WrittenBookContent updated = new WrittenBookContent(content.title(), content.author(), content.generation(), operation.apply(pages, content.pages()), content.resolved());
+            WrittenBookContent content =
+                    input.get(DataComponents.WRITTEN_BOOK_CONTENT, WrittenBookContent.EMPTY);
+            WrittenBookContent updated =
+                    new WrittenBookContent(
+                            content.title(),
+                            content.author(),
+                            content.generation(),
+                            operation.apply(pages, content.pages()),
+                            content.resolved());
 
             return input.with(DataComponents.WRITTEN_BOOK_CONTENT, updated);
         }
@@ -1895,12 +2508,11 @@ public interface LootFunction {
             return CODEC;
         }
     }
-    
+
     record Sequence(@NotNull List<LootFunction> functions) implements LootFunction {
-        public static final @NotNull StructCodec<Sequence> CODEC = StructCodec.struct(
-                "functions", LootFunction.CODEC.list(), Sequence::functions,
-                Sequence::new
-        );
+        public static final @NotNull StructCodec<Sequence> CODEC =
+                StructCodec.struct(
+                        "functions", LootFunction.CODEC.list(), Sequence::functions, Sequence::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
@@ -1912,22 +2524,33 @@ public interface LootFunction {
             return CODEC;
         }
     }
-    
-    record ToggleTooltips(@NotNull List<LootPredicate> predicates, @NotNull Map<DataComponent<?>, Boolean> toggles) implements LootFunction {
-        public static final @NotNull StructCodec<ToggleTooltips> CODEC = StructCodec.struct(
-                "conditions", LootPredicate.CODEC.list().optional(List.of()), ToggleTooltips::predicates,
-                "toggles", DataComponent.CODEC.mapValue(StructCodec.BOOLEAN), ToggleTooltips::toggles,
-                ToggleTooltips::new
-        );
+
+    record ToggleTooltips(
+            @NotNull List<LootPredicate> predicates,
+            @NotNull Map<DataComponent<?>, Boolean> toggles)
+            implements LootFunction {
+        public static final @NotNull StructCodec<ToggleTooltips> CODEC =
+                StructCodec.struct(
+                        "conditions",
+                        LootPredicate.CODEC.list().optional(List.of()),
+                        ToggleTooltips::predicates,
+                        "toggles",
+                        DataComponent.CODEC.mapValue(StructCodec.BOOLEAN),
+                        ToggleTooltips::toggles,
+                        ToggleTooltips::new);
 
         @Override
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
             if (!LootPredicate.all(predicates, context)) return input;
 
-            TooltipDisplay display = input.get(DataComponents.TOOLTIP_DISPLAY, TooltipDisplay.EMPTY);
+            TooltipDisplay display =
+                    input.get(DataComponents.TOOLTIP_DISPLAY, TooltipDisplay.EMPTY);
 
             for (var entry : toggles.entrySet()) {
-                display = entry.getValue() ? display.with(entry.getKey()) : display.without(entry.getKey());
+                display =
+                        entry.getValue()
+                                ? display.with(entry.getKey())
+                                : display.without(entry.getKey());
             }
 
             return input.with(DataComponents.TOOLTIP_DISPLAY, display);
@@ -1938,5 +2561,4 @@ public interface LootFunction {
             return CODEC;
         }
     }
-
 }

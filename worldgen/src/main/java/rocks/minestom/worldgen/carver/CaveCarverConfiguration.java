@@ -6,5 +6,4 @@ public record CaveCarverConfiguration(
         CarverConfiguration base,
         FloatProvider horizontalRadiusMultiplier,
         FloatProvider verticalRadiusMultiplier,
-        FloatProvider floorLevel) {
-}
+        FloatProvider floorLevel) {}

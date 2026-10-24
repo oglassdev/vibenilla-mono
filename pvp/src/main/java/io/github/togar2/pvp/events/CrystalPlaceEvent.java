@@ -6,41 +6,39 @@ import net.minestom.server.event.trait.CancellableEvent;
 import net.minestom.server.event.trait.PlayerInstanceEvent;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Called when a player places an end crystal.
- */
+/** Called when a player places an end crystal. */
 public class CrystalPlaceEvent implements PlayerInstanceEvent, CancellableEvent {
 
-	private final Player player;
-	private Point spawnPosition;
+    private final Player player;
+    private Point spawnPosition;
 
-	private boolean cancelled;
+    private boolean cancelled;
 
-	public CrystalPlaceEvent(@NotNull Player player, @NotNull Point spawnPosition) {
-		this.player = player;
-		this.spawnPosition = spawnPosition;
-	}
+    public CrystalPlaceEvent(@NotNull Player player, @NotNull Point spawnPosition) {
+        this.player = player;
+        this.spawnPosition = spawnPosition;
+    }
 
-	@Override
-	public @NotNull Player getPlayer() {
-		return this.player;
-	}
+    @Override
+    public @NotNull Player getPlayer() {
+        return this.player;
+    }
 
-	public @NotNull Point getSpawnPosition() {
-		return this.spawnPosition;
-	}
+    public @NotNull Point getSpawnPosition() {
+        return this.spawnPosition;
+    }
 
-	public void setSpawnPosition(@NotNull Point spawnPosition) {
-		this.spawnPosition = spawnPosition;
-	}
+    public void setSpawnPosition(@NotNull Point spawnPosition) {
+        this.spawnPosition = spawnPosition;
+    }
 
-	@Override
-	public boolean isCancelled() {
-		return this.cancelled;
-	}
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
 
-	@Override
-	public void setCancelled(boolean cancel) {
-		this.cancelled = cancel;
-	}
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
+    }
 }

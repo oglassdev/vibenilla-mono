@@ -13,20 +13,22 @@ import io.github.togar2.pvp.utils.FluidUtil;
 import io.github.togar2.pvp.utils.PotionFlags;
 import io.github.togar2.pvp.utils.RegistryTags;
 import io.github.togar2.pvp.utils.ViewUtil;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
 import net.kyori.adventure.sound.Sound;
 import net.minestom.server.collision.BoundingBox;
-import net.minestom.server.coordinate.Pos;
+import net.minestom.server.component.DataComponents;
 import net.minestom.server.coordinate.CoordConversion;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
-import net.minestom.server.entity.EquipmentSlot;
 import net.minestom.server.entity.EntityType;
+import net.minestom.server.entity.EquipmentSlot;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.LivingEntity;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.attribute.Attribute;
 import net.minestom.server.entity.damage.DamageType;
-import net.minestom.server.component.DataComponents;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityTickEvent;
 import net.minestom.server.event.player.PlayerTickEvent;
@@ -35,30 +37,25 @@ import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.WorldBorder;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
-import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.item.Material;
 import net.minestom.server.potion.Potion;
 import net.minestom.server.potion.PotionEffect;
 import net.minestom.server.registry.RegistryKey;
+import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.world.Difficulty;
-
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Predicate;
-
-/**
- * Vanilla implementation of {@link EnvironmentDamageFeature}
- */
-public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageFeature, RegistrableFeature {
-    public static final DefinedFeature<VanillaEnvironmentDamageFeature> DEFINED = new DefinedFeature<>(
-            FeatureType.ENVIRONMENT_DAMAGE, VanillaEnvironmentDamageFeature::new,
-            VanillaEnvironmentDamageFeature::initPlayer,
-            FeatureType.ENCHANTMENT,
-            FeatureType.DIFFICULTY
-    );
+/** Vanilla implementation of {@link EnvironmentDamageFeature} */
+public final class VanillaEnvironmentDamageFeature
+        implements EnvironmentDamageFeature, RegistrableFeature {
+    public static final DefinedFeature<VanillaEnvironmentDamageFeature> DEFINED =
+            new DefinedFeature<>(
+                    FeatureType.ENVIRONMENT_DAMAGE,
+                    VanillaEnvironmentDamageFeature::new,
+                    VanillaEnvironmentDamageFeature::initPlayer,
+                    FeatureType.ENCHANTMENT,
+                    FeatureType.DIFFICULTY);
 
     private static final int MAX_AIR_SUPPLY = 300;
     private static final int DROWN_THRESHOLD = -20;
@@ -69,25 +66,34 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
     private static final int FIRE_IGNITE_TICKS = 8 * 20;
     private static final int LAVA_IGNITE_TICKS = 15 * 20;
     private static final int TURTLE_HELMET_WATER_BREATHING_TICKS = 200;
-    private static final byte TURTLE_HELMET_WATER_BREATHING_FLAGS = PotionFlags.create(false, false, true);
+    private static final byte TURTLE_HELMET_WATER_BREATHING_FLAGS =
+            PotionFlags.create(false, false, true);
     private static final int DEFAULT_MAX_ENTITY_CRAMMING = 24;
     private static final double WORLD_BORDER_SAFE_ZONE = 5.0;
     private static final double WORLD_BORDER_DAMAGE_PER_BLOCK = 0.2;
 
     private static final Tag<Integer> AIR_SUPPLY = Tag.Integer("environmentAirSupply");
-    private static final Tag<Integer> DOLPHIN_MOISTNESS = Tag.Integer("environmentDolphinMoistness");
+    private static final Tag<Integer> DOLPHIN_MOISTNESS =
+            Tag.Integer("environmentDolphinMoistness");
     private static final Tag<Integer> FREEZE_TICKS = Tag.Integer("environmentFreezeTicks");
 
-    private static final Set<EntityType> WATER_ANIMAL_DROWN_TYPES = Set.of(
-            EntityType.COD, EntityType.GLOW_SQUID, EntityType.PUFFERFISH, EntityType.SALMON,
-            EntityType.SQUID, EntityType.TADPOLE, EntityType.TROPICAL_FISH
-    );
-    private static final Set<EntityType> DRY_OUT_AIR_SUPPLY_TYPES = Set.of(
-            EntityType.AXOLOTL, EntityType.NAUTILUS
-    );
-    private static final Set<EntityType> WATER_SENSITIVE_TYPES = Set.of(
-            EntityType.BLAZE, EntityType.ENDERMAN, EntityType.SNOW_GOLEM, EntityType.STRIDER
-    );
+    private static final Set<EntityType> WATER_ANIMAL_DROWN_TYPES =
+            Set.of(
+                    EntityType.COD,
+                    EntityType.GLOW_SQUID,
+                    EntityType.PUFFERFISH,
+                    EntityType.SALMON,
+                    EntityType.SQUID,
+                    EntityType.TADPOLE,
+                    EntityType.TROPICAL_FISH);
+    private static final Set<EntityType> DRY_OUT_AIR_SUPPLY_TYPES =
+            Set.of(EntityType.AXOLOTL, EntityType.NAUTILUS);
+    private static final Set<EntityType> WATER_SENSITIVE_TYPES =
+            Set.of(
+                    EntityType.BLAZE,
+                    EntityType.ENDERMAN,
+                    EntityType.SNOW_GOLEM,
+                    EntityType.STRIDER);
 
     @SuppressWarnings("unused")
     public VanillaEnvironmentDamageFeature(FeatureConfiguration configuration) {
@@ -109,12 +115,14 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
     public void init(EventNode<EntityInstanceEvent> node) {
         node.addListener(PlayerTickEvent.class, event -> this.handlePlayerTick(event.getPlayer()));
 
-        node.addListener(EntityTickEvent.class, event -> {
-            if (!(event.getEntity() instanceof LivingEntity livingEntity)) return;
-            if (livingEntity instanceof Player) return;
+        node.addListener(
+                EntityTickEvent.class,
+                event -> {
+                    if (!(event.getEntity() instanceof LivingEntity livingEntity)) return;
+                    if (livingEntity instanceof Player) return;
 
-            this.handleEntityTick(livingEntity);
-        });
+                    this.handleEntityTick(livingEntity);
+                });
     }
 
     private void handlePlayerTick(Player player) {
@@ -152,8 +160,10 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
 
         if (instance == null) return;
 
-        if (this.isInPowderSnow(instance, entity) || this.isTouchingWater(entity)
-                || this.isInRain(instance, entity) || this.isInWaterCauldron(instance, entity)) {
+        if (this.isInPowderSnow(instance, entity)
+                || this.isTouchingWater(entity)
+                || this.isInRain(instance, entity)
+                || this.isInWaterCauldron(instance, entity)) {
             this.extinguish(entity);
         }
     }
@@ -167,7 +177,10 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
             return;
         }
 
-        var fireBlock = this.findBlockInside(entity, block -> block.compare(Block.FIRE) || block.compare(Block.SOUL_FIRE));
+        var fireBlock =
+                this.findBlockInside(
+                        entity,
+                        block -> block.compare(Block.FIRE) || block.compare(Block.SOUL_FIRE));
 
         if (fireBlock != null) {
             this.setFireTicks(entity, FIRE_IGNITE_TICKS);
@@ -191,11 +204,16 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
         var damaged = entity.damage(DamageType.LAVA, 4.0F);
 
         if (damaged && !entity.isSilent()) {
-            ViewUtil.viewersAndSelf(entity).playSound(Sound.sound(
-                    SoundEvent.ENTITY_GENERIC_BURN,
-                    entity instanceof Player ? Sound.Source.PLAYER : Sound.Source.HOSTILE,
-                    0.4F, 2.0F + ThreadLocalRandom.current().nextFloat() * 0.4F
-            ), entity);
+            ViewUtil.viewersAndSelf(entity)
+                    .playSound(
+                            Sound.sound(
+                                    SoundEvent.ENTITY_GENERIC_BURN,
+                                    entity instanceof Player
+                                            ? Sound.Source.PLAYER
+                                            : Sound.Source.HOSTILE,
+                                    0.4F,
+                                    2.0F + ThreadLocalRandom.current().nextFloat() * 0.4F),
+                            entity);
         }
     }
 
@@ -218,10 +236,12 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
 
         var position = entity.getPosition();
         var checkWidth = entity.getBoundingBox().width() * 0.8;
-        var checkBox = new BoundingBox(
-                checkWidth, 1.0E-6, checkWidth,
-                new Vec(-checkWidth / 2.0, -5.0E-7, -checkWidth / 2.0)
-        );
+        var checkBox =
+                new BoundingBox(
+                        checkWidth,
+                        1.0E-6,
+                        checkWidth,
+                        new Vec(-checkWidth / 2.0, -5.0E-7, -checkWidth / 2.0));
         var eyePosition = position.add(0.0, entity.getEyeHeight(), 0.0);
 
         var minX = (int) Math.floor(eyePosition.x() + checkBox.minX());
@@ -239,7 +259,8 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
                     if (!this.isSuffocating(block)) continue;
 
                     var blockPosition = new Vec(blockX, blockY, blockZ);
-                    if (block.collisionShape().intersectBox(eyePosition.sub(blockPosition), checkBox)) {
+                    if (block.collisionShape()
+                            .intersectBox(eyePosition.sub(blockPosition), checkBox)) {
                         entity.damage(DamageType.IN_WALL, 1.0F);
                         return;
                     }
@@ -249,7 +270,8 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
     }
 
     private boolean isSuffocating(Block block) {
-        if (block.air() || !RegistryTags.contains(RegistryTags.BLOCKS_MOTION, block.registryKey())) return false;
+        if (block.air() || !RegistryTags.contains(RegistryTags.BLOCKS_MOTION, block.registryKey()))
+            return false;
 
         var shape = block.collisionShape();
         for (var face : BlockFace.values()) {
@@ -257,7 +279,8 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
         }
 
         if (block.compare(Block.MANGROVE_ROOTS) || block.compare(Block.MOVING_PISTON)) return false;
-        if ((block.compare(Block.PISTON) || block.compare(Block.STICKY_PISTON)) && "true".equals(block.getProperty("extended"))) return false;
+        if ((block.compare(Block.PISTON) || block.compare(Block.STICKY_PISTON))
+                && "true".equals(block.getProperty("extended"))) return false;
 
         var key = block.key().value();
         if (key.endsWith("glass") || key.endsWith("copper_grate")) return false;
@@ -274,13 +297,13 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
 
         var position = entity.getPosition();
         var boundingBox = entity.getBoundingBox();
-        var pushableEntities = instance.getEntities()
-                .stream()
-                .filter(nearbyEntity -> nearbyEntity != entity)
-                .filter(nearbyEntity -> boundingBox.intersectEntity(position, nearbyEntity))
-                .filter(this::isCrammingPushable)
-                .limit(DEFAULT_MAX_ENTITY_CRAMMING)
-                .count();
+        var pushableEntities =
+                instance.getEntities().stream()
+                        .filter(nearbyEntity -> nearbyEntity != entity)
+                        .filter(nearbyEntity -> boundingBox.intersectEntity(position, nearbyEntity))
+                        .filter(this::isCrammingPushable)
+                        .limit(DEFAULT_MAX_ENTITY_CRAMMING)
+                        .count();
 
         if (pushableEntities > DEFAULT_MAX_ENTITY_CRAMMING - 1) {
             entity.damage(DamageType.CRAMMING, 6.0F);
@@ -291,7 +314,8 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
         if (!(entity instanceof LivingEntity livingEntity)) return false;
         if (livingEntity.isDead() || livingEntity.isRemoved()) return false;
         if (livingEntity.getVehicle() != null) return false;
-        if (livingEntity instanceof Player player && player.getGameMode() == GameMode.SPECTATOR) return false;
+        if (livingEntity instanceof Player player && player.getGameMode() == GameMode.SPECTATOR)
+            return false;
 
         return true;
     }
@@ -305,11 +329,16 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
 
         if (this.isWithinWorldBorder(player, worldBorder)) return;
 
-        var distancePastSafeZone = -(this.getDistanceToWorldBorder(player, worldBorder) + WORLD_BORDER_SAFE_ZONE);
+        var distancePastSafeZone =
+                -(this.getDistanceToWorldBorder(player, worldBorder) + WORLD_BORDER_SAFE_ZONE);
 
         if (distancePastSafeZone <= 0.0) return;
 
-        var damage = (float) Math.max(1.0, Math.floor(distancePastSafeZone * WORLD_BORDER_DAMAGE_PER_BLOCK));
+        var damage =
+                (float)
+                        Math.max(
+                                1.0,
+                                Math.floor(distancePastSafeZone * WORLD_BORDER_DAMAGE_PER_BLOCK));
         player.damage(DamageType.OUTSIDE_BORDER, damage);
     }
 
@@ -364,11 +393,11 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
         var airSupply = entity.hasTag(AIR_SUPPLY) ? entity.getTag(AIR_SUPPLY) : MAX_AIR_SUPPLY;
 
         if (this.isEyeInWater(entity)) {
-            var eyeBlock = instance.getBlock(
-                    entity.getPosition().blockX(),
-                    (int) (entity.getPosition().y() + entity.getEyeHeight()),
-                    entity.getPosition().blockZ()
-            );
+            var eyeBlock =
+                    instance.getBlock(
+                            entity.getPosition().blockX(),
+                            (int) (entity.getPosition().y() + entity.getEyeHeight()),
+                            entity.getPosition().blockZ());
 
             if (eyeBlock.compare(Block.BUBBLE_COLUMN)) {
                 airSupply = this.increaseAirSupply(airSupply);
@@ -399,12 +428,12 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
 
         if (!this.isEquipped(player, Material.TURTLE_HELMET)) return;
 
-        player.addEffect(new Potion(
-                PotionEffect.WATER_BREATHING,
-                0,
-                TURTLE_HELMET_WATER_BREATHING_TICKS,
-                TURTLE_HELMET_WATER_BREATHING_FLAGS
-        ));
+        player.addEffect(
+                new Potion(
+                        PotionEffect.WATER_BREATHING,
+                        0,
+                        TURTLE_HELMET_WATER_BREATHING_TICKS,
+                        TURTLE_HELMET_WATER_BREATHING_FLAGS));
     }
 
     private boolean isEquipped(LivingEntity entity, Material material) {
@@ -431,12 +460,14 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
         }
 
         if (WATER_ANIMAL_DROWN_TYPES.contains(entityType)) {
-            this.handleAirSupplyOutOfWater(entity, !this.isTouchingWater(entity), DamageType.DROWN, 2.0F);
+            this.handleAirSupplyOutOfWater(
+                    entity, !this.isTouchingWater(entity), DamageType.DROWN, 2.0F);
             return true;
         }
 
         if (DRY_OUT_AIR_SUPPLY_TYPES.contains(entityType)) {
-            var shouldDecreaseAir = !this.isTouchingWater(entity) && !this.isInRain(instance, entity);
+            var shouldDecreaseAir =
+                    !this.isTouchingWater(entity) && !this.isInRain(instance, entity);
             this.handleAirSupplyOutOfWater(entity, shouldDecreaseAir, DamageType.DRY_OUT, 2.0F);
             return true;
         }
@@ -450,7 +481,10 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
             return;
         }
 
-        var moistness = entity.hasTag(DOLPHIN_MOISTNESS) ? entity.getTag(DOLPHIN_MOISTNESS) : DOLPHIN_MOISTNESS_MAX;
+        var moistness =
+                entity.hasTag(DOLPHIN_MOISTNESS)
+                        ? entity.getTag(DOLPHIN_MOISTNESS)
+                        : DOLPHIN_MOISTNESS_MAX;
         moistness--;
         entity.setTag(DOLPHIN_MOISTNESS, moistness);
 
@@ -459,8 +493,11 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
         }
     }
 
-    private void handleAirSupplyOutOfWater(LivingEntity entity, boolean shouldDecreaseAir,
-                                           RegistryKey<DamageType> damageType, float damageAmount) {
+    private void handleAirSupplyOutOfWater(
+            LivingEntity entity,
+            boolean shouldDecreaseAir,
+            RegistryKey<DamageType> damageType,
+            float damageAmount) {
         var airSupply = entity.hasTag(AIR_SUPPLY) ? entity.getTag(AIR_SUPPLY) : MAX_AIR_SUPPLY;
 
         if (entity.isDead()) return;
@@ -504,7 +541,8 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
                         entity.damage(DamageType.CACTUS, 1.0F);
                     } else if (block.compare(Block.SWEET_BERRY_BUSH)) {
                         this.handleBerryBushDamage(entity, block);
-                    } else if (block.compare(Block.CAMPFIRE) || block.compare(Block.SOUL_CAMPFIRE)) {
+                    } else if (block.compare(Block.CAMPFIRE)
+                            || block.compare(Block.SOUL_CAMPFIRE)) {
                         this.handleCampfireDamage(entity, block);
                     } else if (block.compare(Block.WITHER_ROSE)) {
                         this.handleWitherRoseEffect(entity);
@@ -592,7 +630,8 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
     }
 
     private boolean canFreeze(LivingEntity entity) {
-        if (entity instanceof Player player && player.getGameMode() == GameMode.SPECTATOR) return false;
+        if (entity instanceof Player player && player.getGameMode() == GameMode.SPECTATOR)
+            return false;
         if (this.isFreezeImmuneEntityType(entity)) return false;
 
         for (var slot : EquipmentSlot.armors()) {
@@ -605,7 +644,8 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
     }
 
     private boolean isFreezeImmuneEntityType(LivingEntity entity) {
-        return RegistryTags.contains(RegistryTags.FREEZE_IMMUNE_ENTITY_TYPES, entity.getEntityType());
+        return RegistryTags.contains(
+                RegistryTags.FREEZE_IMMUNE_ENTITY_TYPES, entity.getEntityType());
     }
 
     private void extinguish(LivingEntity entity) {
@@ -616,10 +656,14 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
         this.lowerWaterCauldron(instance, entity);
         entity.setFireTicks(0);
 
-        ViewUtil.viewersAndSelf(entity).playSound(Sound.sound(
-                SoundEvent.ENTITY_GENERIC_EXTINGUISH_FIRE, Sound.Source.NEUTRAL,
-                0.7F, 1.0F
-        ), entity);
+        ViewUtil.viewersAndSelf(entity)
+                .playSound(
+                        Sound.sound(
+                                SoundEvent.ENTITY_GENERIC_EXTINGUISH_FIRE,
+                                Sound.Source.NEUTRAL,
+                                0.7F,
+                                1.0F),
+                        entity);
     }
 
     private void setFireTicks(LivingEntity entity, int fireTicks) {
@@ -646,7 +690,8 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
         var position = entity.getPosition();
         var blockGetter = new ChunkBlockGetter(instance, null, Block.AIR);
 
-        if (FluidUtil.getFluidHeights(blockGetter, position, entity.getBoundingBox()).lava() > 0.0) return true;
+        if (FluidUtil.getFluidHeights(blockGetter, position, entity.getBoundingBox()).lava() > 0.0)
+            return true;
 
         return this.isInLavaCauldron(blockGetter.getBlock(position), entity);
     }
@@ -705,7 +750,8 @@ public final class VanillaEnvironmentDamageFeature implements EnvironmentDamageF
         var position = entity.getPosition();
         var boundingBox = entity.getBoundingBox();
 
-        if (this.isRainingAt(instance, position.blockX(), position.blockY(), position.blockZ())) return true;
+        if (this.isRainingAt(instance, position.blockX(), position.blockY(), position.blockZ()))
+            return true;
 
         var topBlockY = CoordConversion.globalToBlock(position.y() + boundingBox.maxY());
 

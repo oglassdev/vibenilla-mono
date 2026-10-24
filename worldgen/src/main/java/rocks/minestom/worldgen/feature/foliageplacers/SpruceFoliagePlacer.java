@@ -8,14 +8,21 @@ import rocks.minestom.worldgen.feature.configurations.TreeConfiguration;
 import rocks.minestom.worldgen.feature.valueproviders.IntProvider;
 import rocks.minestom.worldgen.random.RandomSource;
 
-public record SpruceFoliagePlacer(IntProvider radius, IntProvider offset, IntProvider trunkHeight) implements FoliagePlacer {
+public record SpruceFoliagePlacer(IntProvider radius, IntProvider offset, IntProvider trunkHeight)
+        implements FoliagePlacer {
 
-    public static final Codec<SpruceFoliagePlacer> CODEC = StructCodec.struct(
-            "radius", IntProvider.CODEC, SpruceFoliagePlacer::radius,
-            "offset", IntProvider.CODEC, SpruceFoliagePlacer::offset,
-            "trunk_height", IntProvider.CODEC, SpruceFoliagePlacer::trunkHeight,
-            SpruceFoliagePlacer::new
-    );
+    public static final Codec<SpruceFoliagePlacer> CODEC =
+            StructCodec.struct(
+                    "radius",
+                    IntProvider.CODEC,
+                    SpruceFoliagePlacer::radius,
+                    "offset",
+                    IntProvider.CODEC,
+                    SpruceFoliagePlacer::offset,
+                    "trunk_height",
+                    IntProvider.CODEC,
+                    SpruceFoliagePlacer::trunkHeight,
+                    SpruceFoliagePlacer::new);
 
     @Override
     public void createFoliage(
@@ -26,8 +33,7 @@ public record SpruceFoliagePlacer(IntProvider radius, IntProvider offset, IntPro
             int maxFreeTreeHeight,
             FoliageAttachment attachment,
             int foliageHeight,
-            int foliageRadius
-    ) {
+            int foliageRadius) {
         // Vanilla samples the offset before running the placer body.
         var offset = this.offset.sample(random);
         var center = attachment.pos();
@@ -44,8 +50,7 @@ public record SpruceFoliagePlacer(IntProvider radius, IntProvider offset, IntPro
                     center,
                     currentRadius,
                     y,
-                    attachment.doubleTrunk()
-            );
+                    attachment.doubleTrunk());
 
             if (currentRadius >= maxRadius) {
                 currentRadius = minRadius;
@@ -75,27 +80,32 @@ public record SpruceFoliagePlacer(IntProvider radius, IntProvider offset, IntPro
             BlockVec center,
             int radius,
             int yOffset,
-            boolean doubleTrunk
-    ) {
+            boolean doubleTrunk) {
         var widthOffset = doubleTrunk ? 1 : 0;
 
         for (var x = -radius; x <= radius + widthOffset; x++) {
             for (var z = -radius; z <= radius + widthOffset; z++) {
                 if (!this.shouldSkipLocationSigned(random, x, yOffset, z, radius, doubleTrunk)) {
-                    var position = new BlockVec(center.blockX() + x, center.blockY() + yOffset, center.blockZ() + z);
+                    var position =
+                            new BlockVec(
+                                    center.blockX() + x,
+                                    center.blockY() + yOffset,
+                                    center.blockZ() + z);
                     FoliagePlacer.tryPlaceLeaf(getter, setter, random, config, position);
                 }
             }
         }
     }
 
-    private boolean shouldSkipLocationSigned(RandomSource random, int x, int y, int z, int radius, boolean doubleTrunk) {
+    private boolean shouldSkipLocationSigned(
+            RandomSource random, int x, int y, int z, int radius, boolean doubleTrunk) {
         var absX = doubleTrunk ? Math.min(Math.abs(x), Math.abs(x - 1)) : Math.abs(x);
         var absZ = doubleTrunk ? Math.min(Math.abs(z), Math.abs(z - 1)) : Math.abs(z);
         return this.shouldSkipLocation(random, absX, y, absZ, radius, doubleTrunk);
     }
 
-    private boolean shouldSkipLocation(RandomSource random, int absX, int y, int absZ, int radius, boolean doubleTrunk) {
+    private boolean shouldSkipLocation(
+            RandomSource random, int absX, int y, int absZ, int radius, boolean doubleTrunk) {
         return absX == radius && absZ == radius && radius > 0;
     }
 }

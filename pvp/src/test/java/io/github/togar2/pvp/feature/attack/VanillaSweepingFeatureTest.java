@@ -1,5 +1,7 @@
 package io.github.togar2.pvp.feature.attack;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.github.togar2.pvp.enchantment.CombatEnchantments;
 import io.github.togar2.pvp.feature.CombatFeatures;
 import io.github.togar2.pvp.feature.FeatureType;
@@ -13,20 +15,19 @@ import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 @EnvTest
 public final class VanillaSweepingFeatureTest {
     @Test
     public void sweepReachesOneBlockAroundTheTarget(Env env) {
         CombatEnchantments.registerAll();
-        var sweepingFeature = CombatFeatures.empty()
-                .version(CombatVersion.MODERN)
-                .add(CombatFeatures.VANILLA_ENCHANTMENT)
-                .add(CombatFeatures.VANILLA_KNOCKBACK)
-                .add(CombatFeatures.VANILLA_SWEEPING)
-                .build()
-                .get(FeatureType.SWEEPING);
+        var sweepingFeature =
+                CombatFeatures.empty()
+                        .version(CombatVersion.MODERN)
+                        .add(CombatFeatures.VANILLA_ENCHANTMENT)
+                        .add(CombatFeatures.VANILLA_KNOCKBACK)
+                        .add(CombatFeatures.VANILLA_SWEEPING)
+                        .build()
+                        .get(FeatureType.SWEEPING);
 
         var instance = env.createFlatInstance();
         var attacker = env.createPlayer(instance, new Pos(0.0, 40.0, 0.0));

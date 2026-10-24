@@ -15,9 +15,17 @@ public final class TripWireHookPlacementRule extends BlockPlacementRule {
     @Override
     public Block blockPlace(PlacementState placementState) {
         var playerPosition = placementState.playerPosition();
-        var nearest = playerPosition == null
-                ? new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST, BlockFace.TOP, BlockFace.BOTTOM}
-                : orderedByNearest(playerPosition.yaw(), playerPosition.pitch());
+        var nearest =
+                playerPosition == null
+                        ? new BlockFace[] {
+                            BlockFace.NORTH,
+                            BlockFace.EAST,
+                            BlockFace.SOUTH,
+                            BlockFace.WEST,
+                            BlockFace.TOP,
+                            BlockFace.BOTTOM
+                        }
+                        : orderedByNearest(playerPosition.yaw(), playerPosition.pitch());
         var instance = placementState.instance();
         var placePosition = placementState.placePosition();
         BlockFace facing = null;
@@ -39,10 +47,12 @@ public final class TripWireHookPlacementRule extends BlockPlacementRule {
             return null;
         }
 
-        var result = placementState.block()
-                .withProperty("facing", facing.name().toLowerCase())
-                .withProperty("powered", "false")
-                .withProperty("attached", "false");
+        var result =
+                placementState
+                        .block()
+                        .withProperty("facing", facing.name().toLowerCase())
+                        .withProperty("powered", "false")
+                        .withProperty("attached", "false");
         return this.withLineState(result, instance, placePosition, facing);
     }
 
@@ -55,8 +65,10 @@ public final class TripWireHookPlacementRule extends BlockPlacementRule {
             return currentBlock;
         }
 
-        var support = updateState.instance().getBlock(
-                updateState.blockPosition().relative(facing.getOppositeFace()));
+        var support =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(facing.getOppositeFace()));
 
         if (!Utility.canSupportCenter(support, facing)) {
             return Block.AIR;
@@ -66,10 +78,12 @@ public final class TripWireHookPlacementRule extends BlockPlacementRule {
             return currentBlock;
         }
 
-        return this.withLineState(currentBlock, updateState.instance(), updateState.blockPosition(), facing);
+        return this.withLineState(
+                currentBlock, updateState.instance(), updateState.blockPosition(), facing);
     }
 
-    private Block withLineState(Block base, Block.Getter blockGetter, Point position, BlockFace facing) {
+    private Block withLineState(
+            Block base, Block.Getter blockGetter, Point position, BlockFace facing) {
         var linePosition = position.relative(facing);
         var hasWire = false;
         var powered = false;
@@ -84,10 +98,13 @@ public final class TripWireHookPlacementRule extends BlockPlacementRule {
                 continue;
             }
 
-            var oppositeHook = lineBlock.compare(Block.TRIPWIRE_HOOK)
-                    && facing.getOppositeFace().name().toLowerCase().equals(lineBlock.getProperty("facing"));
-            return base
-                    .withProperty("attached", String.valueOf(hasWire && oppositeHook))
+            var oppositeHook =
+                    lineBlock.compare(Block.TRIPWIRE_HOOK)
+                            && facing.getOppositeFace()
+                                    .name()
+                                    .toLowerCase()
+                                    .equals(lineBlock.getProperty("facing"));
+            return base.withProperty("attached", String.valueOf(hasWire && oppositeHook))
                     .withProperty("powered", String.valueOf(hasWire && oppositeHook && powered));
         }
 
@@ -105,7 +122,10 @@ public final class TripWireHookPlacementRule extends BlockPlacementRule {
     }
 
     private static boolean isHorizontal(BlockFace face) {
-        return face == BlockFace.NORTH || face == BlockFace.SOUTH || face == BlockFace.EAST || face == BlockFace.WEST;
+        return face == BlockFace.NORTH
+                || face == BlockFace.SOUTH
+                || face == BlockFace.EAST
+                || face == BlockFace.WEST;
     }
 
     private static BlockFace[] orderedByNearest(float yawDegrees, float pitchDegrees) {
@@ -150,7 +170,15 @@ public final class TripWireHookPlacementRule extends BlockPlacementRule {
         return makeDirectionArray(axisZ, axisY, axisX);
     }
 
-    private static BlockFace[] makeDirectionArray(BlockFace first, BlockFace second, BlockFace third) {
-        return new BlockFace[]{first, second, third, third.getOppositeFace(), second.getOppositeFace(), first.getOppositeFace()};
+    private static BlockFace[] makeDirectionArray(
+            BlockFace first, BlockFace second, BlockFace third) {
+        return new BlockFace[] {
+            first,
+            second,
+            third,
+            third.getOppositeFace(),
+            second.getOppositeFace(),
+            first.getOppositeFace()
+        };
     }
 }

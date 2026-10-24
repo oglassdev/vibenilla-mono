@@ -1,10 +1,10 @@
 package rocks.minestom.worldgen.random;
 
 /**
- * Random source used for chunk decoration. Derives values with the legacy
- * bit-extraction algebra while pulling bits from a wrapped (usually Xoroshiro)
- * source, and provides the decoration/feature seeding scheme vanilla uses to
- * make feature placement deterministic per chunk, step, and feature index.
+ * Random source used for chunk decoration. Derives values with the legacy bit-extraction algebra
+ * while pulling bits from a wrapped (usually Xoroshiro) source, and provides the decoration/feature
+ * seeding scheme vanilla uses to make feature placement deterministic per chunk, step, and feature
+ * index.
  */
 public final class WorldgenRandom implements RandomSource {
     private final RandomSource randomSource;
@@ -14,7 +14,9 @@ public final class WorldgenRandom implements RandomSource {
         this.randomSource = randomSource;
     }
 
-    /** Draws consumed so far, mirroring vanilla {@code WorldgenRandom.getCount()} for diagnostics. */
+    /**
+     * Draws consumed so far, mirroring vanilla {@code WorldgenRandom.getCount()} for diagnostics.
+     */
     public int getCount() {
         return this.count;
     }
@@ -33,8 +35,8 @@ public final class WorldgenRandom implements RandomSource {
     }
 
     /**
-     * Vanilla's carver/large-feature seeding: unlike the decoration seed the
-     * scales are not forced odd and the mix uses xor instead of addition.
+     * Vanilla's carver/large-feature seeding: unlike the decoration seed the scales are not forced
+     * odd and the mix uses xor instead of addition.
      */
     public void setLargeFeatureSeed(long seed, int chunkX, int chunkZ) {
         this.setSeed(seed);

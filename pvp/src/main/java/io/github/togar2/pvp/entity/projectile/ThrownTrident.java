@@ -5,11 +5,12 @@ import io.github.togar2.pvp.feature.enchantment.EnchantmentFeature;
 import io.github.togar2.pvp.utils.EntityUtil;
 import io.github.togar2.pvp.utils.FluidUtil;
 import io.github.togar2.pvp.utils.ViewUtil;
+import java.util.Objects;
+import java.util.concurrent.ThreadLocalRandom;
 import net.kyori.adventure.sound.Sound;
 import net.minestom.server.ServerFlag;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.coordinate.Point;
-import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.*;
 import net.minestom.server.entity.damage.Damage;
 import net.minestom.server.entity.damage.DamageType;
@@ -26,26 +27,29 @@ import net.minestom.server.utils.time.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
-import java.util.concurrent.ThreadLocalRandom;
-
 public class ThrownTrident extends AbstractArrow {
     private final ItemStack tridentItem;
     private boolean damageDone;
     private boolean hasStartedReturning;
 
-    public ThrownTrident(@Nullable Entity shooter, ItemStack tridentItem, EnchantmentFeature enchantmentFeature) {
+    public ThrownTrident(
+            @Nullable Entity shooter,
+            ItemStack tridentItem,
+            EnchantmentFeature enchantmentFeature) {
         super(shooter, EntityType.TRIDENT, enchantmentFeature);
         this.tridentItem = tridentItem;
 
         var meta = ((ThrownTridentMeta) this.getEntityMeta());
-        var loyalty = (int) this.enchantmentFeature.modifyConditionalValue(
-                tridentItem, EffectComponent.TRIDENT_RETURN_ACCELERATION, 0.0F
-        );
+        var loyalty =
+                (int)
+                        this.enchantmentFeature.modifyConditionalValue(
+                                tridentItem, EffectComponent.TRIDENT_RETURN_ACCELERATION, 0.0F);
         meta.setLoyaltyLevel((byte) Math.min(Math.max(loyalty, 0), 127));
 
-        meta.setHasEnchantmentGlint(!Objects.requireNonNull(tridentItem.get(DataComponents.ENCHANTMENTS))
-                .enchantments().isEmpty());
+        meta.setHasEnchantmentGlint(
+                !Objects.requireNonNull(tridentItem.get(DataComponents.ENCHANTMENTS))
+                        .enchantments()
+                        .isEmpty());
     }
 
     @Override
@@ -55,14 +59,18 @@ public class ThrownTrident extends AbstractArrow {
         var shooter = this.getShooter();
         var loyalty = ((ThrownTridentMeta) this.getEntityMeta()).getLoyaltyLevel();
         if (loyalty > 0 && (this.damageDone || this.isNoClip()) && shooter != null) {
-            if (shooter.isRemoved() || (shooter instanceof LivingEntity living && living.isDead())
-                    || (shooter instanceof Player player && player.getGameMode() == GameMode.SPECTATOR)) {
+            if (shooter.isRemoved()
+                    || (shooter instanceof LivingEntity living && living.isDead())
+                    || (shooter instanceof Player player
+                            && player.getGameMode() == GameMode.SPECTATOR)) {
                 if (this.pickupMode == PickupMode.ALLOWED)
                     EntityUtil.spawnItemAtLocation(this, this.tridentItem, 0.1);
                 this.remove();
             } else {
                 var ownerEyePosition = shooter.getPosition().add(0, shooter.getEyeHeight(), 0);
-                if (!(shooter instanceof Player) && this.getPosition().distance(ownerEyePosition) < shooter.getBoundingBox().width() + 1.0) {
+                if (!(shooter instanceof Player)
+                        && this.getPosition().distance(ownerEyePosition)
+                                < shooter.getBoundingBox().width() + 1.0) {
                     this.remove();
                     return;
                 }
@@ -72,15 +80,27 @@ public class ThrownTrident extends AbstractArrow {
                 this.collisionDirection = null;
                 ((AbstractArrowMeta) this.getEntityMeta()).setInGround(false);
                 var vector = ownerEyePosition.asVec().sub(this.position);
-                this.refreshPosition(this.position.add(0, vector.y() * 0.015 * loyalty, 0), true, false);
-                this.setVelocity(this.velocity.mul(0.95).add(vector.normalize().mul(0.05 * loyalty)
-                        .mul(ServerFlag.SERVER_TICKS_PER_SECOND)));
+                this.refreshPosition(
+                        this.position.add(0, vector.y() * 0.015 * loyalty, 0), true, false);
+                this.setVelocity(
+                        this.velocity
+                                .mul(0.95)
+                                .add(
+                                        vector.normalize()
+                                                .mul(0.05 * loyalty)
+                                                .mul(ServerFlag.SERVER_TICKS_PER_SECOND)));
 
                 if (!this.hasStartedReturning) {
-                    this.getViewersAsAudience().playSound(Sound.sound(
-                            SoundEvent.ITEM_TRIDENT_RETURN, Sound.Source.NEUTRAL,
-                            10.0F, 1.0F
-                    ), this.position.x(), this.position.y(), this.position.z());
+                    this.getViewersAsAudience()
+                            .playSound(
+                                    Sound.sound(
+                                            SoundEvent.ITEM_TRIDENT_RETURN,
+                                            Sound.Source.NEUTRAL,
+                                            10.0F,
+                                            1.0F),
+                                    this.position.x(),
+                                    this.position.y(),
+                                    this.position.z());
                     this.hasStartedReturning = true;
                     this.synchronizeNextTick();
                 }
@@ -98,7 +118,9 @@ public class ThrownTrident extends AbstractArrow {
     private void deflectBack() {
         this.setVelocity(this.velocity.mul(-0.01, -0.1, -0.01));
         var position = this.getPosition();
-        this.refreshPosition(position.withYaw(position.yaw() + 170.0F + 20.0F * ThreadLocalRandom.current().nextFloat()));
+        this.refreshPosition(
+                position.withYaw(
+                        position.yaw() + 170.0F + 20.0F * ThreadLocalRandom.current().nextFloat()));
     }
 
     @Override
@@ -107,15 +129,20 @@ public class ThrownTrident extends AbstractArrow {
         var shooter = this.getShooter();
 
         if (entity instanceof CrystalEntity crystal) {
-            var damageObj = new Damage(DamageType.TRIDENT, this, shooter == null ? this : shooter, null, 8.0F);
+            var damageObj =
+                    new Damage(
+                            DamageType.TRIDENT, this, shooter == null ? this : shooter, null, 8.0F);
             crystal.damage(damageObj);
             this.damageDone = true;
 
             this.deflectBack();
-            this.getViewersAsAudience().playSound(Sound.sound(
-                    SoundEvent.ITEM_TRIDENT_HIT, Sound.Source.NEUTRAL,
-                    1.0F, 1.0F
-            ), this.position.x(), this.position.y(), this.position.z());
+            this.getViewersAsAudience()
+                    .playSound(
+                            Sound.sound(
+                                    SoundEvent.ITEM_TRIDENT_HIT, Sound.Source.NEUTRAL, 1.0F, 1.0F),
+                            this.position.x(),
+                            this.position.y(),
+                            this.position.z());
 
             return false;
         }
@@ -123,7 +150,9 @@ public class ThrownTrident extends AbstractArrow {
         if (!(entity instanceof LivingEntity living)) return false;
 
         var damage = 8.0F + this.enchantmentFeature.getAttackDamage(this.tridentItem, living);
-        var damageObj = new Damage(DamageType.TRIDENT, this, shooter == null ? this : shooter, null, damage);
+        var damageObj =
+                new Damage(
+                        DamageType.TRIDENT, this, shooter == null ? this : shooter, null, damage);
         var damaged = living.damage(damageObj);
 
         if (damaged && shooter instanceof LivingEntity livingShooter) {
@@ -138,17 +167,20 @@ public class ThrownTrident extends AbstractArrow {
         this.damageDone = true;
 
         this.deflectBack();
-        this.getViewersAsAudience().playSound(Sound.sound(
-                SoundEvent.ITEM_TRIDENT_HIT, Sound.Source.NEUTRAL,
-                1.0F, 1.0F
-        ), this.position.x(), this.position.y(), this.position.z());
+        this.getViewersAsAudience()
+                .playSound(
+                        Sound.sound(SoundEvent.ITEM_TRIDENT_HIT, Sound.Source.NEUTRAL, 1.0F, 1.0F),
+                        this.position.x(),
+                        this.position.y(),
+                        this.position.z());
 
         return false;
     }
 
     @Override
     public boolean onStuck(ProjectileCollideWithBlockEvent event) {
-        if (this.isLightningRod(event.getBlock()) && this.canChannel(event.getCollisionPosition())) {
+        if (this.isLightningRod(event.getBlock())
+                && this.canChannel(event.getCollisionPosition())) {
             this.channelLightning(event.getCollisionPosition());
         }
 
@@ -166,14 +198,15 @@ public class ThrownTrident extends AbstractArrow {
     @Override
     public boolean pickup(Player player) {
         return super.pickup(player)
-                || (this.isNoClip() && this.getShooter() == player && player.getInventory().addItemStack(this.tridentItem));
+                || (this.isNoClip()
+                        && this.getShooter() == player
+                        && player.getInventory().addItemStack(this.tridentItem));
     }
 
     @Override
     protected void tickRemoval() {
         var loyalty = ((ThrownTridentMeta) this.getEntityMeta()).getLoyaltyLevel();
-        if (this.pickupMode != PickupMode.ALLOWED || loyalty <= 0)
-            super.tickRemoval();
+        if (this.pickupMode != PickupMode.ALLOWED || loyalty <= 0) super.tickRemoval();
     }
 
     @Override
@@ -225,10 +258,13 @@ public class ThrownTrident extends AbstractArrow {
 
         lightning.setInstance(instance, point);
         lightning.scheduleRemove(20, TimeUnit.SERVER_TICK);
-        ViewUtil.viewersAndSelf(this).playSound(Sound.sound(
-                SoundEvent.ITEM_TRIDENT_THUNDER, Sound.Source.WEATHER,
-                5.0F, 1.0F
-        ), point.x(), point.y(), point.z());
+        ViewUtil.viewersAndSelf(this)
+                .playSound(
+                        Sound.sound(
+                                SoundEvent.ITEM_TRIDENT_THUNDER, Sound.Source.WEATHER, 5.0F, 1.0F),
+                        point.x(),
+                        point.y(),
+                        point.z());
 
         this.damageLightningEntities(instance, point);
     }
@@ -253,7 +289,9 @@ public class ThrownTrident extends AbstractArrow {
             return;
         }
 
-        this.setFireTicks(livingEntity, Math.max(livingEntity.getFireTicks(), 8 * ServerFlag.SERVER_TICKS_PER_SECOND));
+        this.setFireTicks(
+                livingEntity,
+                Math.max(livingEntity.getFireTicks(), 8 * ServerFlag.SERVER_TICKS_PER_SECOND));
         livingEntity.damage(DamageType.LIGHTNING_BOLT, 5.0F);
     }
 

@@ -1,10 +1,9 @@
 package rocks.minestom.placement;
 
+import java.util.Objects;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
-
-import java.util.Objects;
 
 public final class WallHangingSignPlacementRule extends BlockPlacementRule {
     public WallHangingSignPlacementRule(Block block) {
@@ -16,9 +15,17 @@ public final class WallHangingSignPlacementRule extends BlockPlacementRule {
         var playerPosition = placementState.playerPosition();
         var yaw = playerPosition == null ? 0.0F : playerPosition.yaw();
         var pitch = playerPosition == null ? 0.0F : playerPosition.pitch();
-        var nearest = playerPosition == null
-                ? new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST, BlockFace.TOP, BlockFace.BOTTOM}
-                : orderedByNearest(yaw, pitch);
+        var nearest =
+                playerPosition == null
+                        ? new BlockFace[] {
+                            BlockFace.NORTH,
+                            BlockFace.EAST,
+                            BlockFace.SOUTH,
+                            BlockFace.WEST,
+                            BlockFace.TOP,
+                            BlockFace.BOTTOM
+                        }
+                        : orderedByNearest(yaw, pitch);
         var clickedFace = Objects.requireNonNullElse(placementState.blockFace(), BlockFace.TOP);
         var instance = placementState.instance();
         var placePosition = placementState.placePosition();
@@ -49,7 +56,8 @@ public final class WallHangingSignPlacementRule extends BlockPlacementRule {
         var replaced = instance.getBlock(placePosition);
         var waterlogged = replaced.compare(Block.WATER);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withHandler(SignBlockHandler.INSTANCE)
                 .withProperty("facing", facing.name().toLowerCase())
                 .withProperty("waterlogged", String.valueOf(waterlogged));
@@ -76,8 +84,10 @@ public final class WallHangingSignPlacementRule extends BlockPlacementRule {
         var blockPosition = updateState.blockPosition();
         var clockwiseBlock = instance.getBlock(blockPosition.relative(clockwise));
         var counterClockwiseBlock = instance.getBlock(blockPosition.relative(counterClockwise));
-        var clockwiseSupports = clockwiseBlock.registry().collisionShape().isFaceFull(counterClockwise);
-        var counterClockwiseSupports = counterClockwiseBlock.registry().collisionShape().isFaceFull(clockwise);
+        var clockwiseSupports =
+                clockwiseBlock.registry().collisionShape().isFaceFull(counterClockwise);
+        var counterClockwiseSupports =
+                counterClockwiseBlock.registry().collisionShape().isFaceFull(clockwise);
 
         if (!clockwiseSupports || !counterClockwiseSupports) {
             return Block.AIR;
@@ -117,7 +127,10 @@ public final class WallHangingSignPlacementRule extends BlockPlacementRule {
     }
 
     private static boolean isHorizontal(BlockFace face) {
-        return face == BlockFace.NORTH || face == BlockFace.SOUTH || face == BlockFace.EAST || face == BlockFace.WEST;
+        return face == BlockFace.NORTH
+                || face == BlockFace.SOUTH
+                || face == BlockFace.EAST
+                || face == BlockFace.WEST;
     }
 
     private static boolean sameAxis(BlockFace first, BlockFace second) {
@@ -170,7 +183,15 @@ public final class WallHangingSignPlacementRule extends BlockPlacementRule {
         return makeDirectionArray(axisZ, axisY, axisX);
     }
 
-    private static BlockFace[] makeDirectionArray(BlockFace first, BlockFace second, BlockFace third) {
-        return new BlockFace[]{first, second, third, third.getOppositeFace(), second.getOppositeFace(), first.getOppositeFace()};
+    private static BlockFace[] makeDirectionArray(
+            BlockFace first, BlockFace second, BlockFace third) {
+        return new BlockFace[] {
+            first,
+            second,
+            third,
+            third.getOppositeFace(),
+            second.getOppositeFace(),
+            first.getOppositeFace()
+        };
     }
 }

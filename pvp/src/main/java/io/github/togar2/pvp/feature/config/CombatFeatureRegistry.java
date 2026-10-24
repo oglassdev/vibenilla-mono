@@ -1,5 +1,7 @@
 package io.github.togar2.pvp.feature.config;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.Event;
@@ -10,9 +12,6 @@ import net.minestom.server.event.player.PlayerRespawnEvent;
 import net.minestom.server.tag.Tag;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 public class CombatFeatureRegistry {
     private static final Tag<Boolean> INITIALIZED = Tag.Transient("combatFeaturesInitialized");
 
@@ -21,14 +20,21 @@ public class CombatFeatureRegistry {
     private static @Nullable GlobalEventHandler attachedHandler;
 
     static {
-        initNode.addListener(AddEntityToInstanceEvent.class, event -> {
-            if (!(event.getEntity() instanceof Player player)) return;
+        initNode.addListener(
+                AddEntityToInstanceEvent.class,
+                event -> {
+                    if (!(event.getEntity() instanceof Player player)) return;
 
-            var reason = player.hasTag(INITIALIZED) ? PlayerInitReason.INSTANCE_CHANGE : PlayerInitReason.JOIN;
-            player.setTag(INITIALIZED, true);
-            initPlayer(player, reason);
-        });
-        initNode.addListener(PlayerRespawnEvent.class, event -> initPlayer(event.getPlayer(), PlayerInitReason.RESPAWN));
+                    var reason =
+                            player.hasTag(INITIALIZED)
+                                    ? PlayerInitReason.INSTANCE_CHANGE
+                                    : PlayerInitReason.JOIN;
+                    player.setTag(INITIALIZED, true);
+                    initPlayer(player, reason);
+                });
+        initNode.addListener(
+                PlayerRespawnEvent.class,
+                event -> initPlayer(event.getPlayer(), PlayerInitReason.RESPAWN));
     }
 
     public static synchronized void init(DefinedFeature<?> feature) {
@@ -39,7 +45,8 @@ public class CombatFeatureRegistry {
 
     public static synchronized void attach() {
         if (MinecraftServer.process() == null) {
-            throw new IllegalStateException("MinecraftServer.init() must run before combat features are used");
+            throw new IllegalStateException(
+                    "MinecraftServer.init() must run before combat features are used");
         }
 
         var globalEventHandler = MinecraftServer.getGlobalEventHandler();

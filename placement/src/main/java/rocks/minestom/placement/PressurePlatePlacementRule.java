@@ -27,7 +27,10 @@ public final class PressurePlatePlacementRule extends BlockPlacementRule {
             return updateState.currentBlock();
         }
 
-        var below = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
+        var below =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
         return canSurvive(below) ? updateState.currentBlock() : Block.AIR;
     }
 

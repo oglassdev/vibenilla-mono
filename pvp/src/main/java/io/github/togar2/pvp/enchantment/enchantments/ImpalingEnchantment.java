@@ -15,8 +15,11 @@ public class ImpalingEnchantment extends CombatEnchantment {
     }
 
     @Override
-    public float getAttackDamage(int level, @Nullable Entity target,
-                                 EnchantmentFeature feature, FeatureConfiguration configuration) {
+    public float getAttackDamage(
+            int level,
+            @Nullable Entity target,
+            EnchantmentFeature feature,
+            FeatureConfiguration configuration) {
         return EntityGroup.AQUATIC.contains(target) ? (float) level * 2.5F : 0.0F;
     }
 }

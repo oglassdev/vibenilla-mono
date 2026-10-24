@@ -1,14 +1,13 @@
 package rocks.minestom.worldgen.feature.ruletest;
 
 import com.google.gson.JsonElement;
+import java.util.Set;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.codec.Transcoder;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.BlockCodec;
 import rocks.minestom.worldgen.random.RandomSource;
 import rocks.minestom.worldgen.structure.context.BlockTagManager;
-
-import java.util.Set;
 
 public interface RuleTest {
     boolean test(Block block, RandomSource random);
@@ -28,7 +27,10 @@ public interface RuleTest {
                 yield new BlockMatchTest(block);
             }
             case "minecraft:blockstate_match" -> {
-                var state = BlockCodec.CODEC.decode(Transcoder.JSON, obj.get("block_state")).orElseThrow();
+                var state =
+                        BlockCodec.CODEC
+                                .decode(Transcoder.JSON, obj.get("block_state"))
+                                .orElseThrow();
                 yield new BlockStateMatchTest(state);
             }
             case "minecraft:tag_match" -> {
@@ -41,7 +43,10 @@ public interface RuleTest {
                 yield new RandomBlockMatchTest(block, probability);
             }
             case "minecraft:random_blockstate_match" -> {
-                var state = BlockCodec.CODEC.decode(Transcoder.JSON, obj.get("block_state")).orElseThrow();
+                var state =
+                        BlockCodec.CODEC
+                                .decode(Transcoder.JSON, obj.get("block_state"))
+                                .orElseThrow();
                 var probability = obj.get("probability").getAsFloat();
                 yield new RandomBlockStateMatchTest(state, probability);
             }
@@ -106,7 +111,8 @@ public interface RuleTest {
     record RandomBlockStateMatchTest(Block state, float probability) implements RuleTest {
         @Override
         public boolean test(Block block, RandomSource random) {
-            return block.compare(this.state, Block.Comparator.STATE) && random.nextFloat() < this.probability;
+            return block.compare(this.state, Block.Comparator.STATE)
+                    && random.nextFloat() < this.probability;
         }
     }
 }

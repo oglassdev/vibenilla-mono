@@ -2,10 +2,7 @@ package rocks.minestom.worldgen.structure.mineshaft;
 
 import net.minestom.server.instance.block.Block;
 
-/**
- * Port of vanilla {@code MineshaftStructure.Type}: the wood palette used by
- * mineshaft pieces.
- */
+/** Port of vanilla {@code MineshaftStructure.Type}: the wood palette used by mineshaft pieces. */
 public enum MineshaftType {
     NORMAL(Block.OAK_LOG, Block.OAK_PLANKS, Block.OAK_FENCE),
     MESA(Block.DARK_OAK_LOG, Block.DARK_OAK_PLANKS, Block.DARK_OAK_FENCE);

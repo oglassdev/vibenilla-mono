@@ -10,9 +10,7 @@ public final class BellBlockHandler implements BlockHandler {
     public static final BellBlockHandler INSTANCE = new BellBlockHandler();
     private static final Key KEY = Key.key("placement:bell");
 
-    private BellBlockHandler() {
-
-    }
+    private BellBlockHandler() {}
 
     @Override
     public Key getKey() {

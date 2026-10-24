@@ -1,25 +1,24 @@
 package net.goldenstack.loot.util.nbt;
 
 import it.unimi.dsi.fastutil.ints.IntSet;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import net.kyori.adventure.nbt.*;
 import net.minestom.server.codec.Codec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
 /**
- * A NBTPath allows selecting specific elements from a NBT tree, based on a list of selectors. Each selector has the
- * ability to select any number of elements from its predecessor—this allows arbitrary item selection from any NBT type.
- * <br>
- * It also provides multiple ways to manipulate NBT results as there is no deeply mutable NBT implementation.
+ * A NBTPath allows selecting specific elements from a NBT tree, based on a list of selectors. Each
+ * selector has the ability to select any number of elements from its predecessor—this allows
+ * arbitrary item selection from any NBT type. <br>
+ * It also provides multiple ways to manipulate NBT results as there is no deeply mutable NBT
+ * implementation.
  */
 public record NBTPath(@NotNull List<Selector> selectors) {
 
@@ -28,8 +27,14 @@ public record NBTPath(@NotNull List<Selector> selectors) {
 
     private static @NotNull String formatKey(@NotNull String key) {
         for (var character : key.toCharArray()) {
-            if (character == ' ' || character == '.' || character == '\'' || character == '"'
-                    || character == '{' || character == '}' || character == '[' || character == ']') {
+            if (character == ' '
+                    || character == '.'
+                    || character == '\''
+                    || character == '"'
+                    || character == '{'
+                    || character == '}'
+                    || character == '['
+                    || character == ']') {
                 var escaped = key.replace("\\", "\\\\").replace("\"", "\\\"");
                 return "\"" + escaped + "\"";
             }
@@ -38,37 +43,35 @@ public record NBTPath(@NotNull List<Selector> selectors) {
         return key;
     }
 
-    /**
-     * Selects an arbitrary number of elements from provided NBT.
-     */
+    /** Selects an arbitrary number of elements from provided NBT. */
     public sealed interface Selector {
 
-        /**
-         * Passes each selected NBT element into the given consumer.
-         */
+        /** Passes each selected NBT element into the given consumer. */
         void get(@NotNull NBTReference source, @NotNull Consumer<NBTReference> consumer);
 
         /**
-         * Modifies the provided {@code source} so that, if possible, this path selector will select at least one NBT
-         * element from it. If a placeholder element is needed, {@code nextElement} is to be used.
+         * Modifies the provided {@code source} so that, if possible, this path selector will select
+         * at least one NBT element from it. If a placeholder element is needed, {@code nextElement}
+         * is to be used.
          */
         void prepare(@NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement);
 
-        /**
-         * Provides a tag that this selector may be willing to modify.
-         */
-        @NotNull BinaryTag preparedNBT();
+        /** Provides a tag that this selector may be willing to modify. */
+        @NotNull
+        BinaryTag preparedNBT();
 
         record RootKey(@NotNull String key) implements Selector {
             @Override
-            public void get(@NotNull NBTReference source, @NotNull Consumer<NBTReference> consumer) {
+            public void get(
+                    @NotNull NBTReference source, @NotNull Consumer<NBTReference> consumer) {
                 if (source.has(key)) {
                     consumer.accept(source.get(key));
                 }
             }
 
             @Override
-            public void prepare(@NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {
+            public void prepare(
+                    @NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {
                 if (!source.has(this.key)) {
                     source.get(this.key).set(nextElement.get());
                 }
@@ -87,14 +90,16 @@ public record NBTPath(@NotNull List<Selector> selectors) {
 
         record Key(@NotNull String key) implements Selector {
             @Override
-            public void get(@NotNull NBTReference source, @NotNull Consumer<NBTReference> consumer) {
+            public void get(
+                    @NotNull NBTReference source, @NotNull Consumer<NBTReference> consumer) {
                 if (source.has(key)) {
                     consumer.accept(source.get(key));
                 }
             }
 
             @Override
-            public void prepare(@NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {
+            public void prepare(
+                    @NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {
                 if (!source.has(key)) {
                     source.get(key).set(nextElement.get());
                 }
@@ -113,14 +118,16 @@ public record NBTPath(@NotNull List<Selector> selectors) {
 
         record CompoundFilter(@NotNull CompoundBinaryTag filter) implements Selector {
             @Override
-            public void get(@NotNull NBTReference source, @NotNull Consumer<NBTReference> consumer) {
+            public void get(
+                    @NotNull NBTReference source, @NotNull Consumer<NBTReference> consumer) {
                 if (NBTUtils.compareNBT(filter, source.get(), true)) {
                     consumer.accept(source);
                 }
             }
 
             @Override
-            public void prepare(@NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {}
+            public void prepare(
+                    @NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {}
 
             @Override
             public @NotNull BinaryTag preparedNBT() {
@@ -137,9 +144,11 @@ public record NBTPath(@NotNull List<Selector> selectors) {
             }
         }
 
-        record ObjectFilter(@NotNull String key, @NotNull CompoundBinaryTag filter) implements Selector {
+        record ObjectFilter(@NotNull String key, @NotNull CompoundBinaryTag filter)
+                implements Selector {
             @Override
-            public void get(@NotNull NBTReference source, @NotNull Consumer<NBTReference> consumer) {
+            public void get(
+                    @NotNull NBTReference source, @NotNull Consumer<NBTReference> consumer) {
                 var reference = source.get(this.key);
 
                 if (NBTUtils.compareNBT(this.filter, reference.get(), true)) {
@@ -148,7 +157,8 @@ public record NBTPath(@NotNull List<Selector> selectors) {
             }
 
             @Override
-            public void prepare(@NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {
+            public void prepare(
+                    @NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {
                 if (!source.has(this.key)) {
                     source.get(this.key).set(this.filter);
                 }
@@ -162,7 +172,8 @@ public record NBTPath(@NotNull List<Selector> selectors) {
             @Override
             public String toString() {
                 try {
-                    return NBTPath.formatKey(this.key) + TagStringIO.tagStringIO().asString(this.filter);
+                    return NBTPath.formatKey(this.key)
+                            + TagStringIO.tagStringIO().asString(this.filter);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -171,7 +182,8 @@ public record NBTPath(@NotNull List<Selector> selectors) {
 
         record EntireList() implements Selector {
             @Override
-            public void get(@NotNull NBTReference source, @NotNull Consumer<NBTReference> consumer) {
+            public void get(
+                    @NotNull NBTReference source, @NotNull Consumer<NBTReference> consumer) {
                 int size = source.listSize();
                 for (int i = 0; i < size; i++) {
                     consumer.accept(source.get(i));
@@ -179,7 +191,8 @@ public record NBTPath(@NotNull List<Selector> selectors) {
             }
 
             @Override
-            public void prepare(@NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {
+            public void prepare(
+                    @NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {
                 if (source.listSize() == 0) {
                     source.listAdd(nextElement.get());
                 }
@@ -198,7 +211,8 @@ public record NBTPath(@NotNull List<Selector> selectors) {
 
         record Index(int index) implements Selector {
             @Override
-            public void get(@NotNull NBTReference source, @NotNull Consumer<NBTReference> consumer) {
+            public void get(
+                    @NotNull NBTReference source, @NotNull Consumer<NBTReference> consumer) {
                 var newIndex = index >= 0 ? index : source.listSize() + index;
 
                 if (newIndex < 0 || newIndex >= source.listSize()) return;
@@ -207,7 +221,8 @@ public record NBTPath(@NotNull List<Selector> selectors) {
             }
 
             @Override
-            public void prepare(@NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {}
+            public void prepare(
+                    @NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {}
 
             @Override
             public @NotNull BinaryTag preparedNBT() {
@@ -222,7 +237,8 @@ public record NBTPath(@NotNull List<Selector> selectors) {
 
         record ListFilter(@NotNull CompoundBinaryTag filter) implements Selector {
             @Override
-            public void get(@NotNull NBTReference source, @NotNull Consumer<NBTReference> consumer) {
+            public void get(
+                    @NotNull NBTReference source, @NotNull Consumer<NBTReference> consumer) {
                 int listSize = source.listSize();
                 for (int i = 0; i < listSize; i++) {
                     NBTReference ref = source.get(i);
@@ -233,7 +249,8 @@ public record NBTPath(@NotNull List<Selector> selectors) {
             }
 
             @Override
-            public void prepare(@NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {
+            public void prepare(
+                    @NotNull NBTReference source, @NotNull Supplier<BinaryTag> nextElement) {
                 int listSize = source.listSize();
                 if (listSize == -1) return;
 
@@ -260,12 +277,13 @@ public record NBTPath(@NotNull List<Selector> selectors) {
                 }
             }
         }
-
     }
 
     /**
-     * Strings {@code source} through each selector in {@link #selectors()}, returning the selected results. It is
-     * possible for there to be none. Modifying the resulting NBT references does nothing.
+     * Strings {@code source} through each selector in {@link #selectors()}, returning the selected
+     * results. It is possible for there to be none. Modifying the resulting NBT references does
+     * nothing.
+     *
      * @param source the source, to get the NBT from
      * @return the list of selected NBT, which may be empty
      */
@@ -285,20 +303,25 @@ public record NBTPath(@NotNull List<Selector> selectors) {
     }
 
     /**
-     * Strings {@code source} through each selector, making each selector
-     * {@link Selector#prepare(NBTReference, Supplier) prepare} each element. This should result in this method
-     * returning nothing much less often, although it is still possible. Modifying the resulting NBT references will
-     * result in the provided {@code source} being modified.
+     * Strings {@code source} through each selector, making each selector {@link
+     * Selector#prepare(NBTReference, Supplier) prepare} each element. This should result in this
+     * method returning nothing much less often, although it is still possible. Modifying the
+     * resulting NBT references will result in the provided {@code source} being modified.
+     *
      * @param source the source, to get the NBT from
      * @param finalDefault the default value for results produced from the last path selector
      * @return the list of selected NBT, which may be empty
      */
-    public @NotNull List<NBTReference> getWithDefaults(@NotNull NBTReference source, @NotNull Supplier<BinaryTag> finalDefault) {
+    public @NotNull List<NBTReference> getWithDefaults(
+            @NotNull NBTReference source, @NotNull Supplier<BinaryTag> finalDefault) {
         List<NBTReference> references = List.of(source);
 
         for (int selectorIndex = 0; selectorIndex < selectors().size(); selectorIndex++) {
             var selector = selectors().get(selectorIndex);
-            Supplier<BinaryTag> next = (selectorIndex < selectors().size() - 1) ? selectors().get(selectorIndex + 1)::preparedNBT : finalDefault;
+            Supplier<BinaryTag> next =
+                    (selectorIndex < selectors().size() - 1)
+                            ? selectors().get(selectorIndex + 1)::preparedNBT
+                            : finalDefault;
 
             List<NBTReference> newNBT = new ArrayList<>();
             for (var nbt : references) {
@@ -316,16 +339,19 @@ public record NBTPath(@NotNull List<Selector> selectors) {
     }
 
     /**
-     * Strings {@code source} through each selector, making each selector
-     * {@link Selector#prepare(NBTReference, Supplier) prepare} each element. This should result in this method
-     * returning nothing much less often, although it is still possible. Modifying the resulting NBT references will
-     * result in the provided {@code source} being modified. This is equivalent to calling
-     * {@link #getWithDefaults(NBTReference, Supplier)} and setting all of the results to {@code setValue}.
+     * Strings {@code source} through each selector, making each selector {@link
+     * Selector#prepare(NBTReference, Supplier) prepare} each element. This should result in this
+     * method returning nothing much less often, although it is still possible. Modifying the
+     * resulting NBT references will result in the provided {@code source} being modified. This is
+     * equivalent to calling {@link #getWithDefaults(NBTReference, Supplier)} and setting all of the
+     * results to {@code setValue}.
+     *
      * @param source the source, to get the NBT from
      * @param setValue the value to set all selected elements to
      * @return the list of selected NBT, which may be empty
      */
-    public @NotNull List<NBTReference> set(@NotNull NBTReference source, @NotNull BinaryTag setValue) {
+    public @NotNull List<NBTReference> set(
+            @NotNull NBTReference source, @NotNull BinaryTag setValue) {
         List<NBTReference> references = getWithDefaults(source, () -> setValue);
         for (var reference : references) {
             reference.set(setValue);
@@ -343,16 +369,21 @@ public record NBTPath(@NotNull List<Selector> selectors) {
 class Parser {
 
     static final @NotNull IntSet VALID_SELECTOR_STARTERS = IntSet.of('.', '{', '[');
-    static final @NotNull IntSet VALID_INTEGER_CHARACTERS = IntSet.of('-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
-    static final @NotNull IntSet INVALID_UNQUOTED_CHARACTERS = IntSet.of(-1, ' ', '.', '\'', '\"', '{', '}', '[', ']');
+    static final @NotNull IntSet VALID_INTEGER_CHARACTERS =
+            IntSet.of('-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+    static final @NotNull IntSet INVALID_UNQUOTED_CHARACTERS =
+            IntSet.of(-1, ' ', '.', '\'', '\"', '{', '}', '[', ']');
 
-    static final Codec<NBTPath> CODEC = Codec.STRING.transform(s -> {
-        try {
-            return readPath(new StringReader(s));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }, NBTPath::toString);
+    static final Codec<NBTPath> CODEC =
+            Codec.STRING.transform(
+                    s -> {
+                        try {
+                            return readPath(new StringReader(s));
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    },
+                    NBTPath::toString);
 
     static @NotNull NBTPath readPath(@NotNull StringReader reader) throws IOException {
         List<NBTPath.Selector> selectors = new ArrayList<>();
@@ -375,7 +406,8 @@ class Parser {
 
             if (!VALID_SELECTOR_STARTERS.contains(peek(reader))) {
                 if (selectors.isEmpty()) {
-                    throw new IllegalArgumentException("NBT paths must contain at least one selector");
+                    throw new IllegalArgumentException(
+                            "NBT paths must contain at least one selector");
                 }
 
                 if (peek(reader) != -1 && peek(reader) != ' ') {
@@ -400,7 +432,8 @@ class Parser {
 
     // Returning null indicates a failure to read
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    static @Nullable NBTPath.Selector readPathSelector(@NotNull StringReader reader) throws IOException {
+    static @Nullable NBTPath.Selector readPathSelector(@NotNull StringReader reader)
+            throws IOException {
         var firstChar = peek(reader);
         return switch (firstChar) {
             case '.' -> {
@@ -418,20 +451,23 @@ class Parser {
                 reader.skip(1); // Skip opening square brackets
 
                 var secondChar = peek(reader);
-                var selector = switch(secondChar) {
-                    case ']' -> new NBTPath.Selector.EntireList();
-                    case '{' -> {
-                        var compound = readCompound(reader);
-                        yield compound != null ? new NBTPath.Selector.ListFilter(compound) : null;
-                    }
-                    default -> {
-                        if (VALID_INTEGER_CHARACTERS.contains(secondChar)) {
-                            var index = readInteger(reader);
-                            yield index != null ? new NBTPath.Selector.Index(index) : null;
-                        }
-                        yield null;
-                    }
-                };
+                var selector =
+                        switch (secondChar) {
+                            case ']' -> new NBTPath.Selector.EntireList();
+                            case '{' -> {
+                                var compound = readCompound(reader);
+                                yield compound != null
+                                        ? new NBTPath.Selector.ListFilter(compound)
+                                        : null;
+                            }
+                            default -> {
+                                if (VALID_INTEGER_CHARACTERS.contains(secondChar)) {
+                                    var index = readInteger(reader);
+                                    yield index != null ? new NBTPath.Selector.Index(index) : null;
+                                }
+                                yield null;
+                            }
+                        };
 
                 var closingCharacter = reader.read();
 
@@ -445,9 +481,8 @@ class Parser {
         };
     }
 
-    private static @Nullable NBTPath.Selector readObjectSelector(@NotNull StringReader reader,
-                                                                  @NotNull String key,
-                                                                  boolean root) throws IOException {
+    private static @Nullable NBTPath.Selector readObjectSelector(
+            @NotNull StringReader reader, @NotNull String key, boolean root) throws IOException {
         if (peek(reader) == '{') {
             var compound = readCompound(reader);
 
@@ -466,7 +501,8 @@ class Parser {
             builder.appendCodePoint(peek);
         }
 
-        // Unread the one extra character that was read; this does nothing if the entire string has been read
+        // Unread the one extra character that was read; this does nothing if the entire string has
+        // been read
         reader.skip(-1);
 
         try {
@@ -498,7 +534,8 @@ class Parser {
                 } else if (next == peek && !escape) { // Return if unescaped closing character
                     return builder.toString();
                 } else {
-                    if (escape) { // If there was an unused escape, re-add it; there's only one character it's used for
+                    if (escape) { // If there was an unused escape, re-add it; there's only one
+                        // character it's used for
                         builder.appendCodePoint('\\');
                     }
 
@@ -517,7 +554,8 @@ class Parser {
             builder.appendCodePoint(read);
         }
 
-        // Unread the one extra character that was read; this does nothing if the entire string has been read
+        // Unread the one extra character that was read; this does nothing if the entire string has
+        // been read
         reader.skip(-1);
 
         return builder.isEmpty() ? null : builder.toString();
@@ -598,5 +636,4 @@ class Parser {
             throw new IllegalArgumentException("Expected an inline compound");
         }
     }
-
 }

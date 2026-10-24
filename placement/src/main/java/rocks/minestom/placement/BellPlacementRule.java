@@ -1,11 +1,10 @@
 package rocks.minestom.placement;
 
+import java.util.Objects;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
-
-import java.util.Objects;
 
 public final class BellPlacementRule extends BlockPlacementRule {
     public BellPlacementRule(Block block) {
@@ -21,37 +20,54 @@ public final class BellPlacementRule extends BlockPlacementRule {
 
         if (clickedFace == BlockFace.TOP || clickedFace == BlockFace.BOTTOM) {
             var attachment = clickedFace == BlockFace.BOTTOM ? "ceiling" : "floor";
-            var support = placementState.instance().getBlock(
-                    placementState.placePosition().relative(clickedFace.getOppositeFace()));
+            var support =
+                    placementState
+                            .instance()
+                            .getBlock(
+                                    placementState
+                                            .placePosition()
+                                            .relative(clickedFace.getOppositeFace()));
 
             if (!canSurvive(support, clickedFace.getOppositeFace(), attachment)) {
                 return null;
             }
 
-            return placementState.block()
+            return placementState
+                    .block()
                     .withHandler(BellBlockHandler.INSTANCE)
                     .withProperty("attachment", attachment)
                     .withProperty("facing", horizontalFacing.name().toLowerCase());
         }
 
         var facing = clickedFace.getOppositeFace();
-        var support = placementState.instance().getBlock(placementState.placePosition().relative(facing));
+        var support =
+                placementState.instance().getBlock(placementState.placePosition().relative(facing));
 
-        var doubleAttached = isDoubleAttached(placementState.instance(), placementState.placePosition(), clickedFace);
+        var doubleAttached =
+                isDoubleAttached(
+                        placementState.instance(), placementState.placePosition(), clickedFace);
         var attachment = doubleAttached ? "double_wall" : "single_wall";
-        var result = placementState.block()
-                .withHandler(BellBlockHandler.INSTANCE)
-                .withProperty("attachment", attachment)
-                .withProperty("facing", facing.name().toLowerCase());
+        var result =
+                placementState
+                        .block()
+                        .withHandler(BellBlockHandler.INSTANCE)
+                        .withProperty("attachment", attachment)
+                        .withProperty("facing", facing.name().toLowerCase());
 
         if (canSurvive(support, facing, attachment)) {
             return result;
         }
 
-        var below = placementState.instance().getBlock(placementState.placePosition().relative(BlockFace.BOTTOM));
+        var below =
+                placementState
+                        .instance()
+                        .getBlock(placementState.placePosition().relative(BlockFace.BOTTOM));
         attachment = Utility.canSupportRigidBlock(below, BlockFace.TOP) ? "floor" : "ceiling";
         var fallbackDirection = "floor".equals(attachment) ? BlockFace.BOTTOM : BlockFace.TOP;
-        var fallbackSupport = placementState.instance().getBlock(placementState.placePosition().relative(fallbackDirection));
+        var fallbackSupport =
+                placementState
+                        .instance()
+                        .getBlock(placementState.placePosition().relative(fallbackDirection));
 
         if (!canSurvive(fallbackSupport, fallbackDirection, attachment)) {
             return null;
@@ -64,18 +80,23 @@ public final class BellPlacementRule extends BlockPlacementRule {
     public Block blockUpdate(UpdateState updateState) {
         var currentBlock = updateState.currentBlock();
         var attachment = currentBlock.getProperty("attachment");
-        var supportDirection = switch (attachment) {
-            case "floor" -> BlockFace.BOTTOM;
-            case "ceiling" -> BlockFace.TOP;
-            case "single_wall", "double_wall" -> parseFacing(currentBlock.getProperty("facing"));
-            case null, default -> null;
-        };
+        var supportDirection =
+                switch (attachment) {
+                    case "floor" -> BlockFace.BOTTOM;
+                    case "ceiling" -> BlockFace.TOP;
+                    case "single_wall", "double_wall" ->
+                            parseFacing(currentBlock.getProperty("facing"));
+                    case null, default -> null;
+                };
 
         if (supportDirection == null) {
             return currentBlock;
         }
 
-        var support = updateState.instance().getBlock(updateState.blockPosition().relative(supportDirection));
+        var support =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(supportDirection));
         if (updateState.fromFace() == supportDirection
                 && !"double_wall".equals(attachment)
                 && !canSurvive(support, supportDirection, attachment)) {
@@ -86,7 +107,8 @@ public final class BellPlacementRule extends BlockPlacementRule {
         var fromFace = updateState.fromFace();
 
         if (facing != null && isHorizontal(fromFace) && facing.isSimilar(fromFace)) {
-            var neighbor = updateState.instance().getBlock(updateState.blockPosition().relative(fromFace));
+            var neighbor =
+                    updateState.instance().getBlock(updateState.blockPosition().relative(fromFace));
 
             if ("double_wall".equals(attachment)
                     && !Utility.canSupportRigidBlock(neighbor, fromFace.getOppositeFace())) {
@@ -115,7 +137,8 @@ public final class BellPlacementRule extends BlockPlacementRule {
         };
     }
 
-    private static boolean isDoubleAttached(Block.Getter blockGetter, Point position, BlockFace clickedFace) {
+    private static boolean isDoubleAttached(
+            Block.Getter blockGetter, Point position, BlockFace clickedFace) {
         if (clickedFace == BlockFace.WEST || clickedFace == BlockFace.EAST) {
             var westNeighbor = blockGetter.getBlock(position.relative(BlockFace.WEST));
             var eastNeighbor = blockGetter.getBlock(position.relative(BlockFace.EAST));
@@ -133,7 +156,8 @@ public final class BellPlacementRule extends BlockPlacementRule {
         return false;
     }
 
-    private static boolean canSurvive(Block support, BlockFace supportDirection, String attachment) {
+    private static boolean canSurvive(
+            Block support, BlockFace supportDirection, String attachment) {
         var supportFace = supportDirection.getOppositeFace();
         return "ceiling".equals(attachment)
                 ? Utility.canSupportCenter(support, supportFace)
@@ -141,7 +165,9 @@ public final class BellPlacementRule extends BlockPlacementRule {
     }
 
     private static boolean isHorizontal(BlockFace face) {
-        return face == BlockFace.NORTH || face == BlockFace.SOUTH
-                || face == BlockFace.EAST || face == BlockFace.WEST;
+        return face == BlockFace.NORTH
+                || face == BlockFace.SOUTH
+                || face == BlockFace.EAST
+                || face == BlockFace.WEST;
     }
 }

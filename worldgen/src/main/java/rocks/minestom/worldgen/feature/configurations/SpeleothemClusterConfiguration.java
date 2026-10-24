@@ -1,6 +1,7 @@
 package rocks.minestom.worldgen.feature.configurations;
 
 import com.google.gson.JsonElement;
+import java.util.Set;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.codec.Transcoder;
 import net.minestom.server.instance.block.Block;
@@ -9,8 +10,6 @@ import rocks.minestom.worldgen.feature.FeatureConfiguration;
 import rocks.minestom.worldgen.feature.valueproviders.FloatProvider;
 import rocks.minestom.worldgen.feature.valueproviders.IntProvider;
 import rocks.minestom.worldgen.structure.context.BlockTagManager;
-
-import java.util.Set;
 
 public record SpeleothemClusterConfiguration(
         Block baseBlock,
@@ -27,17 +26,21 @@ public record SpeleothemClusterConfiguration(
         float chanceOfSpeleothemAtMaxDistanceFromCenter,
         int maxDistanceFromEdgeAffectingChanceOfSpeleothem,
         int maxDistanceFromCenterAffectingHeightBias,
-        Set<Key> baseStoneBlocks
-) implements FeatureConfiguration {
+        Set<Key> baseStoneBlocks)
+        implements FeatureConfiguration {
 
-    public static SpeleothemClusterConfiguration fromJson(JsonElement json, BlockTagManager blockTags) {
+    public static SpeleothemClusterConfiguration fromJson(
+            JsonElement json, BlockTagManager blockTags) {
         if (!json.isJsonObject()) {
-            throw new IllegalArgumentException("SpeleothemClusterConfiguration must be a JSON object");
+            throw new IllegalArgumentException(
+                    "SpeleothemClusterConfiguration must be a JSON object");
         }
 
         var obj = json.getAsJsonObject();
-        var baseBlock = BlockCodec.CODEC.decode(Transcoder.JSON, obj.get("base_block")).orElseThrow();
-        var pointedBlock = BlockCodec.CODEC.decode(Transcoder.JSON, obj.get("pointed_block")).orElseThrow();
+        var baseBlock =
+                BlockCodec.CODEC.decode(Transcoder.JSON, obj.get("base_block")).orElseThrow();
+        var pointedBlock =
+                BlockCodec.CODEC.decode(Transcoder.JSON, obj.get("pointed_block")).orElseThrow();
         var replaceableBlocks = BlockSets.parse(obj.get("replaceable_blocks"), blockTags);
 
         return new SpeleothemClusterConfiguration(

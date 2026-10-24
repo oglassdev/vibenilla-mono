@@ -36,8 +36,7 @@ public final class PlacementContext {
             int seaLevel,
             BiomeZoomer biomeZoomer,
             Key sourceBiome,
-            FeatureLoader featureLoader
-    ) {
+            FeatureLoader featureLoader) {
         this.accessor = accessor;
         this.startX = startX;
         this.startZ = startZ;
@@ -48,7 +47,8 @@ public final class PlacementContext {
         // vanilla features reading the proto-chunk after structure placement.
         rocks.minestom.worldgen.structure.StructureWrites.replay(surfaceHeights, accessor);
         if (accessor instanceof GenerationUnitAdapter adapter) {
-            rocks.minestom.worldgen.structure.StructureWrites.captureTerrainLookup(adapter.terrainLookup());
+            rocks.minestom.worldgen.structure.StructureWrites.captureTerrainLookup(
+                    adapter.terrainLookup());
         }
         this.waterHeights = waterHeights;
         this.minY = minY;
@@ -60,8 +60,8 @@ public final class PlacementContext {
     }
 
     /**
-     * Marks the placed feature currently running through the modifier pipeline,
-     * consulted by the biome placement modifier.
+     * Marks the placed feature currently running through the modifier pipeline, consulted by the
+     * biome placement modifier.
      */
     public Key currentFeature() {
         return this.currentFeature;
@@ -72,8 +72,8 @@ public final class PlacementContext {
     }
 
     /**
-     * Vanilla biome filter: the position's biome must list the current placed
-     * feature in its generation settings.
+     * Vanilla biome filter: the position's biome must list the current placed feature in its
+     * generation settings.
      */
     public boolean currentFeatureInBiomeAt(BlockVec position) {
         if (this.featureLoader == null || this.currentFeature == null || this.biomeZoomer == null) {
@@ -113,14 +113,32 @@ public final class PlacementContext {
             // The WG heightmaps are frozen post-carver terrain in vanilla
             // (decoration-stage writes stop updating them once a chunk passes
             // CARVERS); only the non-WG maps are live over generated blocks.
-            var height = switch (type) {
-                case WORLD_SURFACE_WG -> adapter.frozenWorldSurface(blockX, blockZ);
-                case OCEAN_FLOOR_WG -> adapter.frozenOceanFloor(blockX, blockZ);
-                case WORLD_SURFACE -> adapter.heightmap(GenerationUnitAdapter.HeightmapType.WORLD_SURFACE, blockX, blockZ);
-                case OCEAN_FLOOR -> adapter.heightmap(GenerationUnitAdapter.HeightmapType.OCEAN_FLOOR, blockX, blockZ);
-                case MOTION_BLOCKING -> adapter.heightmap(GenerationUnitAdapter.HeightmapType.MOTION_BLOCKING, blockX, blockZ);
-                case MOTION_BLOCKING_NO_LEAVES -> adapter.heightmap(GenerationUnitAdapter.HeightmapType.MOTION_BLOCKING_NO_LEAVES, blockX, blockZ);
-            };
+            var height =
+                    switch (type) {
+                        case WORLD_SURFACE_WG -> adapter.frozenWorldSurface(blockX, blockZ);
+                        case OCEAN_FLOOR_WG -> adapter.frozenOceanFloor(blockX, blockZ);
+                        case WORLD_SURFACE ->
+                                adapter.heightmap(
+                                        GenerationUnitAdapter.HeightmapType.WORLD_SURFACE,
+                                        blockX,
+                                        blockZ);
+                        case OCEAN_FLOOR ->
+                                adapter.heightmap(
+                                        GenerationUnitAdapter.HeightmapType.OCEAN_FLOOR,
+                                        blockX,
+                                        blockZ);
+                        case MOTION_BLOCKING ->
+                                adapter.heightmap(
+                                        GenerationUnitAdapter.HeightmapType.MOTION_BLOCKING,
+                                        blockX,
+                                        blockZ);
+                        case MOTION_BLOCKING_NO_LEAVES ->
+                                adapter.heightmap(
+                                        GenerationUnitAdapter.HeightmapType
+                                                .MOTION_BLOCKING_NO_LEAVES,
+                                        blockX,
+                                        blockZ);
+                    };
             if (height != Integer.MAX_VALUE) {
                 return height;
             }
@@ -128,7 +146,11 @@ public final class PlacementContext {
 
         var localX = blockX - this.startX;
         var localZ = blockZ - this.startZ;
-        if (localX >= 0 && localX < this.sizeX && localZ >= 0 && localZ < this.sizeZ && this.surfaceHeights != null) {
+        if (localX >= 0
+                && localX < this.sizeX
+                && localZ >= 0
+                && localZ < this.sizeZ
+                && this.surfaceHeights != null) {
             var index = localX * this.sizeZ + localZ;
             var surfaceHeight = this.surfaceHeights[index];
             if (surfaceHeight == Integer.MIN_VALUE) {
@@ -136,7 +158,10 @@ public final class PlacementContext {
             }
 
             return switch (type) {
-                case WORLD_SURFACE_WG, WORLD_SURFACE, MOTION_BLOCKING, MOTION_BLOCKING_NO_LEAVES -> {
+                case WORLD_SURFACE_WG,
+                        WORLD_SURFACE,
+                        MOTION_BLOCKING,
+                        MOTION_BLOCKING_NO_LEAVES -> {
                     var waterHeight = this.waterHeights[index];
                     if (waterHeight != Integer.MIN_VALUE) {
                         yield Math.max(surfaceHeight + 1, waterHeight);
@@ -149,8 +174,6 @@ public final class PlacementContext {
 
         return this.seaLevel + 1;
     }
-
-
 
     public Key biomeAt(BlockVec position) {
         return this.biomeZoomer.biome(position.blockX(), position.blockY(), position.blockZ());

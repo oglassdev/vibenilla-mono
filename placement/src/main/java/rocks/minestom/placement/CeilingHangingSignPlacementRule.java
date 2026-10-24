@@ -37,7 +37,8 @@ public final class CeilingHangingSignPlacementRule extends BlockPlacementRule {
                 var aboveRotationProperty = blockAbove.getProperty("rotation");
 
                 if (aboveRotationProperty != null) {
-                    var aboveDirection = segmentToDirection(Integer.parseInt(aboveRotationProperty));
+                    var aboveDirection =
+                            segmentToDirection(Integer.parseInt(aboveRotationProperty));
 
                     if (aboveDirection != null && sameHorizontalAxis(aboveDirection, direction)) {
                         attachedToMiddle = false;
@@ -51,13 +52,15 @@ public final class CeilingHangingSignPlacementRule extends BlockPlacementRule {
             return null;
         }
 
-        var rotation = !attachedToMiddle
-                ? directionToSegment(direction.getOppositeFace())
-                : Math.round((yaw + 180.0F) * 16.0F / 360.0F) & 15;
+        var rotation =
+                !attachedToMiddle
+                        ? directionToSegment(direction.getOppositeFace())
+                        : Math.round((yaw + 180.0F) * 16.0F / 360.0F) & 15;
         var replaced = instance.getBlock(placePosition);
         var waterlogged = replaced.compare(Block.WATER);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withHandler(SignBlockHandler.INSTANCE)
                 .withProperty("attached", String.valueOf(attachedToMiddle))
                 .withProperty("rotation", Integer.toString(rotation))
@@ -71,7 +74,10 @@ public final class CeilingHangingSignPlacementRule extends BlockPlacementRule {
         }
 
         var currentBlock = updateState.currentBlock();
-        var aboveBlock = updateState.instance().getBlock(updateState.blockPosition().relative(BlockFace.TOP));
+        var aboveBlock =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.TOP));
         var aboveFaceFull = aboveBlock.registry().collisionShape().isFaceFull(BlockFace.BOTTOM);
 
         if (aboveFaceFull) {

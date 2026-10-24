@@ -40,9 +40,11 @@ public final class FaceAttachedPlacementRule extends BlockPlacementRule {
             }
 
             if (canAttach(placementState.instance(), placementState.placePosition(), direction)) {
-                var result = this.handler == null ? placementState.block() : placementState.block().withHandler(this.handler);
-                return result
-                        .withProperty("face", face)
+                var result =
+                        this.handler == null
+                                ? placementState.block()
+                                : placementState.block().withHandler(this.handler);
+                return result.withProperty("face", face)
                         .withProperty("facing", facing.name().toLowerCase())
                         .withProperty("powered", "false");
             }
@@ -65,10 +67,14 @@ public final class FaceAttachedPlacementRule extends BlockPlacementRule {
                 : Block.AIR;
     }
 
-    private static boolean canAttach(Block.Getter blockGetter, Point position, BlockFace connectedDirection) {
+    private static boolean canAttach(
+            Block.Getter blockGetter, Point position, BlockFace connectedDirection) {
         var supportPosition = position.relative(connectedDirection);
         var supportBlock = blockGetter.getBlock(supportPosition);
-        return supportBlock.registry().collisionShape().isFaceFull(connectedDirection.getOppositeFace());
+        return supportBlock
+                .registry()
+                .collisionShape()
+                .isFaceFull(connectedDirection.getOppositeFace());
     }
 
     private static BlockFace supportDirection(Block block) {
@@ -99,7 +105,14 @@ public final class FaceAttachedPlacementRule extends BlockPlacementRule {
 
     private static BlockFace[] nearestLookingDirections(@Nullable Pos playerPosition) {
         if (playerPosition == null) {
-            return new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST, BlockFace.TOP, BlockFace.BOTTOM};
+            return new BlockFace[] {
+                BlockFace.NORTH,
+                BlockFace.EAST,
+                BlockFace.SOUTH,
+                BlockFace.WEST,
+                BlockFace.TOP,
+                BlockFace.BOTTOM
+            };
         }
 
         var pitch = playerPosition.pitch() * (float) (Math.PI / 180.0D);
@@ -124,17 +137,29 @@ public final class FaceAttachedPlacementRule extends BlockPlacementRule {
             if (yMagnitude > xMagnitude) {
                 return makeDirectionArray(axisY, axisX, axisZ);
             }
-            return zMagnitude > yMagnitude ? makeDirectionArray(axisX, axisZ, axisY) : makeDirectionArray(axisX, axisY, axisZ);
+            return zMagnitude > yMagnitude
+                    ? makeDirectionArray(axisX, axisZ, axisY)
+                    : makeDirectionArray(axisX, axisY, axisZ);
         }
 
         if (yMagnitude > zMagnitude) {
             return makeDirectionArray(axisY, axisZ, axisX);
         }
 
-        return xMagnitude > yMagnitude ? makeDirectionArray(axisZ, axisX, axisY) : makeDirectionArray(axisZ, axisY, axisX);
+        return xMagnitude > yMagnitude
+                ? makeDirectionArray(axisZ, axisX, axisY)
+                : makeDirectionArray(axisZ, axisY, axisX);
     }
 
-    private static BlockFace[] makeDirectionArray(BlockFace first, BlockFace second, BlockFace third) {
-        return new BlockFace[]{first, second, third, third.getOppositeFace(), second.getOppositeFace(), first.getOppositeFace()};
+    private static BlockFace[] makeDirectionArray(
+            BlockFace first, BlockFace second, BlockFace third) {
+        return new BlockFace[] {
+            first,
+            second,
+            third,
+            third.getOppositeFace(),
+            second.getOppositeFace(),
+            first.getOppositeFace()
+        };
     }
 }

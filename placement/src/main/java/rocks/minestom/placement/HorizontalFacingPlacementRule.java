@@ -22,7 +22,8 @@ public final class HorizontalFacingPlacementRule extends BlockPlacementRule {
         this(block, false, handler);
     }
 
-    public HorizontalFacingPlacementRule(Block block, boolean awayFromPlayer, @Nullable BlockHandler handler) {
+    public HorizontalFacingPlacementRule(
+            Block block, boolean awayFromPlayer, @Nullable BlockHandler handler) {
         super(block);
         this.awayFromPlayer = awayFromPlayer;
         this.handler = handler;
@@ -38,7 +39,10 @@ public final class HorizontalFacingPlacementRule extends BlockPlacementRule {
             facing = facing.getOppositeFace();
         }
 
-        var result = this.handler == null ? placementState.block() : placementState.block().withHandler(this.handler);
+        var result =
+                this.handler == null
+                        ? placementState.block()
+                        : placementState.block().withHandler(this.handler);
         return result.withProperty("facing", facingName(facing));
     }
 

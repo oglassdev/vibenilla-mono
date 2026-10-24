@@ -55,8 +55,13 @@ public final class WindCharge extends CustomEntityProjectile {
         this.setVelocity(direction.mul(ServerFlag.SERVER_TICKS_PER_SECOND));
         this.setView(
                 (float) Math.toDegrees(Math.atan2(direction.x(), direction.z())),
-                (float) Math.toDegrees(Math.atan2(direction.y(), Math.sqrt(direction.x() * direction.x() + direction.z() * direction.z())))
-        );
+                (float)
+                        Math.toDegrees(
+                                Math.atan2(
+                                        direction.y(),
+                                        Math.sqrt(
+                                                direction.x() * direction.x()
+                                                        + direction.z() * direction.z()))));
 
         return true;
     }
@@ -64,7 +69,9 @@ public final class WindCharge extends CustomEntityProjectile {
     @Override
     public boolean onHit(Entity entity) {
         if (entity instanceof LivingEntity livingEntity) {
-            var damage = new Damage(DamageType.WIND_CHARGE, this, this.getShooter(), null, DIRECT_DAMAGE);
+            var damage =
+                    new Damage(
+                            DamageType.WIND_CHARGE, this, this.getShooter(), null, DIRECT_DAMAGE);
             livingEntity.damage(damage);
         }
 
@@ -98,35 +105,59 @@ public final class WindCharge extends CustomEntityProjectile {
 
         if (instance == null) return;
 
-        this.sendPacketToViewersAndSelf(new ParticlePacket(
-                Particle.GUST_EMITTER_SMALL, false, false,
-                center.x(), center.y(), center.z(),
-                0.0F, 0.0F, 0.0F,
-                0.0F, 1
-        ));
-        this.sendPacketToViewersAndSelf(new ParticlePacket(
-                Particle.GUST_EMITTER_LARGE, false, false,
-                center.x(), center.y(), center.z(),
-                0.0F, 0.0F, 0.0F,
-                0.0F, 1
-        ));
-        ViewUtil.viewersAndSelf(this).playSound(Sound.sound(
-                SoundEvent.ENTITY_WIND_CHARGE_WIND_BURST,
-                Sound.Source.NEUTRAL,
-                1.0F,
-                1.0F
-        ), center.x(), center.y(), center.z());
+        this.sendPacketToViewersAndSelf(
+                new ParticlePacket(
+                        Particle.GUST_EMITTER_SMALL,
+                        false,
+                        false,
+                        center.x(),
+                        center.y(),
+                        center.z(),
+                        0.0F,
+                        0.0F,
+                        0.0F,
+                        0.0F,
+                        1));
+        this.sendPacketToViewersAndSelf(
+                new ParticlePacket(
+                        Particle.GUST_EMITTER_LARGE,
+                        false,
+                        false,
+                        center.x(),
+                        center.y(),
+                        center.z(),
+                        0.0F,
+                        0.0F,
+                        0.0F,
+                        0.0F,
+                        1));
+        ViewUtil.viewersAndSelf(this)
+                .playSound(
+                        Sound.sound(
+                                SoundEvent.ENTITY_WIND_CHARGE_WIND_BURST,
+                                Sound.Source.NEUTRAL,
+                                1.0F,
+                                1.0F),
+                        center.x(),
+                        center.y(),
+                        center.z());
 
         var doubleRadius = RADIUS * 2.0;
         var centerVector = center.asVec();
         var ticksPerSecond = ServerFlag.SERVER_TICKS_PER_SECOND;
 
         for (var entity : instance.getNearbyEntities(center, doubleRadius)) {
-            this.applyExplosionKnockback(center, centerVector, doubleRadius, ticksPerSecond, entity);
+            this.applyExplosionKnockback(
+                    center, centerVector, doubleRadius, ticksPerSecond, entity);
         }
     }
 
-    private void applyExplosionKnockback(Point center, Vec centerVector, double doubleRadius, int ticksPerSecond, Entity entity) {
+    private void applyExplosionKnockback(
+            Point center,
+            Vec centerVector,
+            double doubleRadius,
+            int ticksPerSecond,
+            Entity entity) {
         if (entity == this) return;
 
         var distanceStrength = entity.getPosition().distance(center) / doubleRadius;
@@ -136,15 +167,16 @@ public final class WindCharge extends CustomEntityProjectile {
         }
 
         if (entity instanceof Player player) {
-            this.fallFeature.setIgnoreFallDamageFromCurrentImpulse(player, player.getPosition().y());
+            this.fallFeature.setIgnoreFallDamageFromCurrentImpulse(
+                    player, player.getPosition().y());
         }
 
         var originY = entity.getPosition().y() + entity.getEyeHeight();
-        var direction = new Vec(
-                entity.getPosition().x() - center.x(),
-                originY - center.y(),
-                entity.getPosition().z() - center.z()
-        );
+        var direction =
+                new Vec(
+                        entity.getPosition().x() - center.x(),
+                        originY - center.y(),
+                        entity.getPosition().z() - center.z());
         var directionLength = direction.length();
 
         if (directionLength == 0.0) {
@@ -155,7 +187,8 @@ public final class WindCharge extends CustomEntityProjectile {
         var knockback = (1.0 - distanceStrength) * exposure * KNOCKBACK_MULTIPLIER;
 
         if (entity instanceof LivingEntity livingEntity) {
-            knockback *= 1.0 - livingEntity.getAttributeValue(Attribute.EXPLOSION_KNOCKBACK_RESISTANCE);
+            knockback *=
+                    1.0 - livingEntity.getAttributeValue(Attribute.EXPLOSION_KNOCKBACK_RESISTANCE);
         }
 
         if (knockback <= 0.0) {
@@ -178,7 +211,8 @@ public final class WindCharge extends CustomEntityProjectile {
         var basePosition = entity.getPosition();
 
         for (var testStep = 0; testStep < 2; testStep++) {
-            var targetPosition = basePosition.add(0.0, entity.getBoundingBox().height() * 0.5 * testStep, 0.0);
+            var targetPosition =
+                    basePosition.add(0.0, entity.getBoundingBox().height() * 0.5 * testStep, 0.0);
 
             if (VanillaExplosionSupplier.noBlocking(entity.getInstance(), center, targetPosition)) {
                 return true;

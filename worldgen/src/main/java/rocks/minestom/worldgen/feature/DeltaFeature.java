@@ -1,25 +1,30 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.Set;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.DeltaFeatureConfiguration;
 
-import java.util.Set;
-
 /**
- * Port of vanilla {@code DeltaFeature}: lava (or other content) pools with an
- * optional offset rim, filling one-deep surface pockets in basalt deltas.
- * 26.2 vanilla guards replacement with a static block list only; it performs
- * no structure bounding-box queries.
+ * Port of vanilla {@code DeltaFeature}: lava (or other content) pools with an optional offset rim,
+ * filling one-deep surface pockets in basalt deltas. 26.2 vanilla guards replacement with a static
+ * block list only; it performs no structure bounding-box queries.
  */
 public final class DeltaFeature implements Feature<DeltaFeatureConfiguration> {
     /** Vanilla {@code DeltaFeature.CANNOT_REPLACE} (26.2 contents). */
-    private static final Set<String> CANNOT_REPLACE = Set.of(
-            "minecraft:bedrock", "minecraft:nether_bricks", "minecraft:nether_brick_fence",
-            "minecraft:nether_brick_stairs", "minecraft:nether_wart", "minecraft:chest", "minecraft:spawner");
+    private static final Set<String> CANNOT_REPLACE =
+            Set.of(
+                    "minecraft:bedrock",
+                    "minecraft:nether_bricks",
+                    "minecraft:nether_brick_fence",
+                    "minecraft:nether_brick_stairs",
+                    "minecraft:nether_wart",
+                    "minecraft:chest",
+                    "minecraft:spawner");
 
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<DeltaFeatureConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<DeltaFeatureConfiguration, T> context) {
         var anyPlaced = false;
         var random = context.random();
         var level = context.accessor();
@@ -55,7 +60,8 @@ public final class DeltaFeature implements Feature<DeltaFeatureConfiguration> {
         return anyPlaced;
     }
 
-    private static boolean isClear(Block.Getter level, BlockVec pos, DeltaFeatureConfiguration config) {
+    private static boolean isClear(
+            Block.Getter level, BlockVec pos, DeltaFeatureConfiguration config) {
         var state = level.getBlock(pos);
         if (state.compare(config.contents())) {
             return false;

@@ -1,10 +1,9 @@
 package rocks.minestom.placement;
 
+import java.util.Objects;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
-
-import java.util.Objects;
 
 public final class HopperPlacementRule extends BlockPlacementRule {
     public HopperPlacementRule(Block block) {
@@ -17,7 +16,8 @@ public final class HopperPlacementRule extends BlockPlacementRule {
         var direction = clickedFace.getOppositeFace();
         var facing = direction.toDirection().vertical() ? BlockFace.BOTTOM : direction;
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withHandler(ConsumeInteractionBlockHandler.INSTANCE)
                 .withProperty("facing", facingName(facing))
                 .withProperty("enabled", "true");

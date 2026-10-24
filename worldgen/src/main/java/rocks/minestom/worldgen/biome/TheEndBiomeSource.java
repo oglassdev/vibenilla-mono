@@ -1,9 +1,8 @@
 package rocks.minestom.worldgen.biome;
 
+import java.util.List;
 import net.kyori.adventure.key.Key;
 import rocks.minestom.worldgen.density.DensityFunction;
-
-import java.util.List;
 
 public final class TheEndBiomeSource implements BiomeSource {
     private static final Key THE_END = Key.key("minecraft:the_end");
@@ -36,7 +35,8 @@ public final class TheEndBiomeSource implements BiomeSource {
         } else {
             var centerBlockX = (sectionX * 2 + 1) * 8;
             var centerBlockZ = (sectionZ * 2 + 1) * 8;
-            var context = new DensityFunction.SinglePointContext(centerBlockX, blockY, centerBlockZ);
+            var context =
+                    new DensityFunction.SinglePointContext(centerBlockX, blockY, centerBlockZ);
             var erosion = this.climateSampler.erosion().compute(context);
 
             if (erosion > 0.25D) {
@@ -48,5 +48,4 @@ public final class TheEndBiomeSource implements BiomeSource {
             }
         }
     }
-
 }

@@ -6,42 +6,40 @@ import net.minestom.server.event.trait.CancellableEvent;
 import net.minestom.server.event.trait.PlayerInstanceEvent;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * The event called whenever a player retrieves a fishing bobber.
- */
+/** The event called whenever a player retrieves a fishing bobber. */
 public class FishingBobberRetrieveEvent implements PlayerInstanceEvent, CancellableEvent {
 
-	private final Player player;
-	private final FishingBobber bobber;
+    private final Player player;
+    private final FishingBobber bobber;
 
-	private boolean cancelled;
+    private boolean cancelled;
 
-	public FishingBobberRetrieveEvent(Player player, FishingBobber bobber) {
-		this.player = player;
-		this.bobber = bobber;
-	}
+    public FishingBobberRetrieveEvent(Player player, FishingBobber bobber) {
+        this.player = player;
+        this.bobber = bobber;
+    }
 
-	@Override
-	public boolean isCancelled() {
-		return this.cancelled;
-	}
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
 
-	@Override
-	public void setCancelled(boolean cancel) {
-		this.cancelled = cancel;
-	}
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
+    }
 
-	@Override
-	public @NotNull Player getPlayer() {
-		return this.player;
-	}
+    @Override
+    public @NotNull Player getPlayer() {
+        return this.player;
+    }
 
-	/**
-	 * Gets the fishing bobber which was retrieved in the event.
-	 *
-	 * @return the fishing bobber
-	 */
-	public FishingBobber getBobber() {
-		return this.bobber;
-	}
+    /**
+     * Gets the fishing bobber which was retrieved in the event.
+     *
+     * @return the fishing bobber
+     */
+    public FishingBobber getBobber() {
+        return this.bobber;
+    }
 }

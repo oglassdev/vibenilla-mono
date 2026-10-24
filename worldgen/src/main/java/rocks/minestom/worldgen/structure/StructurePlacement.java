@@ -5,9 +5,8 @@ import rocks.minestom.worldgen.structure.placement.RandomSpreadPlacement;
 /**
  * Determines where structures can start generating in the world.
  *
- * <p>Placement algorithms control the distribution pattern of structures across chunks.
- * They use the world seed to deterministically decide which chunks can contain
- * structure starts.
+ * <p>Placement algorithms control the distribution pattern of structures across chunks. They use
+ * the world seed to deterministically decide which chunks can contain structure starts.
  *
  * @see RandomSpreadPlacement for grid-based random placement
  * @see StructureSet for combining structures with placement rules
@@ -17,20 +16,23 @@ public interface StructurePlacement {
     /**
      * Checks if a structure can start generating in the given chunk.
      *
-     * @param chunkX             the chunk X coordinate
-     * @param chunkZ             the chunk Z coordinate
-     * @param seed               the world seed
+     * @param chunkX the chunk X coordinate
+     * @param chunkZ the chunk Z coordinate
+     * @param seed the world seed
      * @param legacyRandomSource whether to use legacy random behavior
      * @return true if this chunk is valid for structure generation
      */
     boolean isStartChunk(int chunkX, int chunkZ, long seed, boolean legacyRandomSource);
 
     /**
-     * Variant carrying the biome source and biome tags, needed by placements
-     * whose positions depend on biome searches (concentric rings). The default
-     * delegates to the plain check.
+     * Variant carrying the biome source and biome tags, needed by placements whose positions depend
+     * on biome searches (concentric rings). The default delegates to the plain check.
      */
-    default boolean isStartChunk(int chunkX, int chunkZ, long seed, boolean legacyRandomSource,
+    default boolean isStartChunk(
+            int chunkX,
+            int chunkZ,
+            long seed,
+            boolean legacyRandomSource,
             rocks.minestom.worldgen.biome.BiomeSource biomeSource,
             rocks.minestom.worldgen.structure.context.BiomeTagManager biomeTags) {
         return this.isStartChunk(chunkX, chunkZ, seed, legacyRandomSource);

@@ -7,14 +7,24 @@ import rocks.minestom.worldgen.feature.configurations.TreeConfiguration;
 import rocks.minestom.worldgen.feature.valueproviders.IntProvider;
 import rocks.minestom.worldgen.random.RandomSource;
 
-public record RandomSpreadFoliagePlacer(int radius, int offset, IntProvider foliageHeight, int leafPlacementAttempts) implements FoliagePlacer {
-    public static final Codec<RandomSpreadFoliagePlacer> CODEC = StructCodec.struct(
-            "radius", Codec.INT, RandomSpreadFoliagePlacer::radius,
-            "offset", Codec.INT, RandomSpreadFoliagePlacer::offset,
-            "foliage_height", IntProvider.CODEC, RandomSpreadFoliagePlacer::foliageHeight,
-            "leaf_placement_attempts", Codec.INT, RandomSpreadFoliagePlacer::leafPlacementAttempts,
-            RandomSpreadFoliagePlacer::new
-    );
+public record RandomSpreadFoliagePlacer(
+        int radius, int offset, IntProvider foliageHeight, int leafPlacementAttempts)
+        implements FoliagePlacer {
+    public static final Codec<RandomSpreadFoliagePlacer> CODEC =
+            StructCodec.struct(
+                    "radius",
+                    Codec.INT,
+                    RandomSpreadFoliagePlacer::radius,
+                    "offset",
+                    Codec.INT,
+                    RandomSpreadFoliagePlacer::offset,
+                    "foliage_height",
+                    IntProvider.CODEC,
+                    RandomSpreadFoliagePlacer::foliageHeight,
+                    "leaf_placement_attempts",
+                    Codec.INT,
+                    RandomSpreadFoliagePlacer::leafPlacementAttempts,
+                    RandomSpreadFoliagePlacer::new);
 
     @Override
     public void createFoliage(
@@ -25,8 +35,7 @@ public record RandomSpreadFoliagePlacer(int radius, int offset, IntProvider foli
             int maxFreeTreeHeight,
             FoliageAttachment attachment,
             int foliageHeight,
-            int foliageRadius
-    ) {
+            int foliageRadius) {
         var center = attachment.pos().add(0, this.offset, 0);
 
         for (var attempt = 0; attempt < this.leafPlacementAttempts; attempt++) {

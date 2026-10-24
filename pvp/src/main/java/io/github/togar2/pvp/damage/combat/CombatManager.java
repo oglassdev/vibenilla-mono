@@ -6,12 +6,13 @@ import io.github.togar2.pvp.feature.state.PlayerStateFeature;
 import io.github.togar2.pvp.utils.EntityUtil;
 import io.github.togar2.pvp.utils.FluidUtil;
 import io.github.togar2.pvp.utils.RegistryTags;
+import java.util.ArrayList;
+import java.util.List;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.component.DataComponents;
-import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.LivingEntity;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.damage.Damage;
@@ -23,15 +24,16 @@ import net.minestom.server.network.packet.server.play.EnterCombatEventPacket;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class CombatManager {
-    private static final Component BAD_RESPAWN_POINT_MESSAGE = Component.text("[")
-            .append(Component.translatable("death.attack.badRespawnPoint.link")
-                    .clickEvent(ClickEvent.openUrl("https://bugs.mojang.com/browse/MCPE-28723"))
-                    .hoverEvent(HoverEvent.showText(Component.text("MCPE-28723"))))
-            .append(Component.text("]"));
+    private static final Component BAD_RESPAWN_POINT_MESSAGE =
+            Component.text("[")
+                    .append(
+                            Component.translatable("death.attack.badRespawnPoint.link")
+                                    .clickEvent(
+                                            ClickEvent.openUrl(
+                                                    "https://bugs.mojang.com/browse/MCPE-28723"))
+                                    .hoverEvent(HoverEvent.showText(Component.text("MCPE-28723"))))
+                    .append(Component.text("]"));
 
     private static final int HURT_MEMORY_TICKS = 100;
 
@@ -67,11 +69,13 @@ public class CombatManager {
             return "vines";
         }
 
-        if (lastClimbedBlock.compare(Block.WEEPING_VINES) || lastClimbedBlock.compare(Block.WEEPING_VINES_PLANT)) {
+        if (lastClimbedBlock.compare(Block.WEEPING_VINES)
+                || lastClimbedBlock.compare(Block.WEEPING_VINES_PLANT)) {
             return "weeping_vines";
         }
 
-        if (lastClimbedBlock.compare(Block.TWISTING_VINES) || lastClimbedBlock.compare(Block.TWISTING_VINES_PLANT)) {
+        if (lastClimbedBlock.compare(Block.TWISTING_VINES)
+                || lastClimbedBlock.compare(Block.TWISTING_VINES_PLANT)) {
             return "twisting_vines";
         }
 
@@ -86,11 +90,18 @@ public class CombatManager {
         return RegistryTags.contains(RegistryTags.TRAPDOORS, block);
     }
 
-    public void recordDamage(int attackerId, Damage damage,
-                             FallFeature fallFeature, PlayerStateFeature playerStateFeature) {
+    public void recordDamage(
+            int attackerId,
+            Damage damage,
+            FallFeature fallFeature,
+            PlayerStateFeature playerStateFeature) {
         this.recheckStatus();
 
-        var entry = new CombatEntry(damage, this.getFallLocation(playerStateFeature), fallFeature.getFallDistance(this.player));
+        var entry =
+                new CombatEntry(
+                        damage,
+                        this.getFallLocation(playerStateFeature),
+                        fallFeature.getFallDistance(this.player));
         this.entries.add(entry);
 
         var now = this.player.getAliveTicks();
@@ -133,25 +144,47 @@ public class CombatManager {
 
         var heaviestFallInfo = DamageTypeInfo.of(heaviestFall.damage().getType());
         if (heaviestFallInfo.fall() || heaviestFallInfo.outOfWorld()) {
-            return Component.translatable("death.fell.accident." + heaviestFall.getMessageFallLocation(), this.getEntityName());
+            return Component.translatable(
+                    "death.fell.accident." + heaviestFall.getMessageFallLocation(),
+                    this.getEntityName());
         }
 
         var firstAttacker = heaviestFall.getAttacker();
         var lastAttacker = lastEntry.getAttacker();
 
         if (firstAttacker != null && firstAttacker != lastAttacker) {
-            var weapon = firstAttacker instanceof LivingEntity ? ((LivingEntity) firstAttacker).getItemInMainHand() : ItemStack.AIR;
+            var weapon =
+                    firstAttacker instanceof LivingEntity
+                            ? ((LivingEntity) firstAttacker).getItemInMainHand()
+                            : ItemStack.AIR;
             if (!weapon.isAir() && weapon.has(DataComponents.CUSTOM_NAME)) {
-                return Component.translatable("death.fell.assist.item", this.getEntityName(), EntityUtil.getName(firstAttacker), weapon.get(DataComponents.CUSTOM_NAME));
+                return Component.translatable(
+                        "death.fell.assist.item",
+                        this.getEntityName(),
+                        EntityUtil.getName(firstAttacker),
+                        weapon.get(DataComponents.CUSTOM_NAME));
             } else {
-                return Component.translatable("death.fell.assist", this.getEntityName(), EntityUtil.getName(firstAttacker));
+                return Component.translatable(
+                        "death.fell.assist",
+                        this.getEntityName(),
+                        EntityUtil.getName(firstAttacker));
             }
         } else if (lastAttacker != null) {
-            var weapon = lastAttacker instanceof LivingEntity ? ((LivingEntity) lastAttacker).getItemInMainHand() : ItemStack.AIR;
+            var weapon =
+                    lastAttacker instanceof LivingEntity
+                            ? ((LivingEntity) lastAttacker).getItemInMainHand()
+                            : ItemStack.AIR;
             if (!weapon.isAir() && weapon.has(DataComponents.CUSTOM_NAME)) {
-                return Component.translatable("death.fell.finish.item", this.getEntityName(), EntityUtil.getName(lastAttacker), weapon.get(DataComponents.CUSTOM_NAME));
+                return Component.translatable(
+                        "death.fell.finish.item",
+                        this.getEntityName(),
+                        EntityUtil.getName(lastAttacker),
+                        weapon.get(DataComponents.CUSTOM_NAME));
             } else {
-                return Component.translatable("death.fell.finish", this.getEntityName(), EntityUtil.getName(lastAttacker));
+                return Component.translatable(
+                        "death.fell.finish",
+                        this.getEntityName(),
+                        EntityUtil.getName(lastAttacker));
             }
         } else {
             return Component.translatable("death.fell.killer", this.getEntityName());
@@ -160,7 +193,10 @@ public class CombatManager {
 
     private Component getAttackDeathMessage(@NotNull Damage damage) {
         if (damage.getType() == DamageType.BAD_RESPAWN_POINT) {
-            return Component.translatable("death.attack.badRespawnPoint.message", this.player.getName(), BAD_RESPAWN_POINT_MESSAGE);
+            return Component.translatable(
+                    "death.attack.badRespawnPoint.message",
+                    this.player.getName(),
+                    BAD_RESPAWN_POINT_MESSAGE);
         }
 
         var damageType = MinecraftServer.getDamageTypeRegistry().get(damage.getType());
@@ -171,10 +207,18 @@ public class CombatManager {
         var attacker = damage.getAttacker();
 
         if (source != null) {
-            var ownerName = attacker == null ? EntityUtil.getName(source) : EntityUtil.getName(attacker);
-            var weapon = source instanceof LivingEntity living ? living.getItemInMainHand() : ItemStack.AIR;
+            var ownerName =
+                    attacker == null ? EntityUtil.getName(source) : EntityUtil.getName(attacker);
+            var weapon =
+                    source instanceof LivingEntity living
+                            ? living.getItemInMainHand()
+                            : ItemStack.AIR;
             if (!weapon.isAir() && weapon.has(DataComponents.CUSTOM_NAME)) {
-                return Component.translatable(id + ".item", EntityUtil.getName(this.player), ownerName, weapon.get(DataComponents.CUSTOM_NAME));
+                return Component.translatable(
+                        id + ".item",
+                        EntityUtil.getName(this.player),
+                        ownerName,
+                        weapon.get(DataComponents.CUSTOM_NAME));
             } else {
                 return Component.translatable(id, EntityUtil.getName(this.player), ownerName);
             }
@@ -183,7 +227,9 @@ public class CombatManager {
             if (killer == null) {
                 return Component.translatable(id, EntityUtil.getName(this.player));
             } else {
-                return Component.translatable(id + ".player", EntityUtil.getName(this.player),
+                return Component.translatable(
+                        id + ".player",
+                        EntityUtil.getName(this.player),
                         EntityUtil.getName(killer));
             }
         }
@@ -216,7 +262,8 @@ public class CombatManager {
             var info = DamageTypeInfo.of(entry.damage().getType());
 
             if ((info.fall() || info.outOfWorld())
-                    && entry.getFallDistance() > 0.0 && (mostDamageEntry == null || entry.getFallDistance() > highestFall)) {
+                    && entry.getFallDistance() > 0.0
+                    && (mostDamageEntry == null || entry.getFallDistance() > highestFall)) {
                 if (index > 0) {
                     mostDamageEntry = this.entries.get(index - 1);
                 } else {
@@ -226,7 +273,8 @@ public class CombatManager {
                 highestFall = entry.getFallDistance();
             }
 
-            if (entry.fallLocation() != null && (highestFallEntry == null || entry.damage().getAmount() > mostDamage)) {
+            if (entry.fallLocation() != null
+                    && (highestFallEntry == null || entry.damage().getAmount() > mostDamage)) {
                 highestFallEntry = entry;
                 mostDamage = entry.damage().getAmount();
             }
@@ -242,23 +290,28 @@ public class CombatManager {
     }
 
     public long getCombatDuration() {
-        return this.inCombat ? this.player.getAliveTicks() - this.combatStartTick : this.combatEndTick - this.combatStartTick;
+        return this.inCombat
+                ? this.player.getAliveTicks() - this.combatStartTick
+                : this.combatEndTick - this.combatStartTick;
     }
 
     public void tick() {
-        if (this.player.isDead() || this.player.getAliveTicks() % 20 == 0)
-            this.recheckStatus();
+        if (this.player.isDead() || this.player.getAliveTicks() % 20 == 0) this.recheckStatus();
 
         if (this.lastHurtByPlayer != -1) {
             var lastPlayer = this.getLivingEntity(this.lastHurtByPlayer);
-            if (lastPlayer == null || lastPlayer.isDead() || --this.lastHurtByPlayerMemoryTicks <= 0) {
+            if (lastPlayer == null
+                    || lastPlayer.isDead()
+                    || --this.lastHurtByPlayerMemoryTicks <= 0) {
                 this.lastHurtByPlayer = -1;
             }
         }
 
         if (this.lastHurtByMob != -1) {
             var lastMob = this.getLivingEntity(this.lastHurtByMob);
-            if (lastMob == null || lastMob.isDead() || this.player.getAliveTicks() - this.lastHurtByMobTick > HURT_MEMORY_TICKS) {
+            if (lastMob == null
+                    || lastMob.isDead()
+                    || this.player.getAliveTicks() - this.lastHurtByMobTick > HURT_MEMORY_TICKS) {
                 this.lastHurtByMob = -1;
             }
         }
@@ -266,7 +319,9 @@ public class CombatManager {
 
     public void recheckStatus() {
         var idleTicks = this.inCombat ? 300 : 100;
-        if (this.takingDamage && (this.player.isDead() || this.player.getAliveTicks() - this.lastDamageTick > idleTicks)) {
+        if (this.takingDamage
+                && (this.player.isDead()
+                        || this.player.getAliveTicks() - this.lastDamageTick > idleTicks)) {
             this.reset();
             this.combatEndTick = this.player.getAliveTicks();
         }
@@ -293,7 +348,9 @@ public class CombatManager {
     }
 
     private void onLeaveCombat() {
-        this.player.getPlayerConnection().sendPacket(new EndCombatEventPacket((int) this.getCombatDuration()));
+        this.player
+                .getPlayerConnection()
+                .sendPacket(new EndCombatEventPacket((int) this.getCombatDuration()));
     }
 
     public List<CombatEntry> getEntries() {

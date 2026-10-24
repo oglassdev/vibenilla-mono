@@ -1,5 +1,8 @@
 package rocks.minestom.worldgen.feature.trunkplacers;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiConsumer;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.coordinate.BlockVec;
@@ -9,10 +12,6 @@ import rocks.minestom.worldgen.feature.foliageplacers.FoliagePlacer;
 import rocks.minestom.worldgen.feature.valueproviders.IntProvider;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.BiConsumer;
-
 public record UpwardsBranchingTrunkPlacer(
         int baseHeight,
         int heightRandA,
@@ -20,18 +19,32 @@ public record UpwardsBranchingTrunkPlacer(
         IntProvider extraBranchSteps,
         float placeBranchPerLogProbability,
         IntProvider extraBranchLength,
-        String canGrowThrough
-) implements TrunkPlacer {
-    public static final Codec<UpwardsBranchingTrunkPlacer> CODEC = StructCodec.struct(
-            "base_height", Codec.INT, UpwardsBranchingTrunkPlacer::baseHeight,
-            "height_rand_a", Codec.INT, UpwardsBranchingTrunkPlacer::heightRandA,
-            "height_rand_b", Codec.INT, UpwardsBranchingTrunkPlacer::heightRandB,
-            "extra_branch_steps", IntProvider.CODEC, UpwardsBranchingTrunkPlacer::extraBranchSteps,
-            "place_branch_per_log_probability", Codec.FLOAT, UpwardsBranchingTrunkPlacer::placeBranchPerLogProbability,
-            "extra_branch_length", IntProvider.CODEC, UpwardsBranchingTrunkPlacer::extraBranchLength,
-            "can_grow_through", Codec.STRING.optional(""), UpwardsBranchingTrunkPlacer::canGrowThrough,
-            UpwardsBranchingTrunkPlacer::new
-    );
+        String canGrowThrough)
+        implements TrunkPlacer {
+    public static final Codec<UpwardsBranchingTrunkPlacer> CODEC =
+            StructCodec.struct(
+                    "base_height",
+                    Codec.INT,
+                    UpwardsBranchingTrunkPlacer::baseHeight,
+                    "height_rand_a",
+                    Codec.INT,
+                    UpwardsBranchingTrunkPlacer::heightRandA,
+                    "height_rand_b",
+                    Codec.INT,
+                    UpwardsBranchingTrunkPlacer::heightRandB,
+                    "extra_branch_steps",
+                    IntProvider.CODEC,
+                    UpwardsBranchingTrunkPlacer::extraBranchSteps,
+                    "place_branch_per_log_probability",
+                    Codec.FLOAT,
+                    UpwardsBranchingTrunkPlacer::placeBranchPerLogProbability,
+                    "extra_branch_length",
+                    IntProvider.CODEC,
+                    UpwardsBranchingTrunkPlacer::extraBranchLength,
+                    "can_grow_through",
+                    Codec.STRING.optional(""),
+                    UpwardsBranchingTrunkPlacer::canGrowThrough,
+                    UpwardsBranchingTrunkPlacer::new);
 
     @Override
     public List<FoliagePlacer.FoliageAttachment> placeTrunk(
@@ -40,22 +53,37 @@ public record UpwardsBranchingTrunkPlacer(
             RandomSource random,
             int freeTreeHeight,
             BlockVec basePos,
-            TreeConfiguration config
-    ) {
+            TreeConfiguration config) {
         var foliageAttachments = new ArrayList<FoliagePlacer.FoliageAttachment>();
 
         for (var trunkIndex = 0; trunkIndex < freeTreeHeight; trunkIndex++) {
             var logPos = basePos.add(0, trunkIndex, 0);
-            if (this.placeLog(getter, logSetter, random, logPos, config) && trunkIndex < freeTreeHeight - 1 && random.nextFloat() < this.placeBranchPerLogProbability) {
+            if (this.placeLog(getter, logSetter, random, logPos, config)
+                    && trunkIndex < freeTreeHeight - 1
+                    && random.nextFloat() < this.placeBranchPerLogProbability) {
                 var direction = HorizontalDirection.random(random);
                 var branchLength = this.extraBranchLength.sample(random);
-                var branchOffset = Math.max(0, branchLength - this.extraBranchLength.sample(random) - 1);
+                var branchOffset =
+                        Math.max(0, branchLength - this.extraBranchLength.sample(random) - 1);
                 var branchSteps = this.extraBranchSteps.sample(random);
-                this.placeBranch(getter, logSetter, random, freeTreeHeight, config, foliageAttachments, logPos.blockY(), basePos, direction, branchOffset, branchSteps);
+                this.placeBranch(
+                        getter,
+                        logSetter,
+                        random,
+                        freeTreeHeight,
+                        config,
+                        foliageAttachments,
+                        logPos.blockY(),
+                        basePos,
+                        direction,
+                        branchOffset,
+                        branchSteps);
             }
 
             if (trunkIndex == freeTreeHeight - 1) {
-                foliageAttachments.add(new FoliagePlacer.FoliageAttachment(basePos.add(0, trunkIndex + 1, 0), 0, false));
+                foliageAttachments.add(
+                        new FoliagePlacer.FoliageAttachment(
+                                basePos.add(0, trunkIndex + 1, 0), 0, false));
             }
         }
 
@@ -73,8 +101,7 @@ public record UpwardsBranchingTrunkPlacer(
             BlockVec trunkBasePos,
             HorizontalDirection direction,
             int branchOffset,
-            int branchSteps
-    ) {
+            int branchSteps) {
         var branchTopY = baseY + branchOffset;
         var branchX = trunkBasePos.blockX();
         var branchZ = trunkBasePos.blockZ();
@@ -87,11 +114,18 @@ public record UpwardsBranchingTrunkPlacer(
                 branchZ += direction.stepZ;
                 branchTopY = blockY;
 
-                if (this.placeLog(getter, logSetter, random, new BlockVec(branchX, blockY, branchZ), config)) {
+                if (this.placeLog(
+                        getter,
+                        logSetter,
+                        random,
+                        new BlockVec(branchX, blockY, branchZ),
+                        config)) {
                     branchTopY = blockY + 1;
                 }
 
-                foliageAttachments.add(new FoliagePlacer.FoliageAttachment(new BlockVec(branchX, blockY, branchZ), 0, false));
+                foliageAttachments.add(
+                        new FoliagePlacer.FoliageAttachment(
+                                new BlockVec(branchX, blockY, branchZ), 0, false));
             }
 
             trunkIndex++;
@@ -101,30 +135,33 @@ public record UpwardsBranchingTrunkPlacer(
         if (branchTopY - baseY > 1) {
             var branchPos = new BlockVec(branchX, branchTopY, branchZ);
             foliageAttachments.add(new FoliagePlacer.FoliageAttachment(branchPos, 0, false));
-            foliageAttachments.add(new FoliagePlacer.FoliageAttachment(branchPos.sub(0, 2, 0), 0, false));
+            foliageAttachments.add(
+                    new FoliagePlacer.FoliageAttachment(branchPos.sub(0, 2, 0), 0, false));
         }
     }
 
     @Override
     public int getTreeHeight(RandomSource random) {
-        return this.baseHeight + random.nextInt(this.heightRandA + 1) + random.nextInt(this.heightRandB + 1);
+        return this.baseHeight
+                + random.nextInt(this.heightRandA + 1)
+                + random.nextInt(this.heightRandB + 1);
     }
 
     /**
-     * Vanilla {@code Direction.Plane.HORIZONTAL.faces}: {@code {NORTH, EAST,
-     * SOUTH, WEST}}, so {@code random.nextInt(4)} selects the same direction.
+     * Vanilla {@code Direction.Plane.HORIZONTAL.faces}: {@code {NORTH, EAST, SOUTH, WEST}}, so
+     * {@code random.nextInt(4)} selects the same direction.
      */
     private record HorizontalDirection(int stepX, int stepZ) {
-        private static final HorizontalDirection[] VALUES = new HorizontalDirection[]{
-                new HorizontalDirection(0, -1),
-                new HorizontalDirection(1, 0),
-                new HorizontalDirection(0, 1),
-                new HorizontalDirection(-1, 0)
-        };
+        private static final HorizontalDirection[] VALUES =
+                new HorizontalDirection[] {
+                    new HorizontalDirection(0, -1),
+                    new HorizontalDirection(1, 0),
+                    new HorizontalDirection(0, 1),
+                    new HorizontalDirection(-1, 0)
+                };
 
         private static HorizontalDirection random(RandomSource random) {
             return VALUES[random.nextInt(VALUES.length)];
         }
     }
 }
-

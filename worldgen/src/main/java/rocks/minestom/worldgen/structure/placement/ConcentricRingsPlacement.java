@@ -1,5 +1,9 @@
 package rocks.minestom.worldgen.structure.placement;
 
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import net.kyori.adventure.key.Key;
 import rocks.minestom.worldgen.biome.BiomeSource;
 import rocks.minestom.worldgen.random.LegacyRandomSource;
@@ -7,16 +11,11 @@ import rocks.minestom.worldgen.random.RandomSource;
 import rocks.minestom.worldgen.structure.StructurePlacement;
 import rocks.minestom.worldgen.structure.context.BiomeTagManager;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
- * Port of vanilla {@code ConcentricRingsStructurePlacement} plus the ring
- * position calculation from {@code ChunkGeneratorStructureState}: structures
- * are laid out on expanding rings around the origin, each candidate snapped
- * toward a preferred biome by a reservoir-sampled horizontal biome search.
+ * Port of vanilla {@code ConcentricRingsStructurePlacement} plus the ring position calculation from
+ * {@code ChunkGeneratorStructureState}: structures are laid out on expanding rings around the
+ * origin, each candidate snapped toward a preferred biome by a reservoir-sampled horizontal biome
+ * search.
  */
 public final class ConcentricRingsPlacement implements StructurePlacement {
     private final int count;
@@ -39,18 +38,25 @@ public final class ConcentricRingsPlacement implements StructurePlacement {
     }
 
     @Override
-    public boolean isStartChunk(int chunkX, int chunkZ, long seed, boolean legacyRandomSource,
-            BiomeSource biomeSource, BiomeTagManager biomeTags) {
+    public boolean isStartChunk(
+            int chunkX,
+            int chunkZ,
+            long seed,
+            boolean legacyRandomSource,
+            BiomeSource biomeSource,
+            BiomeTagManager biomeTags) {
         if (biomeSource == null || biomeTags == null) {
             return false;
         }
 
-        var positions = this.positionsBySeed.computeIfAbsent(seed,
-                ringSeed -> this.computePositions(ringSeed, biomeSource, biomeTags));
+        var positions =
+                this.positionsBySeed.computeIfAbsent(
+                        seed, ringSeed -> this.computePositions(ringSeed, biomeSource, biomeTags));
         return positions.contains(packChunk(chunkX, chunkZ));
     }
 
-    private Set<Long> computePositions(long seed, BiomeSource biomeSource, BiomeTagManager biomeTags) {
+    private Set<Long> computePositions(
+            long seed, BiomeSource biomeSource, BiomeTagManager biomeTags) {
         var positions = new HashSet<Long>();
         if (this.count == 0) {
             return positions;
@@ -64,15 +70,22 @@ public final class ConcentricRingsPlacement implements StructurePlacement {
         var currentSpread = this.spread;
 
         for (var index = 0; index < this.count; index++) {
-            var ringDistance = (double) (4 * this.distance + this.distance * circle * 6)
-                    + (random.nextDouble() - 0.5) * this.distance * 2.5;
+            var ringDistance =
+                    (double) (4 * this.distance + this.distance * circle * 6)
+                            + (random.nextDouble() - 0.5) * this.distance * 2.5;
             var initialChunkX = (int) Math.round(Math.cos(angle) * ringDistance);
             var initialChunkZ = (int) Math.round(Math.sin(angle) * ringDistance);
             var biomeSearchRandom = new LegacyRandomSource(random.nextLong());
 
-            var snapped = findBiomeHorizontal(biomeSource,
-                    (initialChunkX << 4) + 8, 0, (initialChunkZ << 4) + 8, 112,
-                    preferredBiomes, biomeSearchRandom);
+            var snapped =
+                    findBiomeHorizontal(
+                            biomeSource,
+                            (initialChunkX << 4) + 8,
+                            0,
+                            (initialChunkZ << 4) + 8,
+                            112,
+                            preferredBiomes,
+                            biomeSearchRandom);
             if (snapped != null) {
                 positions.add(packChunk(snapped[0] >> 4, snapped[1] >> 4));
             } else {
@@ -92,8 +105,14 @@ public final class ConcentricRingsPlacement implements StructurePlacement {
         return positions;
     }
 
-    private static int[] findBiomeHorizontal(BiomeSource biomeSource, int originX, int originY, int originZ,
-            int searchRadius, Set<Key> allowed, RandomSource random) {
+    private static int[] findBiomeHorizontal(
+            BiomeSource biomeSource,
+            int originX,
+            int originY,
+            int originZ,
+            int searchRadius,
+            Set<Key> allowed,
+            RandomSource random) {
         var centerQuartX = originX >> 2;
         var centerQuartZ = originZ >> 2;
         var quartRadius = searchRadius >> 2;
@@ -108,7 +127,7 @@ public final class ConcentricRingsPlacement implements StructurePlacement {
                 var biome = biomeSource.biome(quartX, quartY, quartZ);
                 if (allowed.contains(biome)) {
                     if (result == null || random.nextInt(found + 1) == 0) {
-                        result = new int[]{quartX << 2, quartZ << 2};
+                        result = new int[] {quartX << 2, quartZ << 2};
                     }
                     found++;
                 }

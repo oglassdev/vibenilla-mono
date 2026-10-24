@@ -1,14 +1,13 @@
 package rocks.minestom.crafting.recipe;
 
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import java.util.ArrayList;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.item.component.FireworkExplosion;
 import net.minestom.server.item.component.FireworkList;
 import rocks.minestom.crafting.CraftingGrid;
-
-import java.util.ArrayList;
 
 public final class FireworkRocketCraftingRecipe implements CraftingRecipe {
 
@@ -57,7 +56,8 @@ public final class FireworkRocketCraftingRecipe implements CraftingRecipe {
         }
 
         var fireworks = new FireworkList(gunpowderCount, explosions);
-        var result = ItemStack.of(Material.FIREWORK_ROCKET, 3).with(DataComponents.FIREWORKS, fireworks);
+        var result =
+                ItemStack.of(Material.FIREWORK_ROCKET, 3).with(DataComponents.FIREWORKS, fireworks);
 
         return new CraftingRecipeMatch(this, result, usage, craftingGrid);
     }

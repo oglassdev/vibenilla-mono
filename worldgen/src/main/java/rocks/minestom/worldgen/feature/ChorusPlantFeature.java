@@ -11,7 +11,8 @@ public final class ChorusPlantFeature implements Feature<NoneFeatureConfiguratio
     private static final Block CHORUS_FLOWER_DEAD = Block.CHORUS_FLOWER.withProperty("age", "5");
 
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<NoneFeatureConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<NoneFeatureConfiguration, T> context) {
         var level = context.accessor();
         var random = context.random();
         var origin = context.origin();
@@ -37,8 +38,7 @@ public final class ChorusPlantFeature implements Feature<NoneFeatureConfiguratio
             BlockVec current,
             BlockVec origin,
             int maxRadius,
-            int depth
-    ) {
+            int depth) {
         var height = random.nextInt(4) + 1;
         if (depth == 0) {
             height++;
@@ -62,8 +62,10 @@ public final class ChorusPlantFeature implements Feature<NoneFeatureConfiguratio
             }
 
             for (var branchIndex = 0; branchIndex < branchCount; branchIndex++) {
-                var direction = Direction.HORIZONTAL.get(random.nextInt(Direction.HORIZONTAL.size()));
-                var branchPos = current.add(0, height, 0).add(direction.stepX(), 0, direction.stepZ());
+                var direction =
+                        Direction.HORIZONTAL.get(random.nextInt(Direction.HORIZONTAL.size()));
+                var branchPos =
+                        current.add(0, height, 0).add(direction.stepX(), 0, direction.stepZ());
                 if (Math.abs(branchPos.blockX() - origin.blockX()) >= maxRadius
                         || Math.abs(branchPos.blockZ() - origin.blockZ()) >= maxRadius) {
                     continue;
@@ -79,7 +81,9 @@ public final class ChorusPlantFeature implements Feature<NoneFeatureConfiguratio
 
                 branched = true;
                 setPlantBlock(level, branchPos);
-                var oppositePos = branchPos.add(direction.opposite().stepX(), 0, direction.opposite().stepZ());
+                var oppositePos =
+                        branchPos.add(
+                                direction.opposite().stepX(), 0, direction.opposite().stepZ());
                 setPlantBlock(level, oppositePos);
                 growTreeRecursive(level, random, branchPos, origin, maxRadius, depth + 1);
             }
@@ -96,7 +100,8 @@ public final class ChorusPlantFeature implements Feature<NoneFeatureConfiguratio
         return getter.getBlock(position).air();
     }
 
-    private static boolean allNeighborsEmpty(Block.Getter getter, BlockVec position, Direction skipDirection) {
+    private static boolean allNeighborsEmpty(
+            Block.Getter getter, BlockVec position, Direction skipDirection) {
         for (var direction : Direction.HORIZONTAL) {
             if (skipDirection != null && direction == skipDirection) {
                 continue;
@@ -111,7 +116,8 @@ public final class ChorusPlantFeature implements Feature<NoneFeatureConfiguratio
         return true;
     }
 
-    private static <T extends Block.Getter & Block.Setter> void setPlantBlock(T level, BlockVec position) {
+    private static <T extends Block.Getter & Block.Setter> void setPlantBlock(
+            T level, BlockVec position) {
         var state = getPlantStateWithConnections(level, position);
         level.setBlock(position, state);
     }
@@ -124,7 +130,8 @@ public final class ChorusPlantFeature implements Feature<NoneFeatureConfiguratio
         var south = getter.getBlock(position.add(0, 0, 1));
         var west = getter.getBlock(position.add(-1, 0, 0));
 
-        var downConnected = isChorusPlantOrFlower(below) || below.compare(Block.END_STONE) || below.air();
+        var downConnected =
+                isChorusPlantOrFlower(below) || below.compare(Block.END_STONE) || below.air();
         var upConnected = isChorusPlantOrFlower(above);
         var northConnected = isChorusPlantOrFlower(north);
         var eastConnected = isChorusPlantOrFlower(east);

@@ -1,8 +1,6 @@
 package rocks.minestom.worldgen.structure.pool;
 
-/**
- * Vanilla {@code StructureTemplatePool.Projection}.
- */
+/** Vanilla {@code StructureTemplatePool.Projection}. */
 public enum Projection {
     RIGID,
     TERRAIN_MATCHING;

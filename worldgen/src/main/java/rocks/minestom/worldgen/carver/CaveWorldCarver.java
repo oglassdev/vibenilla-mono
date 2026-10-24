@@ -4,9 +4,9 @@ import rocks.minestom.worldgen.random.LegacyRandomSource;
 import rocks.minestom.worldgen.random.RandomSource;
 
 /**
- * Exact port of vanilla {@code CaveWorldCarver}. All random draws happen in the
- * vanilla order; tunnels get their own legacy-LCG random seeded from the carve
- * random so their shapes are stable regardless of the target chunk.
+ * Exact port of vanilla {@code CaveWorldCarver}. All random draws happen in the vanilla order;
+ * tunnels get their own legacy-LCG random seeded from the carve random so their shapes are stable
+ * regardless of the target chunk.
  */
 public class CaveWorldCarver extends WorldCarver<CaveCarverConfiguration> {
 
@@ -21,19 +21,30 @@ public class CaveWorldCarver extends WorldCarver<CaveCarverConfiguration> {
     }
 
     @Override
-    public boolean carve(CarvingContext context, CaveCarverConfiguration configuration, RandomSource random,
-            int sourceChunkX, int sourceChunkZ) {
+    public boolean carve(
+            CarvingContext context,
+            CaveCarverConfiguration configuration,
+            RandomSource random,
+            int sourceChunkX,
+            int sourceChunkZ) {
         var maxDistance = (this.getRange() * 2 - 1) * 16;
         var caveCount = random.nextInt(random.nextInt(random.nextInt(this.getCaveBound()) + 1) + 1);
 
         for (var cave = 0; cave < caveCount; cave++) {
             double x = sourceChunkX * 16 + random.nextInt(16);
-            double y = configuration.base().y().sample(random, context.minGenY(), context.maxGenYInclusive());
+            double y =
+                    configuration
+                            .base()
+                            .y()
+                            .sample(random, context.minGenY(), context.maxGenYInclusive());
             double z = sourceChunkZ * 16 + random.nextInt(16);
-            double horizontalRadiusMultiplier = configuration.horizontalRadiusMultiplier().sample(random);
-            double verticalRadiusMultiplier = configuration.verticalRadiusMultiplier().sample(random);
+            double horizontalRadiusMultiplier =
+                    configuration.horizontalRadiusMultiplier().sample(random);
+            double verticalRadiusMultiplier =
+                    configuration.verticalRadiusMultiplier().sample(random);
             double floorLevel = configuration.floorLevel().sample(random);
-            CarveSkipChecker skipChecker = (skipContext, xd, yd, zd, blockY) -> shouldSkip(xd, yd, zd, floorLevel);
+            CarveSkipChecker skipChecker =
+                    (skipContext, xd, yd, zd, blockY) -> shouldSkip(xd, yd, zd, floorLevel);
             var tunnels = 1;
             if (random.nextInt(4) == 0) {
                 double yScale = configuration.base().yScale().sample(random);
@@ -86,11 +97,26 @@ public class CaveWorldCarver extends WorldCarver<CaveCarverConfiguration> {
         return 1.0;
     }
 
-    protected void createRoom(CarvingContext context, CaveCarverConfiguration configuration, double x, double y,
-            double z, float thickness, double yScale, CarveSkipChecker skipChecker) {
+    protected void createRoom(
+            CarvingContext context,
+            CaveCarverConfiguration configuration,
+            double x,
+            double y,
+            double z,
+            float thickness,
+            double yScale,
+            CarveSkipChecker skipChecker) {
         var horizontalRadius = 1.5 + sin((float) (Math.PI / 2)) * thickness;
         var verticalRadius = horizontalRadius * yScale;
-        this.carveEllipsoid(context, configuration, x + 1.0, y, z, horizontalRadius, verticalRadius, skipChecker);
+        this.carveEllipsoid(
+                context,
+                configuration,
+                x + 1.0,
+                y,
+                z,
+                horizontalRadius,
+                verticalRadius,
+                skipChecker);
     }
 
     protected void createTunnel(
@@ -166,7 +192,8 @@ public class CaveWorldCarver extends WorldCarver<CaveCarverConfiguration> {
             }
 
             if (random.nextInt(4) != 0) {
-                if (!canReach(context.chunkX(), context.chunkZ(), x, z, currentStep, dist, thickness)) {
+                if (!canReach(
+                        context.chunkX(), context.chunkZ(), x, z, currentStep, dist, thickness)) {
                     return;
                 }
 

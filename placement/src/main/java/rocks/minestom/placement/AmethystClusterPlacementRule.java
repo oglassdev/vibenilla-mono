@@ -1,10 +1,9 @@
 package rocks.minestom.placement;
 
+import java.util.Objects;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
-
-import java.util.Objects;
 
 public final class AmethystClusterPlacementRule extends BlockPlacementRule {
     public AmethystClusterPlacementRule(Block block) {
@@ -26,7 +25,8 @@ public final class AmethystClusterPlacementRule extends BlockPlacementRule {
         var replaced = instance.getBlock(placePosition);
         var waterlogged = replaced.compare(Block.WATER);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withProperty("facing", facingName(facing))
                 .withProperty("waterlogged", String.valueOf(waterlogged));
     }
@@ -46,7 +46,8 @@ public final class AmethystClusterPlacementRule extends BlockPlacementRule {
             return currentBlock;
         }
 
-        var supportBlock = updateState.instance().getBlock(updateState.blockPosition().relative(supportFace));
+        var supportBlock =
+                updateState.instance().getBlock(updateState.blockPosition().relative(supportFace));
 
         if (!supportBlock.registry().collisionShape().isFaceFull(facing)) {
             return Block.AIR;

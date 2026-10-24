@@ -1,9 +1,8 @@
 package rocks.minestom.crafting;
 
-import net.minestom.server.item.ItemStack;
-
 import java.util.ArrayList;
 import java.util.List;
+import net.minestom.server.item.ItemStack;
 
 public final class CraftingGrid {
     private final int width;
@@ -79,18 +78,29 @@ public final class CraftingGrid {
 
         for (var rowIndex = 0; rowIndex < trimmedHeight; rowIndex++) {
             for (var columnIndex = 0; columnIndex < trimmedWidth; columnIndex++) {
-                trimmedSlots[columnIndex + rowIndex * trimmedWidth] = this.slot(minColumnIndex + columnIndex, minRowIndex + rowIndex);
+                trimmedSlots[columnIndex + rowIndex * trimmedWidth] =
+                        this.slot(minColumnIndex + columnIndex, minRowIndex + rowIndex);
             }
         }
 
-        return new TrimmedGrid(trimmedWidth, trimmedHeight, minColumnIndex, minRowIndex, trimmedSlots, filledSlotCount);
+        return new TrimmedGrid(
+                trimmedWidth,
+                trimmedHeight,
+                minColumnIndex,
+                minRowIndex,
+                trimmedSlots,
+                filledSlotCount);
     }
 
-    public record CraftingGridSlot(int slotIndex, ItemStack item) {
+    public record CraftingGridSlot(int slotIndex, ItemStack item) {}
 
-    }
-
-    public record TrimmedGrid(int width, int height, int offsetX, int offsetY, CraftingGridSlot[] slots, int ingredientCount) {
+    public record TrimmedGrid(
+            int width,
+            int height,
+            int offsetX,
+            int offsetY,
+            CraftingGridSlot[] slots,
+            int ingredientCount) {
         public ItemStack item(int columnIndex, int rowIndex) {
             return this.slots[columnIndex + rowIndex * this.width].item();
         }

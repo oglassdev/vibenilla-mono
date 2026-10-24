@@ -5,17 +5,16 @@ import io.github.togar2.pvp.enchantment.enchantments.ImpalingEnchantment;
 import io.github.togar2.pvp.enchantment.enchantments.ProtectionEnchantment;
 import io.github.togar2.pvp.enchantment.enchantments.ThornsEnchantment;
 import io.github.togar2.pvp.feature.FeatureType;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import net.minestom.server.entity.EquipmentSlot;
 import net.minestom.server.item.enchant.Enchantment;
 import net.minestom.server.registry.RegistryKey;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 public class CombatEnchantments {
-    private static final Map<RegistryKey<Enchantment>, CombatEnchantment> ENCHANTMENTS = new HashMap<>();
+    private static final Map<RegistryKey<Enchantment>, CombatEnchantment> ENCHANTMENTS =
+            new HashMap<>();
 
     public static CombatEnchantment get(RegistryKey<Enchantment> enchantment) {
         return ENCHANTMENTS.get(enchantment);
@@ -52,11 +51,24 @@ public class CombatEnchantments {
         var ALL_ARMOR_SLOTS = EquipmentSlot.armors().toArray(EquipmentSlot[]::new);
 
         register(
-                new ProtectionEnchantment(Enchantment.PROTECTION, ProtectionEnchantment.Type.ALL, ALL_ARMOR_SLOTS),
-                new ProtectionEnchantment(Enchantment.FIRE_PROTECTION, ProtectionEnchantment.Type.FIRE, ALL_ARMOR_SLOTS),
-                new ProtectionEnchantment(Enchantment.FEATHER_FALLING, ProtectionEnchantment.Type.FALL, ALL_ARMOR_SLOTS),
-                new ProtectionEnchantment(Enchantment.BLAST_PROTECTION, ProtectionEnchantment.Type.EXPLOSION, ALL_ARMOR_SLOTS),
-                new ProtectionEnchantment(Enchantment.PROJECTILE_PROTECTION, ProtectionEnchantment.Type.PROJECTILE, ALL_ARMOR_SLOTS),
+                new ProtectionEnchantment(
+                        Enchantment.PROTECTION, ProtectionEnchantment.Type.ALL, ALL_ARMOR_SLOTS),
+                new ProtectionEnchantment(
+                        Enchantment.FIRE_PROTECTION,
+                        ProtectionEnchantment.Type.FIRE,
+                        ALL_ARMOR_SLOTS),
+                new ProtectionEnchantment(
+                        Enchantment.FEATHER_FALLING,
+                        ProtectionEnchantment.Type.FALL,
+                        ALL_ARMOR_SLOTS),
+                new ProtectionEnchantment(
+                        Enchantment.BLAST_PROTECTION,
+                        ProtectionEnchantment.Type.EXPLOSION,
+                        ALL_ARMOR_SLOTS),
+                new ProtectionEnchantment(
+                        Enchantment.PROJECTILE_PROTECTION,
+                        ProtectionEnchantment.Type.PROJECTILE,
+                        ALL_ARMOR_SLOTS),
                 new CombatEnchantment(Enchantment.RESPIRATION, ALL_ARMOR_SLOTS),
                 new CombatEnchantment(Enchantment.AQUA_AFFINITY, ALL_ARMOR_SLOTS),
                 new ThornsEnchantment(ALL_ARMOR_SLOTS),
@@ -65,9 +77,14 @@ public class CombatEnchantments {
                 new CombatEnchantment(Enchantment.BINDING_CURSE, ALL_ARMOR_SLOTS),
                 new CombatEnchantment(Enchantment.SOUL_SPEED, EquipmentSlot.BOOTS),
                 new CombatEnchantment(Enchantment.SWIFT_SNEAK, EquipmentSlot.LEGGINGS),
-                new DamageEnchantment(Enchantment.SHARPNESS, DamageEnchantment.Type.ALL, EquipmentSlot.MAIN_HAND),
-                new DamageEnchantment(Enchantment.SMITE, DamageEnchantment.Type.UNDEAD, EquipmentSlot.MAIN_HAND),
-                new DamageEnchantment(Enchantment.BANE_OF_ARTHROPODS, DamageEnchantment.Type.ARTHROPODS, EquipmentSlot.MAIN_HAND),
+                new DamageEnchantment(
+                        Enchantment.SHARPNESS, DamageEnchantment.Type.ALL, EquipmentSlot.MAIN_HAND),
+                new DamageEnchantment(
+                        Enchantment.SMITE, DamageEnchantment.Type.UNDEAD, EquipmentSlot.MAIN_HAND),
+                new DamageEnchantment(
+                        Enchantment.BANE_OF_ARTHROPODS,
+                        DamageEnchantment.Type.ARTHROPODS,
+                        EquipmentSlot.MAIN_HAND),
                 new CombatEnchantment(Enchantment.KNOCKBACK, EquipmentSlot.MAIN_HAND),
                 new CombatEnchantment(Enchantment.FIRE_ASPECT, EquipmentSlot.MAIN_HAND),
                 new CombatEnchantment(Enchantment.LOOTING, EquipmentSlot.MAIN_HAND),
@@ -94,7 +111,6 @@ public class CombatEnchantments {
                 new CombatEnchantment(Enchantment.BREACH, EquipmentSlot.MAIN_HAND),
                 new CombatEnchantment(Enchantment.WIND_BURST, EquipmentSlot.MAIN_HAND),
                 new CombatEnchantment(Enchantment.MENDING, EquipmentSlot.values()),
-                new CombatEnchantment(Enchantment.VANISHING_CURSE, EquipmentSlot.values())
-        );
+                new CombatEnchantment(Enchantment.VANISHING_CURSE, EquipmentSlot.values()));
     }
 }

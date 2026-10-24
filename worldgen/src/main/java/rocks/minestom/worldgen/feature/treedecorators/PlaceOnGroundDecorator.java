@@ -1,5 +1,7 @@
 package rocks.minestom.worldgen.feature.treedecorators;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.coordinate.BlockVec;
@@ -8,17 +10,24 @@ import rocks.minestom.worldgen.feature.GenerationUnitAdapter;
 import rocks.minestom.worldgen.feature.stateproviders.BlockStateProvider;
 import rocks.minestom.worldgen.feature.stateproviders.BlockStateProviders;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public record PlaceOnGroundDecorator(int tries, int radius, int height, BlockStateProvider blockStateProvider) implements TreeDecorator {
-    public static final Codec<PlaceOnGroundDecorator> CODEC = StructCodec.struct(
-            "tries", Codec.INT.optional(128), PlaceOnGroundDecorator::tries,
-            "radius", Codec.INT.optional(2), PlaceOnGroundDecorator::radius,
-            "height", Codec.INT.optional(1), PlaceOnGroundDecorator::height,
-            "block_state_provider", BlockStateProviders.CODEC, PlaceOnGroundDecorator::blockStateProvider,
-            PlaceOnGroundDecorator::new
-    );
+public record PlaceOnGroundDecorator(
+        int tries, int radius, int height, BlockStateProvider blockStateProvider)
+        implements TreeDecorator {
+    public static final Codec<PlaceOnGroundDecorator> CODEC =
+            StructCodec.struct(
+                    "tries",
+                    Codec.INT.optional(128),
+                    PlaceOnGroundDecorator::tries,
+                    "radius",
+                    Codec.INT.optional(2),
+                    PlaceOnGroundDecorator::radius,
+                    "height",
+                    Codec.INT.optional(1),
+                    PlaceOnGroundDecorator::height,
+                    "block_state_provider",
+                    BlockStateProviders.CODEC,
+                    PlaceOnGroundDecorator::blockStateProvider,
+                    PlaceOnGroundDecorator::new);
 
     @Override
     public void place(TreeDecorator.Context context) {
@@ -64,9 +73,25 @@ public record PlaceOnGroundDecorator(int tries, int radius, int height, BlockSta
                 var hiField = generator.getClass().getDeclaredField("seedHi");
                 loField.setAccessible(true);
                 hiField.setAccessible(true);
-                System.out.println("TRACE litterstart box=[" + boundingMinX + ".." + boundingMaxX + "]x["
-                        + boundingMinY + ".." + boundingMaxY + "]x[" + boundingMinZ + ".." + boundingMaxZ
-                        + "] tries=" + this.tries + " rng=" + loField.getLong(generator) + " " + hiField.getLong(generator));
+                System.out.println(
+                        "TRACE litterstart box=["
+                                + boundingMinX
+                                + ".."
+                                + boundingMaxX
+                                + "]x["
+                                + boundingMinY
+                                + ".."
+                                + boundingMaxY
+                                + "]x["
+                                + boundingMinZ
+                                + ".."
+                                + boundingMaxZ
+                                + "] tries="
+                                + this.tries
+                                + " rng="
+                                + loField.getLong(generator)
+                                + " "
+                                + hiField.getLong(generator));
             } catch (ReflectiveOperationException exception) {
                 System.out.println("TRACE litterstart rng unavailable");
             }
@@ -91,38 +116,48 @@ public record PlaceOnGroundDecorator(int tries, int radius, int height, BlockSta
         // heightmap surface
         if (!blockAbove.air() && !blockAbove.compare(Block.VINE)) {
             if (trace) {
-                System.out.println("TRACE litter " + position + " reject above=" + blockAbove.name());
+                System.out.println(
+                        "TRACE litter " + position + " reject above=" + blockAbove.name());
             }
             return;
         }
         if (!isSolidRender(context.level().getBlock(position))) {
             if (trace) {
-                System.out.println("TRACE litter " + position + " reject solid=" + context.level().getBlock(position).name());
+                System.out.println(
+                        "TRACE litter "
+                                + position
+                                + " reject solid="
+                                + context.level().getBlock(position).name());
             }
             return;
         }
         if (context.level() instanceof GenerationUnitAdapter adapter) {
-            var surfaceY = adapter.heightmap(
-                    GenerationUnitAdapter.HeightmapType.MOTION_BLOCKING_NO_LEAVES,
-                    position.blockX(), position.blockZ());
+            var surfaceY =
+                    adapter.heightmap(
+                            GenerationUnitAdapter.HeightmapType.MOTION_BLOCKING_NO_LEAVES,
+                            position.blockX(),
+                            position.blockZ());
             if (surfaceY != Integer.MAX_VALUE && surfaceY > positionAbove.blockY()) {
                 if (trace) {
-                    System.out.println("TRACE litter " + position + " reject heightmap=" + surfaceY);
+                    System.out.println(
+                            "TRACE litter " + position + " reject heightmap=" + surfaceY);
                 }
                 return;
             }
         }
 
-        var state = this.blockStateProvider.getState(context.level(), context.random(), positionAbove);
+        var state =
+                this.blockStateProvider.getState(context.level(), context.random(), positionAbove);
         if (trace) {
-            System.out.println("TRACE litter " + position + " place " + state.name() + state.properties());
+            System.out.println(
+                    "TRACE litter " + position + " place " + state.name() + state.properties());
         }
         context.setBlock(positionAbove, state);
     }
 
     /**
-     * Approximation of vanilla's {@code isSolidRender} (opaque full cube):
-     * solid blocks except leaves, which are solid but not opaque.
+     * Approximation of vanilla's {@code isSolidRender} (opaque full cube): solid blocks except
+     * leaves, which are solid but not opaque.
      */
     private static boolean isSolidRender(Block block) {
         return block.solid() && !block.name().endsWith("_leaves");

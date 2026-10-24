@@ -1,13 +1,12 @@
 package rocks.minestom.placement;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.ArrayList;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.instance.block.Block;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public final class CoverageTest {
     @BeforeAll

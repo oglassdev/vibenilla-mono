@@ -7,80 +7,77 @@ import net.minestom.server.event.trait.EntityInstanceEvent;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A cancellable form of the death event, which includes damage type.
- * Can be used to cancel the death while still applying after-damage effects, such as attack sounds.
- * See #setCancelDeath for more information.
+ * A cancellable form of the death event, which includes damage type. Can be used to cancel the
+ * death while still applying after-damage effects, such as attack sounds. See #setCancelDeath for
+ * more information.
  */
 public class EntityPreDeathEvent implements EntityInstanceEvent, CancellableEvent {
 
-	private final Entity entity;
-	private final Damage damage;
+    private final Entity entity;
+    private final Damage damage;
 
-	private boolean cancelled;
-	private boolean cancelDeath;
+    private boolean cancelled;
+    private boolean cancelDeath;
 
-	public EntityPreDeathEvent(@NotNull Entity entity, @NotNull Damage damage) {
-		this.entity = entity;
-		this.damage = damage;
-	}
+    public EntityPreDeathEvent(@NotNull Entity entity, @NotNull Damage damage) {
+        this.entity = entity;
+        this.damage = damage;
+    }
 
-	@Override
-	public @NotNull Entity getEntity() {
-		return this.entity;
-	}
+    @Override
+    public @NotNull Entity getEntity() {
+        return this.entity;
+    }
 
-	/**
-	 * Returns the damage type which was used to apply the last damage to the entity.
-	 * <br>
-	 * WARNING: Modifying this object will have no effect.
-	 *
-	 * @return the damage object
-	 */
-	public @NotNull Damage getDamage() {
-		return this.damage;
-	}
+    /**
+     * Returns the damage type which was used to apply the last damage to the entity. <br>
+     * WARNING: Modifying this object will have no effect.
+     *
+     * @return the damage object
+     */
+    public @NotNull Damage getDamage() {
+        return this.damage;
+    }
 
-	/**
-	 * Returns whether the damage should be canceled or not.
-	 * <br>
-	 * WARNING: Cancelling can have unintended side effects, see #setCancelled for explanation.
-	 *
-	 * @return whether the damage should be canceled
-	 */
-	@Override
-	public boolean isCancelled() {
-		return this.cancelled;
-	}
+    /**
+     * Returns whether the damage should be canceled or not. <br>
+     * WARNING: Cancelling can have unintended side effects, see #setCancelled for explanation.
+     *
+     * @return whether the damage should be canceled
+     */
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
 
-	/**
-	 * Use this method to cancel the damage.
-	 * <br>
-	 * WARNING: This will also get rid of any effects applied after the damage, such as attack sounds.
-	 * You might want to use #setCancelDeath instead.
-	 *
-	 * @param cancel true if the event should be canceled, false otherwise
-	 */
-	@Override
-	public void setCancelled(boolean cancel) {
-		this.cancelled = cancel;
-	}
+    /**
+     * Use this method to cancel the damage. <br>
+     * WARNING: This will also get rid of any effects applied after the damage, such as attack
+     * sounds. You might want to use #setCancelDeath instead.
+     *
+     * @param cancel true if the event should be canceled, false otherwise
+     */
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
+    }
 
-	/**
-	 * See #setCancelDeath for explanation
-	 *
-	 * @return whether the death should be canceled or not
-	 */
-	public boolean isCancelDeath() {
-		return this.cancelDeath;
-	}
+    /**
+     * See #setCancelDeath for explanation
+     *
+     * @return whether the death should be canceled or not
+     */
+    public boolean isCancelDeath() {
+        return this.cancelDeath;
+    }
 
-	/**
-	 * Use this method to cancel the death, but make the damage method return true.
-	 * This will make sure any effects applied after the damage, such as attack sounds, still apply.
-	 *
-	 * @param cancelDeath whether the death should be canceled or not
-	 */
-	public void setCancelDeath(boolean cancelDeath) {
-		this.cancelDeath = cancelDeath;
-	}
+    /**
+     * Use this method to cancel the death, but make the damage method return true. This will make
+     * sure any effects applied after the damage, such as attack sounds, still apply.
+     *
+     * @param cancelDeath whether the death should be canceled or not
+     */
+    public void setCancelDeath(boolean cancelDeath) {
+        this.cancelDeath = cancelDeath;
+    }
 }

@@ -1,6 +1,10 @@
 package rocks.minestom.worldgen.feature.configurations;
 
 import com.google.gson.JsonElement;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.Direction;
@@ -9,15 +13,7 @@ import rocks.minestom.worldgen.feature.treedecorators.TreeDecorator;
 import rocks.minestom.worldgen.random.RandomSource;
 import rocks.minestom.worldgen.structure.context.BlockTagManager;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-/**
- * Port of vanilla's {@code MultifaceGrowthConfiguration} (glow lichen, sculk
- * vein growth).
- */
+/** Port of vanilla's {@code MultifaceGrowthConfiguration} (glow lichen, sculk vein growth). */
 public record MultifaceGrowthConfiguration(
         Block placeBlock,
         int searchRange,
@@ -26,18 +22,26 @@ public record MultifaceGrowthConfiguration(
         boolean canPlaceOnWall,
         float chanceOfSpreading,
         Set<String> canBePlacedOn,
-        List<Direction> validDirections
-) implements FeatureConfiguration {
+        List<Direction> validDirections)
+        implements FeatureConfiguration {
 
-    public static MultifaceGrowthConfiguration fromJson(JsonElement json, BlockTagManager blockTags) {
+    public static MultifaceGrowthConfiguration fromJson(
+            JsonElement json, BlockTagManager blockTags) {
         var object = json.getAsJsonObject();
 
         var block = Block.fromKey(object.get("block").getAsString());
         var searchRange = object.has("search_range") ? object.get("search_range").getAsInt() : 10;
-        var canPlaceOnFloor = object.has("can_place_on_floor") && object.get("can_place_on_floor").getAsBoolean();
-        var canPlaceOnCeiling = object.has("can_place_on_ceiling") && object.get("can_place_on_ceiling").getAsBoolean();
-        var canPlaceOnWall = object.has("can_place_on_wall") && object.get("can_place_on_wall").getAsBoolean();
-        var chanceOfSpreading = object.has("chance_of_spreading") ? object.get("chance_of_spreading").getAsFloat() : 0.5F;
+        var canPlaceOnFloor =
+                object.has("can_place_on_floor") && object.get("can_place_on_floor").getAsBoolean();
+        var canPlaceOnCeiling =
+                object.has("can_place_on_ceiling")
+                        && object.get("can_place_on_ceiling").getAsBoolean();
+        var canPlaceOnWall =
+                object.has("can_place_on_wall") && object.get("can_place_on_wall").getAsBoolean();
+        var chanceOfSpreading =
+                object.has("chance_of_spreading")
+                        ? object.get("chance_of_spreading").getAsFloat()
+                        : 0.5F;
 
         var canBePlacedOn = new HashSet<String>();
         var placedOnElement = object.get("can_be_placed_on");
@@ -63,8 +67,15 @@ public record MultifaceGrowthConfiguration(
             validDirections.addAll(Direction.HORIZONTAL);
         }
 
-        return new MultifaceGrowthConfiguration(block, searchRange, canPlaceOnFloor, canPlaceOnCeiling,
-                canPlaceOnWall, chanceOfSpreading, Set.copyOf(canBePlacedOn), List.copyOf(validDirections));
+        return new MultifaceGrowthConfiguration(
+                block,
+                searchRange,
+                canPlaceOnFloor,
+                canPlaceOnCeiling,
+                canPlaceOnWall,
+                chanceOfSpreading,
+                Set.copyOf(canBePlacedOn),
+                List.copyOf(validDirections));
     }
 
     private static void addBlockOrTag(Set<String> target, String value, BlockTagManager blockTags) {
@@ -85,7 +96,8 @@ public record MultifaceGrowthConfiguration(
         return directions;
     }
 
-    public List<Direction> shuffledDirectionsExcept(RandomSource random, Direction excludeDirection) {
+    public List<Direction> shuffledDirectionsExcept(
+            RandomSource random, Direction excludeDirection) {
         var directions = new ArrayList<Direction>(this.validDirections.size());
         for (var direction : this.validDirections) {
             if (direction != excludeDirection) {

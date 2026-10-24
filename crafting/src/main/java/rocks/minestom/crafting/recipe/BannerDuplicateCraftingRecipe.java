@@ -1,22 +1,33 @@
 package rocks.minestom.crafting.recipe;
 
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import rocks.minestom.crafting.CraftingGrid;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
 public final class BannerDuplicateCraftingRecipe implements CraftingRecipe {
-    private static final Set<Material> BANNER_MATERIALS = Set.of(
-            Material.WHITE_BANNER, Material.ORANGE_BANNER, Material.MAGENTA_BANNER, Material.LIGHT_BLUE_BANNER,
-            Material.YELLOW_BANNER, Material.LIME_BANNER, Material.PINK_BANNER, Material.GRAY_BANNER,
-            Material.LIGHT_GRAY_BANNER, Material.CYAN_BANNER, Material.PURPLE_BANNER, Material.BLUE_BANNER,
-            Material.BROWN_BANNER, Material.GREEN_BANNER, Material.RED_BANNER, Material.BLACK_BANNER
-    );
+    private static final Set<Material> BANNER_MATERIALS =
+            Set.of(
+                    Material.WHITE_BANNER,
+                    Material.ORANGE_BANNER,
+                    Material.MAGENTA_BANNER,
+                    Material.LIGHT_BLUE_BANNER,
+                    Material.YELLOW_BANNER,
+                    Material.LIME_BANNER,
+                    Material.PINK_BANNER,
+                    Material.GRAY_BANNER,
+                    Material.LIGHT_GRAY_BANNER,
+                    Material.CYAN_BANNER,
+                    Material.PURPLE_BANNER,
+                    Material.BLUE_BANNER,
+                    Material.BROWN_BANNER,
+                    Material.GREEN_BANNER,
+                    Material.RED_BANNER,
+                    Material.BLACK_BANNER);
 
     @Override
     public CraftingRecipeMatch match(CraftingGrid craftingGrid) {

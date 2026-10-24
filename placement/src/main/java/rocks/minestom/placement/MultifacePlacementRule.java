@@ -6,12 +6,12 @@ import net.minestom.server.instance.block.rule.BlockPlacementRule;
 
 public final class MultifacePlacementRule extends BlockPlacementRule {
     private static final BlockFace[] DEFAULT_ORDER = {
-            BlockFace.NORTH,
-            BlockFace.EAST,
-            BlockFace.SOUTH,
-            BlockFace.WEST,
-            BlockFace.TOP,
-            BlockFace.BOTTOM
+        BlockFace.NORTH,
+        BlockFace.EAST,
+        BlockFace.SOUTH,
+        BlockFace.WEST,
+        BlockFace.TOP,
+        BlockFace.BOTTOM
     };
 
     private final boolean waterloggable;
@@ -31,9 +31,10 @@ public final class MultifacePlacementRule extends BlockPlacementRule {
         var placePosition = placementState.placePosition();
         var existingBlock = instance.getBlock(placePosition);
         var playerPosition = placementState.playerPosition();
-        var nearest = playerPosition == null
-                ? DEFAULT_ORDER
-                : orderedByNearest(playerPosition.yaw(), playerPosition.pitch());
+        var nearest =
+                playerPosition == null
+                        ? DEFAULT_ORDER
+                        : orderedByNearest(playerPosition.yaw(), playerPosition.pitch());
 
         for (var direction : nearest) {
             var supportPosition = placePosition.relative(direction);
@@ -45,7 +46,8 @@ public final class MultifacePlacementRule extends BlockPlacementRule {
 
             var faceName = faceProperty(direction);
 
-            if (existingBlock.compare(placementState.block()) && "true".equals(existingBlock.getProperty(faceName))) {
+            if (existingBlock.compare(placementState.block())
+                    && "true".equals(existingBlock.getProperty(faceName))) {
                 continue;
             }
 
@@ -53,7 +55,9 @@ public final class MultifacePlacementRule extends BlockPlacementRule {
 
             if (existingBlock.compare(placementState.block())) {
                 result = existingBlock;
-            } else if (this.waterloggable && existingBlock.compare(Block.WATER) && isWaterSource(existingBlock)) {
+            } else if (this.waterloggable
+                    && existingBlock.compare(Block.WATER)
+                    && isWaterSource(existingBlock)) {
                 result = placementState.block().withProperty("waterlogged", "true");
             } else {
                 result = placementState.block();
@@ -177,7 +181,15 @@ public final class MultifacePlacementRule extends BlockPlacementRule {
         return makeDirectionArray(axisZ, axisY, axisX);
     }
 
-    private static BlockFace[] makeDirectionArray(BlockFace first, BlockFace second, BlockFace third) {
-        return new BlockFace[]{first, second, third, third.getOppositeFace(), second.getOppositeFace(), first.getOppositeFace()};
+    private static BlockFace[] makeDirectionArray(
+            BlockFace first, BlockFace second, BlockFace third) {
+        return new BlockFace[] {
+            first,
+            second,
+            third,
+            third.getOppositeFace(),
+            second.getOppositeFace(),
+            first.getOppositeFace()
+        };
     }
 }

@@ -1,5 +1,8 @@
 package io.github.togar2.pvp.feature.attack;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.github.togar2.pvp.enchantment.CombatEnchantments;
 import io.github.togar2.pvp.feature.CombatFeatures;
 import io.github.togar2.pvp.feature.FeatureType;
@@ -9,8 +12,8 @@ import net.minestom.server.component.DataComponents;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.EntityType;
-import net.minestom.server.entity.ItemEntity;
 import net.minestom.server.entity.GameMode;
+import net.minestom.server.entity.ItemEntity;
 import net.minestom.server.entity.LivingEntity;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
@@ -21,17 +24,15 @@ import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 @EnvTest
 public final class VanillaSmashAttackFeatureTest {
     @Test
     public void smashKnockbackAddsVerticalImpulse(Env env) {
-        var featureSet = CombatFeatures.empty()
-                .add(CombatFeatures.VANILLA_FALL)
-                .add(CombatFeatures.VANILLA_SMASH_ATTACK)
-                .build();
+        var featureSet =
+                CombatFeatures.empty()
+                        .add(CombatFeatures.VANILLA_FALL)
+                        .add(CombatFeatures.VANILLA_SMASH_ATTACK)
+                        .build();
         var smashAttackFeature = featureSet.get(FeatureType.SMASH_ATTACK);
 
         var instance = env.createFlatInstance();
@@ -48,15 +49,17 @@ public final class VanillaSmashAttackFeatureTest {
 
         smashAttackFeature.applySmashAttack(attacker, target);
 
-        assertEquals(-10.0 + 0.7 * ServerFlag.SERVER_TICKS_PER_SECOND, nearby.getVelocity().y(), 1.0E-9);
+        assertEquals(
+                -10.0 + 0.7 * ServerFlag.SERVER_TICKS_PER_SECOND, nearby.getVelocity().y(), 1.0E-9);
     }
 
     @Test
     public void smashSendsTheGroundLevelEvent(Env env) {
-        var featureSet = CombatFeatures.empty()
-                .add(CombatFeatures.VANILLA_FALL)
-                .add(CombatFeatures.VANILLA_SMASH_ATTACK)
-                .build();
+        var featureSet =
+                CombatFeatures.empty()
+                        .add(CombatFeatures.VANILLA_FALL)
+                        .add(CombatFeatures.VANILLA_SMASH_ATTACK)
+                        .build();
         var smashAttackFeature = featureSet.get(FeatureType.SMASH_ATTACK);
 
         var instance = env.createFlatInstance();
@@ -72,28 +75,32 @@ public final class VanillaSmashAttackFeatureTest {
         var events = connection.trackIncoming(WorldEventPacket.class);
         smashAttackFeature.applySmashAttack(attacker, target);
 
-        events.assertSingle(packet -> {
-            assertEquals(2013, packet.effectId());
-            assertEquals(750, packet.data());
-        });
+        events.assertSingle(
+                packet -> {
+                    assertEquals(2013, packet.effectId());
+                    assertEquals(750, packet.data());
+                });
     }
 
     @Test
     public void windBurstKeepsImpactPositionAndEndsGraceTime(Env env) {
         CombatEnchantments.registerAll();
-        var featureSet = CombatFeatures.empty()
-                .add(CombatFeatures.VANILLA_FALL)
-                .add(CombatFeatures.VANILLA_ENCHANTMENT)
-                .add(CombatFeatures.VANILLA_SMASH_ATTACK)
-                .build();
+        var featureSet =
+                CombatFeatures.empty()
+                        .add(CombatFeatures.VANILLA_FALL)
+                        .add(CombatFeatures.VANILLA_ENCHANTMENT)
+                        .add(CombatFeatures.VANILLA_SMASH_ATTACK)
+                        .build();
         var smashAttackFeature = featureSet.get(FeatureType.SMASH_ATTACK);
 
         var instance = env.createFlatInstance();
         var attacker = env.createPlayer(instance, new Pos(0.0, 41.0, 0.0));
         attacker.setGameMode(GameMode.SURVIVAL);
-        attacker.setItemInMainHand(ItemStack.of(Material.MACE).with(
-                DataComponents.ENCHANTMENTS, EnchantmentList.EMPTY.with(Enchantment.WIND_BURST, 1)
-        ));
+        attacker.setItemInMainHand(
+                ItemStack.of(Material.MACE)
+                        .with(
+                                DataComponents.ENCHANTMENTS,
+                                EnchantmentList.EMPTY.with(Enchantment.WIND_BURST, 1)));
         attacker.setTag(VanillaFallFeature.FALL_DISTANCE, 3.0);
 
         var target = new LivingEntity(EntityType.ZOMBIE);
@@ -103,26 +110,30 @@ public final class VanillaSmashAttackFeatureTest {
 
         assertTrue(attacker.hasTag(VanillaFallFeature.CURRENT_IMPULSE_IMPACT_Y));
         assertEquals(41.0, attacker.getTag(VanillaFallFeature.CURRENT_IMPULSE_IMPACT_Y));
-        assertEquals(0, attacker.getTag(VanillaFallFeature.CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME));
+        assertEquals(
+                0, attacker.getTag(VanillaFallFeature.CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME));
         assertEquals(0.0, attacker.getTag(VanillaFallFeature.FALL_DISTANCE));
     }
 
     @Test
     public void windBurstPushesNonLivingEntities(Env env) {
         CombatEnchantments.registerAll();
-        var featureSet = CombatFeatures.empty()
-                .add(CombatFeatures.VANILLA_FALL)
-                .add(CombatFeatures.VANILLA_ENCHANTMENT)
-                .add(CombatFeatures.VANILLA_SMASH_ATTACK)
-                .build();
+        var featureSet =
+                CombatFeatures.empty()
+                        .add(CombatFeatures.VANILLA_FALL)
+                        .add(CombatFeatures.VANILLA_ENCHANTMENT)
+                        .add(CombatFeatures.VANILLA_SMASH_ATTACK)
+                        .build();
         var smashAttackFeature = featureSet.get(FeatureType.SMASH_ATTACK);
 
         var instance = env.createFlatInstance();
         var attacker = env.createPlayer(instance, new Pos(8.0, 41.0, 8.0));
         attacker.setGameMode(GameMode.SURVIVAL);
-        attacker.setItemInMainHand(ItemStack.of(Material.MACE).with(
-                DataComponents.ENCHANTMENTS, EnchantmentList.EMPTY.with(Enchantment.WIND_BURST, 1)
-        ));
+        attacker.setItemInMainHand(
+                ItemStack.of(Material.MACE)
+                        .with(
+                                DataComponents.ENCHANTMENTS,
+                                EnchantmentList.EMPTY.with(Enchantment.WIND_BURST, 1)));
         attacker.setTag(VanillaFallFeature.FALL_DISTANCE, 3.0);
 
         var item = new ItemEntity(ItemStack.of(Material.STONE));

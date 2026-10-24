@@ -5,9 +5,9 @@ import rocks.minestom.worldgen.random.RandomSource;
 import rocks.minestom.worldgen.structure.template.BoundingBox;
 
 /**
- * Port of vanilla {@code SwampHutPiece}. Witch and cat spawning are out of
- * scope (block parity only); the piece still tracks the same spawn gate
- * booleans so re-entrant calls behave like vanilla.
+ * Port of vanilla {@code SwampHutPiece}. Witch and cat spawning are out of scope (block parity
+ * only); the piece still tracks the same spawn gate booleans so re-entrant calls behave like
+ * vanilla.
  */
 final class SwampHutPiece extends ScatteredFeaturePiece {
     static final int WIDTH = 7;
@@ -22,13 +22,20 @@ final class SwampHutPiece extends ScatteredFeaturePiece {
             return;
         }
 
-        this.generateBox(level, chunkBB, 1, 1, 1, 5, 1, 7, Block.SPRUCE_PLANKS, Block.SPRUCE_PLANKS, false);
-        this.generateBox(level, chunkBB, 1, 4, 2, 5, 4, 7, Block.SPRUCE_PLANKS, Block.SPRUCE_PLANKS, false);
-        this.generateBox(level, chunkBB, 2, 1, 0, 4, 1, 0, Block.SPRUCE_PLANKS, Block.SPRUCE_PLANKS, false);
-        this.generateBox(level, chunkBB, 2, 2, 2, 3, 3, 2, Block.SPRUCE_PLANKS, Block.SPRUCE_PLANKS, false);
-        this.generateBox(level, chunkBB, 1, 2, 3, 1, 3, 6, Block.SPRUCE_PLANKS, Block.SPRUCE_PLANKS, false);
-        this.generateBox(level, chunkBB, 5, 2, 3, 5, 3, 6, Block.SPRUCE_PLANKS, Block.SPRUCE_PLANKS, false);
-        this.generateBox(level, chunkBB, 2, 2, 7, 4, 3, 7, Block.SPRUCE_PLANKS, Block.SPRUCE_PLANKS, false);
+        this.generateBox(
+                level, chunkBB, 1, 1, 1, 5, 1, 7, Block.SPRUCE_PLANKS, Block.SPRUCE_PLANKS, false);
+        this.generateBox(
+                level, chunkBB, 1, 4, 2, 5, 4, 7, Block.SPRUCE_PLANKS, Block.SPRUCE_PLANKS, false);
+        this.generateBox(
+                level, chunkBB, 2, 1, 0, 4, 1, 0, Block.SPRUCE_PLANKS, Block.SPRUCE_PLANKS, false);
+        this.generateBox(
+                level, chunkBB, 2, 2, 2, 3, 3, 2, Block.SPRUCE_PLANKS, Block.SPRUCE_PLANKS, false);
+        this.generateBox(
+                level, chunkBB, 1, 2, 3, 1, 3, 6, Block.SPRUCE_PLANKS, Block.SPRUCE_PLANKS, false);
+        this.generateBox(
+                level, chunkBB, 5, 2, 3, 5, 3, 6, Block.SPRUCE_PLANKS, Block.SPRUCE_PLANKS, false);
+        this.generateBox(
+                level, chunkBB, 2, 2, 7, 4, 3, 7, Block.SPRUCE_PLANKS, Block.SPRUCE_PLANKS, false);
         this.generateBox(level, chunkBB, 1, 0, 2, 1, 3, 2, Block.OAK_LOG, Block.OAK_LOG, false);
         this.generateBox(level, chunkBB, 5, 0, 2, 5, 3, 2, Block.OAK_LOG, Block.OAK_LOG, false);
         this.generateBox(level, chunkBB, 1, 0, 7, 1, 3, 7, Block.OAK_LOG, Block.OAK_LOG, false);

@@ -3,9 +3,9 @@ package rocks.minestom.worldgen.structure.processor;
 import net.minestom.server.coordinate.BlockVec;
 
 /**
- * Vanilla {@code GravityProcessor} as appended by the {@code terrain_matching}
- * projection: every block column snaps to the world surface heightmap plus an
- * offset (-1), preserving the block's template-relative Y.
+ * Vanilla {@code GravityProcessor} as appended by the {@code terrain_matching} projection: every
+ * block column snaps to the world surface heightmap plus an offset (-1), preserving the block's
+ * template-relative Y.
  */
 public final class GravityProcessor implements StructureProcessor {
     private final int offset;

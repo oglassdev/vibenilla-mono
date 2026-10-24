@@ -24,4 +24,3 @@ public record ConstantIntProvider(int value) implements IntProvider {
         return this.value;
     }
 }
-

@@ -16,9 +16,7 @@ public final class ButtonBlockHandler implements BlockHandler {
     private static final int WOODEN_DELAY = 30;
     private static final int STONE_DELAY = 20;
 
-    private ButtonBlockHandler() {
-
-    }
+    private ButtonBlockHandler() {}
 
     @Override
     public Key getKey() {
@@ -44,29 +42,50 @@ public final class ButtonBlockHandler implements BlockHandler {
 
         instance.setBlock(blockPosition, pressedBlock);
 
-        var pressSound = Sound.sound(wooden ? SoundEvent.BLOCK_WOODEN_BUTTON_CLICK_ON : SoundEvent.BLOCK_STONE_BUTTON_CLICK_ON, Sound.Source.BLOCK, 0.3F, 0.6F);
-        instance.playSoundExcept(interaction.getPlayer(), pressSound, blockPosition.add(0.5D, 0.5D, 0.5D));
+        var pressSound =
+                Sound.sound(
+                        wooden
+                                ? SoundEvent.BLOCK_WOODEN_BUTTON_CLICK_ON
+                                : SoundEvent.BLOCK_STONE_BUTTON_CLICK_ON,
+                        Sound.Source.BLOCK,
+                        0.3F,
+                        0.6F);
+        instance.playSoundExcept(
+                interaction.getPlayer(), pressSound, blockPosition.add(0.5D, 0.5D, 0.5D));
 
         var delay = wooden ? WOODEN_DELAY : STONE_DELAY;
 
-        instance.scheduler().buildTask(() -> {
-            var currentBlock = instance.getBlock(blockPosition);
-            var buttonsTag = MinecraftServer.process().blocks().getTag(BUTTONS_TAG);
+        instance.scheduler()
+                .buildTask(
+                        () -> {
+                            var currentBlock = instance.getBlock(blockPosition);
+                            var buttonsTag = MinecraftServer.process().blocks().getTag(BUTTONS_TAG);
 
-            if (buttonsTag == null || !buttonsTag.contains(currentBlock)) {
-                return;
-            }
+                            if (buttonsTag == null || !buttonsTag.contains(currentBlock)) {
+                                return;
+                            }
 
-            if (!"true".equals(currentBlock.getProperty("powered"))) {
-                return;
-            }
+                            if (!"true".equals(currentBlock.getProperty("powered"))) {
+                                return;
+                            }
 
-            instance.setBlock(blockPosition, currentBlock.withProperty("powered", "false"));
-            var releaseSound = Sound.sound(wooden ? SoundEvent.BLOCK_WOODEN_BUTTON_CLICK_OFF : SoundEvent.BLOCK_STONE_BUTTON_CLICK_OFF, Sound.Source.BLOCK, 0.3F, 0.5F);
-            instance.playSound(releaseSound, blockPosition.add(0.5D, 0.5D, 0.5D));
-        }).delay(TaskSchedule.tick(delay)).schedule();
+                            instance.setBlock(
+                                    blockPosition, currentBlock.withProperty("powered", "false"));
+                            var releaseSound =
+                                    Sound.sound(
+                                            wooden
+                                                    ? SoundEvent.BLOCK_WOODEN_BUTTON_CLICK_OFF
+                                                    : SoundEvent.BLOCK_STONE_BUTTON_CLICK_OFF,
+                                            Sound.Source.BLOCK,
+                                            0.3F,
+                                            0.5F);
+                            instance.playSound(releaseSound, blockPosition.add(0.5D, 0.5D, 0.5D));
+                        })
+                .delay(TaskSchedule.tick(delay))
+                .schedule();
 
-        // TODO: vanilla emits a redstone signal on the connected face; redstone is not simulated here
+        // TODO: vanilla emits a redstone signal on the connected face; redstone is not simulated
+        // here
         return false;
     }
 

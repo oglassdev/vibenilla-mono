@@ -4,21 +4,26 @@ import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.UnderwaterMagmaConfiguration;
 
 /**
- * Port of vanilla's {@code UnderwaterMagmaFeature}: finds the water/floor
- * boundary below the origin and rolls magma blocks into a cube around it,
- * keeping only fully buried candidates (no exposed face towards open space).
+ * Port of vanilla's {@code UnderwaterMagmaFeature}: finds the water/floor boundary below the origin
+ * and rolls magma blocks into a cube around it, keeping only fully buried candidates (no exposed
+ * face towards open space).
  */
 public final class UnderwaterMagmaFeature implements Feature<UnderwaterMagmaConfiguration> {
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<UnderwaterMagmaConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<UnderwaterMagmaConfiguration, T> context) {
         var level = context.accessor();
         var origin = context.origin();
         var config = context.config();
         var random = context.random();
 
-        var column = Column.scan(level, origin, config.floorSearchRange(),
-                block -> block.compare(Block.WATER),
-                block -> !block.compare(Block.WATER));
+        var column =
+                Column.scan(
+                        level,
+                        origin,
+                        config.floorSearchRange(),
+                        block -> block.compare(Block.WATER),
+                        block -> !block.compare(Block.WATER));
         if (column.isEmpty() || column.get().floor().isEmpty()) {
             return false;
         }
@@ -36,7 +41,8 @@ public final class UnderwaterMagmaFeature implements Feature<UnderwaterMagmaConf
         for (var z = minZ; z <= maxZ; z++) {
             for (var y = minY; y <= maxY; y++) {
                 for (var x = minX; x <= maxX; x++) {
-                    if (random.nextFloat() < config.placementProbabilityPerValidPosition() && isValidPlacement(level, x, y, z)) {
+                    if (random.nextFloat() < config.placementProbabilityPerValidPosition()
+                            && isValidPlacement(level, x, y, z)) {
                         level.setBlock(x, y, z, Block.MAGMA_BLOCK);
                         placedAny = true;
                     }
@@ -53,9 +59,13 @@ public final class UnderwaterMagmaFeature implements Feature<UnderwaterMagmaConf
         var origin = context.origin();
         var config = context.config();
 
-        var column = Column.scan(level, origin, config.floorSearchRange(),
-                block -> block.compare(Block.WATER),
-                block -> !block.compare(Block.WATER));
+        var column =
+                Column.scan(
+                        level,
+                        origin,
+                        config.floorSearchRange(),
+                        block -> block.compare(Block.WATER),
+                        block -> !block.compare(Block.WATER));
         if (column.isEmpty() || column.get().floor().isEmpty()) {
             return;
         }
@@ -80,7 +90,8 @@ public final class UnderwaterMagmaFeature implements Feature<UnderwaterMagmaConf
         }
     }
 
-    private static <T extends Block.Getter & Block.Setter> boolean isValidPlacement(T level, int x, int y, int z) {
+    private static <T extends Block.Getter & Block.Setter> boolean isValidPlacement(
+            T level, int x, int y, int z) {
         var block = level.getBlock(x, y, z);
         if (block.air() || block.compare(Block.WATER)) {
             return false;
@@ -104,11 +115,12 @@ public final class UnderwaterMagmaFeature implements Feature<UnderwaterMagmaConf
     }
 
     /**
-     * Port of vanilla's {@code BubbleColumnBlock.updateColumn}: a magma block
-     * placed under a water source turns the water above it (and every water
-     * source stacked above that) into a downward-dragging bubble column.
+     * Port of vanilla's {@code BubbleColumnBlock.updateColumn}: a magma block placed under a water
+     * source turns the water above it (and every water source stacked above that) into a
+     * downward-dragging bubble column.
      */
-    private static <T extends Block.Getter & Block.Setter> void convertWaterAboveToBubbleColumn(T level, int x, int y, int z, int maxY) {
+    private static <T extends Block.Getter & Block.Setter> void convertWaterAboveToBubbleColumn(
+            T level, int x, int y, int z, int maxY) {
         var bubbleColumn = Block.BUBBLE_COLUMN.withProperty("drag", "true");
         var aboveY = y + 1;
         while (aboveY <= maxY && isWaterSource(level.getBlock(x, aboveY, z))) {

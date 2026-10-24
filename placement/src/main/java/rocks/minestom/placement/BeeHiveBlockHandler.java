@@ -13,9 +13,7 @@ public final class BeeHiveBlockHandler implements BlockHandler {
     public static final BeeHiveBlockHandler INSTANCE = new BeeHiveBlockHandler();
     private static final Key KEY = Key.key("placement:bee_hive");
 
-    private BeeHiveBlockHandler() {
-
-    }
+    private BeeHiveBlockHandler() {}
 
     @Override
     public Key getKey() {
@@ -34,7 +32,9 @@ public final class BeeHiveBlockHandler implements BlockHandler {
         var hand = interaction.getHand();
         var heldItem = player.getItemInHand(hand);
 
-        if (honeyLevel < 5 || (heldItem.material() != Material.SHEARS && heldItem.material() != Material.GLASS_BOTTLE)) {
+        if (honeyLevel < 5
+                || (heldItem.material() != Material.SHEARS
+                        && heldItem.material() != Material.GLASS_BOTTLE)) {
             return true;
         }
 

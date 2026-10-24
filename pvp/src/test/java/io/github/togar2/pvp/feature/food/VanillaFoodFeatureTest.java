@@ -1,5 +1,7 @@
 package io.github.togar2.pvp.feature.food;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.github.togar2.pvp.feature.CombatFeatures;
 import io.github.togar2.pvp.feature.FeatureType;
 import net.minestom.server.MinecraftServer;
@@ -13,8 +15,6 @@ import net.minestom.server.item.Material;
 import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @EnvTest
 public final class VanillaFoodFeatureTest {
@@ -36,10 +36,11 @@ public final class VanillaFoodFeatureTest {
 
     @Test
     public void creativePlayersRegenerateNaturally(Env env) {
-        var node = CombatFeatures.empty()
-                .add(CombatFeatures.VANILLA_REGENERATION)
-                .build()
-                .createNode();
+        var node =
+                CombatFeatures.empty()
+                        .add(CombatFeatures.VANILLA_REGENERATION)
+                        .build()
+                        .createNode();
         MinecraftServer.getGlobalEventHandler().addChild(node);
 
         try {
@@ -60,10 +61,11 @@ public final class VanillaFoodFeatureTest {
 
     @Test
     public void chorusFruitAppliesItsUseCooldown(Env env) {
-        var featureSet = CombatFeatures.empty()
-                .add(CombatFeatures.VANILLA_ITEM_COOLDOWN)
-                .add(CombatFeatures.VANILLA_FOOD)
-                .build();
+        var featureSet =
+                CombatFeatures.empty()
+                        .add(CombatFeatures.VANILLA_ITEM_COOLDOWN)
+                        .add(CombatFeatures.VANILLA_FOOD)
+                        .build();
         var node = featureSet.createNode();
         MinecraftServer.getGlobalEventHandler().addChild(node);
 

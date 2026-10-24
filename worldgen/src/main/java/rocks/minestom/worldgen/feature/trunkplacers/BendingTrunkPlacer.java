@@ -1,5 +1,8 @@
 package rocks.minestom.worldgen.feature.trunkplacers;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiConsumer;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.coordinate.BlockVec;
@@ -10,19 +13,31 @@ import rocks.minestom.worldgen.feature.foliageplacers.FoliagePlacer;
 import rocks.minestom.worldgen.feature.valueproviders.IntProvider;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.BiConsumer;
-
-public record BendingTrunkPlacer(int baseHeight, int heightRandA, int heightRandB, int minHeightForLeaves, IntProvider bendLength) implements TrunkPlacer {
-    public static final Codec<BendingTrunkPlacer> CODEC = StructCodec.struct(
-            "base_height", Codec.INT, BendingTrunkPlacer::baseHeight,
-            "height_rand_a", Codec.INT, BendingTrunkPlacer::heightRandA,
-            "height_rand_b", Codec.INT, BendingTrunkPlacer::heightRandB,
-            "min_height_for_leaves", Codec.INT.optional(1), BendingTrunkPlacer::minHeightForLeaves,
-            "bend_length", IntProvider.CODEC, BendingTrunkPlacer::bendLength,
-            BendingTrunkPlacer::new
-    );
+public record BendingTrunkPlacer(
+        int baseHeight,
+        int heightRandA,
+        int heightRandB,
+        int minHeightForLeaves,
+        IntProvider bendLength)
+        implements TrunkPlacer {
+    public static final Codec<BendingTrunkPlacer> CODEC =
+            StructCodec.struct(
+                    "base_height",
+                    Codec.INT,
+                    BendingTrunkPlacer::baseHeight,
+                    "height_rand_a",
+                    Codec.INT,
+                    BendingTrunkPlacer::heightRandA,
+                    "height_rand_b",
+                    Codec.INT,
+                    BendingTrunkPlacer::heightRandB,
+                    "min_height_for_leaves",
+                    Codec.INT.optional(1),
+                    BendingTrunkPlacer::minHeightForLeaves,
+                    "bend_length",
+                    IntProvider.CODEC,
+                    BendingTrunkPlacer::bendLength,
+                    BendingTrunkPlacer::new);
 
     @Override
     public List<FoliagePlacer.FoliageAttachment> placeTrunk(
@@ -31,8 +46,7 @@ public record BendingTrunkPlacer(int baseHeight, int heightRandA, int heightRand
             RandomSource random,
             int freeTreeHeight,
             BlockVec basePos,
-            TreeConfiguration config
-    ) {
+            TreeConfiguration config) {
         var direction = HorizontalDirection.random(random);
         var topIndex = freeTreeHeight - 1;
         var currentPos = basePos;
@@ -72,24 +86,26 @@ public record BendingTrunkPlacer(int baseHeight, int heightRandA, int heightRand
 
     @Override
     public int getTreeHeight(RandomSource random) {
-        return this.baseHeight + random.nextInt(this.heightRandA + 1) + random.nextInt(this.heightRandB + 1);
+        return this.baseHeight
+                + random.nextInt(this.heightRandA + 1)
+                + random.nextInt(this.heightRandB + 1);
     }
 
     /**
-     * Vanilla {@code Direction.Plane.HORIZONTAL.faces}: {@code {NORTH, EAST,
-     * SOUTH, WEST}}, so {@code random.nextInt(4)} selects the same direction.
+     * Vanilla {@code Direction.Plane.HORIZONTAL.faces}: {@code {NORTH, EAST, SOUTH, WEST}}, so
+     * {@code random.nextInt(4)} selects the same direction.
      */
     private record HorizontalDirection(int stepX, int stepZ) {
-        private static final HorizontalDirection[] VALUES = new HorizontalDirection[]{
-                new HorizontalDirection(0, -1),
-                new HorizontalDirection(1, 0),
-                new HorizontalDirection(0, 1),
-                new HorizontalDirection(-1, 0)
-        };
+        private static final HorizontalDirection[] VALUES =
+                new HorizontalDirection[] {
+                    new HorizontalDirection(0, -1),
+                    new HorizontalDirection(1, 0),
+                    new HorizontalDirection(0, 1),
+                    new HorizontalDirection(-1, 0)
+                };
 
         private static HorizontalDirection random(RandomSource random) {
             return VALUES[random.nextInt(VALUES.length)];
         }
     }
 }
-

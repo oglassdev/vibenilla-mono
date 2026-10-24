@@ -14,15 +14,21 @@ public enum RelevantEntity {
     INTERACTING_ENTITY("interacting_entity", LootContext.INTERACTING_ENTITY);
 
     @SuppressWarnings("UnstableApiUsage")
-    public static final @NotNull Codec<RelevantEntity> CODEC = Codec.STRING.transform(value -> switch (value) {
-        case "this" -> THIS;
-        case "attacker" -> ATTACKER;
-        case "direct_attacker" -> DIRECT_ATTACKER;
-        case "attacking_player" -> LAST_PLAYER_DAMAGE;
-        case "target_entity" -> TARGET_ENTITY;
-        case "interacting_entity" -> INTERACTING_ENTITY;
-        default -> throw new IllegalArgumentException("Unknown entity target: " + value);
-    }, RelevantEntity::id);
+    public static final @NotNull Codec<RelevantEntity> CODEC =
+            Codec.STRING.transform(
+                    value ->
+                            switch (value) {
+                                case "this" -> THIS;
+                                case "attacker" -> ATTACKER;
+                                case "direct_attacker" -> DIRECT_ATTACKER;
+                                case "attacking_player" -> LAST_PLAYER_DAMAGE;
+                                case "target_entity" -> TARGET_ENTITY;
+                                case "interacting_entity" -> INTERACTING_ENTITY;
+                                default ->
+                                        throw new IllegalArgumentException(
+                                                "Unknown entity target: " + value);
+                            },
+                    RelevantEntity::id);
 
     private final @NotNull String id;
     private final @NotNull LootContext.Key<? extends Entity> key;
@@ -39,5 +45,4 @@ public enum RelevantEntity {
     public @NotNull LootContext.Key<? extends Entity> key() {
         return key;
     }
-
 }

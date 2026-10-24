@@ -1,18 +1,16 @@
 package rocks.minestom.worldgen.structure.pool;
 
 import com.google.gson.JsonElement;
-import net.kyori.adventure.key.Key;
-import rocks.minestom.worldgen.random.RandomSource;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
+import net.kyori.adventure.key.Key;
+import rocks.minestom.worldgen.random.RandomSource;
 
 /**
- * Vanilla {@code PoolAliasBinding}: resolves pool alias keys to concrete
- * pools, drawing from a shared positional random (trial chamber spawner
- * variants). Draw order matches vanilla: bindings resolve in list order;
- * weighted picks draw one {@code nextInt(totalWeight)}.
+ * Vanilla {@code PoolAliasBinding}: resolves pool alias keys to concrete pools, drawing from a
+ * shared positional random (trial chamber spawner variants). Draw order matches vanilla: bindings
+ * resolve in list order; weighted picks draw one {@code nextInt(totalWeight)}.
  */
 public sealed interface PoolAliasBinding {
     void forEachResolved(RandomSource random, BiConsumer<Key, Key> consumer);
@@ -24,7 +22,8 @@ public sealed interface PoolAliasBinding {
         }
     }
 
-    record Random(Key alias, List<Weighted<Key>> targets, int totalWeight) implements PoolAliasBinding {
+    record Random(Key alias, List<Weighted<Key>> targets, int totalWeight)
+            implements PoolAliasBinding {
         public Random(Key alias, List<Weighted<Key>> targets) {
             this(alias, targets, sumWeights(targets));
         }
@@ -35,7 +34,8 @@ public sealed interface PoolAliasBinding {
         }
     }
 
-    record RandomGroup(List<Weighted<List<PoolAliasBinding>>> groups, int totalWeight) implements PoolAliasBinding {
+    record RandomGroup(List<Weighted<List<PoolAliasBinding>>> groups, int totalWeight)
+            implements PoolAliasBinding {
         public RandomGroup(List<Weighted<List<PoolAliasBinding>>> groups) {
             this(groups, sumWeights(groups));
         }
@@ -48,8 +48,7 @@ public sealed interface PoolAliasBinding {
         }
     }
 
-    record Weighted<T>(T value, int weight) {
-    }
+    record Weighted<T>(T value, int weight) {}
 
     private static int sumWeights(List<? extends Weighted<?>> entries) {
         var total = 0;
@@ -94,16 +93,18 @@ public sealed interface PoolAliasBinding {
         var obj = json.getAsJsonObject();
         var type = obj.get("type").getAsString();
         return switch (type) {
-            case "minecraft:direct" -> new Direct(
-                    Key.key(obj.get("alias").getAsString()),
-                    Key.key(obj.get("target").getAsString()));
+            case "minecraft:direct" ->
+                    new Direct(
+                            Key.key(obj.get("alias").getAsString()),
+                            Key.key(obj.get("target").getAsString()));
             case "minecraft:random" -> {
                 var targets = new ArrayList<Weighted<Key>>();
                 for (var target : obj.getAsJsonArray("targets")) {
                     var targetObj = target.getAsJsonObject();
-                    targets.add(new Weighted<>(
-                            Key.key(targetObj.get("data").getAsString()),
-                            targetObj.get("weight").getAsInt()));
+                    targets.add(
+                            new Weighted<>(
+                                    Key.key(targetObj.get("data").getAsString()),
+                                    targetObj.get("weight").getAsInt()));
                 }
                 yield new Random(Key.key(obj.get("alias").getAsString()), List.copyOf(targets));
             }
@@ -111,9 +112,10 @@ public sealed interface PoolAliasBinding {
                 var groups = new ArrayList<Weighted<List<PoolAliasBinding>>>();
                 for (var group : obj.getAsJsonArray("groups")) {
                     var groupObj = group.getAsJsonObject();
-                    groups.add(new Weighted<>(
-                            parseList(groupObj.get("data")),
-                            groupObj.get("weight").getAsInt()));
+                    groups.add(
+                            new Weighted<>(
+                                    parseList(groupObj.get("data")),
+                                    groupObj.get("weight").getAsInt()));
                 }
                 yield new RandomGroup(List.copyOf(groups));
             }

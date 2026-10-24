@@ -1,5 +1,7 @@
 package io.github.togar2.pvp.feature.armor;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import io.github.togar2.pvp.enchantment.CombatEnchantments;
 import io.github.togar2.pvp.feature.CombatFeatures;
 import io.github.togar2.pvp.feature.FeatureType;
@@ -19,19 +21,18 @@ import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 @EnvTest
 public final class VanillaArmorFeatureTest {
     @Test
     public void breachReducesTheAbsorbedFraction(Env env) {
         CombatEnchantments.registerAll();
-        var armorFeature = CombatFeatures.empty()
-                .version(CombatVersion.MODERN)
-                .add(CombatFeatures.VANILLA_ENCHANTMENT)
-                .add(CombatFeatures.VANILLA_ARMOR)
-                .build()
-                .get(FeatureType.ARMOR);
+        var armorFeature =
+                CombatFeatures.empty()
+                        .version(CombatVersion.MODERN)
+                        .add(CombatFeatures.VANILLA_ENCHANTMENT)
+                        .add(CombatFeatures.VANILLA_ARMOR)
+                        .build()
+                        .get(FeatureType.ARMOR);
 
         var instance = env.createFlatInstance();
         var victim = new LivingEntity(EntityType.ZOMBIE);
@@ -44,11 +45,19 @@ public final class VanillaArmorFeatureTest {
         var damageType = MinecraftServer.getDamageTypeRegistry().get(DamageType.PLAYER_ATTACK);
 
         attacker.setItemInMainHand(ItemStack.of(Material.DIAMOND_SWORD));
-        assertEquals(2.8F, armorFeature.getDamageWithProtection(victim, damageType, 10.0F, attacker), 1.0E-3);
+        assertEquals(
+                2.8F,
+                armorFeature.getDamageWithProtection(victim, damageType, 10.0F, attacker),
+                1.0E-3);
 
-        attacker.setItemInMainHand(ItemStack.of(Material.DIAMOND_SWORD).with(
-                DataComponents.ENCHANTMENTS, EnchantmentList.EMPTY.with(Enchantment.BREACH, 4)
-        ));
-        assertEquals(8.8F, armorFeature.getDamageWithProtection(victim, damageType, 10.0F, attacker), 1.0E-3);
+        attacker.setItemInMainHand(
+                ItemStack.of(Material.DIAMOND_SWORD)
+                        .with(
+                                DataComponents.ENCHANTMENTS,
+                                EnchantmentList.EMPTY.with(Enchantment.BREACH, 4)));
+        assertEquals(
+                8.8F,
+                armorFeature.getDamageWithProtection(victim, damageType, 10.0F, attacker),
+                1.0E-3);
     }
 }

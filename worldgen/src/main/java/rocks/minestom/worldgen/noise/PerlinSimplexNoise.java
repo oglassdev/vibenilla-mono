@@ -1,15 +1,13 @@
 package rocks.minestom.worldgen.noise;
 
+import java.util.List;
+import java.util.TreeSet;
 import rocks.minestom.worldgen.random.LegacyRandomSource;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.List;
-import java.util.TreeSet;
-
 /**
- * Port of vanilla {@code PerlinSimplexNoise}: stacked two-dimensional simplex
- * octaves over a shared legacy random, used by the fixed-seed biome
- * temperature noises.
+ * Port of vanilla {@code PerlinSimplexNoise}: stacked two-dimensional simplex octaves over a shared
+ * legacy random, used by the fixed-seed biome temperature noises.
  */
 public final class PerlinSimplexNoise {
     private final SimplexNoise[] noiseLevels;
@@ -32,7 +30,9 @@ public final class PerlinSimplexNoise {
         var zeroOctave = new SimplexNoise(randomSource);
         var zeroOctaveIndex = highFrequencyOctaves;
         this.noiseLevels = new SimplexNoise[octaveCount];
-        if (highFrequencyOctaves >= 0 && highFrequencyOctaves < octaveCount && octaveSet.contains(0)) {
+        if (highFrequencyOctaves >= 0
+                && highFrequencyOctaves < octaveCount
+                && octaveSet.contains(0)) {
             this.noiseLevels[highFrequencyOctaves] = zeroOctave;
         }
 
@@ -45,7 +45,10 @@ public final class PerlinSimplexNoise {
         }
 
         if (highFrequencyOctaves > 0) {
-            var positiveOctaveSeed = (long) (zeroOctave.getValue(zeroOctave.xo, zeroOctave.yo, zeroOctave.zo) * 9.223372E18F);
+            var positiveOctaveSeed =
+                    (long)
+                            (zeroOctave.getValue(zeroOctave.xo, zeroOctave.yo, zeroOctave.zo)
+                                    * 9.223372E18F);
             var highFrequencyRandom = new LegacyRandomSource(positiveOctaveSeed);
 
             for (var index = zeroOctaveIndex - 1; index >= 0; index--) {
@@ -68,9 +71,11 @@ public final class PerlinSimplexNoise {
 
         for (var noiseLevel : this.noiseLevels) {
             if (noiseLevel != null) {
-                value += noiseLevel.getValue(
-                        x * inputFactor + (useNoiseOffsets ? noiseLevel.xo : 0.0),
-                        y * inputFactor + (useNoiseOffsets ? noiseLevel.yo : 0.0)) * valueFactor;
+                value +=
+                        noiseLevel.getValue(
+                                        x * inputFactor + (useNoiseOffsets ? noiseLevel.xo : 0.0),
+                                        y * inputFactor + (useNoiseOffsets ? noiseLevel.yo : 0.0))
+                                * valueFactor;
             }
 
             inputFactor /= 2.0;

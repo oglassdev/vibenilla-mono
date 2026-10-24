@@ -1,15 +1,13 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.List;
 import net.minestom.server.coordinate.BlockVec;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.List;
-
 /**
- * Mirror of vanilla's {@code net.minecraft.core.Direction}. Declaration order
- * matches vanilla so {@link #getRandom(RandomSource)} consumes the random in
- * the exact same way, and {@link #HORIZONTAL} matches
- * {@code Direction.Plane.HORIZONTAL} iteration order.
+ * Mirror of vanilla's {@code net.minecraft.core.Direction}. Declaration order matches vanilla so
+ * {@link #getRandom(RandomSource)} consumes the random in the exact same way, and {@link
+ * #HORIZONTAL} matches {@code Direction.Plane.HORIZONTAL} iteration order.
  */
 public enum Direction {
     DOWN(0, -1, 0),
@@ -20,8 +18,12 @@ public enum Direction {
     EAST(1, 0, 0);
 
     public static final List<Direction> HORIZONTAL = List.of(NORTH, EAST, SOUTH, WEST);
-    /** Vanilla {@code Direction.BY_2D_DATA}: horizontal directions sorted by legacy 2D data value. */
+
+    /**
+     * Vanilla {@code Direction.BY_2D_DATA}: horizontal directions sorted by legacy 2D data value.
+     */
     private static final List<Direction> BY_2D_DATA = List.of(SOUTH, WEST, NORTH, EAST);
+
     private static final Direction[] VALUES = values();
 
     private final int stepX;
@@ -84,7 +86,10 @@ public enum Direction {
         return valueOf(name.toUpperCase());
     }
 
-    /** Vanilla {@code Direction.getClockWise()}: Y-axis clockwise rotation of a horizontal direction. */
+    /**
+     * Vanilla {@code Direction.getClockWise()}: Y-axis clockwise rotation of a horizontal
+     * direction.
+     */
     public Direction getClockWise() {
         return switch (this) {
             case NORTH -> EAST;
@@ -95,7 +100,10 @@ public enum Direction {
         };
     }
 
-    /** Vanilla {@code Direction.getCounterClockWise()}: Y-axis counter-clockwise rotation of a horizontal direction. */
+    /**
+     * Vanilla {@code Direction.getCounterClockWise()}: Y-axis counter-clockwise rotation of a
+     * horizontal direction.
+     */
     public Direction getCounterClockWise() {
         return switch (this) {
             case NORTH -> WEST;
@@ -114,5 +122,6 @@ public enum Direction {
     }
 
     public static final net.minestom.server.codec.Codec<Direction> CODEC =
-            net.minestom.server.codec.Codec.STRING.transform(Direction::fromSerializedName, Direction::serializedName);
+            net.minestom.server.codec.Codec.STRING.transform(
+                    Direction::fromSerializedName, Direction::serializedName);
 }

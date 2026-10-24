@@ -1,17 +1,15 @@
 package rocks.minestom.worldgen.feature;
 
+import java.util.ArrayList;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.block.Block;
 import rocks.minestom.worldgen.feature.configurations.NoneFeatureConfiguration;
 import rocks.minestom.worldgen.random.RandomSource;
 
-import java.util.ArrayList;
-
 /**
- * Port of vanilla {@code BonusChestFeature}: places a chest with surrounding
- * torches at the first free position found while scanning a shuffled order of
- * the origin chunk's columns. Loot table assignment is out of scope for this
- * library; the chest is placed with no inventory contents.
+ * Port of vanilla {@code BonusChestFeature}: places a chest with surrounding torches at the first
+ * free position found while scanning a shuffled order of the origin chunk's columns. Loot table
+ * assignment is out of scope for this library; the chest is placed with no inventory contents.
  */
 public final class BonusChestFeature implements Feature<NoneFeatureConfiguration> {
 
@@ -21,7 +19,8 @@ public final class BonusChestFeature implements Feature<NoneFeatureConfiguration
     }
 
     @Override
-    public <T extends Block.Getter & Block.Setter> boolean place(FeaturePlaceContext<NoneFeatureConfiguration, T> context) {
+    public <T extends Block.Getter & Block.Setter> boolean place(
+            FeaturePlaceContext<NoneFeatureConfiguration, T> context) {
         var random = context.random();
         var level = context.accessor();
         var origin = context.origin();
@@ -56,9 +55,11 @@ public final class BonusChestFeature implements Feature<NoneFeatureConfiguration
         return false;
     }
 
-    private static <T extends Block.Getter> int motionBlockingNoLeavesHeight(T level, int x, int z) {
+    private static <T extends Block.Getter> int motionBlockingNoLeavesHeight(
+            T level, int x, int z) {
         if (level instanceof GenerationUnitAdapter adapter) {
-            return adapter.heightmap(GenerationUnitAdapter.HeightmapType.MOTION_BLOCKING_NO_LEAVES, x, z);
+            return adapter.heightmap(
+                    GenerationUnitAdapter.HeightmapType.MOTION_BLOCKING_NO_LEAVES, x, z);
         }
 
         if (level instanceof MotionBlockingNoLeaves motionBlockingNoLeaves) {
@@ -73,7 +74,8 @@ public final class BonusChestFeature implements Feature<NoneFeatureConfiguration
         return below.solid();
     }
 
-    private static ArrayList<Integer> shuffledRange(int minInclusive, int maxInclusive, RandomSource random) {
+    private static ArrayList<Integer> shuffledRange(
+            int minInclusive, int maxInclusive, RandomSource random) {
         var values = new ArrayList<Integer>();
         for (var value = minInclusive; value <= maxInclusive; value++) {
             values.add(value);

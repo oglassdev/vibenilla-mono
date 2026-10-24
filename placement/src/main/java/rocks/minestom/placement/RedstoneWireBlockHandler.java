@@ -9,9 +9,7 @@ public final class RedstoneWireBlockHandler implements BlockHandler {
     public static final RedstoneWireBlockHandler INSTANCE = new RedstoneWireBlockHandler();
     private static final Key KEY = Key.key("placement:redstone_wire");
 
-    private RedstoneWireBlockHandler() {
-
-    }
+    private RedstoneWireBlockHandler() {}
 
     @Override
     public Key getKey() {
@@ -38,8 +36,12 @@ public final class RedstoneWireBlockHandler implements BlockHandler {
 
         var position = interaction.getBlockPosition();
         var rule = new RedstoneWirePlacementRule(Block.REDSTONE_WIRE);
-        var updated = rule.withConnections(
-                block, interaction.getInstance(), position, RedstoneWirePlacementRule.isCross(block));
+        var updated =
+                rule.withConnections(
+                        block,
+                        interaction.getInstance(),
+                        position,
+                        RedstoneWirePlacementRule.isCross(block));
 
         if (updated.equals(block)) {
             return true;

@@ -15,18 +15,32 @@ public record CherryFoliagePlacer(
         float wideBottomLayerHoleChance,
         float cornerHoleChance,
         float hangingLeavesChance,
-        float hangingLeavesExtensionChance
-) implements FoliagePlacer {
-    public static final Codec<CherryFoliagePlacer> CODEC = StructCodec.struct(
-            "radius", Codec.INT, CherryFoliagePlacer::radius,
-            "offset", Codec.INT, CherryFoliagePlacer::offset,
-            "height", IntProvider.CODEC, CherryFoliagePlacer::height,
-            "wide_bottom_layer_hole_chance", Codec.FLOAT, CherryFoliagePlacer::wideBottomLayerHoleChance,
-            "corner_hole_chance", Codec.FLOAT, CherryFoliagePlacer::cornerHoleChance,
-            "hanging_leaves_chance", Codec.FLOAT, CherryFoliagePlacer::hangingLeavesChance,
-            "hanging_leaves_extension_chance", Codec.FLOAT, CherryFoliagePlacer::hangingLeavesExtensionChance,
-            CherryFoliagePlacer::new
-    );
+        float hangingLeavesExtensionChance)
+        implements FoliagePlacer {
+    public static final Codec<CherryFoliagePlacer> CODEC =
+            StructCodec.struct(
+                    "radius",
+                    Codec.INT,
+                    CherryFoliagePlacer::radius,
+                    "offset",
+                    Codec.INT,
+                    CherryFoliagePlacer::offset,
+                    "height",
+                    IntProvider.CODEC,
+                    CherryFoliagePlacer::height,
+                    "wide_bottom_layer_hole_chance",
+                    Codec.FLOAT,
+                    CherryFoliagePlacer::wideBottomLayerHoleChance,
+                    "corner_hole_chance",
+                    Codec.FLOAT,
+                    CherryFoliagePlacer::cornerHoleChance,
+                    "hanging_leaves_chance",
+                    Codec.FLOAT,
+                    CherryFoliagePlacer::hangingLeavesChance,
+                    "hanging_leaves_extension_chance",
+                    Codec.FLOAT,
+                    CherryFoliagePlacer::hangingLeavesExtensionChance,
+                    CherryFoliagePlacer::new);
 
     @Override
     public void createFoliage(
@@ -37,21 +51,39 @@ public record CherryFoliagePlacer(
             int maxFreeTreeHeight,
             FoliageAttachment attachment,
             int foliageHeight,
-            int foliageRadius
-    ) {
+            int foliageRadius) {
         var doubleTrunk = attachment.doubleTrunk();
         var center = attachment.pos().add(0, this.offset, 0);
         var radius = foliageRadius + attachment.radiusOffset() - 1;
 
-        this.placeLeavesRow(getter, foliageSetter, random, config, center, radius - 2, foliageHeight - 3, doubleTrunk);
-        this.placeLeavesRow(getter, foliageSetter, random, config, center, radius - 1, foliageHeight - 4, doubleTrunk);
+        this.placeLeavesRow(
+                getter,
+                foliageSetter,
+                random,
+                config,
+                center,
+                radius - 2,
+                foliageHeight - 3,
+                doubleTrunk);
+        this.placeLeavesRow(
+                getter,
+                foliageSetter,
+                random,
+                config,
+                center,
+                radius - 1,
+                foliageHeight - 4,
+                doubleTrunk);
 
         for (var layerY = foliageHeight - 5; layerY >= 0; layerY--) {
-            this.placeLeavesRow(getter, foliageSetter, random, config, center, radius, layerY, doubleTrunk);
+            this.placeLeavesRow(
+                    getter, foliageSetter, random, config, center, radius, layerY, doubleTrunk);
         }
 
-        this.placeLeavesRowWithHangingLeavesBelow(getter, foliageSetter, random, config, center, radius, -1, doubleTrunk);
-        this.placeLeavesRowWithHangingLeavesBelow(getter, foliageSetter, random, config, center, radius - 1, -2, doubleTrunk);
+        this.placeLeavesRowWithHangingLeavesBelow(
+                getter, foliageSetter, random, config, center, radius, -1, doubleTrunk);
+        this.placeLeavesRowWithHangingLeavesBelow(
+                getter, foliageSetter, random, config, center, radius - 1, -2, doubleTrunk);
     }
 
     @Override
@@ -72,8 +104,7 @@ public record CherryFoliagePlacer(
             BlockVec center,
             int radius,
             int yOffset,
-            boolean doubleTrunk
-    ) {
+            boolean doubleTrunk) {
         this.placeLeavesRow(getter, setter, random, config, center, radius, yOffset, doubleTrunk);
 
         for (var x = -radius; x <= radius; x++) {
@@ -83,7 +114,8 @@ public record CherryFoliagePlacer(
                     if (random.nextFloat() < this.hangingLeavesChance) {
                         FoliagePlacer.tryPlaceLeaf(getter, setter, random, config, below);
                         if (random.nextFloat() < this.hangingLeavesExtensionChance) {
-                            FoliagePlacer.tryPlaceLeaf(getter, setter, random, config, below.sub(0, 1, 0));
+                            FoliagePlacer.tryPlaceLeaf(
+                                    getter, setter, random, config, below.sub(0, 1, 0));
                         }
                     }
                 }
@@ -99,14 +131,17 @@ public record CherryFoliagePlacer(
             BlockVec center,
             int radius,
             int yOffset,
-            boolean doubleTrunk
-    ) {
+            boolean doubleTrunk) {
         var widthOffset = doubleTrunk ? 1 : 0;
 
         for (var x = -radius; x <= radius + widthOffset; x++) {
             for (var z = -radius; z <= radius + widthOffset; z++) {
                 if (!this.shouldSkipLocationSigned(random, x, yOffset, z, radius)) {
-                    var position = new BlockVec(center.blockX() + x, center.blockY() + yOffset, center.blockZ() + z);
+                    var position =
+                            new BlockVec(
+                                    center.blockX() + x,
+                                    center.blockY() + yOffset,
+                                    center.blockZ() + z);
                     FoliagePlacer.tryPlaceLeaf(getter, setter, random, config, position);
                 }
             }
@@ -117,14 +152,17 @@ public record CherryFoliagePlacer(
         var absX = Math.abs(x);
         var absZ = Math.abs(z);
 
-        if (y == -1 && (absX == radius || absZ == radius) && random.nextFloat() < this.wideBottomLayerHoleChance) {
+        if (y == -1
+                && (absX == radius || absZ == radius)
+                && random.nextFloat() < this.wideBottomLayerHoleChance) {
             return true;
         }
 
         var isCorner = absX == radius && absZ == radius;
         var wide = radius > 2;
         if (wide) {
-            return isCorner || absX + absZ > radius * 2 - 2 && random.nextFloat() < this.cornerHoleChance;
+            return isCorner
+                    || absX + absZ > radius * 2 - 2 && random.nextFloat() < this.cornerHoleChance;
         }
 
         return isCorner && random.nextFloat() < this.cornerHoleChance;

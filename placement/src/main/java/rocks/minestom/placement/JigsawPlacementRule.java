@@ -1,10 +1,9 @@
 package rocks.minestom.placement;
 
+import java.util.Objects;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
-
-import java.util.Objects;
 
 public final class JigsawPlacementRule extends BlockPlacementRule {
     public JigsawPlacementRule(Block block) {
@@ -16,9 +15,13 @@ public final class JigsawPlacementRule extends BlockPlacementRule {
         var front = Objects.requireNonNullElse(placementState.blockFace(), BlockFace.TOP);
         var playerPosition = placementState.playerPosition();
         var yaw = playerPosition == null ? 0.0F : playerPosition.yaw();
-        var top = front.toDirection().vertical() ? BlockFace.fromYaw(yaw).getOppositeFace() : BlockFace.TOP;
+        var top =
+                front.toDirection().vertical()
+                        ? BlockFace.fromYaw(yaw).getOppositeFace()
+                        : BlockFace.TOP;
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withHandler(GameMasterInteractionBlockHandler.INSTANCE)
                 .withProperty("orientation", orientationName(front) + "_" + orientationName(top));
     }

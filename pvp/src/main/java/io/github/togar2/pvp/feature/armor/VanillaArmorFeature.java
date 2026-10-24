@@ -12,18 +12,17 @@ import net.minestom.server.entity.attribute.Attribute;
 import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.item.enchant.EffectComponent;
 import net.minestom.server.potion.PotionEffect;
-import net.minestom.server.potion.TimedPotion;
 import net.minestom.server.registry.RegistryKey;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Vanilla implementation of {@link ArmorFeature}
- */
+/** Vanilla implementation of {@link ArmorFeature} */
 public class VanillaArmorFeature implements ArmorFeature {
-    public static final DefinedFeature<VanillaArmorFeature> DEFINED = new DefinedFeature<>(
-            FeatureType.ARMOR, VanillaArmorFeature::new,
-            FeatureType.ENCHANTMENT, FeatureType.VERSION
-    );
+    public static final DefinedFeature<VanillaArmorFeature> DEFINED =
+            new DefinedFeature<>(
+                    FeatureType.ARMOR,
+                    VanillaArmorFeature::new,
+                    FeatureType.ENCHANTMENT,
+                    FeatureType.VERSION);
 
     private final FeatureConfiguration configuration;
     private EnchantmentFeature enchantmentFeature;
@@ -45,15 +44,20 @@ public class VanillaArmorFeature implements ArmorFeature {
     }
 
     @Override
-    public float getDamageWithProtection(LivingEntity entity, DamageType type, float amount, @Nullable LivingEntity attacker) {
+    public float getDamageWithProtection(
+            LivingEntity entity, DamageType type, float amount, @Nullable LivingEntity attacker) {
         var damageType = MinecraftServer.getDamageTypeRegistry().getKey(type);
         var info = DamageTypeInfo.of(damageType);
         amount = this.getDamageWithArmor(entity, info, amount, damageType, attacker);
         return this.getDamageWithEnchantments(entity, type, amount);
     }
 
-    protected float getDamageWithArmor(LivingEntity entity, DamageTypeInfo typeInfo, float amount,
-                                       RegistryKey<DamageType> damageType, @Nullable LivingEntity attacker) {
+    protected float getDamageWithArmor(
+            LivingEntity entity,
+            DamageTypeInfo typeInfo,
+            float amount,
+            RegistryKey<DamageType> damageType,
+            @Nullable LivingEntity attacker) {
         if (typeInfo.bypassesArmor()) return amount;
 
         var armorValue = entity.getAttributeValue(Attribute.ARMOR);
@@ -63,15 +67,21 @@ public class VanillaArmorFeature implements ArmorFeature {
             return (amount * (float) armorMultiplier) / 25;
         }
 
-        var fraction = this.getArmorFraction(
-                amount, (float) Math.floor(armorValue),
-                (float) entity.getAttributeValue(Attribute.ARMOR_TOUGHNESS)
-        );
+        var fraction =
+                this.getArmorFraction(
+                        amount,
+                        (float) Math.floor(armorValue),
+                        (float) entity.getAttributeValue(Attribute.ARMOR_TOUGHNESS));
 
         if (attacker != null && this.isWeaponDamage(damageType)) {
-            fraction = Math.clamp(this.enchantmentFeature.modifyConditionalValue(
-                    attacker.getItemInMainHand(), EffectComponent.ARMOR_EFFECTIVENESS, fraction
-            ), 0.0F, 1.0F);
+            fraction =
+                    Math.clamp(
+                            this.enchantmentFeature.modifyConditionalValue(
+                                    attacker.getItemInMainHand(),
+                                    EffectComponent.ARMOR_EFFECTIVENESS,
+                                    fraction),
+                            0.0F,
+                            1.0F);
         }
 
         return amount * (1.0F - fraction);
@@ -85,8 +95,10 @@ public class VanillaArmorFeature implements ArmorFeature {
                 || damageType.equals(DamageType.SPEAR);
     }
 
-    protected float getDamageWithEnchantments(LivingEntity entity, DamageType damageType, float amount) {
-        var damageTypeInfo = DamageTypeInfo.of(MinecraftServer.getDamageTypeRegistry().getKey(damageType));
+    protected float getDamageWithEnchantments(
+            LivingEntity entity, DamageType damageType, float amount) {
+        var damageTypeInfo =
+                DamageTypeInfo.of(MinecraftServer.getDamageTypeRegistry().getKey(damageType));
         if (damageTypeInfo.unblockable()) return amount;
 
         int protectionAmount;
@@ -106,7 +118,9 @@ public class VanillaArmorFeature implements ArmorFeature {
             protectionAmount = this.enchantmentFeature.getProtectionAmount(entity, damageType);
             if (this.version.modern()) {
                 if (protectionAmount > 0) {
-                    amount = this.getDamageAfterProtectionEnchantment(amount, (float) protectionAmount);
+                    amount =
+                            this.getDamageAfterProtectionEnchantment(
+                                    amount, (float) protectionAmount);
                 }
             } else {
                 if (protectionAmount > 20) {

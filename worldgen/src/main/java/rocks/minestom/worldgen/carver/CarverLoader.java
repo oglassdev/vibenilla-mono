@@ -2,13 +2,6 @@ package rocks.minestom.worldgen.carver;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import net.kyori.adventure.key.Key;
-import net.minestom.server.codec.Transcoder;
-import rocks.minestom.worldgen.datapack.DataPack;
-import rocks.minestom.worldgen.feature.valueproviders.FloatProvider;
-import rocks.minestom.worldgen.structure.context.BlockTagManager;
-import rocks.minestom.worldgen.surface.VerticalAnchor;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -16,10 +9,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import net.kyori.adventure.key.Key;
+import net.minestom.server.codec.Transcoder;
+import rocks.minestom.worldgen.datapack.DataPack;
+import rocks.minestom.worldgen.feature.valueproviders.FloatProvider;
+import rocks.minestom.worldgen.structure.context.BlockTagManager;
+import rocks.minestom.worldgen.surface.VerticalAnchor;
 
 /**
- * Loads configured carvers and per-biome carver lists from the datapack,
- * mirroring {@link rocks.minestom.worldgen.feature.FeatureLoader}'s caching.
+ * Loads configured carvers and per-biome carver lists from the datapack, mirroring {@link
+ * rocks.minestom.worldgen.feature.FeatureLoader}'s caching.
  */
 public final class CarverLoader {
     private static final CaveWorldCarver CAVE = new CaveWorldCarver();
@@ -39,8 +38,7 @@ public final class CarverLoader {
     }
 
     /**
-     * The biome's configured carver ids, in datapack order (order defines the
-     * carver seed index).
+     * The biome's configured carver ids, in datapack order (order defines the carver seed index).
      */
     public List<Key> biomeCarvers(Key biomeId) {
         return this.biomeCarverCache.computeIfAbsent(biomeId, this::loadBiomeCarvers);
@@ -93,12 +91,16 @@ public final class CarverLoader {
             var type = Key.key(json.get("type").getAsString()).asString();
             var config = json.getAsJsonObject("config");
             var base = this.parseBase(config);
-            return Optional.ofNullable(switch (type) {
-                case "minecraft:cave" -> new ConfiguredCarver<>(CAVE, parseCaveConfig(base, config));
-                case "minecraft:nether_cave" -> new ConfiguredCarver<>(NETHER_CAVE, parseCaveConfig(base, config));
-                case "minecraft:canyon" -> new ConfiguredCarver<>(CANYON, parseCanyonConfig(base, config));
-                default -> null;
-            });
+            return Optional.ofNullable(
+                    switch (type) {
+                        case "minecraft:cave" ->
+                                new ConfiguredCarver<>(CAVE, parseCaveConfig(base, config));
+                        case "minecraft:nether_cave" ->
+                                new ConfiguredCarver<>(NETHER_CAVE, parseCaveConfig(base, config));
+                        case "minecraft:canyon" ->
+                                new ConfiguredCarver<>(CANYON, parseCanyonConfig(base, config));
+                        default -> null;
+                    });
         } catch (Exception exception) {
             return Optional.empty();
         }
@@ -109,12 +111,14 @@ public final class CarverLoader {
                 config.get("probability").getAsFloat(),
                 CarverHeightProvider.fromJson(config.get("y")),
                 FloatProvider.fromJson(config.get("yScale")),
-                VerticalAnchor.CODEC.decode(Transcoder.JSON, config.get("lava_level")).orElseThrow(),
+                VerticalAnchor.CODEC
+                        .decode(Transcoder.JSON, config.get("lava_level"))
+                        .orElseThrow(),
                 this.parseReplaceable(config.get("replaceable")));
     }
 
-    private static CaveCarverConfiguration parseCaveConfig(CarverConfiguration base,
-            com.google.gson.JsonObject config) {
+    private static CaveCarverConfiguration parseCaveConfig(
+            CarverConfiguration base, com.google.gson.JsonObject config) {
         return new CaveCarverConfiguration(
                 base,
                 FloatProvider.fromJson(config.get("horizontal_radius_multiplier")),
@@ -122,8 +126,8 @@ public final class CarverLoader {
                 FloatProvider.fromJson(config.get("floor_level")));
     }
 
-    private static CanyonCarverConfiguration parseCanyonConfig(CarverConfiguration base,
-            com.google.gson.JsonObject config) {
+    private static CanyonCarverConfiguration parseCanyonConfig(
+            CarverConfiguration base, com.google.gson.JsonObject config) {
         var shape = config.getAsJsonObject("shape");
         return new CanyonCarverConfiguration(
                 base,

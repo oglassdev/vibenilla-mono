@@ -7,7 +7,8 @@ import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
 
 public final class LeavesPlacementRule extends BlockPlacementRule {
-    private static final Key PREVENTS_NEARBY_LEAF_DECAY = Key.key("minecraft:prevents_nearby_leaf_decay");
+    private static final Key PREVENTS_NEARBY_LEAF_DECAY =
+            Key.key("minecraft:prevents_nearby_leaf_decay");
 
     public LeavesPlacementRule(Block block) {
         super(block);
@@ -19,16 +20,23 @@ public final class LeavesPlacementRule extends BlockPlacementRule {
         var replaced = placementState.instance().getBlock(placePosition);
         var waterlogged = replaced.compare(Block.WATER);
 
-        return placementState.block()
+        return placementState
+                .block()
                 .withProperty("persistent", "true")
                 .withProperty("waterlogged", String.valueOf(waterlogged))
-                .withProperty("distance", String.valueOf(distanceAt(placementState.instance(), placePosition)));
+                .withProperty(
+                        "distance",
+                        String.valueOf(distanceAt(placementState.instance(), placePosition)));
     }
 
     @Override
     public Block blockUpdate(UpdateState updateState) {
-        return updateState.currentBlock().withProperty(
-                "distance", String.valueOf(distanceAt(updateState.instance(), updateState.blockPosition())));
+        return updateState
+                .currentBlock()
+                .withProperty(
+                        "distance",
+                        String.valueOf(
+                                distanceAt(updateState.instance(), updateState.blockPosition())));
     }
 
     private static int distanceAt(Block.Getter blockGetter, Point position) {

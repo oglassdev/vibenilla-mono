@@ -22,17 +22,19 @@ public final class NoiseGeneratorSettingsLoader {
 
         var randomState = new RandomState(this.dataPack, seed, settings.legacyRandomSource());
         var densityResolver = new DensityFunctionResolver(this.dataPack, randomState);
-        var finalDensityJson = settings.noiseRouter().finalDensity().convertTo(Transcoder.JSON).orElseThrow();
-        var finalDensity = densityResolver.codec().decode(Transcoder.JSON, finalDensityJson).orElseThrow();
+        var finalDensityJson =
+                settings.noiseRouter().finalDensity().convertTo(Transcoder.JSON).orElseThrow();
+        var finalDensity =
+                densityResolver.codec().decode(Transcoder.JSON, finalDensityJson).orElseThrow();
 
-        var climateSampler = new ClimateSampler(
-                decodeDensity(densityResolver, settings.noiseRouter().temperature()),
-                decodeDensity(densityResolver, settings.noiseRouter().vegetation()),
-                decodeDensity(densityResolver, settings.noiseRouter().continents()),
-                decodeDensity(densityResolver, settings.noiseRouter().erosion()),
-                decodeDensity(densityResolver, settings.noiseRouter().depth()),
-                decodeDensity(densityResolver, settings.noiseRouter().ridges())
-        );
+        var climateSampler =
+                new ClimateSampler(
+                        decodeDensity(densityResolver, settings.noiseRouter().temperature()),
+                        decodeDensity(densityResolver, settings.noiseRouter().vegetation()),
+                        decodeDensity(densityResolver, settings.noiseRouter().continents()),
+                        decodeDensity(densityResolver, settings.noiseRouter().erosion()),
+                        decodeDensity(densityResolver, settings.noiseRouter().depth()),
+                        decodeDensity(densityResolver, settings.noiseRouter().ridges()));
 
         var surfaceRuleJson = settings.surfaceRule().convertTo(Transcoder.JSON).orElseThrow();
         var surfaceRule = SurfaceRules.CODEC.decode(Transcoder.JSON, surfaceRuleJson).orElseThrow();
@@ -44,7 +46,8 @@ public final class NoiseGeneratorSettingsLoader {
         var seaLevel = settings.seaLevel();
         var defaultBlock = settings.defaultBlock();
         var defaultFluid = settings.defaultFluid();
-        var surfaceSystem = new SurfaceSystem(randomState, defaultBlock, seaLevel, randomState.random());
+        var surfaceSystem =
+                new SurfaceSystem(randomState, defaultBlock, seaLevel, randomState.random());
 
         return new NoiseGeneratorSettingsRuntime(
                 minY,
@@ -68,11 +71,11 @@ public final class NoiseGeneratorSettingsLoader {
                 climateSampler,
                 randomState,
                 surfaceSystem,
-                surfaceRule
-        );
+                surfaceRule);
     }
 
-    private static DensityFunction decodeDensity(DensityFunctionResolver resolver, Codec.RawValue value) {
+    private static DensityFunction decodeDensity(
+            DensityFunctionResolver resolver, Codec.RawValue value) {
         var json = value.convertTo(Transcoder.JSON).orElseThrow();
         return resolver.codec().decode(Transcoder.JSON, json).orElseThrow();
     }

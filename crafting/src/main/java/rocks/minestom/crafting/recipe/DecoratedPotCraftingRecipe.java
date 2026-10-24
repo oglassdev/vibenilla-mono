@@ -14,7 +14,9 @@ public final class DecoratedPotCraftingRecipe implements CraftingRecipe {
     private final Ingredient shardIngredient;
 
     public DecoratedPotCraftingRecipe(ItemTagManager tagManager) {
-        this.shardIngredient = Ingredient.ofTag(tagManager.materials(Key.key("minecraft:decorated_pot_ingredients")));
+        this.shardIngredient =
+                Ingredient.ofTag(
+                        tagManager.materials(Key.key("minecraft:decorated_pot_ingredients")));
     }
 
     @Override
@@ -32,15 +34,19 @@ public final class DecoratedPotCraftingRecipe implements CraftingRecipe {
         var rightShardSlot = craftingGrid.slot(2, 1);
         var frontShardSlot = craftingGrid.slot(1, 2);
 
-        if (!this.matchesShard(backShardSlot.item()) || !this.matchesShard(leftShardSlot.item()) || !this.matchesShard(rightShardSlot.item()) || !this.matchesShard(frontShardSlot.item())) {
+        if (!this.matchesShard(backShardSlot.item())
+                || !this.matchesShard(leftShardSlot.item())
+                || !this.matchesShard(rightShardSlot.item())
+                || !this.matchesShard(frontShardSlot.item())) {
             return null;
         }
 
-        var decorations = new PotDecorations(
-                backShardSlot.item(),
-                leftShardSlot.item(),
-                rightShardSlot.item(),
-                frontShardSlot.item());
+        var decorations =
+                new PotDecorations(
+                        backShardSlot.item(),
+                        leftShardSlot.item(),
+                        rightShardSlot.item(),
+                        frontShardSlot.item());
 
         var usage = new Int2IntOpenHashMap();
         usage.defaultReturnValue(0);
@@ -51,8 +57,10 @@ public final class DecoratedPotCraftingRecipe implements CraftingRecipe {
 
         return new CraftingRecipeMatch(
                 this,
-                ItemStack.of(Material.DECORATED_POT).with(DataComponents.POT_DECORATIONS, decorations),
-                usage, craftingGrid);
+                ItemStack.of(Material.DECORATED_POT)
+                        .with(DataComponents.POT_DECORATIONS, decorations),
+                usage,
+                craftingGrid);
     }
 
     private boolean matchesShard(ItemStack shardCandidate) {

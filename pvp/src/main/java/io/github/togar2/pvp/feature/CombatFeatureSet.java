@@ -6,7 +6,8 @@ import net.minestom.server.event.EventNode;
 import net.minestom.server.event.trait.EntityInstanceEvent;
 
 /**
- * A container for multiple {@link CombatFeature}s. Use {@link CombatFeatureSet#createNode()} to get an event node.
+ * A container for multiple {@link CombatFeature}s. Use {@link CombatFeatureSet#createNode()} to get
+ * an event node.
  */
 public class CombatFeatureSet extends FeatureConfiguration implements RegistrableFeature {
     private boolean initialized = false;
@@ -35,7 +36,8 @@ public class CombatFeatureSet extends FeatureConfiguration implements Registrabl
 
     @Override
     public FeatureConfiguration add(FeatureType<?> type, CombatFeature feature) {
-        if (this.initialized) throw new UnsupportedOperationException("Cannot add features after initialization");
+        if (this.initialized)
+            throw new UnsupportedOperationException("Cannot add features after initialization");
         return super.add(type, feature);
     }
 }

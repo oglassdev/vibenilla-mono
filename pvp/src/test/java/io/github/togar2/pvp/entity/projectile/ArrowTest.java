@@ -1,5 +1,8 @@
 package io.github.togar2.pvp.entity.projectile;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.github.togar2.pvp.enchantment.CombatEnchantments;
 import io.github.togar2.pvp.feature.CombatFeatures;
 import io.github.togar2.pvp.feature.FeatureType;
@@ -15,18 +18,16 @@ import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 @EnvTest
 public final class ArrowTest {
     @Test
     public void piercingArrowHitsSeveralTargetsInOneTick(Env env) {
         CombatEnchantments.registerAll();
-        var featureSet = CombatFeatures.empty()
-                .add(CombatFeatures.VANILLA_ENCHANTMENT)
-                .add(CombatFeatures.VANILLA_EFFECT)
-                .build();
+        var featureSet =
+                CombatFeatures.empty()
+                        .add(CombatFeatures.VANILLA_ENCHANTMENT)
+                        .add(CombatFeatures.VANILLA_EFFECT)
+                        .build();
 
         var instance = env.createFlatInstance();
         var first = new LivingEntity(EntityType.ZOMBIE);
@@ -36,7 +37,11 @@ public final class ArrowTest {
         second.setInstance(instance, new Pos(8.0, 40.0, 8.5)).join();
         second.setHealth(20.0F);
 
-        var arrow = new Arrow(null, featureSet.get(FeatureType.EFFECT), featureSet.get(FeatureType.ENCHANTMENT));
+        var arrow =
+                new Arrow(
+                        null,
+                        featureSet.get(FeatureType.EFFECT),
+                        featureSet.get(FeatureType.ENCHANTMENT));
         arrow.setPiercingLevel((byte) 1);
         arrow.setInstance(instance, new Pos(8.0, 41.0, 6.0)).join();
         arrow.setVelocity(new Vec(0.0, 0.0, 3.0 * ServerFlag.SERVER_TICKS_PER_SECOND));
@@ -50,16 +55,22 @@ public final class ArrowTest {
     @Test
     public void arrowKeepsItsHeadingAcrossTheYawWrap(Env environment) {
         CombatEnchantments.registerAll();
-        var featureSet = CombatFeatures.empty()
-                .add(CombatFeatures.VANILLA_ENCHANTMENT)
-                .add(CombatFeatures.VANILLA_EFFECT)
-                .build();
+        var featureSet =
+                CombatFeatures.empty()
+                        .add(CombatFeatures.VANILLA_ENCHANTMENT)
+                        .add(CombatFeatures.VANILLA_EFFECT)
+                        .build();
 
         var instance = environment.createFlatInstance();
-        var arrow = new Arrow(null, featureSet.get(FeatureType.EFFECT), featureSet.get(FeatureType.ENCHANTMENT));
+        var arrow =
+                new Arrow(
+                        null,
+                        featureSet.get(FeatureType.EFFECT),
+                        featureSet.get(FeatureType.ENCHANTMENT));
         arrow.setInstance(instance, new Pos(8.0, 60.0, 8.0)).join();
         arrow.shootFromRotation(0.0F, 180.0F, 0.0F, 3.0, 0.0);
-        arrow.setVelocity(arrow.getVelocity().add(0.3 * ServerFlag.SERVER_TICKS_PER_SECOND, 0.0, 0.0));
+        arrow.setVelocity(
+                arrow.getVelocity().add(0.3 * ServerFlag.SERVER_TICKS_PER_SECOND, 0.0, 0.0));
 
         for (var tick = 0; tick < 6; tick++) {
             environment.tick();
@@ -71,10 +82,11 @@ public final class ArrowTest {
     @Test
     public void stuckArrowPoseIsSentEvenWhenASyncIsDue(Env environment) {
         CombatEnchantments.registerAll();
-        var featureSet = CombatFeatures.empty()
-                .add(CombatFeatures.VANILLA_ENCHANTMENT)
-                .add(CombatFeatures.VANILLA_EFFECT)
-                .build();
+        var featureSet =
+                CombatFeatures.empty()
+                        .add(CombatFeatures.VANILLA_ENCHANTMENT)
+                        .add(CombatFeatures.VANILLA_EFFECT)
+                        .build();
 
         var instance = environment.createFlatInstance();
         var connection = environment.createConnection();
@@ -86,7 +98,11 @@ public final class ArrowTest {
             }
         }
 
-        var arrow = new Arrow(null, featureSet.get(FeatureType.EFFECT), featureSet.get(FeatureType.ENCHANTMENT));
+        var arrow =
+                new Arrow(
+                        null,
+                        featureSet.get(FeatureType.EFFECT),
+                        featureSet.get(FeatureType.ENCHANTMENT));
         arrow.setInstance(instance, new Pos(8.5, 41.7, 3.5)).join();
         arrow.shootFromRotation(0.0F, 180.0F, 0.0F, 3.0, 0.0);
         var teleports = connection.trackIncoming(EntityTeleportPacket.class);
@@ -95,21 +111,27 @@ public final class ArrowTest {
         environment.tick();
 
         assertTrue(arrow.isStuck());
-        var pose = teleports.collect().stream()
-                .filter(packet -> packet.entityId() == arrow.getEntityId())
-                .reduce((firstPacket, secondPacket) -> secondPacket)
-                .orElseThrow(() -> new AssertionError("no teleport for the stuck arrow"));
-        assertTrue(Math.abs(pose.position().z() - arrow.getPosition().z()) < 1.0E-6, "position " + pose.position());
-        assertTrue(Math.abs(Math.abs(pose.position().yaw()) - 180.0F) < 2.0F, "yaw " + pose.position().yaw());
+        var pose =
+                teleports.collect().stream()
+                        .filter(packet -> packet.entityId() == arrow.getEntityId())
+                        .reduce((firstPacket, secondPacket) -> secondPacket)
+                        .orElseThrow(() -> new AssertionError("no teleport for the stuck arrow"));
+        assertTrue(
+                Math.abs(pose.position().z() - arrow.getPosition().z()) < 1.0E-6,
+                "position " + pose.position());
+        assertTrue(
+                Math.abs(Math.abs(pose.position().yaw()) - 180.0F) < 2.0F,
+                "yaw " + pose.position().yaw());
     }
 
     @Test
     public void farBlockHitSendsNoRelativeMoveAfterTheTeleport(Env environment) {
         CombatEnchantments.registerAll();
-        var featureSet = CombatFeatures.empty()
-                .add(CombatFeatures.VANILLA_ENCHANTMENT)
-                .add(CombatFeatures.VANILLA_EFFECT)
-                .build();
+        var featureSet =
+                CombatFeatures.empty()
+                        .add(CombatFeatures.VANILLA_ENCHANTMENT)
+                        .add(CombatFeatures.VANILLA_EFFECT)
+                        .build();
 
         var instance = environment.createFlatInstance();
         var connection = environment.createConnection();
@@ -121,7 +143,11 @@ public final class ArrowTest {
             }
         }
 
-        var arrow = new Arrow(null, featureSet.get(FeatureType.EFFECT), featureSet.get(FeatureType.ENCHANTMENT));
+        var arrow =
+                new Arrow(
+                        null,
+                        featureSet.get(FeatureType.EFFECT),
+                        featureSet.get(FeatureType.ENCHANTMENT));
         arrow.setInstance(instance, new Pos(8.5, 42.0, 3.5)).join();
         arrow.addViewer(viewer);
         arrow.shootFromRotation(0.0F, 0.0F, 0.0F, 3.0, 0.0);
@@ -134,7 +160,11 @@ public final class ArrowTest {
         }
 
         assertTrue(arrow.isStuck());
-        assertTrue(teleports.collect().stream().anyMatch(packet -> packet.entityId() == arrow.getEntityId()));
-        assertFalse(moves.collect().stream().anyMatch(packet -> packet.entityId() == arrow.getEntityId()));
+        assertTrue(
+                teleports.collect().stream()
+                        .anyMatch(packet -> packet.entityId() == arrow.getEntityId()));
+        assertFalse(
+                moves.collect().stream()
+                        .anyMatch(packet -> packet.entityId() == arrow.getEntityId()));
     }
 }
