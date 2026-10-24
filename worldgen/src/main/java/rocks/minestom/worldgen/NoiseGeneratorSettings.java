@@ -6,19 +6,18 @@ import net.minestom.server.instance.block.Block;
 
 /**
  * Defines the per-dimension knobs that establish the overall terrain character. This ties together
- * the terrain noise layout, base blocks and fluids, sea level, and surface rules so the dimension
+ * the terrain noise layout, base blocks and fluids, sea level, and material rules so the dimension
  * has a consistent identity.
  */
 public record NoiseGeneratorSettings(
         boolean legacyRandomSource,
         NoiseSettings noise,
         int seaLevel,
-        boolean aquifersEnabled,
-        boolean oreVeinsEnabled,
+        AquiferSettings aquifers,
         Block defaultBlock,
         Block defaultFluid,
         NoiseRouter noiseRouter,
-        Codec.RawValue surfaceRule) {
+        Codec.RawValue materialRule) {
     public static final Codec<NoiseGeneratorSettings> CODEC =
             StructCodec.struct(
                     "legacy_random_source",
@@ -30,12 +29,9 @@ public record NoiseGeneratorSettings(
                     "sea_level",
                     Codec.INT,
                     NoiseGeneratorSettings::seaLevel,
-                    "aquifers_enabled",
-                    Codec.BOOLEAN,
-                    NoiseGeneratorSettings::aquifersEnabled,
-                    "ore_veins_enabled",
-                    Codec.BOOLEAN,
-                    NoiseGeneratorSettings::oreVeinsEnabled,
+                    "aquifers",
+                    AquiferSettings.CODEC.optional(),
+                    NoiseGeneratorSettings::aquifers,
                     "default_block",
                     BlockCodec.CODEC,
                     NoiseGeneratorSettings::defaultBlock,
@@ -45,8 +41,8 @@ public record NoiseGeneratorSettings(
                     "noise_router",
                     NoiseRouter.CODEC,
                     NoiseGeneratorSettings::noiseRouter,
-                    "surface_rule",
+                    "material_rule",
                     Codec.RAW_VALUE,
-                    NoiseGeneratorSettings::surfaceRule,
+                    NoiseGeneratorSettings::materialRule,
                     NoiseGeneratorSettings::new);
 }

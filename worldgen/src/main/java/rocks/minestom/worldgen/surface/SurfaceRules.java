@@ -1,6 +1,10 @@
 package rocks.minestom.worldgen.surface;
 
+import com.google.gson.JsonElement;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.Result;
@@ -12,6 +16,8 @@ import rocks.minestom.worldgen.RandomState;
 import rocks.minestom.worldgen.VMath;
 import rocks.minestom.worldgen.biome.BiomeClimate;
 import rocks.minestom.worldgen.biome.BiomeZoomer;
+import rocks.minestom.worldgen.datapack.DataPack;
+import rocks.minestom.worldgen.density.ChunkContext;
 import rocks.minestom.worldgen.density.DensityFunction;
 
 /**
@@ -22,8 +28,6 @@ import rocks.minestom.worldgen.density.DensityFunction;
 public final class SurfaceRules {
     private SurfaceRules() {}
 
-    public static final Codec<RuleSource> CODEC = createRuleCodec();
-
     public static Block constantBlock(RuleSource rule) {
         if (rule instanceof BlockRuleSource(var block)) {
             return block;
@@ -31,50 +35,127 @@ public final class SurfaceRules {
         return null;
     }
 
-    private static Codec<RuleSource> createRuleCodec() {
-        return Codec.Recursive(
-                self -> {
-                    var conditionCodec = createConditionCodec();
-
-                    var unionCodec =
-                            Codec.KEY.<RuleSource>unionType(
-                                    "type",
-                                    type -> structForRule(type, self, conditionCodec),
-                                    rule -> {
-                                        throw new UnsupportedOperationException(
-                                                "Encoding is not supported");
-                                    });
-
-                    return new Codec<>() {
-                        @Override
-                        public <D> Result<RuleSource> decode(Transcoder<D> coder, D value) {
-                            return unionCodec.decode(coder, value);
-                        }
-
-                        @Override
-                        public <D> Result<D> encode(Transcoder<D> coder, RuleSource value) {
-                            throw new UnsupportedOperationException("Encoding is not supported");
-                        }
-                    };
-                });
-    }
-
-    private static Codec<ConditionSource> createConditionCodec() {
+    /**
+     * Rule codec that also resolves named rule and condition references from the {@code
+     * material_rule} and {@code material_condition} datapack directories.
+     */
+    public static Codec<RuleSource> codec(DataPack dataPack, Codec<DensityFunction> densityCodec) {
+        var ruleReferences = new ConcurrentHashMap<Key, RuleSource>();
+        var conditionReferences = new ConcurrentHashMap<Key, ConditionSource>();
+        Codec<ConditionSource> conditionCodec =
+                Codec.Recursive(
+                        self ->
+                                referenceCodec(
+                                        Codec.KEY.<ConditionSource>unionType(
+                                                "type",
+                                                type -> structForCondition(type, self),
+                                                condition -> {
+                                                    throw new UnsupportedOperationException(
+                                                            "Encoding is not supported");
+                                                }),
+                                        conditionReferences,
+                                        dataPack::readMaterialCondition));
         return Codec.Recursive(
                 self ->
-                        Codec.KEY.<ConditionSource>unionType(
-                                "type",
-                                type -> structForCondition(type, self),
-                                condition -> {
-                                    throw new UnsupportedOperationException(
-                                            "Encoding is not supported");
-                                }));
+                        referenceCodec(
+                                Codec.KEY.<RuleSource>unionType(
+                                        "type",
+                                        type ->
+                                                structForRule(
+                                                        type, self, conditionCodec, densityCodec),
+                                        rule -> {
+                                            throw new UnsupportedOperationException(
+                                                    "Encoding is not supported");
+                                        }),
+                                ruleReferences,
+                                dataPack::readMaterialRule));
+    }
+
+    /**
+     * Wraps a typed-object codec so a plain string value loads the named definition through {@code
+     * reader} with the same codec.
+     */
+    private static <T> Codec<T> referenceCodec(
+            Codec<T> direct, Map<Key, T> cache, Function<Key, JsonElement> reader) {
+        return new Codec<>() {
+            private final Codec<T> self = this;
+
+            @Override
+            public <D> Result<T> decode(Transcoder<D> coder, D value) {
+                if (coder.getString(value) instanceof Result.Ok<String>(var name)) {
+                    var key = Key.key(name);
+                    var cached = cache.get(key);
+                    if (cached != null) {
+                        return new Result.Ok<>(cached);
+                    }
+                    var loaded = self.decode(Transcoder.JSON, reader.apply(key));
+                    if (loaded instanceof Result.Ok<T>(var definition)) {
+                        cache.put(key, definition);
+                    }
+                    return loaded;
+                }
+                return direct.decode(coder, value);
+            }
+
+            @Override
+            public <D> Result<D> encode(Transcoder<D> coder, T value) {
+                throw new UnsupportedOperationException("Encoding is not supported");
+            }
+        };
     }
 
     private static StructCodec<? extends RuleSource> structForRule(
-            Key type, Codec<RuleSource> self, Codec<ConditionSource> conditionCodec) {
+            Key type,
+            Codec<RuleSource> self,
+            Codec<ConditionSource> conditionCodec,
+            Codec<DensityFunction> densityCodec) {
         return switch (type.asString()) {
             case "minecraft:bandlands" -> StructCodec.struct(Bandlands::new);
+            case "minecraft:ore_vein" ->
+                    StructCodec.struct(
+                            "ore_block",
+                            BlockCodec.CODEC,
+                            rule -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            "raw_ore_block",
+                            BlockCodec.CODEC,
+                            rule -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            "filler_block",
+                            BlockCodec.CODEC,
+                            rule -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            "raw_ore_chance",
+                            Codec.FLOAT,
+                            rule -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            "density",
+                            densityCodec,
+                            rule -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            "richness",
+                            densityCodec,
+                            rule -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            "filler_gap",
+                            densityCodec,
+                            rule -> {
+                                throw new UnsupportedOperationException(
+                                        "Encoding is not supported");
+                            },
+                            OreVeinRuleSource::new);
             case "minecraft:block" ->
                     StructCodec.struct(
                             "result_state",
@@ -296,7 +377,8 @@ public final class SurfaceRules {
         private final RandomState randomState;
         private final BiomeResolver biomeResolver;
         private final BiomeZoomer biomeZoomer;
-        private final DensityFunction preliminarySurfaceLevel;
+        private final DensityFunction chunkSurfaceLevel;
+        private final ChunkContext densityContext;
         private final int minY;
         private final int maxYInclusive;
 
@@ -311,8 +393,6 @@ public final class SurfaceRules {
         private boolean surfaceSecondaryDirty;
         private int minSurfaceLevel;
         private boolean minSurfaceLevelDirty;
-        private long lastPreliminarySurfaceCellOrigin = Long.MAX_VALUE;
-        private final int[] preliminarySurfaceCache = new int[4];
         private int waterHeight;
         private int stoneDepthBelow;
         private int stoneDepthAbove;
@@ -323,14 +403,16 @@ public final class SurfaceRules {
                 RandomState randomState,
                 BiomeResolver biomeResolver,
                 BiomeZoomer biomeZoomer,
-                DensityFunction preliminarySurfaceLevel,
+                DensityFunction chunkSurfaceLevel,
+                ChunkContext densityContext,
                 int minY,
                 int maxYInclusive) {
             this.system = system;
             this.randomState = randomState;
             this.biomeResolver = biomeResolver;
             this.biomeZoomer = biomeZoomer;
-            this.preliminarySurfaceLevel = preliminarySurfaceLevel;
+            this.chunkSurfaceLevel = chunkSurfaceLevel;
+            this.densityContext = densityContext;
             this.minY = minY;
             this.maxYInclusive = maxYInclusive;
         }
@@ -411,31 +493,10 @@ public final class SurfaceRules {
         public int minSurfaceLevel() {
             if (this.minSurfaceLevelDirty) {
                 this.minSurfaceLevelDirty = false;
-                var cellX = this.blockX >> 4;
-                var cellZ = this.blockZ >> 4;
-                var cellOrigin = (long) cellX << 32 | (cellZ & 0xFFFFFFFFL);
-                if (this.lastPreliminarySurfaceCellOrigin != cellOrigin) {
-                    this.lastPreliminarySurfaceCellOrigin = cellOrigin;
-                    this.preliminarySurfaceCache[0] =
-                            this.samplePreliminarySurface(cellX << 4, cellZ << 4);
-                    this.preliminarySurfaceCache[1] =
-                            this.samplePreliminarySurface((cellX + 1) << 4, cellZ << 4);
-                    this.preliminarySurfaceCache[2] =
-                            this.samplePreliminarySurface(cellX << 4, (cellZ + 1) << 4);
-                    this.preliminarySurfaceCache[3] =
-                            this.samplePreliminarySurface((cellX + 1) << 4, (cellZ + 1) << 4);
-                }
-
                 var preliminarySurface =
-                        (int)
-                                Math.floor(
-                                        VMath.lerp2(
-                                                (this.blockX & 15) / 16.0,
-                                                (this.blockZ & 15) / 16.0,
-                                                this.preliminarySurfaceCache[0],
-                                                this.preliminarySurfaceCache[1],
-                                                this.preliminarySurfaceCache[2],
-                                                this.preliminarySurfaceCache[3]));
+                        VMath.floor(
+                                this.densityContext.sample(
+                                        this.chunkSurfaceLevel, this.blockX, 0, this.blockZ));
                 this.minSurfaceLevel =
                         preliminarySurface
                                 + this.surfaceDepth
@@ -444,13 +505,8 @@ public final class SurfaceRules {
             return this.minSurfaceLevel;
         }
 
-        private int samplePreliminarySurface(int blockX, int blockZ) {
-            var quartX = (blockX >> 2) << 2;
-            var quartZ = (blockZ >> 2) << 2;
-            return (int)
-                    Math.floor(
-                            this.preliminarySurfaceLevel.compute(
-                                    new DensityFunction.SinglePointContext(quartX, 0, quartZ)));
+        public ChunkContext densityContext() {
+            return this.densityContext;
         }
 
         public int waterHeight() {
@@ -474,6 +530,40 @@ public final class SurfaceRules {
         @Override
         public Block tryApply(Context context) {
             return context.system().getBand(context.blockX(), context.blockY(), context.blockZ());
+        }
+    }
+
+    private record OreVeinRuleSource(
+            Block oreBlock,
+            Block rawOreBlock,
+            Block fillerBlock,
+            float rawOreChance,
+            DensityFunction density,
+            DensityFunction richness,
+            DensityFunction fillerGap)
+            implements RuleSource {
+        @Override
+        public Block tryApply(Context context) {
+            var x = context.blockX();
+            var y = context.blockY();
+            var z = context.blockZ();
+            var densityContext = context.densityContext();
+            var veinDensity = (float) densityContext.sample(this.density, x, y, z);
+            if (veinDensity <= 0.0F) {
+                return null;
+            }
+
+            var random = context.randomState().oreRandom().at(x, y, z);
+            if (random.nextFloat() > veinDensity) {
+                return null;
+            }
+
+            var veinRichness = (float) densityContext.sample(this.richness, x, y, z);
+            if (random.nextFloat() < veinRichness
+                    && (float) densityContext.sample(this.fillerGap, x, y, z) < 0.0F) {
+                return random.nextFloat() < this.rawOreChance ? this.rawOreBlock : this.oreBlock;
+            }
+            return this.fillerBlock;
         }
     }
 

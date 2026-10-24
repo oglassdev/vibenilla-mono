@@ -3,6 +3,7 @@ package rocks.minestom.worldgen.carver;
 import rocks.minestom.worldgen.NoiseGeneratorSettingsRuntime;
 import rocks.minestom.worldgen.biome.BiomeZoomer;
 import rocks.minestom.worldgen.biome.CachedBiomeSource;
+import rocks.minestom.worldgen.density.ChunkContext;
 import rocks.minestom.worldgen.random.LegacyRandomSource;
 import rocks.minestom.worldgen.random.WorldgenRandom;
 import rocks.minestom.worldgen.surface.BiomeResolver;
@@ -92,7 +93,8 @@ public final class Carvers {
                         this.settings.randomState(),
                         this.biomeResolver,
                         this.biomeZoomer,
-                        this.settings.preliminarySurfaceLevel(),
+                        this.settings.chunkSurfaceLevel(),
+                        new ChunkContext(),
                         this.settings.minY(),
                         this.settings.maxYInclusive());
         return (blockX, blockY, blockZ, underFluid) -> {

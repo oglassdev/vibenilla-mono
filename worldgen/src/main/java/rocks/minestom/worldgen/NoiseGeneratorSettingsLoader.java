@@ -22,52 +22,50 @@ public final class NoiseGeneratorSettingsLoader {
 
         var randomState = new RandomState(this.dataPack, seed, settings.legacyRandomSource());
         var densityResolver = new DensityFunctionResolver(this.dataPack, randomState);
-        var finalDensityJson =
-                settings.noiseRouter().finalDensity().convertTo(Transcoder.JSON).orElseThrow();
-        var finalDensity =
-                densityResolver.codec().decode(Transcoder.JSON, finalDensityJson).orElseThrow();
+        var router = settings.noiseRouter();
 
         var climateSampler =
                 new ClimateSampler(
-                        decodeDensity(densityResolver, settings.noiseRouter().temperature()),
-                        decodeDensity(densityResolver, settings.noiseRouter().vegetation()),
-                        decodeDensity(densityResolver, settings.noiseRouter().continents()),
-                        decodeDensity(densityResolver, settings.noiseRouter().erosion()),
-                        decodeDensity(densityResolver, settings.noiseRouter().depth()),
-                        decodeDensity(densityResolver, settings.noiseRouter().ridges()));
+                        decodeDensity(densityResolver, router.temperature()),
+                        decodeDensity(densityResolver, router.vegetation()),
+                        decodeDensity(densityResolver, router.continents()),
+                        decodeDensity(densityResolver, router.erosion()),
+                        decodeDensity(densityResolver, router.depth()),
+                        decodeDensity(densityResolver, router.ridges()));
 
-        var surfaceRuleJson = settings.surfaceRule().convertTo(Transcoder.JSON).orElseThrow();
-        var surfaceRule = SurfaceRules.CODEC.decode(Transcoder.JSON, surfaceRuleJson).orElseThrow();
+        var aquiferSettings = settings.aquifers();
+        var aquifers =
+                aquiferSettings == null
+                        ? null
+                        : new NoiseGeneratorSettingsRuntime.AquiferDensities(
+                                decodeDensity(densityResolver, aquiferSettings.barrier()),
+                                decodeDensity(densityResolver, aquiferSettings.exclusion()),
+                                decodeDensity(
+                                        densityResolver, aquiferSettings.fluidLevelFloodedness()),
+                                decodeDensity(densityResolver, aquiferSettings.fluidLevelSpread()),
+                                decodeDensity(densityResolver, aquiferSettings.lava()),
+                                decodeDensity(densityResolver, aquiferSettings.surfaceLevel()));
 
-        var minY = settings.noise().minY();
-        var height = settings.noise().height();
-        var cellWidth = settings.noise().sizeHorizontal() * 4;
-        var cellHeight = settings.noise().sizeVertical() * 4;
+        var surfaceRuleJson = settings.materialRule().convertTo(Transcoder.JSON).orElseThrow();
+        var surfaceRule =
+                SurfaceRules.codec(this.dataPack, densityResolver.codec())
+                        .decode(Transcoder.JSON, surfaceRuleJson)
+                        .orElseThrow();
+
         var seaLevel = settings.seaLevel();
-        var defaultBlock = settings.defaultBlock();
-        var defaultFluid = settings.defaultFluid();
         var surfaceSystem =
-                new SurfaceSystem(randomState, defaultBlock, seaLevel, randomState.random());
+                new SurfaceSystem(
+                        randomState, settings.defaultBlock(), seaLevel, randomState.random());
 
         return new NoiseGeneratorSettingsRuntime(
-                minY,
-                height,
-                cellWidth,
-                cellHeight,
+                settings.noise().minY(),
+                settings.noise().height(),
                 seaLevel,
-                settings.aquifersEnabled(),
-                settings.oreVeinsEnabled(),
-                defaultBlock,
-                defaultFluid,
-                finalDensity,
-                decodeDensity(densityResolver, settings.noiseRouter().barrier()),
-                decodeDensity(densityResolver, settings.noiseRouter().fluidLevelFloodedness()),
-                decodeDensity(densityResolver, settings.noiseRouter().fluidLevelSpread()),
-                decodeDensity(densityResolver, settings.noiseRouter().lava()),
-                decodeDensity(densityResolver, settings.noiseRouter().preliminarySurfaceLevel()),
-                decodeDensity(densityResolver, settings.noiseRouter().veinToggle()),
-                decodeDensity(densityResolver, settings.noiseRouter().veinRidged()),
-                decodeDensity(densityResolver, settings.noiseRouter().veinGap()),
+                settings.defaultBlock(),
+                settings.defaultFluid(),
+                decodeDensity(densityResolver, router.finalDensity()),
+                decodeDensity(densityResolver, router.chunkSurfaceLevel()),
+                aquifers,
                 climateSampler,
                 randomState,
                 surfaceSystem,

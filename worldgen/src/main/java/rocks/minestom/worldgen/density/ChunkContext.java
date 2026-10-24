@@ -1,46 +1,34 @@
 package rocks.minestom.worldgen.density;
 
-import java.util.IdentityHashMap;
-import java.util.Map;
-import java.util.function.Supplier;
-import rocks.minestom.worldgen.VMath;
-import rocks.minestom.worldgen.density.DensityFunctions.Interpolated;
+import java.util.Arrays;
+import rocks.minestom.worldgen.terrain.Beardifier;
 
+/**
+ * Density-function context for evaluating many positions of one chunk. Holds the per-chunk state of
+ * {@link DensityFunctions.Cache} memoization and {@link DensityFunctions.Interpolated} corner
+ * values, and the {@link Beardifier} that structure terrain adaptation reads. Not thread-safe.
+ */
 public final class ChunkContext implements DensityFunction.Context {
-    private final int cellWidth;
-    private final int cellHeight;
-    private final Map<Interpolated, LongObjectCache<double[]>> interpolationCache;
-    private final Map<DensityFunctions.CacheOnce, CacheOnceState> cacheOnce;
-    private final Map<DensityFunctions.Cache2D, Cache2DState> cache2D;
-    private final Map<DensityFunctions.FlatCache, Cache2DState> flatCache;
-    private final Map<DensityFunctions.CacheAllInCell, LongObjectCache<Double>> cacheAllInCell;
+    private InterpolationState[] interpolations = new InterpolationState[0];
+    private CacheState[] caches = new CacheState[0];
+    private Beardifier beardifier = Beardifier.EMPTY;
 
     private int blockX;
     private int blockY;
     private int blockZ;
 
-    public ChunkContext(int cellWidth, int cellHeight) {
-        this.cellWidth = cellWidth;
-        this.cellHeight = cellHeight;
-        this.interpolationCache = new IdentityHashMap<>();
-        this.cacheOnce = new IdentityHashMap<>();
-        this.cache2D = new IdentityHashMap<>();
-        this.flatCache = new IdentityHashMap<>();
-        this.cacheAllInCell = new IdentityHashMap<>();
-    }
-
-    public int cellWidth() {
-        return this.cellWidth;
-    }
-
-    public int cellHeight() {
-        return this.cellHeight;
-    }
-
     public void setBlock(int blockX, int blockY, int blockZ) {
         this.blockX = blockX;
         this.blockY = blockY;
         this.blockZ = blockZ;
+    }
+
+    public Beardifier beardifier() {
+        return this.beardifier;
+    }
+
+    public void beardifier(Beardifier beardifier) {
+        this.beardifier = beardifier;
     }
 
     @Override
@@ -58,125 +46,122 @@ public final class ChunkContext implements DensityFunction.Context {
         return this.blockZ;
     }
 
-    public double interpolatedValue(Interpolated interpolated) {
-        var x = this.blockX;
-        var y = this.blockY;
-        var z = this.blockZ;
-
-        var cellX = Math.floorDiv(x, this.cellWidth);
-        var cellY = Math.floorDiv(y, this.cellHeight);
-        var cellZ = Math.floorDiv(z, this.cellWidth);
-
-        var x0 = cellX * this.cellWidth;
-        var y0 = cellY * this.cellHeight;
-        var z0 = cellZ * this.cellWidth;
-        var x1 = x0 + this.cellWidth;
-        var y1 = y0 + this.cellHeight;
-        var z1 = z0 + this.cellWidth;
-
-        var deltaX = (double) (x - x0) / (double) this.cellWidth;
-        var deltaY = (double) (y - y0) / (double) this.cellHeight;
-        var deltaZ = (double) (z - z0) / (double) this.cellWidth;
-
-        var perFunction =
-                this.interpolationCache.computeIfAbsent(
-                        interpolated, key -> new LongObjectCache<>());
-        var cellKey = pack(cellX, cellY, cellZ);
-        var corners =
-                perFunction.getOrCompute(
-                        cellKey, () -> this.sampleCorners(interpolated, x0, y0, z0, x1, y1, z1));
-
-        return VMath.lerp3(
-                deltaX,
-                deltaY,
-                deltaZ,
-                corners[0],
-                corners[1],
-                corners[2],
-                corners[3],
-                corners[4],
-                corners[5],
-                corners[6],
-                corners[7]);
-    }
-
-    public double cacheOnceValue(DensityFunctions.CacheOnce function) {
-        var state = this.cacheOnce.computeIfAbsent(function, key -> new CacheOnceState());
-        if (state.hasValue
-                && state.blockX == this.blockX
-                && state.blockY == this.blockY
-                && state.blockZ == this.blockZ) {
-            return state.value;
-        }
-
-        var value = function.argument().compute(this);
-        state.blockX = this.blockX;
-        state.blockY = this.blockY;
-        state.blockZ = this.blockZ;
-        state.value = value;
-        state.hasValue = true;
-        return value;
-    }
-
-    public double cache2DValue(DensityFunctions.Cache2D function) {
-        var state = this.cache2D.computeIfAbsent(function, key -> new Cache2DState());
-        if (state.hasValue && state.blockX == this.blockX && state.blockZ == this.blockZ) {
-            return state.value;
-        }
-
-        var value = function.argument().compute(this);
-        state.blockX = this.blockX;
-        state.blockZ = this.blockZ;
-        state.value = value;
-        state.hasValue = true;
-        return value;
-    }
-
-    public double flatCacheValue(DensityFunctions.FlatCache function) {
-        var state = this.flatCache.computeIfAbsent(function, key -> new Cache2DState());
-        if (state.hasValue && state.blockX == this.blockX && state.blockZ == this.blockZ) {
-            return state.value;
-        }
-
-        var value = function.argument().compute(this);
-        state.blockX = this.blockX;
-        state.blockZ = this.blockZ;
-        state.value = value;
-        state.hasValue = true;
-        return value;
-    }
-
-    public double cacheAllInCellValue(DensityFunctions.CacheAllInCell function) {
-        var perFunction =
-                this.cacheAllInCell.computeIfAbsent(function, key -> new LongObjectCache<>());
-        var cellX = Math.floorDiv(this.blockX, this.cellWidth);
-        var cellY = Math.floorDiv(this.blockY, this.cellHeight);
-        var cellZ = Math.floorDiv(this.blockZ, this.cellWidth);
-        var cellKey = pack(cellX, cellY, cellZ);
-        return perFunction.getOrCompute(cellKey, () -> function.argument().compute(this));
-    }
-
-    private double[] sampleCorners(
-            Interpolated interpolated, int x0, int y0, int z0, int x1, int y1, int z1) {
-        var values = new double[8];
-        values[0] = this.sample(interpolated.argument(), x0, y0, z0);
-        values[1] = this.sample(interpolated.argument(), x1, y0, z0);
-        values[2] = this.sample(interpolated.argument(), x0, y1, z0);
-        values[3] = this.sample(interpolated.argument(), x1, y1, z0);
-        values[4] = this.sample(interpolated.argument(), x0, y0, z1);
-        values[5] = this.sample(interpolated.argument(), x1, y0, z1);
-        values[6] = this.sample(interpolated.argument(), x0, y1, z1);
-        values[7] = this.sample(interpolated.argument(), x1, y1, z1);
-        return values;
-    }
-
-    private double sample(DensityFunction function, int x, int y, int z) {
+    /** Evaluates {@code function} at the given position, then restores the current position. */
+    public double sample(DensityFunction function, int x, int y, int z) {
         var previousX = this.blockX;
         var previousY = this.blockY;
         var previousZ = this.blockZ;
         this.setBlock(x, y, z);
-        var value = function.compute(this);
-        this.setBlock(previousX, previousY, previousZ);
+        try {
+            return function.compute(this);
+        } finally {
+            this.setBlock(previousX, previousY, previousZ);
+        }
+    }
+
+    double cachedValue(DensityFunctions.Cache cache) {
+        var slot = cache.slot();
+        if (slot >= this.caches.length) {
+            this.caches = Arrays.copyOf(this.caches, DensityFunctions.slotCount());
+        }
+        var state = this.caches[slot];
+        if (state == null) {
+            state = new CacheState();
+            this.caches[slot] = state;
+        }
+
+        var axes = cache.axes();
+        var x = (axes & DensityFunction.AXIS_X) != 0 ? this.blockX : 0;
+        var y = (axes & DensityFunction.AXIS_Y) != 0 ? this.blockY : 0;
+        var z = (axes & DensityFunction.AXIS_Z) != 0 ? this.blockZ : 0;
+        if (state.hasValue && state.x == x && state.y == y && state.z == z) {
+            return state.value;
+        }
+
+        var value = cache.input().compute(this);
+        state.hasValue = true;
+        state.x = x;
+        state.y = y;
+        state.z = z;
+        state.value = value;
+        return value;
+    }
+
+    double interpolatedValue(DensityFunctions.Interpolated interpolated) {
+        var slot = interpolated.slot();
+        if (slot >= this.interpolations.length) {
+            this.interpolations = Arrays.copyOf(this.interpolations, DensityFunctions.slotCount());
+        }
+        var state = this.interpolations[slot];
+        if (state == null) {
+            state = new InterpolationState();
+            this.interpolations[slot] = state;
+        }
+
+        var sizeXz = interpolated.cellSizeXz();
+        var sizeY = interpolated.cellSizeY();
+        var cellX = Math.floorDiv(this.blockX, sizeXz);
+        var cellY = Math.floorDiv(this.blockY, sizeY);
+        var cellZ = Math.floorDiv(this.blockZ, sizeXz);
+        var inCellX = this.blockX - cellX * sizeXz;
+        var inCellY = this.blockY - cellY * sizeY;
+        var inCellZ = this.blockZ - cellZ * sizeXz;
+
+        var cellKey = pack(cellX, cellY, cellZ);
+        if (state.cellKey != cellKey || !state.hasCell) {
+            state.cellKey = cellKey;
+            state.hasCell = true;
+            state.filled = 0;
+        }
+
+        var needX = inCellX != 0;
+        var needY = inCellY != 0;
+        var needZ = inCellZ != 0;
+        var corners = state.corners;
+        var work = state.work;
+        for (var corner = 0; corner < 8; corner++) {
+            var effective =
+                    ((corner & 1) != 0 && needX ? 1 : 0)
+                            | ((corner & 2) != 0 && needY ? 2 : 0)
+                            | ((corner & 4) != 0 && needZ ? 4 : 0);
+            if ((state.filled & (1 << effective)) == 0) {
+                corners[effective] =
+                        this.cornerValue(interpolated, state, cellX, cellY, cellZ, effective);
+                state.filled |= 1 << effective;
+            }
+            work[corner] = corners[effective];
+        }
+
+        return DensityFunctions.Interpolated.trilinear(
+                inCellX * (1.0F / sizeXz),
+                inCellY * (1.0F / sizeY),
+                inCellZ * (1.0F / sizeXz),
+                work);
+    }
+
+    private double cornerValue(
+            DensityFunctions.Interpolated interpolated,
+            InterpolationState state,
+            int cellX,
+            int cellY,
+            int cellZ,
+            int corner) {
+        var cornerX = cellX + (corner & 1);
+        var cornerY = cellY + ((corner >> 1) & 1);
+        var cornerZ = cellZ + ((corner >> 2) & 1);
+        var key = pack(cornerX, cornerY, cornerZ);
+        var cached = state.cornerCache.get(key);
+        if (!Double.isNaN(cached)) {
+            return cached;
+        }
+
+        var value =
+                this.sample(
+                        interpolated.input(),
+                        cornerX * interpolated.cellSizeXz(),
+                        cornerY * interpolated.cellSizeY(),
+                        cornerZ * interpolated.cellSizeXz());
+        state.cornerCache.put(key, value);
         return value;
     }
 
@@ -184,54 +169,52 @@ public final class ChunkContext implements DensityFunction.Context {
         return ((long) (x & 0x1FFFFF) << 42) | ((long) (y & 0x3FFFFF) << 20) | (long) (z & 0xFFFFF);
     }
 
-    private static final class CacheOnceState {
+    private static final class CacheState {
         private boolean hasValue;
-        private int blockX;
-        private int blockY;
-        private int blockZ;
+        private int x;
+        private int y;
+        private int z;
         private double value;
     }
 
-    private static final class Cache2DState {
-        private boolean hasValue;
-        private int blockX;
-        private int blockZ;
-        private double value;
+    private static final class InterpolationState {
+        private final double[] corners = new double[8];
+        private final double[] work = new double[8];
+        private final CornerCache cornerCache = new CornerCache();
+        private boolean hasCell;
+        private long cellKey;
+        private int filled;
     }
 
-    private static final class LongObjectCache<T> {
-        private static final float LOAD_FACTOR = 0.7F;
-
-        private long[] keys;
-        private Object[] values;
-        private boolean[] occupied;
+    /** Open-addressing {@code long -> double} map; absent keys read as {@link Double#NaN}. */
+    private static final class CornerCache {
+        private long[] keys = new long[64];
+        private double[] values = new double[64];
+        private boolean[] occupied = new boolean[64];
         private int size;
-        private int threshold;
 
-        private LongObjectCache() {
-            this.keys = new long[16];
-            this.values = new Object[16];
-            this.occupied = new boolean[16];
-            this.size = 0;
-            this.threshold = (int) ((float) this.keys.length * LOAD_FACTOR);
-        }
-
-        @SuppressWarnings("unchecked")
-        private T get(long key) {
-            var index = this.findIndex(key);
-            if (index < 0) {
-                return null;
-            }
-            return (T) this.values[index];
-        }
-
-        private void put(long key, T value) {
-            if (this.size >= this.threshold) {
-                this.rehash(this.keys.length * 2);
-            }
-
+        double get(long key) {
             var mask = this.keys.length - 1;
-            var index = (int) mix64(key) & mask;
+            var index = mix(key) & mask;
+            while (this.occupied[index]) {
+                if (this.keys[index] == key) {
+                    return this.values[index];
+                }
+                index = (index + 1) & mask;
+            }
+            return Double.NaN;
+        }
+
+        void put(long key, double value) {
+            if (this.size * 10 >= this.keys.length * 7) {
+                this.grow();
+            }
+            this.insert(key, value);
+        }
+
+        private void insert(long key, double value) {
+            var mask = this.keys.length - 1;
+            var index = mix(key) & mask;
             while (this.occupied[index]) {
                 if (this.keys[index] == key) {
                     this.values[index] = value;
@@ -239,60 +222,31 @@ public final class ChunkContext implements DensityFunction.Context {
                 }
                 index = (index + 1) & mask;
             }
-
             this.occupied[index] = true;
             this.keys[index] = key;
             this.values[index] = value;
             this.size++;
         }
 
-        private int findIndex(long key) {
-            var mask = this.keys.length - 1;
-            var index = (int) mix64(key) & mask;
-            while (this.occupied[index]) {
-                if (this.keys[index] == key) {
-                    return index;
-                }
-                index = (index + 1) & mask;
-            }
-            return -1;
-        }
-
-        private void rehash(int newCapacity) {
+        private void grow() {
             var oldKeys = this.keys;
             var oldValues = this.values;
             var oldOccupied = this.occupied;
-
-            this.keys = new long[newCapacity];
-            this.values = new Object[newCapacity];
-            this.occupied = new boolean[newCapacity];
+            this.keys = new long[oldKeys.length * 2];
+            this.values = new double[oldKeys.length * 2];
+            this.occupied = new boolean[oldKeys.length * 2];
             this.size = 0;
-            this.threshold = (int) ((float) newCapacity * LOAD_FACTOR);
-
             for (var index = 0; index < oldKeys.length; index++) {
-                if (!oldOccupied[index]) {
-                    continue;
+                if (oldOccupied[index]) {
+                    this.insert(oldKeys[index], oldValues[index]);
                 }
-                @SuppressWarnings("unchecked")
-                var value = (T) oldValues[index];
-                this.put(oldKeys[index], value);
             }
         }
 
-        private static long mix64(long value) {
+        private static int mix(long value) {
             value = (value ^ (value >>> 33)) * 0xff51afd7ed558ccdL;
             value = (value ^ (value >>> 33)) * 0xc4ceb9fe1a85ec53L;
-            return value ^ (value >>> 33);
-        }
-
-        private T getOrCompute(long key, Supplier<T> supplier) {
-            var cached = this.get(key);
-            if (cached != null) {
-                return cached;
-            }
-            var value = supplier.get();
-            this.put(key, value);
-            return value;
+            return (int) (value ^ (value >>> 33));
         }
     }
 }

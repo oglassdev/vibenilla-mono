@@ -8,7 +8,8 @@ import net.minestom.server.codec.StructCodec;
 /**
  * Noise octave layout in the legacy {@code firstOctave}/{@code amplitudes} form. The 26.3 data
  * stores {@code base_octave}, {@code octave_count} and sparse {@code amplitude_modifiers} with a
- * pre-computed {@code base_amplitude} that reproduces this normalization, so the latter is not read.
+ * pre-computed {@code base_amplitude} that reproduces this normalization, so the latter is not
+ * read.
  */
 public record NoiseParameters(int firstOctave, List<Double> amplitudes) {
     public static final Codec<NoiseParameters> CODEC =

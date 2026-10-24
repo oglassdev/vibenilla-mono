@@ -58,12 +58,14 @@ public final class WorldGenerators {
                                 Key.key("minecraft:swamp_huts"),
                                 Key.key("minecraft:buried_treasures"),
                                 Key.key("minecraft:ocean_monuments"),
-                                Key.key("minecraft:woodland_mansions")));
+                                Key.key("minecraft:woodland_mansions"),
+                                Key.key("minecraft:abandoned_camp")));
         this.netherStructures =
                 new StructurePlacer(
                         this.structureLoader,
                         this.featureLoader,
                         List.of(
+                                Key.key("minecraft:ruined_portals"),
                                 Key.key("minecraft:nether_fossils"),
                                 Key.key("minecraft:nether_complexes")));
         this.endStructures =
