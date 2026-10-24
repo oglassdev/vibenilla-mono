@@ -4,7 +4,7 @@ plugins {
 
 spotless {
     kotlinGradle {
-        target("*.gradle.kts", "*/*.gradle.kts", "buildSrc/**/*.gradle.kts")
+        target("*.gradle.kts", "*/*.gradle.kts", "buildSrc/src/**/*.gradle.kts")
         ktlint()
     }
     kotlin {
