@@ -41,12 +41,18 @@ public final class Server {
 
         var crafting = new CraftingManager(vanillaData);
 
-        events.addChild(combat.createNode())
+        var breaking =
+                new BlockBreaking(
+                        combat.get(FeatureType.ITEM_DAMAGE),
+                        new BlockDrops(vanillaData.resolve("loot_table")));
+
+        // Breaking runs before combat so a rejected break adds no exhaustion.
+        events.addChild(breaking.events())
+                .addChild(combat.createNode())
                 .addChild(MinestomFluids.events())
                 .addChild(MinestomFluids.bucketEvents())
                 .addChild(Items.events())
                 .addChild(crafting.events())
-                .addChild(new BlockDrops(vanillaData.resolve("loot_table")).events())
                 .addListener(
                         AsyncPlayerConfigurationEvent.class,
                         event -> {
