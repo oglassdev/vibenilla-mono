@@ -145,13 +145,20 @@ public final class CraftingWorkspace {
 
             if (currentStack.isAir()) {
                 this.inventory.setItemStack(slotIndex, remainder);
-            } else if (currentStack.isSimilar(remainder)) {
+            } else if (currentStack.isSimilar(remainder)
+                    && currentStack.amount() + remainder.amount() <= currentStack.maxStackSize()) {
                 this.inventory.setItemStack(
                         slotIndex,
                         currentStack.withAmount(currentStack.amount() + remainder.amount()));
-            } else if (!player.getInventory().addItemStack(remainder)) {
-                player.dropItem(remainder);
+            } else {
+                this.giveToPlayer(player, remainder);
             }
+        }
+    }
+
+    private void giveToPlayer(Player player, ItemStack stack) {
+        if (!player.getInventory().addItemStack(stack)) {
+            player.dropItem(stack);
         }
     }
 
@@ -177,13 +184,11 @@ public final class CraftingWorkspace {
                 }
 
                 this.inventory.setItemStack(slotIndex, ItemStack.AIR);
-
-                if (!player.getInventory().addItemStack(gridItem)) {
-                    player.dropItem(gridItem);
-                }
+                this.giveToPlayer(player, gridItem);
             }
 
-            this.inventory.setItemStack(this.resultSlot, ItemStack.AIR);
+            this.currentMatch = null;
+            this.updateResult(ItemStack.AIR);
         } finally {
             this.updatingGrid = false;
         }

@@ -46,13 +46,8 @@ public final class CraftingShiftClickListener
             return;
         }
 
-        if (click instanceof Click.Left) {
-            this.handleResultPickup(event, workspace, false);
-            return;
-        }
-
-        if (click instanceof Click.Right) {
-            this.handleResultPickup(event, workspace, true);
+        if (click instanceof Click.Left || click instanceof Click.Right) {
+            this.handleResultPickup(event, workspace);
             return;
         }
 
@@ -77,8 +72,7 @@ public final class CraftingShiftClickListener
         }
     }
 
-    private void handleResultPickup(
-            InventoryPreClickEvent event, CraftingWorkspace workspace, boolean isRightClick) {
+    private void handleResultPickup(InventoryPreClickEvent event, CraftingWorkspace workspace) {
         event.setCancelled(true);
         var recipeMatch = workspace.currentMatch();
 
@@ -94,14 +88,14 @@ public final class CraftingShiftClickListener
 
         var playerInventory = event.getPlayer().getInventory();
         var cursorItem = playerInventory.getCursorItem();
-        int pickupAmount = isRightClick ? 1 : resultStack.amount();
+        var pickupAmount = resultStack.amount();
 
         if (!this.canPickup(cursorItem, resultStack, pickupAmount)) {
             return;
         }
 
         if (cursorItem.isAir()) {
-            playerInventory.setCursorItem(resultStack.withAmount(pickupAmount));
+            playerInventory.setCursorItem(resultStack);
         } else {
             playerInventory.setCursorItem(
                     cursorItem.withAmount(cursorItem.amount() + pickupAmount));
