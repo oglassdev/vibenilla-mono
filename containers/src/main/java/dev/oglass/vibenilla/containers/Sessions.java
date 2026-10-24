@@ -1,7 +1,6 @@
 package dev.oglass.vibenilla.containers;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,8 +40,6 @@ final class Sessions {
         final ContainerKind kind;
         final Inventory inventory;
         boolean open;
-        final boolean[] dirty = new boolean[2];
-        boolean flushScheduled;
 
         Session(SessionKey key, List<BlockVec> halves, ContainerKind kind, Component title) {
             this.key = key;
@@ -143,19 +140,6 @@ final class Sessions {
         }
     }
 
-    /**
-     * Returns the block with the live contents of any open session that includes the position, so
-     * changes that have not been written back yet are not lost.
-     */
-    Block current(Instance instance, BlockVec position, Block block) {
-        var session = find(instance, List.of(position));
-
-        if (session == null) {
-            return block;
-        }
-        return ContainerItems.write(block, session.items(session.halves.indexOf(position)));
-    }
-
     /** Resets a barrel that was saved open when no one is viewing it anymore. */
     void reconcileBarrel(Instance instance, BlockVec position) {
         MinecraftServer.getSchedulerManager()
@@ -188,7 +172,6 @@ final class Sessions {
     void closeAt(Instance instance, BlockVec position) {
         for (var session : List.copyOf(sessions.values())) {
             if (session.instance() == instance && session.halves.contains(position)) {
-                deferFlush(session);
                 close(session, false);
             }
         }
@@ -221,7 +204,6 @@ final class Sessions {
             return;
         }
 
-        flush(session);
         var wasOpen = session.open;
         session.open = false;
 
@@ -266,7 +248,7 @@ final class Sessions {
 
         session.inventory
                 .eventNode()
-                .addListener(InventoryItemChangeEvent.class, event -> markDirty(session, event));
+                .addListener(InventoryItemChangeEvent.class, event -> writeBack(session, event));
         return session;
     }
 
@@ -280,56 +262,13 @@ final class Sessions {
         return null;
     }
 
-    private void markDirty(Session session, InventoryItemChangeEvent event) {
+    /** Writes the changed half into its block, as long as the session is still current. */
+    private void writeBack(Session session, InventoryItemChangeEvent event) {
         if (sessions.get(session.key) != session) {
             return;
         }
 
-        session.dirty[event.getSlot() / ContainerKind.SLOTS_PER_BLOCK] = true;
-
-        if (!session.flushScheduled) {
-            session.flushScheduled = true;
-            MinecraftServer.getSchedulerManager()
-                    .scheduleEndOfTick(
-                            () -> {
-                                session.flushScheduled = false;
-                                flush(session);
-                            });
-        }
-    }
-
-    /** Writes the changed halves into their blocks. */
-    private void flush(Session session) {
-        for (var index = 0; index < session.halves.size(); index++) {
-            if (session.dirty[index]) {
-                session.dirty[index] = false;
-                write(session, index, session.items(index));
-            }
-        }
-    }
-
-    /**
-     * Takes the changed halves now and writes them at the end of the tick, for when the block of a
-     * half is being replaced and can't be modified right away.
-     */
-    private void deferFlush(Session session) {
-        var pending = new HashMap<Integer, List<ItemStack>>();
-
-        for (var index = 0; index < session.halves.size(); index++) {
-            if (session.dirty[index]) {
-                session.dirty[index] = false;
-                pending.put(index, session.items(index));
-            }
-        }
-
-        if (!pending.isEmpty()) {
-            MinecraftServer.getSchedulerManager()
-                    .scheduleEndOfTick(
-                            () -> pending.forEach((index, items) -> write(session, index, items)));
-        }
-    }
-
-    private void write(Session session, int index, List<ItemStack> items) {
+        var index = event.getSlot() / ContainerKind.SLOTS_PER_BLOCK;
         var half = session.halves.get(index);
         var instance = session.instance();
 
@@ -340,7 +279,7 @@ final class Sessions {
         var block = instance.getBlock(half);
 
         if (block.compare(session.kind.block())) {
-            instance.setBlock(half, ContainerItems.write(block, items), false);
+            instance.setBlock(half, ContainerItems.write(block, session.items(index)), false);
         }
     }
 
@@ -352,7 +291,6 @@ final class Sessions {
         var viewers = session.viewersExcluding(player);
 
         if (viewers == 0) {
-            flush(session);
             sessions.remove(session.key, session);
         }
 

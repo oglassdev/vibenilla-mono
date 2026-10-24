@@ -74,7 +74,6 @@ final class ContainersTest {
         interact(player, POSITION);
         var inventory = player.getOpenInventory();
         inventory.setItemStack(3, ItemStack.of(Material.DIAMOND, 5));
-        env.tick();
 
         var items = instance.getBlock(POSITION).nbt().getList("Items", BinaryTagTypes.COMPOUND);
         var entry = (CompoundBinaryTag) items.getCompound(0);
@@ -104,7 +103,6 @@ final class ContainersTest {
 
         first.getOpenInventory().setItemStack(0, ItemStack.of(Material.STONE));
         first.getOpenInventory().setItemStack(30, ItemStack.of(Material.DIRT));
-        env.tick();
 
         assertEquals(
                 "minecraft:stone",
@@ -127,7 +125,6 @@ final class ContainersTest {
         var inventory = player.getOpenInventory();
         inventory.setItemStack(0, ItemStack.of(Material.GOLD_INGOT, 2));
         instance.setBlock(POSITION, Block.AIR);
-        env.tick();
 
         var drops = instance.getEntities().stream().filter(ItemEntity.class::isInstance).toList();
         assertEquals(1, drops.size());
@@ -193,7 +190,6 @@ final class ContainersTest {
         interact(player, POSITION);
         var inventory = player.getOpenInventory();
         inventory.setItemStack(0, ItemStack.of(Material.DIAMOND));
-        env.tick();
         assertTrue(instance.getBlock(POSITION).nbt().get("Items") != null);
 
         instance.unloadChunk(instance.getChunkAt(POSITION));
@@ -261,7 +257,6 @@ final class ContainersTest {
         inventory.setItemStack(0, ItemStack.of(Material.STONE));
         inventory.setItemStack(30, ItemStack.of(Material.DIRT));
         instance.setBlock(EAST, Block.AIR);
-        env.tick();
 
         var drops = instance.getEntities().stream().filter(ItemEntity.class::isInstance).toList();
         assertEquals(1, drops.size());
@@ -270,5 +265,59 @@ final class ContainersTest {
         assertEquals(
                 "minecraft:dirt",
                 instance.getBlock(POSITION).nbt().getList("Items").getCompound(0).getString("id"));
+    }
+
+    @Test
+    void joiningAPartnerKeepsTheWithdrawnContents(Env env) {
+        var instance = instanceWith(env);
+        instance.setBlock(POSITION, chest(env, "single"));
+        var player = env.createPlayer(instance, new Pos(8, 41, 10));
+
+        interact(player, POSITION);
+        player.getOpenInventory().setItemStack(0, ItemStack.of(Material.DIAMOND, 10));
+        player.closeInventory();
+
+        interact(player, POSITION);
+        player.getOpenInventory().setItemStack(0, ItemStack.of(Material.DIAMOND, 4));
+        player.getInventory().addItemStack(ItemStack.of(Material.DIAMOND, 6));
+
+        instance.setBlock(EAST, chest(env, "right"));
+        instance.setBlock(POSITION, instance.getBlock(POSITION).withProperty("type", "left"));
+        interact(player, POSITION);
+
+        var inventory = player.getOpenInventory();
+        assertEquals(54, inventory.getSize());
+        assertEquals(
+                10,
+                count(inventory, Material.DIAMOND)
+                        + count(player.getInventory(), Material.DIAMOND));
+    }
+
+    @Test
+    void replacingABrokenContainerDoesNotInheritItsContents(Env env) {
+        var instance = instanceWith(env);
+        instance.setBlock(POSITION, chest(env, "single"));
+        var player = env.createPlayer(instance, new Pos(8, 41, 10));
+
+        interact(player, POSITION);
+        player.getOpenInventory().setItemStack(0, ItemStack.of(Material.GOLD_INGOT, 2));
+        instance.setBlock(POSITION, Block.AIR);
+        instance.setBlock(POSITION, chest(env, "single"));
+
+        var drops = instance.getEntities().stream().filter(ItemEntity.class::isInstance).toList();
+        assertEquals(1, drops.size());
+        assertEquals(2, ((ItemEntity) drops.getFirst()).getItemStack().amount());
+        assertNull(instance.getBlock(POSITION).nbtOrEmpty().get("Items"));
+
+        interact(player, POSITION);
+        assertEquals(0, count(player.getOpenInventory(), Material.GOLD_INGOT));
+    }
+
+    private static int count(
+            net.minestom.server.inventory.AbstractInventory inventory, Material material) {
+        return List.of(inventory.getItemStacks()).stream()
+                .filter(item -> item.material() == material)
+                .mapToInt(ItemStack::amount)
+                .sum();
     }
 }

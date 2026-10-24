@@ -52,7 +52,7 @@ final class ContainerHandler implements BlockHandler {
     public void onDestroy(Destroy destroy) {
         var instance = destroy.getInstance();
         var position = destroy.getBlockPosition().asBlockVec();
-        var block = sessions.current(instance, position, destroy.getBlock());
+        var block = destroy.getBlock();
         var next = destroy.getNewBlock();
 
         if (next.compare(block)) {
