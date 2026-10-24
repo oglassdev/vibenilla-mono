@@ -26,6 +26,17 @@ just format             # apply formatting
 just ready              # formatting check + full build
 ```
 
+## Server
+
+`server` is a survival server that wires all the modules together. It isn't published.
+
+```sh
+just run                                    # localhost:25565, random seed
+just run -Dvibenilla.seed=42 -Dvibenilla.port=25566
+```
+
+The first run downloads the vanilla server jar from Mojang and extracts its datapack into `server/run/`.
+
 ## Usage
 
 Modules are published as `dev.oglass.vibenilla:<module>`. To use them locally, run `./gradlew publishToMavenLocal` and add `mavenLocal()` to your repositories.

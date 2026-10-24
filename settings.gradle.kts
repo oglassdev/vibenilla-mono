@@ -26,4 +26,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "vibenilla-mono"
 
-include("pvp", "worldgen", "placement", "crafting", "fluids", "loot")
+include("pvp", "worldgen", "placement", "crafting", "fluids", "loot", "server")

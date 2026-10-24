@@ -1,5 +1,7 @@
 [versions]
 minecraft = "26.3"
+# worldgen still reads the pre-26.3 worldgen datapack format
+minecraft-worldgen = "26.2"
 minestom = "26_3-20261007.224755-10"
 fastutil = "8.5.19"
 slf4j = "2.0.20"
