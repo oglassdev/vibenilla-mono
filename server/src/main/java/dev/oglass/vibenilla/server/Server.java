@@ -55,13 +55,14 @@ public final class Server {
                             var player = event.getPlayer();
                             event.setSpawningInstance(overworld);
                             var data = players.read(player.getUuid());
-                            var position = data == null ? null : PlayerStorage.position(data);
-                            if (position == null) {
-                                player.setRespawnPoint(spawn);
-                            } else {
+                            var position =
+                                    data == null || PlayerStorage.dead(data)
+                                            ? null
+                                            : PlayerStorage.position(data);
+                            if (data != null) {
                                 saved.put(player.getUuid(), data);
-                                player.setRespawnPoint(position);
                             }
+                            player.setRespawnPoint(position == null ? spawn : position);
                         })
                 .addListener(
                         PlayerSpawnEvent.class,
@@ -96,14 +97,15 @@ public final class Server {
                 .buildTask(
                         () -> {
                             savePlayers.run();
-                            world.save(false);
+                            world.save();
                         })
                 .repeat(TaskSchedule.minutes(5))
                 .schedule();
         scheduler.buildShutdownTask(
                 () -> {
                     savePlayers.run();
-                    world.save(true);
+                    players.close();
+                    world.saveAndWait();
                     MinecraftServer.LOGGER.info("World saved");
                 });
 
