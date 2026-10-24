@@ -3,6 +3,7 @@ package net.goldenstack.loot.util;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
+import net.minestom.server.MinecraftServer;
 import net.minestom.server.component.DataComponent;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.entity.Entity;
@@ -30,14 +31,16 @@ public class EnchantmentUtils {
     }
 
     public static int level(@Nullable Entity entity, @NotNull RegistryKey<Enchantment> key) {
-        int level = 0;
-        if (entity instanceof LivingEntity living) {
-            for (EquipmentSlot slot : EquipmentSlot.values()) {
-                EnchantmentList ench = living.getEquipment(slot).get(DataComponents.ENCHANTMENTS);
-                if (ench == null) continue;
+        if (!(entity instanceof LivingEntity living)) return 0;
 
-                level = Math.max(level, ench.level(key));
-            }
+        var enchantment = MinecraftServer.process().enchantment().get(key);
+        if (enchantment == null) return 0;
+
+        int level = 0;
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            if (enchantment.slots().stream().noneMatch(group -> group.test(slot))) continue;
+
+            level = Math.max(level, level(living.getEquipment(slot), key));
         }
 
         return level;

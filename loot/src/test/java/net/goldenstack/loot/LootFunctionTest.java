@@ -97,6 +97,34 @@ class LootFunctionTest {
     }
 
     @Test
+    void enchantRandomlyChecksTheAdditionalCostFlagValue() {
+        MinecraftServer.init();
+
+        var function = new LootFunction.EnchantRandomly(List.of(), null, false, true);
+        var item = ItemStack.of(Material.BOOK);
+
+        var allowed =
+                LootContext.from(
+                        VanillaInterface.defaults(),
+                        Map.of(
+                                LootContext.RANDOM,
+                                new Random(1L),
+                                LootContext.ADDITIONAL_COST_COMPONENT_ALLOWED,
+                                true));
+        var denied =
+                LootContext.from(
+                        VanillaInterface.defaults(),
+                        Map.of(
+                                LootContext.RANDOM,
+                                new Random(1L),
+                                LootContext.ADDITIONAL_COST_COMPONENT_ALLOWED,
+                                false));
+
+        assertNotNull(function.apply(item, allowed).get(DataComponents.ADDITIONAL_TRADE_COST));
+        assertNull(function.apply(item, denied).get(DataComponents.ADDITIONAL_TRADE_COST));
+    }
+
+    @Test
     void applyBonusSkipsFailedConditions() {
         MinecraftServer.init();
 
@@ -229,7 +257,7 @@ class LootFunctionTest {
                         .asTag(
                                 """
                 {
-                  conditions: [],
+                  condition: [],
                   effects: [
                     {type: "minecraft:speed", duration: 1},
                     {type: "minecraft:speed", duration: 2}
@@ -522,8 +550,8 @@ class LootFunctionTest {
                         .asTag(
                                 """
                 {
-                  function: "set_contents",
-                  conditions: [],
+                  type: "set_contents",
+                  condition: [],
                   component: "minecraft:container",
                   entries: []
                 }
@@ -533,12 +561,12 @@ class LootFunctionTest {
                         .asTag(
                                 """
                 {
-                  function: "modify_contents",
-                  conditions: [],
+                  type: "modify_contents",
+                  condition: [],
                   component: "minecraft:container",
                   modifier: {
-                    function: "set_count",
-                    conditions: [],
+                    type: "set_count",
+                    condition: [],
                     count: 1
                   }
                 }
@@ -655,7 +683,7 @@ class LootFunctionTest {
                         .asTag(
                                 """
                 {
-                  conditions: [],
+                  condition: [],
                   title: {raw: "123456789012345678901234567890123"},
                   author: "author"
                 }
@@ -667,7 +695,7 @@ class LootFunctionTest {
     }
 
     @Test
-    void setLootTableDecodesTheVanillaBlockEntityType() throws Exception {
+    void setLootTableDecodesTheLootTableId() throws Exception {
         MinecraftServer.init();
 
         var input =
@@ -675,13 +703,12 @@ class LootFunctionTest {
                         .asTag(
                                 """
                 {
-                  name: "minecraft:chests/simple_dungeon",
-                  type: "minecraft:chest"
+                  loot_table_id: "minecraft:chests/simple_dungeon"
                 }
                 """);
         var function = LootFunction.SetLootTable.CODEC.decode(Transcoder.NBT, input).orElseThrow();
 
-        assertEquals(Key.key("minecraft:chest"), function.type());
+        assertEquals(Key.key("minecraft:chests/simple_dungeon"), function.name());
     }
 
     @Test

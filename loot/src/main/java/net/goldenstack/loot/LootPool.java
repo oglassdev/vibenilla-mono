@@ -36,11 +36,11 @@ public record LootPool(
                     "entries",
                     LootEntry.CODEC.list(),
                     LootPool::entries,
-                    "conditions",
-                    LootPredicate.CODEC.list().optional(List.of()),
+                    "condition",
+                    LootPredicate.CODEC.listOrSingle().optional(List.of()),
                     LootPool::predicates,
-                    "functions",
-                    LootFunction.CODEC.list().optional(List.of()),
+                    "modifier",
+                    LootFunction.CODEC.listOrSingle().optional(List.of()),
                     LootPool::functions,
                     LootPool::new);
 

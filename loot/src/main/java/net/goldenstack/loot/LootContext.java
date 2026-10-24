@@ -1,10 +1,12 @@
 package net.goldenstack.loot;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Random;
+import java.util.Set;
 import net.goldenstack.loot.util.VanillaInterface;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.entity.Entity;
@@ -131,10 +133,23 @@ public sealed interface LootContext permits LootContextImpl {
 
     @NotNull
     LootContext withRandom(@NotNull Random random);
+
+    /**
+     * Enters a referenced element, such as a predicate or loot table, to guard against reference
+     * cycles.
+     *
+     * @param scope a string uniquely identifying the referenced element
+     * @return a context to evaluate the element with, or null if the element is already being
+     *     evaluated by this context
+     */
+    @Nullable
+    LootContext enter(@NotNull String scope);
 }
 
 record LootContextImpl(@NotNull VanillaInterface vanilla, @NotNull Map<String, Object> data)
         implements LootContext {
+
+    private static final @NotNull String VISITED = "vibenilla:visited";
 
     LootContextImpl {
         data = Map.copyOf(data);
@@ -181,6 +196,22 @@ record LootContextImpl(@NotNull VanillaInterface vanilla, @NotNull Map<String, O
     public @NotNull LootContext withRandom(@NotNull Random random) {
         Map<String, Object> updatedData = new HashMap<>(this.data);
         updatedData.put(LootContext.RANDOM.id(), random);
+        return new LootContextImpl(this.vanilla, updatedData);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public @Nullable LootContext enter(@NotNull String scope) {
+        var visited = (Set<String>) data.get(VISITED);
+        if (visited != null && visited.contains(scope)) {
+            return null;
+        }
+
+        var updated = new HashSet<String>(visited != null ? visited : Set.of());
+        updated.add(scope);
+
+        var updatedData = new HashMap<>(this.data);
+        updatedData.put(VISITED, Set.copyOf(updated));
         return new LootContextImpl(this.vanilla, updatedData);
     }
 }

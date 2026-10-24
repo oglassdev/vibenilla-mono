@@ -370,6 +370,8 @@ public interface EntityPredicate {
             @NotNull LootNumberRange verticalSpeed,
             @NotNull LootNumberRange fallDistance)
             implements EntityPredicate {
+        private static final double TICKS_PER_SECOND = 20.0;
+
         public static final @NotNull StructCodec<EntityMovementPredicate> CODEC =
                 StructCodec.struct(
                         "x",
@@ -411,26 +413,32 @@ public interface EntityPredicate {
         }
 
         private boolean test(@Nullable Entity entity, @Nullable Double fallDistance) {
-            if (entity == null || fallDistance == null) {
+            if (entity == null) {
 
                 return false;
             }
 
             var velocity = entity.getVelocity();
-            var x = velocity.x() * 20.0;
-            var y = velocity.y() * 20.0;
-            var z = velocity.z() * 20.0;
+            var x = velocity.x() / TICKS_PER_SECOND;
+            var y = velocity.y() / TICKS_PER_SECOND;
+            var z = velocity.z() / TICKS_PER_SECOND;
             var speedSquared = x * x + y * y + z * z;
             var horizontalSpeedSquared = x * x + z * z;
             var verticalSpeed = Math.abs(y);
             var context = LootContext.from(VanillaInterface.defaults(), Map.of());
+            if (fallDistance == null
+                    ? this.fallDistance.min() != null || this.fallDistance.max() != null
+                    : !this.fallDistance.check(context, fallDistance)) {
+
+                return false;
+            }
+
             return this.x.check(context, x)
                     && this.y.check(context, y)
                     && this.z.check(context, z)
                     && this.speed.checkSquared(context, speedSquared)
                     && this.horizontalSpeed.checkSquared(context, horizontalSpeedSquared)
-                    && this.verticalSpeed.check(context, verticalSpeed)
-                    && this.fallDistance.check(context, fallDistance);
+                    && this.verticalSpeed.check(context, verticalSpeed);
         }
     }
 
@@ -1185,7 +1193,7 @@ public interface EntityPredicate {
         public boolean test(
                 @NotNull Instance instance, @Nullable Point position, @Nullable Entity entity) {
             var vehicle = entity == null ? null : entity.getVehicle();
-            return vehicle != null && this.predicate.test(instance, vehicle.getPosition(), vehicle);
+            return vehicle != null && this.predicate.test(instance, position, vehicle);
         }
 
         @Override
@@ -1195,8 +1203,7 @@ public interface EntityPredicate {
                 @Nullable Entity entity,
                 @NotNull VanillaInterface vanilla) {
             var vehicle = entity == null ? null : entity.getVehicle();
-            return vehicle != null
-                    && this.predicate.test(instance, vehicle.getPosition(), vehicle, vanilla);
+            return vehicle != null && this.predicate.test(instance, position, vehicle, vanilla);
         }
     }
 
@@ -1208,8 +1215,7 @@ public interface EntityPredicate {
                     && entity.getPassengers().stream()
                             .anyMatch(
                                     passenger ->
-                                            this.predicate.test(
-                                                    instance, passenger.getPosition(), passenger));
+                                            this.predicate.test(instance, position, passenger));
         }
 
         @Override
@@ -1223,10 +1229,7 @@ public interface EntityPredicate {
                             .anyMatch(
                                     passenger ->
                                             this.predicate.test(
-                                                    instance,
-                                                    passenger.getPosition(),
-                                                    passenger,
-                                                    vanilla));
+                                                    instance, position, passenger, vanilla));
         }
     }
 
@@ -1237,7 +1240,7 @@ public interface EntityPredicate {
             var targetedEntity =
                     entity instanceof EntityCreature creature ? creature.getTarget() : null;
             return targetedEntity != null
-                    && this.predicate.test(instance, targetedEntity.getPosition(), targetedEntity);
+                    && this.predicate.test(instance, position, targetedEntity);
         }
 
         @Override
@@ -1249,8 +1252,7 @@ public interface EntityPredicate {
             var targetedEntity =
                     entity instanceof EntityCreature creature ? creature.getTarget() : null;
             return targetedEntity != null
-                    && this.predicate.test(
-                            instance, targetedEntity.getPosition(), targetedEntity, vanilla);
+                    && this.predicate.test(instance, position, targetedEntity, vanilla);
         }
     }
 }

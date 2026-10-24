@@ -69,7 +69,7 @@ class LootPredicateTest {
                         .asTag(
                                 """
                 {
-                  "condition": "minecraft:entity_properties",
+                  "type": "minecraft:entity_properties",
                   "entity": "this"
                 }
                 """);
@@ -88,7 +88,7 @@ class LootPredicateTest {
                         .asTag(
                                 """
                 {
-                  "condition": "minecraft:match_tool"
+                  "type": "minecraft:match_tool"
                 }
                 """);
         var predicate = LootPredicate.MatchTool.CODEC.decode(Transcoder.NBT, input).orElseThrow();

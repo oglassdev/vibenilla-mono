@@ -140,4 +140,47 @@ class LootPoolTest {
         assertEquals(
                 1, entry.requestChoices(context).getFirst().generate(context).getFirst().amount());
     }
+
+    @Test
+    void alternativesStopAtAnEntryWhoseConditionsPassEvenWithoutChoices() {
+        MinecraftServer.init();
+
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of());
+        var entry =
+                new LootEntry.Alternatives(
+                        List.of(),
+                        List.of(
+                                new LootEntry.Group(List.of(), List.of()),
+                                item(Material.STONE, List.of())));
+
+        assertEquals(List.of(), entry.requestChoices(context));
+    }
+
+    @Test
+    void failedSequencesFailTheirAlternativesButKeepEmittedChoices() {
+        MinecraftServer.init();
+
+        var context = LootContext.from(VanillaInterface.defaults(), Map.of());
+        var failing = List.<LootPredicate>of(new LootPredicate.KilledByPlayer());
+        var entry =
+                new LootEntry.Alternatives(
+                        List.of(),
+                        List.of(
+                                new LootEntry.Sequence(
+                                        List.of(),
+                                        List.of(
+                                                item(Material.STONE, List.of()),
+                                                item(Material.DIRT, failing))),
+                                item(Material.DIAMOND, List.of())));
+
+        assertEquals(
+                List.of(Material.STONE, Material.DIAMOND),
+                entry.requestChoices(context).stream()
+                        .map(choice -> ((LootEntry.Item) choice).name())
+                        .toList());
+    }
+
+    private static LootEntry.Item item(Material material, List<LootPredicate> predicates) {
+        return new LootEntry.Item(predicates, List.of(), 1L, 0L, material);
+    }
 }

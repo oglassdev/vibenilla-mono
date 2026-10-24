@@ -56,7 +56,11 @@ public interface LootFunction {
                     .orElse(
                             makeCodec()
                                     .list()
-                                    .transform(Sequence::new, seq -> ((Sequence) seq).functions()));
+                                    .transform(Sequence::new, seq -> ((Sequence) seq).functions()))
+                    .orElse(
+                            Codec.KEY.<LootFunction>transform(
+                                    key -> new Reference(List.of(), key),
+                                    function -> ((Reference) function).name()));
 
     private static StructCodec<LootFunction> makeCodec() {
         return Codec.RegistryTaggedUnion(
@@ -68,7 +72,7 @@ public interface LootFunction {
                     return Holder.CODEC;
                 },
                 LootFunction::codec,
-                "function");
+                "type");
     }
 
     final class Codecs {
@@ -136,7 +140,6 @@ public interface LootFunction {
         registry.register("furnace_smelt", FurnaceSmelt.CODEC);
         registry.register("limit_count", LimitCount.CODEC);
         registry.register("modify_contents", ModifyContents.CODEC);
-        registry.register("reference", Reference.CODEC);
         registry.register("set_attributes", SetAttributes.CODEC);
         registry.register("set_banner_pattern", SetBannerPattern.CODEC);
         registry.register("set_book_cover", SetBookCover.CODEC);
@@ -268,8 +271,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<ApplyBonus> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         ApplyBonus::predicates,
                         "enchantment",
                         RegistryKey.codec(Registries::enchantment),
@@ -437,8 +440,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<CopyComponents> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         CopyComponents::predicates,
                         "source",
                         RelevantTarget.CODEC,
@@ -548,8 +551,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<CopyCustomData> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         CopyCustomData::predicates,
                         "source",
                         LootNBT.CODEC,
@@ -669,8 +672,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<CopyName> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         CopyName::predicates,
                         "source",
                         RelevantTarget.ENTITY_OR_BLOCK_CODEC,
@@ -715,8 +718,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<CopyState> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         CopyState::predicates,
                         "block",
                         Codec.KEY.transform(Block::fromKey, Block::key),
@@ -775,8 +778,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<EnchantedCountIncrease> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         EnchantedCountIncrease::predicates,
                         "enchantment",
                         RegistryKey.codec(Registries::enchantment),
@@ -828,8 +831,8 @@ public interface LootFunction {
 
         public static final @NotNull StructCodec<EnchantRandomly> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         EnchantRandomly::predicates,
                         "options",
                         RegistryTag.codec(Registries::enchantment).optional(),
@@ -874,7 +877,7 @@ public interface LootFunction {
             var result = EnchantmentUtils.modifyItem(input, map -> map.put(chosen, level));
 
             if (this.includeAdditionalCostComponent
-                    && context.has(LootContext.ADDITIONAL_COST_COMPONENT_ALLOWED)) {
+                    && context.get(LootContext.ADDITIONAL_COST_COMPONENT_ALLOWED, false)) {
                 return result.with(
                         DataComponents.ADDITIONAL_TRADE_COST,
                         2 + random.nextInt(5 + level * 10) + 3 * level);
@@ -904,8 +907,8 @@ public interface LootFunction {
 
         public static final @NotNull StructCodec<EnchantWithLevels> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         EnchantWithLevels::predicates,
                         "levels",
                         LootNumber.CODEC,
@@ -934,7 +937,7 @@ public interface LootFunction {
                                     this.options);
 
             if (this.includeAdditionalCostComponent
-                    && context.has(LootContext.ADDITIONAL_COST_COMPONENT_ALLOWED)
+                    && context.get(LootContext.ADDITIONAL_COST_COMPONENT_ALLOWED, false)
                     && !result.isAir()
                     && enchantmentCost > 0) {
                 return result.with(DataComponents.ADDITIONAL_TRADE_COST, enchantmentCost);
@@ -959,8 +962,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<ExplorationMap> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         ExplorationMap::predicates,
                         "destination",
                         Codec.STRING
@@ -1012,8 +1015,8 @@ public interface LootFunction {
     record ExplosionDecay(@NotNull List<LootPredicate> predicates) implements LootFunction {
         public static final @NotNull StructCodec<ExplosionDecay> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         ExplosionDecay::predicates,
                         ExplosionDecay::new);
 
@@ -1050,8 +1053,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<FillPlayerHead> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         FillPlayerHead::predicates,
                         "entity",
                         RelevantEntity.CODEC,
@@ -1086,8 +1089,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<Filtered> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         Filtered::predicates,
                         "item_filter",
                         ItemPredicate.CODEC,
@@ -1121,8 +1124,8 @@ public interface LootFunction {
     record Discard(@NotNull List<LootPredicate> predicates) implements LootFunction {
         public static final @NotNull StructCodec<Discard> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         Discard::predicates,
                         Discard::new);
 
@@ -1150,8 +1153,8 @@ public interface LootFunction {
 
         public static final @NotNull StructCodec<FurnaceSmelt> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         FurnaceSmelt::predicates,
                         "use_input_count",
                         Codec.BOOLEAN.optional(true),
@@ -1184,8 +1187,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<LimitCount> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         LimitCount::predicates,
                         "limit",
                         LootNumberRange.CODEC,
@@ -1218,8 +1221,8 @@ public interface LootFunction {
 
         public static final @NotNull StructCodec<ModifyContents> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         ModifyContents::predicates,
                         "component",
                         Template.CONTAINER,
@@ -1272,8 +1275,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<Reference> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         Reference::predicates,
                         "name",
                         Codec.KEY,
@@ -1284,9 +1287,11 @@ public interface LootFunction {
         public @NotNull ItemStack apply(@NotNull ItemStack input, @NotNull LootContext context) {
             if (!LootPredicate.all(predicates, context)) return input;
 
-            LootFunction function = context.vanilla().functionRegistry(name);
+            var function = context.vanilla().functionRegistry(name);
+            if (function == null) return input;
 
-            return function != null ? function.apply(input, context) : input;
+            var inner = context.enter("function:" + name.asString());
+            return inner != null ? function.apply(input, inner) : input;
         }
 
         @Override
@@ -1302,8 +1307,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<SetAttributes> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetAttributes::predicates,
                         "modifiers",
                         AttributeDirective.CODEC.list(),
@@ -1407,8 +1412,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<SetBannerPattern> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetBannerPattern::predicates,
                         "patterns",
                         BannerPatterns.CODEC,
@@ -1458,8 +1463,8 @@ public interface LootFunction {
 
         public static final @NotNull StructCodec<SetBookCover> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetBookCover::predicates,
                         "title",
                         TITLE_CODEC.optional(),
@@ -1500,8 +1505,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<SetComponents> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetComponents::predicates,
                         "components",
                         DataComponent.PATCH_CODEC,
@@ -1554,8 +1559,8 @@ public interface LootFunction {
 
         public static final @NotNull StructCodec<SetContents> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetContents::predicates,
                         "component",
                         Template.CONTAINER,
@@ -1598,8 +1603,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<SetCount> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetCount::predicates,
                         "count",
                         LootNumber.CODEC,
@@ -1625,8 +1630,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<SetCustomData> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetCustomData::predicates,
                         "tag",
                         Codec.STRING.transform(
@@ -1668,8 +1673,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<SetCustomModelData> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetCustomModelData::predicates,
                         "floats",
                         ListOperation.WithValues.codec(LootNumber.CODEC).optional(),
@@ -1759,8 +1764,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<SetDamage> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetDamage::predicates,
                         "damage",
                         LootNumber.CODEC,
@@ -1806,8 +1811,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<SetEnchantments> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetEnchantments::predicates,
                         "enchantments",
                         RegistryKey.codec(Registries::enchantment)
@@ -1863,8 +1868,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<SetFireworkExplosion> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetFireworkExplosion::predicates,
                         "shape",
                         Codec.Enum(FireworkExplosion.Shape.class).optional(),
@@ -1929,8 +1934,8 @@ public interface LootFunction {
 
         public static final @NotNull StructCodec<SetFireworks> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetFireworks::predicates,
                         "flight_duration",
                         UNSIGNED_BYTE_CODEC.optional(),
@@ -1972,8 +1977,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<SetInstrument> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetInstrument::predicates,
                         "options",
                         RegistryTag.codec(Registries::instrument),
@@ -2005,8 +2010,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<SetItem> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetItem::predicates,
                         "item",
                         Material.CODEC,
@@ -2026,30 +2031,20 @@ public interface LootFunction {
         }
     }
 
-    record SetLootTable(
-            @NotNull List<LootPredicate> predicates,
-            @NotNull Key name,
-            long seed,
-            @Nullable Key type)
+    record SetLootTable(@NotNull List<LootPredicate> predicates, @NotNull Key name, long seed)
             implements LootFunction {
-        public SetLootTable(@NotNull List<LootPredicate> predicates, @NotNull Key name, long seed) {
-            this(predicates, name, seed, null);
-        }
 
         public static final @NotNull StructCodec<SetLootTable> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetLootTable::predicates,
-                        "name",
+                        "loot_table_id",
                         Codec.KEY,
                         SetLootTable::name,
                         "seed",
                         Codec.LONG.optional(0L),
                         SetLootTable::seed,
-                        "type",
-                        Codec.KEY,
-                        SetLootTable::type,
                         SetLootTable::new);
 
         @Override
@@ -2075,8 +2070,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<SetLore> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetLore::predicates,
                         "lore",
                         Codec.COMPONENT.list(256),
@@ -2118,8 +2113,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<SetName> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetName::predicates,
                         "name",
                         Codec.COMPONENT.optional(),
@@ -2188,8 +2183,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<SetOminousBottleAmplifier> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetOminousBottleAmplifier::predicates,
                         "amplifier",
                         LootNumber.CODEC,
@@ -2226,8 +2221,8 @@ public interface LootFunction {
 
         public static final @NotNull StructCodec<SetPotion> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetPotion::predicates,
                         "id",
                         POTION_CODEC,
@@ -2259,8 +2254,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<SetRandomDyes> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetRandomDyes::predicates,
                         "number_of_dyes",
                         LootNumber.CODEC,
@@ -2319,8 +2314,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<SetRandomPotion> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetRandomPotion::predicates,
                         "options",
                         RegistryTag.codec(Registries::potionType).optional(),
@@ -2363,8 +2358,8 @@ public interface LootFunction {
 
         public static final @NotNull StructCodec<SetStewEffect> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetStewEffect::predicates,
                         "effects",
                         EFFECTS_CODEC.optional(List.of()),
@@ -2439,8 +2434,8 @@ public interface LootFunction {
 
         public static final @NotNull StructCodec<SetWritableBookPages> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetWritableBookPages::predicates,
                         "pages",
                         PAGE_CODEC.list(100),
@@ -2475,8 +2470,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<SetWrittenBookPages> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         SetWrittenBookPages::predicates,
                         "pages",
                         FilteredText.COMPONENT_CODEC.list(100),
@@ -2531,8 +2526,8 @@ public interface LootFunction {
             implements LootFunction {
         public static final @NotNull StructCodec<ToggleTooltips> CODEC =
                 StructCodec.struct(
-                        "conditions",
-                        LootPredicate.CODEC.list().optional(List.of()),
+                        "condition",
+                        LootPredicate.CODEC.listOrSingle().optional(List.of()),
                         ToggleTooltips::predicates,
                         "toggles",
                         DataComponent.CODEC.mapValue(StructCodec.BOOLEAN),

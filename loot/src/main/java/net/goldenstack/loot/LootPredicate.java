@@ -17,7 +17,6 @@ import net.minestom.server.codec.StructCodec;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.instance.Weather;
-import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.predicate.BlockPredicate;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.enchant.Enchantment;
@@ -37,42 +36,45 @@ import org.jetbrains.annotations.Nullable;
 public interface LootPredicate extends Predicate<@NotNull LootContext> {
 
     @NotNull
-    StructCodec<LootPredicate> CODEC =
+    Codec<LootPredicate> CODEC =
             Codec.RegistryTaggedUnion(
-                    registries -> {
-                        class Holder {
-                            static final @NotNull DynamicRegistry<
-                                            StructCodec<? extends LootPredicate>>
-                                    CODEC = createDefaultRegistry();
-                        }
-                        return Holder.CODEC;
-                    },
-                    LootPredicate::codec,
-                    "condition");
+                            registries -> {
+                                class Holder {
+                                    static final @NotNull DynamicRegistry<
+                                                    StructCodec<? extends LootPredicate>>
+                                            CODEC = createDefaultRegistry();
+                                }
+                                return Holder.CODEC;
+                            },
+                            LootPredicate::codec,
+                            "type")
+                    .orElse(
+                            Codec.KEY.<LootPredicate>transform(
+                                    Reference::new, predicate -> ((Reference) predicate).name()));
 
     static @NotNull DynamicRegistry<StructCodec<? extends LootPredicate>> createDefaultRegistry() {
         final DynamicRegistry<StructCodec<? extends LootPredicate>> registry =
                 DynamicRegistry.create(Key.key("loot_predicates"));
         registry.register("all_of", AllOf.CODEC);
         registry.register("any_of", AnyOf.CODEC);
-        registry.register("block_state_property", BlockStateProperty.CODEC);
         registry.register("damage_source_properties", DamageSourceProperties.CODEC);
         registry.register("enchantment_active_check", EnchantmentActiveCheck.CODEC);
         registry.register("entity_properties", EntityProperties.CODEC);
         registry.register("entity_scores", EntityScores.CODEC);
         registry.register("environment_attribute_check", EnvironmentAttributeCheck.CODEC);
+        registry.register("float_value_check", FloatValueCheck.CODEC);
+        registry.register("int_value_check", IntValueCheck.CODEC);
         registry.register("inverted", Inverted.CODEC);
         registry.register("killed_by_player", KilledByPlayer.CODEC);
         registry.register("location_check", LocationCheck.CODEC);
+        registry.register("match_block", MatchBlock.CODEC);
         registry.register("match_tool", MatchTool.CODEC);
         registry.register("random_chance", RandomChance.CODEC);
         registry.register(
                 "random_chance_with_enchanted_bonus", RandomChanceWithEnchantedBonus.CODEC);
-        registry.register("reference", Reference.CODEC);
         registry.register("survives_explosion", SurvivesExplosion.CODEC);
         registry.register("table_bonus", TableBonus.CODEC);
         registry.register("time_check", TimeCheck.CODEC);
-        registry.register("value_check", ValueCheck.CODEC);
         registry.register("weather_check", WeatherCheck.CODEC);
         return registry;
     }
@@ -135,33 +137,6 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
                 }
             }
             return false;
-        }
-
-        @Override
-        public @NotNull StructCodec<? extends LootPredicate> codec() {
-            return CODEC;
-        }
-    }
-
-    record BlockStateProperty(@NotNull Key block, @Nullable BlockPredicate properties)
-            implements LootPredicate {
-        public static final @NotNull StructCodec<BlockStateProperty> CODEC =
-                StructCodec.struct(
-                        "block",
-                        Codec.KEY,
-                        BlockStateProperty::block,
-                        "properties",
-                        BlockPredicate.CODEC.optional(),
-                        BlockStateProperty::properties,
-                        BlockStateProperty::new);
-
-        @Override
-        public boolean test(@NotNull LootContext context) {
-            Block block = context.get(LootContext.BLOCK_STATE);
-
-            return block != null
-                    && this.block.equals(block.key())
-                    && (properties == null || properties.test(block));
         }
 
         @Override
@@ -383,6 +358,26 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
         }
     }
 
+    record MatchBlock(@NotNull BlockPredicate predicate) implements LootPredicate {
+        public static final @NotNull StructCodec<MatchBlock> CODEC =
+                StructCodec.struct(
+                        StructCodec.INLINE,
+                        BlockPredicate.CODEC,
+                        MatchBlock::predicate,
+                        MatchBlock::new);
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            var block = context.get(LootContext.BLOCK_STATE);
+            return block != null && predicate.test(block);
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
     record MatchTool(@Nullable ItemPredicate predicate) implements LootPredicate {
         public static final @NotNull StructCodec<MatchTool> CODEC =
                 StructCodec.struct(
@@ -476,9 +471,13 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
 
         @Override
         public boolean test(@NotNull LootContext context) {
-            LootPredicate predicate = context.vanilla().predicateRegistry(name);
+            var predicate = context.vanilla().predicateRegistry(name);
+            if (predicate == null) {
+                return false;
+            }
 
-            return predicate != null && predicate.test(context);
+            var inner = context.enter("predicate:" + name.asString());
+            return inner != null && predicate.test(inner);
         }
 
         @Override
@@ -578,21 +577,44 @@ public interface LootPredicate extends Predicate<@NotNull LootContext> {
         }
     }
 
-    record ValueCheck(@NotNull LootNumber value, @NotNull LootNumberRange range)
+    record IntValueCheck(@NotNull LootNumber value, @NotNull LootNumberRange range)
             implements LootPredicate {
-        public static final @NotNull StructCodec<ValueCheck> CODEC =
+        public static final @NotNull StructCodec<IntValueCheck> CODEC =
                 StructCodec.struct(
                         "value",
                         LootNumber.CODEC,
-                        ValueCheck::value,
+                        IntValueCheck::value,
                         "range",
                         LootNumberRange.CODEC,
-                        ValueCheck::range,
-                        ValueCheck::new);
+                        IntValueCheck::range,
+                        IntValueCheck::new);
 
         @Override
         public boolean test(@NotNull LootContext context) {
             return range.check(context, value.getInt(context));
+        }
+
+        @Override
+        public @NotNull StructCodec<? extends LootPredicate> codec() {
+            return CODEC;
+        }
+    }
+
+    record FloatValueCheck(@NotNull LootNumber value, @NotNull LootNumberRange range)
+            implements LootPredicate {
+        public static final @NotNull StructCodec<FloatValueCheck> CODEC =
+                StructCodec.struct(
+                        "value",
+                        LootNumber.CODEC,
+                        FloatValueCheck::value,
+                        "range",
+                        LootNumberRange.CODEC,
+                        FloatValueCheck::range,
+                        FloatValueCheck::new);
+
+        @Override
+        public boolean test(@NotNull LootContext context) {
+            return range.check(context, (double) (float) value.getDouble(context));
         }
 
         @Override
