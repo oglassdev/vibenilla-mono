@@ -171,7 +171,7 @@ public class VanillaDamageFeature implements DamageFeature, RegistrableFeature {
         var hurtSoundAndAnimation = true;
         var newDamageTime =
                 entity.hasTag(NEW_DAMAGE_TIME) ? entity.getTag(NEW_DAMAGE_TIME) : -10000;
-        if (entity.getAliveTicks() - newDamageTime < 0) {
+        if (entity.getAliveTicks() - newDamageTime < 0 && !this.bypassesCooldown(damage)) {
             var lastDamage =
                     entity.hasTag(LAST_DAMAGE_AMOUNT) ? entity.getTag(LAST_DAMAGE_AMOUNT) : 0;
 
@@ -352,6 +352,15 @@ public class VanillaDamageFeature implements DamageFeature, RegistrableFeature {
                 MinecraftServer.process().damageType().getTag(Key.key("minecraft:no_knockback"));
 
         return noKnockback != null && noKnockback.contains(damage.getType());
+    }
+
+    private boolean bypassesCooldown(Damage damage) {
+        var bypassesCooldown =
+                MinecraftServer.process()
+                        .damageType()
+                        .getTag(Key.key("minecraft:bypasses_cooldown"));
+
+        return bypassesCooldown != null && bypassesCooldown.contains(damage.getType());
     }
 
     private boolean isImmuneToDamageFromEnchantments(

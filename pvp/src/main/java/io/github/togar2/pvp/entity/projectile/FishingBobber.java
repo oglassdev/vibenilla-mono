@@ -147,19 +147,24 @@ public class FishingBobber extends CustomEntityProjectile {
     }
 
     @Override
+    protected boolean canHit(Entity entity) {
+        return super.canHit(entity) || (!this.legacy && entity instanceof ItemEntity);
+    }
+
+    @Override
     public boolean onHit(Entity entity) {
         if (this.hooked != null) return false;
         this.setHookedEntity(entity);
 
         if (this.legacy) {
+            if (!(entity instanceof LivingEntity living)) return false;
             if (entity instanceof Player player
                     && (player == this.getShooter() || player.getGameMode() == GameMode.CREATIVE))
                 return false;
 
             var posNow = this.position;
             this.position = this.prevPos;
-            if (((LivingEntity) entity)
-                    .damage(new Damage(DamageType.GENERIC, null, null, null, 0))) {
+            if (living.damage(new Damage(DamageType.GENERIC, null, null, null, 0))) {
                 entity.setVelocity(
                         this.calculateLegacyKnockback(entity.getVelocity(), entity.getPosition()));
             }

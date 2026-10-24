@@ -8,6 +8,7 @@ import io.github.togar2.pvp.feature.config.FeatureConfiguration;
 import io.github.togar2.pvp.utils.ViewUtil;
 import java.util.List;
 import net.kyori.adventure.sound.Sound;
+import net.minestom.server.MinecraftServer;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.EquipmentSlot;
@@ -140,7 +141,18 @@ public class VanillaEquipmentFeature implements EquipmentFeature, RegistrableFea
         }
 
         var clickedItem = player.getInventory().getItemStack(click.slot());
-        return clickedItem.has(EffectComponent.PREVENT_ARMOR_CHANGE);
+        var enchantments = clickedItem.get(DataComponents.ENCHANTMENTS);
+        if (enchantments == null) return false;
+
+        var registry = MinecraftServer.getEnchantmentRegistry();
+        return enchantments.enchantments().keySet().stream()
+                .map(registry::get)
+                .anyMatch(
+                        enchantment ->
+                                enchantment != null
+                                        && enchantment
+                                                .effects()
+                                                .has(EffectComponent.PREVENT_ARMOR_CHANGE));
     }
 
     private @Nullable EquipmentSlot getArmorSlot(int slot) {

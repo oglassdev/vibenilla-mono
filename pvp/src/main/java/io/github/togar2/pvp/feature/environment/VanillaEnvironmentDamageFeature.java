@@ -9,6 +9,7 @@ import io.github.togar2.pvp.feature.enchantment.EnchantmentFeature;
 import io.github.togar2.pvp.feature.enchantment.VanillaEnchantmentFeature;
 import io.github.togar2.pvp.feature.provider.DifficultyProvider;
 import io.github.togar2.pvp.utils.ChunkBlockGetter;
+import io.github.togar2.pvp.utils.EffectUtil;
 import io.github.togar2.pvp.utils.FluidUtil;
 import io.github.togar2.pvp.utils.PotionFlags;
 import io.github.togar2.pvp.utils.RegistryTags;
@@ -31,6 +32,7 @@ import net.minestom.server.entity.attribute.Attribute;
 import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityTickEvent;
+import net.minestom.server.event.player.PlayerBlockBreakEvent;
 import net.minestom.server.event.player.PlayerTickEvent;
 import net.minestom.server.event.trait.EntityInstanceEvent;
 import net.minestom.server.instance.Instance;
@@ -44,6 +46,7 @@ import net.minestom.server.registry.RegistryKey;
 import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.world.Difficulty;
+import net.minestom.server.worldevent.WorldEvent;
 import org.jetbrains.annotations.Nullable;
 
 /** Vanilla implementation of {@link EnvironmentDamageFeature} */
@@ -114,6 +117,7 @@ public final class VanillaEnvironmentDamageFeature
     @Override
     public void init(EventNode<EntityInstanceEvent> node) {
         node.addListener(PlayerTickEvent.class, event -> this.handlePlayerTick(event.getPlayer()));
+        node.addListener(PlayerBlockBreakEvent.class, this::handleFireBreak);
 
         node.addListener(
                 EntityTickEvent.class,
@@ -123,6 +127,22 @@ public final class VanillaEnvironmentDamageFeature
 
                     this.handleEntityTick(livingEntity);
                 });
+    }
+
+    private void handleFireBreak(PlayerBlockBreakEvent event) {
+        var block = event.getBlock();
+        if (!block.compare(Block.FIRE) && !block.compare(Block.SOUL_FIRE)) return;
+
+        var position = event.getBlockPosition();
+        EffectUtil.sendNearby(
+                event.getInstance(),
+                WorldEvent.SOUND_EXTINGUISH_FIRE,
+                position.blockX(),
+                position.blockY(),
+                position.blockZ(),
+                0,
+                64.0,
+                false);
     }
 
     private void handlePlayerTick(Player player) {

@@ -163,6 +163,35 @@ public final class VanillaEquipmentFeatureTest {
     }
 
     @Test
+    public void curseOfBindingPreventsArmorRemovalInSurvival(Env env) {
+        var node = this.addEquipmentFeature();
+
+        try {
+            var instance = env.createFlatInstance();
+            var player = env.createPlayer(instance, new Pos(0.0, 40.0, 0.0));
+            player.setGameMode(GameMode.SURVIVAL);
+
+            var helmet =
+                    ItemStack.of(Material.DIAMOND_HELMET)
+                            .with(
+                                    DataComponents.ENCHANTMENTS,
+                                    new EnchantmentList(Enchantment.BINDING_CURSE, 1));
+            player.getInventory().setItemStack(PlayerInventoryUtils.HELMET_SLOT, helmet);
+
+            this.leftClick(player, PlayerInventoryUtils.HELMET_SLOT);
+            assertEquals(ItemStack.AIR, player.getInventory().getCursorItem());
+            assertEquals(
+                    helmet, player.getInventory().getItemStack(PlayerInventoryUtils.HELMET_SLOT));
+
+            player.setGameMode(GameMode.CREATIVE);
+            this.leftClick(player, PlayerInventoryUtils.HELMET_SLOT);
+            assertEquals(helmet, player.getInventory().getCursorItem());
+        } finally {
+            MinecraftServer.getGlobalEventHandler().removeChild(node);
+        }
+    }
+
+    @Test
     public void armorDamageDoesNotPlayAnEquipSound(Env env) {
         var node = this.addEquipmentFeature();
 

@@ -317,9 +317,7 @@ public final class VanillaExplosionSupplier implements ExplosionSupplier {
                                 ? 1.0F / this.getStrength()
                                 : 1.0F;
 
-                byte[] records = new byte[3 * blocks.size()];
-                for (var index = 0; index < blocks.size(); index++) {
-                    var blockPosition = blocks.get(index);
+                for (var blockPosition : blocks) {
                     var block = instance.getBlock(blockPosition);
                     if (tntExplodes && block.compare(Block.TNT)) {
                         var causingEntity = this.getCausingEntity(instance);
@@ -332,12 +330,6 @@ public final class VanillaExplosionSupplier implements ExplosionSupplier {
                         this.dropBlockItem(instance, blockPosition, block);
                     }
                     instance.setBlock(blockPosition, Block.AIR);
-                    var x = (byte) (blockPosition.x() - Math.floor(this.getCenterX()));
-                    var y = (byte) (blockPosition.y() - Math.floor(this.getCenterY()));
-                    var z = (byte) (blockPosition.z() - Math.floor(this.getCenterZ()));
-                    records[index * 3] = x;
-                    records[index * 3 + 1] = y;
-                    records[index * 3 + 2] = z;
                 }
 
                 var centerPoint = new Vec(centerX, centerY, centerZ);

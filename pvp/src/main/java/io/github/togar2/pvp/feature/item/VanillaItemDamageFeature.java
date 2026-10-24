@@ -87,7 +87,11 @@ public class VanillaItemDamageFeature implements ItemDamageFeature {
                 () -> {
                     Consumer<LivingEntity> breakCallback = _ -> triggerEquipmentBreak(entity, slot);
                     var newEquipment =
-                            this.damage(entity.getEquipment(slot), amount, entity, breakCallback);
+                            this.damage(
+                                    entity.getEquipment(slot),
+                                    event.getAmount(),
+                                    entity,
+                                    breakCallback);
                     entity.setEquipment(slot, newEquipment);
                 });
     }
