@@ -36,18 +36,19 @@ public final class TransmuteCraftingRecipe implements CraftingRecipe {
             return null;
         }
 
-        CraftingGrid.CraftingGridSlot baseIngredientSlot = null;
-        CraftingGrid.CraftingGridSlot catalystSlot = null;
+        var firstSlot = nonEmptySlots.get(0);
+        var secondSlot = nonEmptySlots.get(1);
+        var match = this.match(craftingGrid, firstSlot, secondSlot);
 
-        for (var gridSlot : nonEmptySlots) {
-            if (baseIngredientSlot == null && this.baseIngredient.matches(gridSlot.item())) {
-                baseIngredientSlot = gridSlot;
-            } else if (catalystSlot == null && this.catalystIngredient.matches(gridSlot.item())) {
-                catalystSlot = gridSlot;
-            }
-        }
+        return match != null ? match : this.match(craftingGrid, secondSlot, firstSlot);
+    }
 
-        if (baseIngredientSlot == null || catalystSlot == null) {
+    private CraftingRecipeMatch match(
+            CraftingGrid craftingGrid,
+            CraftingGrid.CraftingGridSlot baseIngredientSlot,
+            CraftingGrid.CraftingGridSlot catalystSlot) {
+        if (!this.baseIngredient.matches(baseIngredientSlot.item())
+                || !this.catalystIngredient.matches(catalystSlot.item())) {
             return null;
         }
 

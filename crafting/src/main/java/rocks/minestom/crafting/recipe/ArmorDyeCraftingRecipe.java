@@ -3,7 +3,6 @@ package rocks.minestom.crafting.recipe;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import java.util.ArrayList;
 import java.util.Map;
-import net.kyori.adventure.key.Key;
 import net.kyori.adventure.util.RGBLike;
 import net.minestom.server.color.Color;
 import net.minestom.server.color.DyeColor;
@@ -12,7 +11,6 @@ import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import rocks.minestom.crafting.CraftingGrid;
 import rocks.minestom.crafting.Ingredient;
-import rocks.minestom.crafting.ItemTagManager;
 
 public final class ArmorDyeCraftingRecipe implements CraftingRecipe {
     private static final Map<Material, DyeColor> DYE_COLORS =
@@ -36,9 +34,8 @@ public final class ArmorDyeCraftingRecipe implements CraftingRecipe {
 
     private final Ingredient dyeableIngredient;
 
-    public ArmorDyeCraftingRecipe(ItemTagManager tagManager) {
-        this.dyeableIngredient =
-                Ingredient.ofTag(tagManager.materials(Key.key("minecraft:dyeable")));
+    public ArmorDyeCraftingRecipe(Ingredient dyeableIngredient) {
+        this.dyeableIngredient = dyeableIngredient;
     }
 
     @Override
@@ -58,7 +55,7 @@ public final class ArmorDyeCraftingRecipe implements CraftingRecipe {
         for (var gridSlot : nonEmptySlots) {
             var item = gridSlot.item();
 
-            if (this.dyeableIngredient != null && this.dyeableIngredient.matches(item)) {
+            if (this.dyeableIngredient.matches(item)) {
                 if (dyeableItem != null) {
                     return null;
                 }
@@ -81,15 +78,14 @@ public final class ArmorDyeCraftingRecipe implements CraftingRecipe {
         usage.addTo(dyeableSlot.slotIndex(), 1);
 
         var existingColor = dyeableItem.get(DataComponents.DYED_COLOR);
-        Color baseColor;
 
         if (existingColor != null) {
-            baseColor = Color.fromRGBLike(existingColor);
-        } else {
-            baseColor = new Color(0xA06540);
+            dyeColors.add(0, existingColor);
         }
 
-        var newColor = baseColor.mixWith(dyeColors.toArray(new RGBLike[0]));
+        var newColor =
+                Color.fromRGBLike(dyeColors.getFirst())
+                        .mixWith(dyeColors.subList(1, dyeColors.size()).toArray(new RGBLike[0]));
         var result = dyeableItem.with(DataComponents.DYED_COLOR, newColor);
 
         return new CraftingRecipeMatch(this, result, usage, craftingGrid);

@@ -1,11 +1,20 @@
 package rocks.minestom.crafting.recipe;
 
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.item.ItemStack;
+import net.minestom.server.item.component.EnchantmentList;
+import net.minestom.server.item.enchant.Enchantment;
+import net.minestom.server.registry.RegistryKey;
 import rocks.minestom.crafting.CraftingGrid;
 
 public final class RepairItemCraftingRecipe implements CraftingRecipe {
+    private static final Set<RegistryKey<Enchantment>> CURSES =
+            Set.of(Enchantment.BINDING_CURSE, Enchantment.VANISHING_CURSE);
 
     @Override
     public CraftingRecipeMatch match(CraftingGrid craftingGrid) {
@@ -46,8 +55,33 @@ public final class RepairItemCraftingRecipe implements CraftingRecipe {
                 ItemStack.of(firstItem.material())
                         .with(DataComponents.MAX_DAMAGE, maxDamage)
                         .with(DataComponents.DAMAGE, newDamage);
+        var curses = this.mergeCurses(firstItem, secondItem);
+
+        if (!curses.isEmpty()) {
+            result = result.with(DataComponents.ENCHANTMENTS, new EnchantmentList(curses));
+        }
 
         return new CraftingRecipeMatch(this, result, usage, craftingGrid);
+    }
+
+    private Map<RegistryKey<Enchantment>, Integer> mergeCurses(ItemStack first, ItemStack second) {
+        var curses = new HashMap<RegistryKey<Enchantment>, Integer>();
+
+        for (var item : List.of(first, second)) {
+            var enchantments = item.get(DataComponents.ENCHANTMENTS);
+
+            if (enchantments == null) {
+                continue;
+            }
+
+            for (var entry : enchantments.enchantments().entrySet()) {
+                if (CURSES.contains(entry.getKey())) {
+                    curses.merge(entry.getKey(), entry.getValue(), Math::max);
+                }
+            }
+        }
+
+        return curses;
     }
 
     private boolean canCombine(ItemStack first, ItemStack second) {

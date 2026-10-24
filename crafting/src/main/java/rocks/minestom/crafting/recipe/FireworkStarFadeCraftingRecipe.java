@@ -83,7 +83,7 @@ public final class FireworkStarFadeCraftingRecipe implements CraftingRecipe {
                         existingExplosion.hasTrail(),
                         existingExplosion.hasTwinkle());
 
-        var result = starItem.with(DataComponents.FIREWORK_EXPLOSION, newExplosion);
+        var result = starItem.with(DataComponents.FIREWORK_EXPLOSION, newExplosion).withAmount(1);
 
         return new CraftingRecipeMatch(this, result, usage, craftingGrid);
     }

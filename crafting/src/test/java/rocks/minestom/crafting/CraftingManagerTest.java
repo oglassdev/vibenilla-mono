@@ -5,17 +5,26 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.color.Color;
+import net.minestom.server.color.DyeColor;
 import net.minestom.server.component.DataComponents;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
+import net.minestom.server.item.component.EnchantmentList;
+import net.minestom.server.item.component.FireworkExplosion;
 import net.minestom.server.item.component.PotDecorations;
+import net.minestom.server.item.enchant.Enchantment;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import rocks.minestom.crafting.recipe.ShapelessCraftingRecipe;
 
 final class CraftingManagerTest {
     private static final Path DATA_PATH = Path.of("data", "minecraft");
@@ -62,6 +71,81 @@ final class CraftingManagerTest {
         assertEquals(Material.BLADE_POTTERY_SHERD, decorations.left().material());
         assertEquals(Material.ARMS_UP_POTTERY_SHERD, decorations.right().material());
         assertEquals(Material.MOURNER_POTTERY_SHERD, decorations.front().material());
+    }
+
+    @Test
+    void fireworkStarFadeConsumesSingleStar() {
+        var explosion =
+                new FireworkExplosion(
+                        FireworkExplosion.Shape.SMALL_BALL, List.of(), List.of(), false, false);
+        var stars =
+                ItemStack.of(Material.FIREWORK_STAR)
+                        .withAmount(64)
+                        .with(DataComponents.FIREWORK_EXPLOSION, explosion);
+
+        var recipeMatch =
+                CRAFTING_MANAGER.match(createGrid(2, 2, stars, ItemStack.of(Material.RED_DYE)));
+
+        assertNotNull(recipeMatch);
+        assertEquals(1, recipeMatch.result().amount());
+    }
+
+    @Test
+    void shapelessMatchingIgnoresSlotOrder() {
+        var recipe =
+                new ShapelessCraftingRecipe(
+                        List.of(
+                                Ingredient.ofTag(Set.of(Material.WHITE_WOOL, Material.RED_WOOL)),
+                                Ingredient.ofMaterial(Material.WHITE_WOOL)),
+                        ItemStack.of(Material.STICK));
+
+        var recipeMatch =
+                recipe.match(
+                        createGrid(
+                                2,
+                                1,
+                                ItemStack.of(Material.WHITE_WOOL),
+                                ItemStack.of(Material.RED_WOOL)));
+
+        assertNotNull(recipeMatch);
+    }
+
+    @Test
+    void dyeingUndyedArmorUsesOnlyDyeColor() {
+        var recipeMatch =
+                CRAFTING_MANAGER.match(
+                        createGrid(
+                                2,
+                                1,
+                                ItemStack.of(Material.LEATHER_CHESTPLATE),
+                                ItemStack.of(Material.RED_DYE)));
+
+        assertNotNull(recipeMatch);
+        assertEquals(
+                Color.fromRGBLike(DyeColor.RED.color()),
+                Color.fromRGBLike(recipeMatch.result().get(DataComponents.DYED_COLOR)));
+    }
+
+    @Test
+    void repairKeepsOnlyCurses() {
+        var enchanted =
+                ItemStack.of(Material.DIAMOND_PICKAXE)
+                        .with(
+                                DataComponents.ENCHANTMENTS,
+                                new EnchantmentList(
+                                        Map.of(
+                                                Enchantment.BINDING_CURSE,
+                                                1,
+                                                Enchantment.MENDING,
+                                                1)))
+                        .with(DataComponents.DAMAGE, 100);
+
+        var recipeMatch = CRAFTING_MANAGER.match(createGrid(2, 1, enchanted, enchanted));
+
+        assertNotNull(recipeMatch);
+        assertEquals(
+                new EnchantmentList(Enchantment.BINDING_CURSE, 1),
+                recipeMatch.result().get(DataComponents.ENCHANTMENTS));
     }
 
     private static Stream<Arguments> craftingData() {

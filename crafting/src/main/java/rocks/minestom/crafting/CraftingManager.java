@@ -11,6 +11,8 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.minestom.server.codec.Transcoder;
 import net.minestom.server.entity.Player;
+import net.minestom.server.event.Event;
+import net.minestom.server.event.EventNode;
 import net.minestom.server.inventory.AbstractInventory;
 import net.minestom.server.inventory.Inventory;
 import net.minestom.server.inventory.InventoryType;
@@ -19,6 +21,7 @@ import net.minestom.server.item.Material;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rocks.minestom.crafting.listener.*;
 import rocks.minestom.crafting.recipe.*;
 
 public final class CraftingManager {
@@ -38,7 +41,6 @@ public final class CraftingManager {
 
     private void registerSpecialRecipes() {
         this.recipes.add(new DecoratedPotCraftingRecipe(this.tagManager));
-        this.recipes.add(new ArmorDyeCraftingRecipe(this.tagManager));
         this.recipes.add(new BannerDuplicateCraftingRecipe());
         this.recipes.add(new BookCloningCraftingRecipe(this.tagManager));
         this.recipes.add(new FireworkRocketCraftingRecipe());
@@ -57,8 +59,8 @@ public final class CraftingManager {
             return;
         }
 
-        try {
-            Files.walk(recipeDirectory)
+        try (var recipePaths = Files.walk(recipeDirectory)) {
+            recipePaths
                     .filter(Files::isRegularFile)
                     .filter(filePath -> filePath.toString().endsWith(".json"))
                     .sorted()
@@ -77,6 +79,7 @@ public final class CraftingManager {
                 case "minecraft:crafting_shaped" -> this.loadShaped(recipeObject);
                 case "minecraft:crafting_shapeless" -> this.loadShapeless(recipeObject);
                 case "minecraft:crafting_transmute" -> this.loadTransmute(recipeObject);
+                case "minecraft:crafting_dye" -> this.loadDye(recipeObject);
             }
         } catch (Exception exception) {
             LOGGER.error("Failed to parse recipe {}", recipePath, exception);
@@ -210,6 +213,14 @@ public final class CraftingManager {
                         resultStack.componentPatch()));
     }
 
+    private void loadDye(JsonObject recipeObject) {
+        var targetIngredient = this.parseIngredient(recipeObject.get("target"));
+
+        if (targetIngredient != null) {
+            this.recipes.add(new ArmorDyeCraftingRecipe(targetIngredient));
+        }
+    }
+
     private Ingredient parseIngredient(JsonElement ingredientElement) {
         if (ingredientElement == null) {
             return null;
@@ -279,6 +290,16 @@ public final class CraftingManager {
                     "Failed to decode {} recipe result {}", recipeType, resultElement, exception);
             return ItemStack.AIR;
         }
+    }
+
+    public EventNode<Event> events() {
+        return EventNode.all("crafting")
+                .addListener(new CraftingPlayerSpawnListener(this))
+                .addListener(new CraftingPlayerDisconnectListener(this))
+                .addListener(new CraftingTableListener(this))
+                .addListener(new CraftingGridListener(this))
+                .addListener(new CraftingShiftClickListener(this))
+                .addListener(new CraftingCloseListener(this));
     }
 
     public CraftingRecipeMatch match(CraftingGrid grid) {
