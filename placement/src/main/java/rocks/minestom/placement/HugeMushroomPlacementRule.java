@@ -27,8 +27,18 @@ public final class HugeMushroomPlacementRule extends BlockPlacementRule {
 
     @Override
     public Block blockUpdate(UpdateState updateState) {
-        return this.withNeighborProperties(
-                updateState.currentBlock(), updateState.instance(), updateState.blockPosition());
+        var neighbor =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(updateState.fromFace()));
+
+        if (!neighbor.compare(this.block)) {
+            return updateState.currentBlock();
+        }
+
+        return updateState
+                .currentBlock()
+                .withProperty(propertyName(updateState.fromFace()), "false");
     }
 
     private Block withNeighborProperties(Block base, Block.Getter blockGetter, Point position) {

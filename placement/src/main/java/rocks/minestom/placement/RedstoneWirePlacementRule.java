@@ -1,11 +1,14 @@
 package rocks.minestom.placement;
 
+import net.kyori.adventure.key.Key;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
 
 public final class RedstoneWirePlacementRule extends BlockPlacementRule {
+    private static final Key TRAPDOORS = Key.key("minecraft:trapdoors");
+
     public RedstoneWirePlacementRule(Block block) {
         super(block);
     }
@@ -20,7 +23,7 @@ public final class RedstoneWirePlacementRule extends BlockPlacementRule {
             return null;
         }
 
-        return this.withConnections(placementState.block(), blockGetter, placePosition, false)
+        return this.withConnections(placementState.block(), blockGetter, placePosition, true)
                 .withHandler(RedstoneWireBlockHandler.INSTANCE)
                 .withProperty("power", "0");
     }
@@ -92,29 +95,48 @@ public final class RedstoneWirePlacementRule extends BlockPlacementRule {
     private String computeSide(Block.Getter blockGetter, Point placePosition, BlockFace face) {
         var sidePosition = placePosition.relative(face);
         var sideBlock = blockGetter.getBlock(sidePosition);
+        var aboveBlock = blockGetter.getBlock(placePosition.relative(BlockFace.TOP));
 
-        if (sideBlock.compare(this.block)) {
+        if (!aboveBlock.redstoneConductor()) {
+            var sideSupportsWire =
+                    Utility.hasTag(sideBlock, TRAPDOORS)
+                            || sideBlock.compare(Block.HOPPER)
+                            || sideBlock.registry().collisionShape().isFaceFull(BlockFace.TOP);
+            var aboveSideBlock = blockGetter.getBlock(sidePosition.relative(BlockFace.TOP));
+
+            if (sideSupportsWire && aboveSideBlock.compare(this.block)) {
+                var facesWire =
+                        sideBlock.registry().collisionShape().isFaceFull(face.getOppositeFace());
+                return facesWire ? "up" : "side";
+            }
+        }
+
+        if (shouldConnectTo(sideBlock, face)) {
             return "side";
         }
 
-        var abovePosition = placePosition.relative(BlockFace.TOP);
-        var aboveBlock = blockGetter.getBlock(abovePosition);
-        var aboveSidePosition = sidePosition.relative(BlockFace.TOP);
-        var aboveSideBlock = blockGetter.getBlock(aboveSidePosition);
-        var sideSturdyTop = sideBlock.registry().collisionShape().isFaceFull(BlockFace.TOP);
-        var aboveSolid = aboveBlock.registry().collisionShape().isFaceFull(BlockFace.BOTTOM);
+        var belowSideBlock = blockGetter.getBlock(sidePosition.relative(BlockFace.BOTTOM));
+        return !sideBlock.redstoneConductor() && belowSideBlock.compare(this.block)
+                ? "side"
+                : "none";
+    }
 
-        if (sideSturdyTop && !aboveSolid && aboveSideBlock.compare(this.block)) {
-            return "up";
+    private static boolean shouldConnectTo(Block block, BlockFace direction) {
+        if (block.compare(Block.REDSTONE_WIRE)) {
+            return true;
         }
 
-        var belowSidePosition = sidePosition.relative(BlockFace.BOTTOM);
-        var belowSideBlock = blockGetter.getBlock(belowSidePosition);
+        var facing = block.getProperty("facing");
 
-        if (!sideSturdyTop && belowSideBlock.compare(this.block)) {
-            return "side";
+        if (block.compare(Block.REPEATER)) {
+            return direction.name().equalsIgnoreCase(facing)
+                    || direction.getOppositeFace().name().equalsIgnoreCase(facing);
         }
 
-        return "none";
+        if (block.compare(Block.OBSERVER)) {
+            return direction.name().equalsIgnoreCase(facing);
+        }
+
+        return block.signalSource();
     }
 }

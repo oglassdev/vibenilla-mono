@@ -188,7 +188,11 @@ final class VanillaPlacementUtils {
     }
 
     private static boolean faces(BlockFace face, String facing) {
-        return face.name().equalsIgnoreCase(facing);
+        return switch (face) {
+            case TOP -> "up".equals(facing);
+            case BOTTOM -> "down".equals(facing);
+            default -> face.name().equalsIgnoreCase(facing);
+        };
     }
 
     private static int property(Block block, String name) {

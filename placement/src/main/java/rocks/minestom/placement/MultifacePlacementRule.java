@@ -1,5 +1,6 @@
 package rocks.minestom.placement;
 
+import net.minestom.server.coordinate.Point;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
@@ -15,14 +16,28 @@ public final class MultifacePlacementRule extends BlockPlacementRule {
     };
 
     private final boolean waterloggable;
+    private final boolean vine;
 
     public MultifacePlacementRule(Block block) {
         this(block, true);
     }
 
     public MultifacePlacementRule(Block block, boolean waterloggable) {
+        this(block, waterloggable, false);
+    }
+
+    private MultifacePlacementRule(Block block, boolean waterloggable, boolean vine) {
         super(block);
         this.waterloggable = waterloggable;
+        this.vine = vine;
+    }
+
+    /**
+     * A vine-style rule: no downward face, no waterlogging, and side faces may also be supported by
+     * a vine above that has the same face.
+     */
+    public static MultifacePlacementRule vine(Block block) {
+        return new MultifacePlacementRule(block, false, true);
     }
 
     @Override
@@ -37,10 +52,7 @@ public final class MultifacePlacementRule extends BlockPlacementRule {
                         : orderedByNearest(playerPosition.yaw(), playerPosition.pitch());
 
         for (var direction : nearest) {
-            var supportPosition = placePosition.relative(direction);
-            var supportBlock = instance.getBlock(supportPosition);
-
-            if (!supportBlock.registry().collisionShape().isFaceFull(direction.getOppositeFace())) {
+            if (!canSupportFace(instance, placePosition, direction)) {
                 continue;
             }
 
@@ -72,6 +84,11 @@ public final class MultifacePlacementRule extends BlockPlacementRule {
     @Override
     public Block blockUpdate(UpdateState updateState) {
         var currentBlock = updateState.currentBlock();
+
+        if (this.vine && updateState.fromFace() == BlockFace.BOTTOM) {
+            return currentBlock;
+        }
+
         var instance = updateState.instance();
         var blockPosition = updateState.blockPosition();
         var result = currentBlock;
@@ -85,9 +102,7 @@ public final class MultifacePlacementRule extends BlockPlacementRule {
                 continue;
             }
 
-            var supportBlock = instance.getBlock(blockPosition.relative(direction));
-
-            if (supportBlock.registry().collisionShape().isFaceFull(direction.getOppositeFace())) {
+            if (canSupportFace(instance, blockPosition, direction)) {
                 anyFace = true;
                 continue;
             }
@@ -120,7 +135,26 @@ public final class MultifacePlacementRule extends BlockPlacementRule {
 
         var faceName = faceProperty(blockFace);
         var current = replacement.block().getProperty(faceName);
-        return current == null || "false".equals(current);
+        return "false".equals(current);
+    }
+
+    private boolean canSupportFace(Block.Getter getter, Point position, BlockFace face) {
+        if (this.vine && face == BlockFace.BOTTOM) {
+            return false;
+        }
+
+        var support = getter.getBlock(position.relative(face));
+
+        if (support.registry().collisionShape().isFaceFull(face.getOppositeFace())) {
+            return true;
+        }
+
+        if (!this.vine || face == BlockFace.TOP) {
+            return false;
+        }
+
+        var above = getter.getBlock(position.relative(BlockFace.TOP));
+        return above.compare(this.block) && "true".equals(above.getProperty(faceProperty(face)));
     }
 
     private static boolean isWaterSource(Block water) {

@@ -72,7 +72,7 @@ public final class DoorPlacementRule extends BlockPlacementRule {
                         .withProperty("powered", String.valueOf(powered))
                         .withProperty("open", String.valueOf(powered));
 
-        if (intersectsAnyEntity(instance, placePosition, lowerBlock)) {
+        if (Utility.intersectsPlacementBlockingEntity(instance, placePosition, lowerBlock)) {
             return null;
         }
 
@@ -151,25 +151,6 @@ public final class DoorPlacementRule extends BlockPlacementRule {
         return currentBlock
                 .withProperty("powered", String.valueOf(powered))
                 .withProperty("open", String.valueOf(powered));
-    }
-
-    private static boolean intersectsAnyEntity(
-            Instance instance, Point blockPosition, Block block) {
-        var collisionShape = block.registry().collisionShape();
-
-        for (var entity : instance.getNearbyEntities(blockPosition, 3.0D)) {
-            if (!entity.preventBlockPlacement()) {
-                continue;
-            }
-
-            var entityPosition = entity.getPosition();
-
-            if (collisionShape.intersectBox(
-                    entityPosition.sub(blockPosition), entity.getBoundingBox())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static String computeHinge(
