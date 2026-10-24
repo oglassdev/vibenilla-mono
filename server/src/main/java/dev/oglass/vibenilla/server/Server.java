@@ -1,5 +1,6 @@
 package dev.oglass.vibenilla.server;
 
+import dev.oglass.vibenilla.containers.Containers;
 import io.github.togar2.fluids.MinestomFluids;
 import io.github.togar2.pvp.MinestomPvP;
 import io.github.togar2.pvp.feature.CombatFeatures;
@@ -30,6 +31,7 @@ public final class Server {
 
         // Placement rules first: fluids wraps whatever rule is already registered.
         Registrations.registerAllVanilla(MinecraftServer.getBlockManager());
+        var containers = Containers.register(MinecraftServer.getBlockManager());
         MinestomFluids.init();
         MinestomPvP.init();
 
@@ -51,6 +53,7 @@ public final class Server {
         // Breaking runs before combat so a rejected break adds no exhaustion.
         events.addChild(breaking.events())
                 .addChild(combat.createNode())
+                .addChild(containers)
                 .addChild(MinestomFluids.events())
                 .addChild(MinestomFluids.bucketEvents())
                 .addChild(Items.events())
