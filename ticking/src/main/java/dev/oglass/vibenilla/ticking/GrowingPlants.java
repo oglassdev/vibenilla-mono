@@ -1,12 +1,10 @@
 package dev.oglass.vibenilla.ticking;
 
-import java.util.List;
 import java.util.random.RandomGenerator;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.entity.ItemEntity;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
-import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 
@@ -15,9 +13,6 @@ final class GrowingPlants {
     private static final int MAX_AGE = 15;
     private static final int MAX_HEIGHT = 3;
     private static final int FLOWER_AGE = 8;
-
-    private static final List<BlockFace> HORIZONTAL =
-            List.of(BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST);
 
     private GrowingPlants() {}
 
@@ -75,7 +70,7 @@ final class GrowingPlants {
 
     /** Cacti stand on sand or cacti, and cannot touch solid blocks, lava or liquid above. */
     private static boolean canSurvive(Instance instance, BlockVec position) {
-        for (var face : HORIZONTAL) {
+        for (var face : Level.HORIZONTAL) {
             var neighbor = Level.block(instance, position.relative(face));
             if (neighbor.solid() || neighbor.compare(Block.LAVA)) {
                 return false;

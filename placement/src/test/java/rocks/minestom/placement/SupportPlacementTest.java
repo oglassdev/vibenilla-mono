@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
+import net.kyori.adventure.key.Key;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.coordinate.Pos;
@@ -402,6 +403,93 @@ final class SupportPlacementTest {
     }
 
     @Test
+    void attachedStemRevertsToAFullyGrownStemWhenItsFruitIsGone() {
+        var rule = attachedPumpkinStemRule();
+        var position = new BlockVec(0, 0, 0);
+        var farmland = Map.of(new BlockVec(0, -1, 0), Block.FARMLAND);
+        var current = Block.ATTACHED_PUMPKIN_STEM.withProperty("facing", "east");
+        var fruitless = blocksAt(farmland);
+        var fruited =
+                blocksAt(
+                        Map.of(
+                                new BlockVec(0, -1, 0),
+                                Block.FARMLAND,
+                                new BlockVec(1, 0, 0),
+                                Block.PUMPKIN));
+
+        var reverted =
+                rule.blockUpdate(
+                        new BlockPlacementRule.UpdateState(
+                                fruitless, position, current, BlockFace.EAST));
+
+        assertEquals(Block.PUMPKIN_STEM.withProperty("age", "7"), reverted);
+        assertEquals(
+                current,
+                rule.blockUpdate(
+                        new BlockPlacementRule.UpdateState(
+                                fruited, position, current, BlockFace.EAST)));
+        assertEquals(
+                current,
+                rule.blockUpdate(
+                        new BlockPlacementRule.UpdateState(
+                                fruitless, position, current, BlockFace.WEST)));
+    }
+
+    @Test
+    void attachedStemBreaksWhenItsFarmlandIsRemoved() {
+        var rule = attachedPumpkinStemRule();
+        var current = Block.ATTACHED_PUMPKIN_STEM.withProperty("facing", "east");
+
+        var update =
+                new BlockPlacementRule.UpdateState(
+                        blocksAt(Map.of(new BlockVec(1, 0, 0), Block.PUMPKIN)),
+                        new BlockVec(0, 0, 0),
+                        current,
+                        BlockFace.BOTTOM);
+
+        assertEquals(Block.AIR, rule.blockUpdate(update));
+    }
+
+    private static AttachedStemPlacementRule attachedPumpkinStemRule() {
+        return new AttachedStemPlacementRule(
+                Block.ATTACHED_PUMPKIN_STEM,
+                Block.PUMPKIN,
+                Block.PUMPKIN_STEM,
+                Key.key("minecraft:supports_pumpkin_stem"));
+    }
+
+    @Test
+    void exposedPlantBodyBecomesAHeadAgainKeepingItsBerries() {
+        var rule =
+                new GrowingPlantBodyPlacementRule(
+                        Block.CAVE_VINES_PLANT,
+                        Block.CAVE_VINES,
+                        BlockFace.BOTTOM,
+                        BerryBlockHandler.INSTANCE);
+        var position = new BlockVec(0, 0, 0);
+        var current =
+                Block.CAVE_VINES_PLANT
+                        .withProperty("berries", "true")
+                        .withHandler(BerryBlockHandler.INSTANCE);
+
+        var head =
+                rule.blockUpdate(
+                        new BlockPlacementRule.UpdateState(
+                                blocksAt(Map.of()), position, current, BlockFace.BOTTOM));
+
+        assertTrue(head.compare(Block.CAVE_VINES));
+        assertEquals("true", head.getProperty("berries"));
+        assertEquals(BerryBlockHandler.INSTANCE, head.handler());
+
+        var continued = blocksAt(Map.of(new BlockVec(0, -1, 0), Block.CAVE_VINES));
+        assertEquals(
+                current,
+                rule.blockUpdate(
+                        new BlockPlacementRule.UpdateState(
+                                continued, position, current, BlockFace.BOTTOM)));
+    }
+
+    @Test
     void chestPairingUpdatesBothHalves() {
         var rule = new ChestPlacementRule(Block.CHEST);
         var position = new BlockVec(0, 0, 0);
@@ -434,6 +522,36 @@ final class SupportPlacementTest {
                         blocksAt(Map.of()), position, paired, BlockFace.EAST);
 
         assertEquals("single", rule.blockUpdate(brokenUpdate).getProperty("type"));
+    }
+
+    @Test
+    void copperChestVariantsPairIntoTheLeastOxidizedUnwaxedVariant() {
+        var position = new BlockVec(0, 0, 0);
+        var waxedExposed =
+                Block.WAXED_EXPOSED_COPPER_CHEST
+                        .withProperty("facing", "north")
+                        .withProperty("type", "single");
+        var copperRight =
+                Block.COPPER_CHEST.withProperty("facing", "north").withProperty("type", "right");
+        var getter = blocksAt(Map.of(new BlockVec(1, 0, 0), copperRight));
+        var rule = new ChestPlacementRule(waxedExposed);
+        var update =
+                new BlockPlacementRule.UpdateState(getter, position, waxedExposed, BlockFace.EAST);
+
+        var updated = rule.blockUpdate(update);
+
+        assertEquals(Block.COPPER_CHEST.key(), updated.key());
+        assertEquals("left", updated.getProperty("type"));
+
+        var woodenRight = Block.CHEST.withProperty("facing", "north").withProperty("type", "right");
+        var wooden = blocksAt(Map.of(new BlockVec(1, 0, 0), woodenRight));
+
+        assertEquals(
+                "single",
+                rule.blockUpdate(
+                                new BlockPlacementRule.UpdateState(
+                                        wooden, position, waxedExposed, BlockFace.EAST))
+                        .getProperty("type"));
     }
 
     @Test

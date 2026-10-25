@@ -67,7 +67,8 @@ final class ContainerHandler implements BlockHandler {
         var block = destroy.getBlock();
         var next = destroy.getNewBlock();
 
-        if (next.compare(block)) {
+        if (next.compare(block)
+                || (next.handler() == this && Objects.equals(next.nbt(), block.nbt()))) {
             if (!Objects.equals(block.getProperty("type"), next.getProperty("type"))
                     || !Objects.equals(block.getProperty("facing"), next.getProperty("facing"))) {
                 sessions.closeAt(instance, position);

@@ -32,7 +32,8 @@ final class ContainerLayout {
 
         var partnerBlock = instance.getBlock(partner);
 
-        if (!partnerBlock.compare(block)
+        if (!(partnerBlock.compare(block)
+                        || (CopperChests.is(block) && CopperChests.is(partnerBlock)))
                 || facing(partnerBlock) != facing
                 || !(left ? "right" : "left").equals(partnerBlock.getProperty("type"))) {
             return List.of(position);

@@ -276,7 +276,7 @@ final class Sessions {
 
         var block = instance.getBlock(half);
 
-        if (block.compare(session.kind.block())) {
+        if (session.kind.matches(block)) {
             instance.setBlock(half, ContainerItems.write(block, session.items(index)), false);
         }
     }

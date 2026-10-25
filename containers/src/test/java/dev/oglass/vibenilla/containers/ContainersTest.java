@@ -24,6 +24,7 @@ import net.minestom.server.entity.PlayerHand;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
+import net.minestom.server.instance.block.rule.BlockPlacementRule;
 import net.minestom.server.inventory.Inventory;
 import net.minestom.server.inventory.InventoryType;
 import net.minestom.server.item.ItemStack;
@@ -38,8 +39,11 @@ final class ContainersTest {
     private static final BlockVec EAST = new BlockVec(9, 40, 8);
 
     private static Block chest(Env env, String type) {
-        return Block.CHEST
-                .withProperties(Map.of("facing", "north", "type", type))
+        return chest(env, Block.CHEST, type);
+    }
+
+    private static Block chest(Env env, Block block, String type) {
+        return block.withProperties(Map.of("facing", "north", "type", type))
                 .withHandler(env.process().block().getHandlerOrDummy("minecraft:chest"));
     }
 
@@ -311,6 +315,90 @@ final class ContainersTest {
 
         interact(player, POSITION);
         assertEquals(0, count(player.getOpenInventory(), Material.GOLD_INGOT));
+    }
+
+    @Test
+    void weatheringACopperChestKeepsItsContentsWithoutDropping(Env env) {
+        var instance = instanceWith(env);
+        var handler = env.process().block().getHandlerOrDummy("minecraft:chest");
+        var copper =
+                ContainerItems.write(
+                        Block.COPPER_CHEST
+                                .withProperties(Map.of("facing", "north", "type", "single"))
+                                .withHandler(handler),
+                        List.of(ItemStack.of(Material.GOLD_INGOT, 2)));
+        instance.setBlock(POSITION, copper);
+
+        instance.setBlock(
+                POSITION,
+                Block.EXPOSED_COPPER_CHEST
+                        .withProperties(copper.properties())
+                        .withHandler(copper.handler())
+                        .withNbt(copper.nbt()),
+                false);
+
+        assertTrue(instance.getEntities().stream().noneMatch(ItemEntity.class::isInstance));
+        var items = instance.getBlock(POSITION).nbt().getList("Items", BinaryTagTypes.COMPOUND);
+        assertEquals(1, items.size());
+        assertEquals("minecraft:gold_ingot", items.getCompound(0).getString("id"));
+    }
+
+    @Test
+    void copperChestDepositsPersistAcrossReopening(Env env) {
+        var instance = instanceWith(env);
+        instance.setBlock(POSITION, chest(env, Block.WAXED_WEATHERED_COPPER_CHEST, "single"));
+        var player = env.createPlayer(instance, new Pos(8, 41, 10));
+
+        interact(player, POSITION);
+        player.getOpenInventory().setItemStack(2, ItemStack.of(Material.EMERALD, 4));
+        player.closeInventory();
+        interact(player, POSITION);
+
+        assertEquals(ItemStack.of(Material.EMERALD, 4), player.getOpenInventory().getItemStack(2));
+    }
+
+    @Test
+    void placedCopperChestOpensAnInventory(Env env) {
+        var instance = instanceWith(env);
+        var rule = env.process().block().getBlockPlacementRule(Block.EXPOSED_COPPER_CHEST);
+        var placed =
+                rule.blockPlace(
+                        new BlockPlacementRule.PlacementState(
+                                instance,
+                                Block.EXPOSED_COPPER_CHEST.withProperty("facing", "north"),
+                                BlockFace.TOP,
+                                POSITION,
+                                POSITION,
+                                new Pos(POSITION),
+                                ItemStack.AIR,
+                                false));
+        instance.setBlock(POSITION, placed);
+        var player = env.createPlayer(instance, new Pos(8, 41, 10));
+
+        interact(player, POSITION);
+
+        assertEquals("minecraft:chest", placed.handler().getKey().asString());
+        assertEquals(27, player.getOpenInventory().getSize());
+    }
+
+    @Test
+    void mixedCopperChestVariantsShareOneInventoryButWoodenOnesDoNot(Env env) {
+        var instance = instanceWith(env);
+        instance.setBlock(POSITION, chest(env, Block.COPPER_CHEST, "left"));
+        instance.setBlock(EAST, chest(env, Block.WAXED_OXIDIZED_COPPER_CHEST, "right"));
+        var player = env.createPlayer(instance, new Pos(8, 41, 10));
+
+        interact(player, POSITION);
+
+        assertEquals(54, player.getOpenInventory().getSize());
+
+        var other = new BlockVec(20, 40, 8);
+        instance.setBlock(other, chest(env, Block.COPPER_CHEST, "left"));
+        instance.setBlock(other.add(1, 0, 0), chest(env, Block.CHEST, "right"));
+
+        interact(player, other);
+
+        assertEquals(27, player.getOpenInventory().getSize());
     }
 
     private static int count(

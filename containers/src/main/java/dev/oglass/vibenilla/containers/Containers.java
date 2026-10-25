@@ -13,7 +13,7 @@ import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerGameModeChangeEvent;
 import net.minestom.server.instance.block.BlockManager;
 
-/** Vanilla chests, trapped chests and barrels. */
+/** Vanilla chests, copper chests, trapped chests and barrels. */
 public final class Containers {
     private Containers() {}
 
@@ -27,10 +27,11 @@ public final class Containers {
 
     /**
      * Registers handlers for chests, trapped chests and barrels, and wraps the placement rule
-     * registered for each of them so that placed blocks use the new handler instead of any
-     * placeholder. Call this after the placement rules are registered. Chunks loaded from disk get
-     * the handler through the {@code minecraft:chest}, {@code minecraft:trapped_chest} and {@code
-     * minecraft:barrel} block entity ids.
+     * registered for each of them and for copper chests, which share the chest handler, so that
+     * placed blocks use the new handler instead of any placeholder. Call this after the placement
+     * rules are registered. Chunks loaded from disk get the handler through the {@code
+     * minecraft:chest}, {@code minecraft:trapped_chest} and {@code minecraft:barrel} block entity
+     * ids.
      *
      * @param lootTables resolves the {@code LootTable} of containers that have not been opened yet
      * @return the events that must be added to a running event handler, so viewers of a container
@@ -44,11 +45,12 @@ public final class Containers {
         for (var kind : ContainerKind.values()) {
             var handler = new ContainerHandler(kind, sessions);
             blockManager.registerHandler(kind.key(), () -> handler);
-            blockManager.registerBlockPlacementRule(
-                    new ContainerPlacementRule(
-                            kind.block(),
-                            blockManager.getBlockPlacementRule(kind.block()),
-                            handler));
+
+            for (var block : kind.blocks()) {
+                blockManager.registerBlockPlacementRule(
+                        new ContainerPlacementRule(
+                                block, blockManager.getBlockPlacementRule(block), handler));
+            }
         }
 
         return EventNode.all("containers")
