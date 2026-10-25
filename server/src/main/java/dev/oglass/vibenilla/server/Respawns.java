@@ -22,7 +22,10 @@ import net.minestom.server.instance.block.Block;
 import net.minestom.server.sound.SoundEvent;
 import org.jetbrains.annotations.Nullable;
 
-/** Chooses where a respawning player appears: a valid bed or anchor, else near world spawn. */
+/**
+ * Chooses where a respawning player appears: a valid bed or anchor, else near world spawn. Players
+ * always respawn in the overworld.
+ */
 public final class Respawns {
     private static final int SPAWN_RADIUS = 10;
     private static final int SPAWN_ATTEMPTS = 16;
@@ -42,12 +45,14 @@ public final class Respawns {
                     "soul_campfire",
                     "wither_rose");
 
+    private static Instance overworld;
     private static Pos worldSpawn = Pos.ZERO;
     private static @Nullable Pos searchedSpawn;
 
     private Respawns() {}
 
-    static EventNode<Event> events(Pos worldSpawn) {
+    static EventNode<Event> events(Instance overworld, Pos worldSpawn) {
+        Respawns.overworld = overworld;
         Respawns.worldSpawn = worldSpawn;
         return EventNode.all("respawns").addListener(PlayerRespawnEvent.class, Respawns::onRespawn);
     }
@@ -55,16 +60,22 @@ public final class Respawns {
     private static void onRespawn(PlayerRespawnEvent event) {
         var player = event.getPlayer();
         player.clearEffects();
-        event.setRespawnPosition(resolve(player));
+        var position = resolve(player);
+        if (player.getInstance() == overworld) {
+            event.setRespawnPosition(position);
+            return;
+        }
+        event.setRespawnPosition(player.getPosition());
+        player.scheduleNextTick(entity -> player.setInstance(overworld, position));
     }
 
     /**
      * Where the player should appear after dying: their bed or anchor if still valid (consuming an
      * anchor charge), otherwise a safe spot near world spawn. Call on the player's instance tick
-     * thread with the player already in an instance.
+     * thread; the returned position is in the overworld.
      */
     public static Pos resolve(Player player) {
-        var instance = player.getInstance();
+        var instance = overworld;
         var point = player.getRespawnPoint();
         if (point == null || point.samePoint(worldSpawn)) {
             return randomSpawn(instance);

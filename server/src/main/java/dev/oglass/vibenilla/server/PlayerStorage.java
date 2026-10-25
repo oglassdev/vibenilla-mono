@@ -17,6 +17,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.BinaryTagIO;
 import net.kyori.adventure.nbt.BinaryTagTypes;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
@@ -143,6 +144,12 @@ final class PlayerStorage {
         return data.getFloat("Health", FULL_HEALTH) <= 0;
     }
 
+    /** The dimension the player was in, defaulting to the overworld. */
+    static Key dimension(CompoundBinaryTag data) {
+        var name = data.getString("Dimension", "minecraft:overworld");
+        return Key.parseable(name) ? Key.key(name) : WorldStorage.OVERWORLD;
+    }
+
     /** Position the player should spawn at, or null if the data has none. */
     static @Nullable Pos position(CompoundBinaryTag data) {
         var pos = data.getList("Pos", BinaryTagTypes.DOUBLE);
@@ -173,8 +180,8 @@ final class PlayerStorage {
     }
 
     /**
-     * Applies everything except position and respawn point, which are used to spawn. A dead player
-     * comes back alive with full health and food.
+     * Applies everything except dimension, position and respawn point, which are used to spawn. A
+     * dead player comes back alive with full health and food.
      */
     static void restore(Player player, CompoundBinaryTag data) {
         var inventory = player.getInventory();
@@ -336,6 +343,7 @@ final class PlayerStorage {
         }
 
         return CompoundBinaryTag.builder()
+                .putString("Dimension", player.getInstance().getDimensionName())
                 .put("Pos", doubles(position.x(), position.y(), position.z()))
                 .put("Rotation", floats(position.yaw(), position.pitch()))
                 .put("SpawnPos", doubles(respawn.x(), respawn.y(), respawn.z()))

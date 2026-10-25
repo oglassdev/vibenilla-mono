@@ -44,8 +44,12 @@ public final class Server {
 
         var combat = CombatFeatures.modernVanilla();
         var world = new WorldStorage(worldPath, dataPath, Long.getLong("vibenilla.seed"));
-        var overworld = world.instance();
-        overworld.setExplosionSupplier(combat.get(FeatureType.EXPLOSION).getExplosionSupplier());
+        var overworld = world.overworld();
+        world.instances()
+                .forEach(
+                        instance ->
+                                instance.setExplosionSupplier(
+                                        combat.get(FeatureType.EXPLOSION).getExplosionSupplier()));
         var spawn = world.spawn();
         var players = new PlayerStorage(worldPath.resolve("playerdata"));
         var saved = new ConcurrentHashMap<Player, CompoundBinaryTag>();
@@ -81,7 +85,8 @@ public final class Server {
                 .addChild(Items.events())
                 .addChild(Deaths.events())
                 .addChild(Experience.events())
-                .addChild(Respawns.events(spawn))
+                .addChild(Respawns.events(overworld, spawn))
+                .addChild(new Portals(world).events())
                 .addChild(crafting.events())
                 .addListener(
                         AsyncPlayerConfigurationEvent.class,
@@ -92,10 +97,13 @@ public final class Server {
                                 return;
                             }
                             var data = players.load(player);
-                            var position =
-                                    data == null || PlayerStorage.dead(data)
-                                            ? null
-                                            : PlayerStorage.position(data);
+                            var alive = data != null && !PlayerStorage.dead(data);
+                            var dimension =
+                                    alive ? world.instance(PlayerStorage.dimension(data)) : null;
+                            if (dimension != null) {
+                                event.setSpawningInstance(dimension);
+                            }
+                            var position = dimension == null ? null : PlayerStorage.position(data);
                             if (data != null) {
                                 saved.put(player, data);
                                 if (!player.isOnline()) {
