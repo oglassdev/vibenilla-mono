@@ -120,6 +120,7 @@ public final class Server {
                                 return;
                             }
                             PlayerStorage.restore(player, data);
+                            crafting.restoreRecipeBook(player, PlayerStorage.recipeBook(data));
                             var respawn = PlayerStorage.respawnPoint(data);
                             player.setRespawnPoint(respawn == null ? spawn : respawn);
                             if (PlayerStorage.dead(data)) {

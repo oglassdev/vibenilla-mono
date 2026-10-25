@@ -10,6 +10,7 @@ dependencies {
     compileOnly(libs.slf4j.api)
 
     testImplementation(libs.fastutil)
+    testImplementation(libs.minestom.testing)
 }
 
 val vanillaData =

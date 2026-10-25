@@ -3,10 +3,12 @@ package rocks.minestom.crafting;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.ints.IntSets;
+import java.util.Objects;
 import net.minestom.server.entity.Player;
 import net.minestom.server.inventory.AbstractInventory;
 import net.minestom.server.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
+import rocks.minestom.crafting.book.BookRecipe;
 import rocks.minestom.crafting.recipe.CraftingRecipeMatch;
 
 public final class CraftingWorkspace {
@@ -111,7 +113,32 @@ public final class CraftingWorkspace {
             this.updatingGrid = false;
         }
 
+        this.manager.recipeCrafted(player, recipeMatch.recipe());
         this.refresh();
+    }
+
+    RecipePlacer.Result place(BookRecipe recipe, boolean all) {
+        var matching = this.currentMatch != null && this.currentMatch.recipe() == recipe.crafting();
+        RecipePlacer.Result result;
+        this.updatingGrid = true;
+
+        try {
+            result =
+                    RecipePlacer.place(
+                            this.inventory,
+                            this.gridSlots,
+                            this.gridWidth,
+                            this.gridHeight,
+                            this.owner.getInventory(),
+                            Objects.requireNonNull(recipe.layout()),
+                            all,
+                            matching);
+        } finally {
+            this.updatingGrid = false;
+        }
+
+        this.refresh();
+        return result;
     }
 
     private void consumeInputs(CraftingRecipeMatch recipeMatch) {
