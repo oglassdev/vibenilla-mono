@@ -15,13 +15,7 @@ import rocks.minestom.crafting.CookingRecipes;
 
 /** Vanilla furnaces, smokers and blast furnaces. */
 public final class Furnaces {
-    private final FurnaceSessions sessions;
-    private final EventNode<Event> events;
-
-    private Furnaces(FurnaceSessions sessions, EventNode<Event> events) {
-        this.sessions = sessions;
-        this.events = events;
-    }
+    private Furnaces() {}
 
     /** Spawns experience orbs worth {@code points} in total. */
     @FunctionalInterface
@@ -37,8 +31,11 @@ public final class Furnaces {
      * ids, and furnaces that were burning resume when their chunk loads.
      *
      * @param experience spawns the orbs for the experience a furnace stored while smelting
+     * @return the events that must be added to a running event handler, so viewers of a furnace are
+     *     released when they disconnect or become spectators, furnaces in unloaded chunks or
+     *     instances are closed, and clicks follow the furnace slot rules
      */
-    public static Furnaces register(
+    public static EventNode<Event> register(
             BlockManager blockManager,
             CookingRecipes recipes,
             CookingFuels fuels,
@@ -55,43 +52,24 @@ public final class Furnaces {
                             handler));
         }
 
-        var events =
-                EventNode.all("furnaces")
-                        .addListener(
-                                PlayerDisconnectEvent.class,
-                                event -> sessions.release(event.getPlayer()))
-                        .addListener(
-                                PlayerGameModeChangeEvent.class,
-                                event -> {
-                                    if (event.getNewGameMode() == GameMode.SPECTATOR) {
-                                        sessions.closeView(event.getPlayer());
-                                    }
-                                })
-                        .addListener(InventoryPreClickEvent.class, sessions::preClick)
-                        .addListener(
-                                InstanceChunkUnloadEvent.class,
-                                event ->
-                                        sessions.closeChunk(
-                                                event.getInstance(),
-                                                event.getChunkX(),
-                                                event.getChunkZ()))
-                        .addListener(
-                                InstanceUnregisterEvent.class,
-                                event -> sessions.closeInstance(event.getInstance()));
-        return new Furnaces(sessions, events);
-    }
-
-    /**
-     * The events that must be added to a running event handler, so viewers of a furnace are
-     * released when they disconnect or become spectators, furnaces in unloaded chunks or instances
-     * are closed, and clicks follow the furnace slot rules.
-     */
-    public EventNode<Event> events() {
-        return events;
-    }
-
-    /** Writes the state of every furnace that is open or has work to do into its block. */
-    public void saveAll() {
-        sessions.saveAll();
+        return EventNode.all("furnaces")
+                .addListener(
+                        PlayerDisconnectEvent.class, event -> sessions.release(event.getPlayer()))
+                .addListener(
+                        PlayerGameModeChangeEvent.class,
+                        event -> {
+                            if (event.getNewGameMode() == GameMode.SPECTATOR) {
+                                sessions.closeView(event.getPlayer());
+                            }
+                        })
+                .addListener(InventoryPreClickEvent.class, sessions::preClick)
+                .addListener(
+                        InstanceChunkUnloadEvent.class,
+                        event ->
+                                sessions.closeChunk(
+                                        event.getInstance(), event.getChunkX(), event.getChunkZ()))
+                .addListener(
+                        InstanceUnregisterEvent.class,
+                        event -> sessions.closeInstance(event.getInstance()));
     }
 }

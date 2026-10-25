@@ -72,7 +72,7 @@ public final class Server {
         events.addChild(breaking.events())
                 .addChild(combat.createNode())
                 .addChild(containers)
-                .addChild(furnaces.events())
+                .addChild(furnaces)
                 .addChild(MinestomFluids.events())
                 .addChild(MinestomFluids.bucketEvents())
                 .addChild(randomTicks.events())
@@ -155,7 +155,6 @@ public final class Server {
         scheduler.buildShutdownTask(
                 () -> {
                     players.close();
-                    furnaces.saveAll();
                     world.saveAndWait();
                     MinecraftServer.LOGGER.info("World saved");
                 });

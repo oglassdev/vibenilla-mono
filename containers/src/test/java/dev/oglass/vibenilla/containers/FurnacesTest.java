@@ -42,11 +42,10 @@ final class FurnacesTest {
                 .eventHandler()
                 .addChild(
                         Furnaces.register(
-                                        env.process().block(),
-                                        new CookingRecipes(DATA),
-                                        new CookingFuels(DATA),
-                                        (instance, position, points) -> experience.add(points))
-                                .events());
+                                env.process().block(),
+                                new CookingRecipes(DATA),
+                                new CookingFuels(DATA),
+                                (instance, position, points) -> experience.add(points)));
         return env.createFlatInstance();
     }
 
@@ -294,16 +293,45 @@ final class FurnacesTest {
     }
 
     @Test
-    void fuelSlotKeepsOneEmptyBucketAndTheRestStaysWithThePlayer(Env env) {
+    void clickingABucketStackIntoTheFuelSlotMovesOneAndBreakingDropsNoMore(Env env) {
         var instance = instanceWith(env);
         var player = load(env, instance, Block.FURNACE, ItemStack.AIR, ItemStack.AIR);
         player.getInventory().setCursorItem(ItemStack.of(Material.BUCKET, 16));
 
         pickup(player, Furnace.FUEL, 0);
-        env.tick();
 
         assertEquals(ItemStack.of(Material.BUCKET), player.getOpenInventory().getItemStack(1));
         assertEquals(ItemStack.of(Material.BUCKET, 15), player.getInventory().getCursorItem());
+
+        instance.setBlock(POSITION, Block.AIR);
+
+        var dropped =
+                instance.getEntities().stream()
+                        .filter(ItemEntity.class::isInstance)
+                        .map(entity -> ((ItemEntity) entity).getItemStack())
+                        .toList();
+        assertEquals(List.of(ItemStack.of(Material.BUCKET)), dropped);
+    }
+
+    @Test
+    void swappingABucketStackIntoTheFuelSlotIsCancelled(Env env) {
+        var instance = instanceWith(env);
+        var player = load(env, instance, Block.FURNACE, ItemStack.AIR, ItemStack.AIR);
+        player.getInventory().setItemStack(0, ItemStack.of(Material.BUCKET, 16));
+
+        player.addPacketToQueue(
+                new ClientClickWindowPacket(
+                        player.getOpenInventory().getWindowId(),
+                        0,
+                        (short) Furnace.FUEL,
+                        (byte) 0,
+                        ClientClickWindowPacket.ClickType.SWAP,
+                        Map.of(),
+                        ItemStack.Hash.AIR));
+        player.interpretPacketQueue();
+
+        assertEquals(ItemStack.AIR, player.getOpenInventory().getItemStack(1));
+        assertEquals(ItemStack.of(Material.BUCKET, 16), player.getInventory().getItemStack(0));
     }
 
     @Test

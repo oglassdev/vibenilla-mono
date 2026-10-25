@@ -130,11 +130,6 @@ final class FurnaceSessions {
         }
     }
 
-    /** Writes every tracked furnace into its block, for a shutdown between periodic saves. */
-    void saveAll() {
-        furnaces.values().forEach(Furnace::save);
-    }
-
     void closeChunk(Instance instance, int chunkX, int chunkZ) {
         unload(
                 furnace ->
@@ -157,9 +152,6 @@ final class FurnaceSessions {
         var furnace = view.furnace();
         var click = event.getClick();
 
-        MinecraftServer.getSchedulerManager()
-                .scheduleEndOfTick(() -> limitBucket(furnace, player, click));
-
         if (event.getInventory() == view) {
             if (click.slot() == Furnace.OUTPUT) {
                 furnace.taking(player);
@@ -167,9 +159,11 @@ final class FurnaceSessions {
                 if (click instanceof Click.Left || click instanceof Click.Right) {
                     mergeResult(furnace, player);
                 }
+            } else if (click.slot() == Furnace.FUEL) {
+                moveOneBucket(furnace, player, click);
             }
 
-            if (!allowed(player, click)) {
+            if (!allowed(furnace, player, click)) {
                 event.setCancelled(true);
             }
         } else if (event.getInventory() == player.getInventory()
@@ -224,7 +218,7 @@ final class FurnaceSessions {
     }
 
     /** Whether a click in the furnace window may go ahead: the result can only be taken. */
-    private boolean allowed(Player player, Click click) {
+    private boolean allowed(Furnace furnace, Player player, Click click) {
         var cursor = player.getInventory().getCursorItem();
 
         return switch (click) {
@@ -234,7 +228,7 @@ final class FurnaceSessions {
             default ->
                     switch (click.slot()) {
                         case Furnace.OUTPUT -> takesResult(player, click, cursor);
-                        case Furnace.FUEL -> placesFuel(player, click, cursor);
+                        case Furnace.FUEL -> placesFuel(furnace, player, click, cursor);
                         default -> true;
                     };
         };
@@ -242,7 +236,7 @@ final class FurnaceSessions {
 
     private boolean dragAllowed(List<Integer> slots, ItemStack cursor) {
         return !slots.contains(Furnace.OUTPUT)
-                && (!slots.contains(Furnace.FUEL) || isFuelSlotItem(cursor));
+                && (!slots.contains(Furnace.FUEL) || fitsFuelSlot(cursor));
     }
 
     private boolean takesResult(Player player, Click click, ItemStack cursor) {
@@ -259,24 +253,47 @@ final class FurnaceSessions {
         };
     }
 
-    private boolean placesFuel(Player player, Click click, ItemStack cursor) {
+    private boolean placesFuel(Furnace furnace, Player player, Click click, ItemStack cursor) {
         return switch (click) {
-            case Click.Left left -> cursor.isAir() || isFuelSlotItem(cursor);
-            case Click.Right right -> cursor.isAir() || isFuelSlotItem(cursor);
-            case Click.HotbarSwap swap -> {
-                var item = player.getInventory().getItemStack(swap.hotbarSlot());
-                yield item.isAir() || isFuelSlotItem(item);
-            }
-            case Click.OffhandSwap swap -> {
-                var item = player.getItemInOffHand();
-                yield item.isAir() || isFuelSlotItem(item);
-            }
+            case Click.Left left -> cursorFits(furnace, cursor, false);
+            case Click.Right right -> cursorFits(furnace, cursor, true);
+            case Click.HotbarSwap swap ->
+                    fitsFuelSlot(player.getInventory().getItemStack(swap.hotbarSlot()));
+            case Click.OffhandSwap swap -> fitsFuelSlot(player.getItemInOffHand());
             default -> true;
         };
     }
 
-    private boolean isFuelSlotItem(ItemStack item) {
-        return item.isAir() || cooking.fuels().isFuel(item) || item.material() == Material.BUCKET;
+    /** Whether a stack may sit in the fuel slot: a fuel, or a single empty bucket. */
+    private boolean fitsFuelSlot(ItemStack item) {
+        return item.isAir()
+                || (item.material() == Material.BUCKET
+                        ? item.amount() == 1
+                        : cooking.fuels().isFuel(item));
+    }
+
+    /** Whether a click with the cursor stack leaves the fuel slot with at most one empty bucket. */
+    private boolean cursorFits(Furnace furnace, ItemStack cursor, boolean single) {
+        if (cursor.material() != Material.BUCKET) {
+            return fitsFuelSlot(cursor);
+        }
+
+        var fuel = furnace.view.getItemStack(Furnace.FUEL);
+        return (single && fuel.isAir())
+                || (cursor.amount() == 1 && fuel.material() != Material.BUCKET);
+    }
+
+    /** Puts one bucket of a carried stack into an empty fuel slot, as a left click would. */
+    private static void moveOneBucket(Furnace furnace, Player player, Click click) {
+        var cursor = player.getInventory().getCursorItem();
+
+        if (click instanceof Click.Left
+                && cursor.material() == Material.BUCKET
+                && cursor.amount() > 1
+                && furnace.view.getItemStack(Furnace.FUEL).isAir()) {
+            player.getInventory().setCursorItem(cursor.withAmount(cursor.amount() - 1));
+            furnace.view.setItemStack(Furnace.FUEL, cursor.withAmount(1));
+        }
     }
 
     /** Moves the result into a carried stack of the same item, up to its maximum size. */
@@ -298,30 +315,6 @@ final class FurnaceSessions {
                             ? ItemStack.AIR
                             : output.withAmount(output.amount() - moved));
         }
-    }
-
-    /**
-     * Vanilla's fuel slot holds a single empty bucket. Whatever a click stacked on top goes back to
-     * the cursor, or to the inventory when the click was a swap.
-     */
-    private void limitBucket(Furnace furnace, Player player, Click click) {
-        var fuel = furnace.view.getItemStack(Furnace.FUEL);
-
-        if (fuel.material() != Material.BUCKET || fuel.amount() <= 1) {
-            return;
-        }
-
-        var excess = fuel.withAmount(fuel.amount() - 1);
-        var inventory = player.getInventory();
-        var cursor = inventory.getCursorItem();
-        var swap = click instanceof Click.HotbarSwap || click instanceof Click.OffhandSwap;
-
-        if (!swap && (cursor.isAir() || cursor.isSimilar(excess))) {
-            inventory.setCursorItem(excess.withAmount(cursor.amount() + excess.amount()));
-        } else if (!inventory.addItemStack(excess)) {
-            return;
-        }
-        furnace.view.setItemStack(Furnace.FUEL, fuel.withAmount(1));
     }
 
     /**
