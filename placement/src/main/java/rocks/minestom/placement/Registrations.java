@@ -606,6 +606,8 @@ public final class Registrations {
                 blockManager, RedstoneWirePlacementRule::new, Block.REDSTONE_WIRE);
         Utility.registerPlacementRules(blockManager, FirePlacementRule::new, Block.FIRE);
         Utility.registerPlacementRules(
+                blockManager, NetherPortalPlacementRule::new, Block.NETHER_PORTAL);
+        Utility.registerPlacementRules(
                 blockManager, RedstoneLampPlacementRule::new, Block.REDSTONE_LAMP);
         Utility.registerPlacementRules(blockManager, LightPlacementRule::new, Block.LIGHT);
         Utility.registerPlacementRules(
