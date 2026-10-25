@@ -3,16 +3,19 @@ package dev.oglass.vibenilla.server;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.BlockVec;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Stand-in for vanilla's point of interest storage: one representative block per nether portal in a
  * dimension, persisted so a portal can be found without loading the chunks around it. Entries are
- * not removed when a portal breaks; whoever finds a stale one removes it. Not thread safe.
+ * not removed when a portal breaks; whoever finds stale ones removes them together. Not thread
+ * safe.
  */
 final class PortalIndex {
     private final Path file;
@@ -44,31 +47,31 @@ final class PortalIndex {
         }
     }
 
-    void remove(BlockVec portal) {
-        if (portals.remove(portal)) {
+    void removeAll(Collection<BlockVec> stale) {
+        if (portals.removeAll(stale)) {
             write();
         }
     }
 
-    /** The portal closest to the target within the square around it, lowest first on ties. */
-    @Nullable BlockVec nearest(int x, int y, int z, int radius) {
-        BlockVec best = null;
-        var bestDistance = Long.MAX_VALUE;
-        for (var portal : portals) {
-            if (Math.abs(portal.blockX() - x) > radius || Math.abs(portal.blockZ() - z) > radius) {
-                continue;
-            }
-            long dx = portal.blockX() - x;
-            long dy = portal.blockY() - y;
-            long dz = portal.blockZ() - z;
-            var distance = dx * dx + dy * dy + dz * dz;
-            if (distance < bestDistance
-                    || distance == bestDistance && portal.blockY() < best.blockY()) {
-                best = portal;
-                bestDistance = distance;
-            }
-        }
-        return best;
+    /** The portals within the square around the target, closest first and lowest first on ties. */
+    List<BlockVec> nearby(int x, int y, int z, int radius) {
+        return portals.stream()
+                .filter(
+                        portal ->
+                                Math.abs(portal.blockX() - x) <= radius
+                                        && Math.abs(portal.blockZ() - z) <= radius)
+                .sorted(
+                        Comparator.comparingLong(
+                                        (BlockVec portal) -> distanceSquared(portal, x, y, z))
+                                .thenComparingInt(BlockVec::blockY))
+                .toList();
+    }
+
+    private static long distanceSquared(BlockVec portal, int x, int y, int z) {
+        long dx = portal.blockX() - x;
+        long dy = portal.blockY() - y;
+        long dz = portal.blockZ() - z;
+        return dx * dx + dy * dy + dz * dz;
     }
 
     private void write() {

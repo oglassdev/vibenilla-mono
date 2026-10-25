@@ -1,7 +1,8 @@
 package dev.oglass.vibenilla.server;
 
+import dev.oglass.vibenilla.server.Respawns.Spawn;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
+import java.util.function.BooleanSupplier;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.BlockVec;
@@ -145,14 +146,22 @@ final class Portals {
     }
 
     /**
-     * Starts the transfer on the tick thread. Only chunk loading runs elsewhere; the block work and
-     * the final move happen back on the player's tick, unless the request went stale meanwhile.
+     * Starts the transfer on the tick thread. Only chunk loading runs elsewhere. The block work and
+     * the final move happen back on the player's tick, and each re-checks that the request is still
+     * wanted. The destination's view area is loaded first, so the move itself loads nothing and
+     * cannot be overtaken by a death or an instance change.
      */
     private void travel(Player player, Instance from, Hit hit, Travel travel) {
         var origin = from.getDimensionType().key();
         var position = player.getPosition();
         var token = travel.generation;
-        Executor tick = task -> player.scheduleNextTick(entity -> task.run());
+        var tick = Chunks.tick(player);
+        BooleanSupplier wanted =
+                () ->
+                        travel.generation == token
+                                && player.isOnline()
+                                && !player.isDead()
+                                && player.getInstance() == from;
 
         var endExit = hit.block().compare(Block.END_PORTAL) && origin.equals(WorldStorage.THE_END);
         var target = endExit ? WorldStorage.OVERWORLD : destination(origin, hit.block());
@@ -160,38 +169,56 @@ final class Portals {
             travel.traveling = false;
             return;
         }
-        var to = world.instance(target);
-        CompletableFuture<Pos> exit;
+        CompletableFuture<Spawn> exit;
         if (endExit) {
-            exit = CompletableFuture.supplyAsync(() -> Respawns.resolve(player), tick);
-        } else if (target.equals(WorldStorage.THE_END)) {
-            exit = PortalForcer.buildEndPlatform(to, tick);
+            exit = Respawns.load(player, tick);
         } else {
-            exit =
-                    PortalForcer.netherExit(
-                            from, to, world.portals(target), position, Axis.of(hit.block()), tick);
+            var to = world.instance(target);
+            var arrival =
+                    target.equals(WorldStorage.THE_END)
+                            ? PortalForcer.buildEndPlatform(to, wanted, tick)
+                            : PortalForcer.netherExit(
+                                    from,
+                                    to,
+                                    world.portals(target),
+                                    position,
+                                    Axis.of(hit.block()),
+                                    wanted,
+                                    tick);
+            exit = arrival.thenApply(pos -> pos == null ? null : new Spawn(target, pos));
         }
 
-        exit.whenCompleteAsync(
-                (arrival, error) -> {
-                    if (error != null) {
-                        MinecraftServer.LOGGER.error(
-                                "Failed to send {} through a portal", player.getUsername(), error);
-                    }
-                    var current = travel.generation == token;
-                    if (error != null
-                            || !current
-                            || !player.isOnline()
-                            || player.isDead()
-                            || player.getInstance() != from) {
-                        if (current) {
-                            travel.traveling = false;
-                        }
-                        return;
-                    }
-                    arrive(player, travel, to, arrival);
-                },
-                tick);
+        exit.thenCompose(
+                        spawn ->
+                                spawn == null
+                                        ? CompletableFuture.<Spawn>completedFuture(null)
+                                        : Chunks.loadView(
+                                                        player,
+                                                        world.instance(spawn.dimension()),
+                                                        spawn.position())
+                                                .thenApply(ignored -> spawn))
+                .whenCompleteAsync(
+                        (spawn, error) -> {
+                            if (error != null) {
+                                MinecraftServer.LOGGER.error(
+                                        "Failed to send {} through a portal",
+                                        player.getUsername(),
+                                        error);
+                            }
+                            if (error != null || spawn == null || !wanted.getAsBoolean()) {
+                                if (travel.generation == token) {
+                                    travel.traveling = false;
+                                }
+                                return;
+                            }
+                            var arrival = endExit ? Respawns.locate(player, true) : spawn;
+                            arrive(
+                                    player,
+                                    travel,
+                                    world.instance(arrival.dimension()),
+                                    arrival.position());
+                        },
+                        tick);
     }
 
     private static @Nullable Key destination(Key origin, Block portal) {

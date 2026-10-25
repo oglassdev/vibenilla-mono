@@ -85,7 +85,7 @@ public final class Server {
                 .addChild(Items.events())
                 .addChild(Deaths.events())
                 .addChild(Experience.events())
-                .addChild(Respawns.events(overworld, spawn))
+                .addChild(Respawns.events(world))
                 .addChild(new Portals(world).events())
                 .addChild(crafting.events())
                 .addListener(
@@ -125,10 +125,9 @@ public final class Server {
                                 return;
                             }
                             PlayerStorage.restore(player, data);
-                            var respawn = PlayerStorage.respawnPoint(data);
-                            player.setRespawnPoint(respawn == null ? spawn : respawn);
+                            Respawns.restore(player, PlayerStorage.respawn(data));
                             if (PlayerStorage.dead(data)) {
-                                player.teleport(Respawns.resolve(player));
+                                Respawns.placeDead(player);
                             }
                         })
                 .addListener(

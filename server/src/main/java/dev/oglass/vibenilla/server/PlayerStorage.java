@@ -1,5 +1,6 @@
 package dev.oglass.vibenilla.server;
 
+import dev.oglass.vibenilla.server.Respawns.Spawn;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -35,6 +36,7 @@ import net.minestom.server.inventory.PlayerInventory;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.utils.inventory.PlayerInventoryUtils;
 import org.jspecify.annotations.Nullable;
+import rocks.minestom.placement.Utility;
 
 /**
  * Per-player NBT files in {@code playerdata/<uuid>.dat}, using vanilla field names and slots.
@@ -165,23 +167,40 @@ final class PlayerStorage {
                 rotation.getFloat(1));
     }
 
-    /** Respawn point stored in the data, or null if none was saved. */
-    static @Nullable Pos respawnPoint(CompoundBinaryTag data) {
-        var spawn = data.getList("SpawnPos", BinaryTagTypes.DOUBLE);
-        if (spawn.size() != 3) {
+    /**
+     * The bed or anchor stored in vanilla's {@code respawn} compound, or null if none was saved.
+     */
+    static @Nullable Spawn respawn(CompoundBinaryTag data) {
+        var tag = data.getCompound("respawn");
+        var block = tag.getIntArray("pos");
+        var dimension = tag.getString("dimension");
+        if (block.length != 3 || !Key.parseable(dimension)) {
             return null;
         }
-        return new Pos(
-                spawn.getDouble(0),
-                spawn.getDouble(1),
-                spawn.getDouble(2),
-                data.getFloat("SpawnAngle"),
-                0);
+        var position =
+                new Pos(
+                        block[0] + 0.5,
+                        block[1] + 0.1,
+                        block[2] + 0.5,
+                        tag.getFloat("yaw"),
+                        tag.getFloat("pitch"));
+        return new Spawn(Key.key(dimension), position);
+    }
+
+    static CompoundBinaryTag respawnTag(Spawn spawn) {
+        var position = spawn.position();
+        return CompoundBinaryTag.builder()
+                .putString("dimension", spawn.dimension().asString())
+                .putIntArray(
+                        "pos", new int[] {position.blockX(), position.blockY(), position.blockZ()})
+                .putFloat("yaw", position.yaw())
+                .putFloat("pitch", position.pitch())
+                .build();
     }
 
     /**
-     * Applies everything except dimension, position and respawn point, which are used to spawn. A
-     * dead player comes back alive with full health and food.
+     * Applies everything except dimension, position and respawn, which are used to spawn. A dead
+     * player comes back alive with full health and food.
      */
     static void restore(Player player, CompoundBinaryTag data) {
         var inventory = player.getInventory();
@@ -311,7 +330,6 @@ final class PlayerStorage {
      */
     static CompoundBinaryTag serialize(Player player) {
         var position = player.getPosition();
-        var respawn = player.getRespawnPoint();
         var items = player.getInventory();
 
         var main = new ItemStack[PlayerInventory.INNER_INVENTORY_SIZE];
@@ -342,22 +360,26 @@ final class PlayerStorage {
             overflowList.add(item(stack, 0));
         }
 
-        return CompoundBinaryTag.builder()
-                .putString("Dimension", player.getInstance().getDimensionName())
-                .put("Pos", doubles(position.x(), position.y(), position.z()))
-                .put("Rotation", floats(position.yaw(), position.pitch()))
-                .put("SpawnPos", doubles(respawn.x(), respawn.y(), respawn.z()))
-                .putFloat("SpawnAngle", respawn.yaw())
-                .putFloat("Health", player.getHealth())
-                .putInt("foodLevel", player.getFood())
-                .putFloat("foodSaturationLevel", player.getFoodSaturation())
-                .putInt("XpLevel", player.getLevel())
-                .putFloat("XpP", player.getExp())
-                .putInt("playerGameType", player.getGameMode().ordinal())
-                .putInt("SelectedItemSlot", player.getHeldSlot())
-                .put("Inventory", inventory.build())
-                .put("Overflow", overflowList.build())
-                .build();
+        var data =
+                CompoundBinaryTag.builder()
+                        .putString("Dimension", player.getInstance().getDimensionName())
+                        .put("Pos", doubles(position.x(), position.y(), position.z()))
+                        .put("Rotation", floats(position.yaw(), position.pitch()))
+                        .putFloat("Health", player.getHealth())
+                        .putInt("foodLevel", player.getFood())
+                        .putFloat("foodSaturationLevel", player.getFoodSaturation())
+                        .putInt("XpLevel", player.getLevel())
+                        .putFloat("XpP", player.getExp())
+                        .putInt("playerGameType", player.getGameMode().ordinal())
+                        .putInt("SelectedItemSlot", player.getHeldSlot())
+                        .put("Inventory", inventory.build())
+                        .put("Overflow", overflowList.build());
+        var bed = player.getTag(Utility.RESPAWN_DIMENSION);
+        if (bed != null) {
+            var spawn = new Spawn(Key.key(bed), player.getRespawnPoint());
+            data.put("respawn", respawnTag(spawn));
+        }
+        return data.build();
     }
 
     private static CompoundBinaryTag item(ItemStack stack, int slot) {
