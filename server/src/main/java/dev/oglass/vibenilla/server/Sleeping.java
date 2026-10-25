@@ -51,6 +51,7 @@ final class Sleeping {
                     EntityType.ENDERMAN,
                     EntityType.ENDERMITE,
                     EntityType.EVOKER,
+                    EntityType.GIANT,
                     EntityType.GUARDIAN,
                     EntityType.HUSK,
                     EntityType.ILLUSIONER,
@@ -217,6 +218,7 @@ final class Sleeping {
             }
         }
         return !block.key().value().endsWith("glass")
+                && !block.compare(Block.MANGROVE_ROOTS)
                 && !RegistryTags.contains(RegistryTags.LEAVES, block);
     }
 
@@ -313,7 +315,7 @@ final class Sleeping {
         brightness = 1.0F - Math.clamp(brightness, 0.0F, 1.0F);
         var weather = instance.getWeather();
         brightness *= 1.0F - weather.rainLevel() * 5.0F / 16.0F;
-        brightness *= 1.0F - weather.thunderLevel() * 5.0F / 16.0F;
+        brightness *= 1.0F - weather.thunderLevel() * weather.rainLevel() * 5.0F / 16.0F;
         return (int) ((1.0F - brightness) * 11.0F) < BRIGHT_SKY_DARKNESS;
     }
 }
