@@ -5,14 +5,23 @@ import java.util.List;
 import net.kyori.adventure.nbt.BinaryTagTypes;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.nbt.ListBinaryTag;
+import net.kyori.adventure.text.Component;
+import net.minestom.server.codec.Codec;
+import net.minestom.server.codec.Transcoder;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
-/** Reads and writes container contents in the vanilla block entity {@code Items} format. */
+/** Reads and writes container contents and names in the vanilla block entity format. */
 final class ContainerItems {
     private static final String ITEMS = "Items";
 
     private ContainerItems() {}
+
+    static @Nullable Component customName(Block block) {
+        var name = block.nbtOrEmpty().get("CustomName");
+        return name == null ? null : Codec.COMPONENT.decode(Transcoder.NBT, name).orElse(null);
+    }
 
     static ItemStack[] read(Block block, int size) {
         var items = new ItemStack[size];

@@ -22,6 +22,22 @@ final class ContainerHandler implements BlockHandler {
 
     @Override
     public boolean onInteract(Interaction interaction) {
+        return interact(
+                interaction,
+                () ->
+                        sessions.open(
+                                interaction.getPlayer(),
+                                interaction.getInstance(),
+                                interaction.getBlockPosition().asBlockVec(),
+                                kind));
+    }
+
+    /**
+     * Opens a container for an interaction unless the player is placing a block against it by
+     * sneaking with an item, or is a spectator. Returns whether the interaction was left to block
+     * placement.
+     */
+    static boolean interact(Interaction interaction, Runnable open) {
         var player = interaction.getPlayer();
 
         if (player.isSneaking()
@@ -30,11 +46,7 @@ final class ContainerHandler implements BlockHandler {
         }
 
         if (player.getGameMode() != GameMode.SPECTATOR) {
-            sessions.open(
-                    player,
-                    interaction.getInstance(),
-                    interaction.getBlockPosition().asBlockVec(),
-                    kind);
+            open.run();
         }
         return false;
     }

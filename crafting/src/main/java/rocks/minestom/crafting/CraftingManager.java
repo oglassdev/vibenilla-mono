@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.minestom.server.codec.Transcoder;
 import net.minestom.server.entity.Player;
@@ -17,7 +16,6 @@ import net.minestom.server.inventory.AbstractInventory;
 import net.minestom.server.inventory.Inventory;
 import net.minestom.server.inventory.InventoryType;
 import net.minestom.server.item.ItemStack;
-import net.minestom.server.item.Material;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -222,55 +220,7 @@ public final class CraftingManager {
     }
 
     private Ingredient parseIngredient(JsonElement ingredientElement) {
-        if (ingredientElement == null) {
-            return null;
-        }
-        if (ingredientElement.isJsonPrimitive()) {
-            return this.parseIngredientString(ingredientElement.getAsString());
-        } else if (ingredientElement.isJsonObject()) {
-            var ingredientObject = ingredientElement.getAsJsonObject();
-            if (ingredientObject.has("item")) {
-                return this.parseIngredientString(ingredientObject.get("item").getAsString());
-            } else if (ingredientObject.has("tag")) {
-                return this.parseIngredientString("#" + ingredientObject.get("tag").getAsString());
-            }
-        } else if (ingredientElement.isJsonArray()) {
-            var combinedMaterials = new LinkedHashSet<Material>();
-
-            for (var child : ingredientElement.getAsJsonArray()) {
-                var nestedIngredient = this.parseIngredient(child);
-
-                if (nestedIngredient != null) {
-                    combinedMaterials.addAll(nestedIngredient.getMaterials());
-                }
-            }
-
-            if (!combinedMaterials.isEmpty()) {
-                return Ingredient.ofTag(combinedMaterials);
-            }
-        }
-
-        return null;
-    }
-
-    private Ingredient parseIngredientString(String ingredientValue) {
-        if (ingredientValue == null || ingredientValue.isEmpty()) {
-            return null;
-        }
-
-        if (ingredientValue.charAt(0) == '#') {
-            var tagKey = Key.key(ingredientValue.substring(1));
-            return Ingredient.ofTag(this.tagManager.materials(tagKey));
-        }
-
-        var material = Material.fromKey(ingredientValue);
-
-        if (material == null) {
-            LOGGER.warn("Unknown ingredient {}, skipping recipe entry.", ingredientValue);
-            return null;
-        }
-
-        return Ingredient.ofMaterial(material);
+        return Ingredient.parse(ingredientElement, this.tagManager);
     }
 
     private ItemStack readResult(JsonElement resultElement, String recipeType) {
