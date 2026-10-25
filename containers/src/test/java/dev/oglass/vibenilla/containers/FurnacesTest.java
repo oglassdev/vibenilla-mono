@@ -335,6 +335,32 @@ final class FurnacesTest {
     }
 
     @Test
+    void draggingABucketOntoABucketInTheFuelSlotIsCancelled(Env env) {
+        var instance = instanceWith(env);
+        var player = load(env, instance, Block.FURNACE, ItemStack.AIR, ItemStack.AIR);
+        player.getOpenInventory().setItemStack(Furnace.FUEL, ItemStack.of(Material.BUCKET));
+        player.getInventory().setCursorItem(ItemStack.of(Material.BUCKET));
+
+        for (var step : new int[][] {{-999, 0}, {Furnace.FUEL, 1}, {-999, 2}}) {
+            player.addPacketToQueue(
+                    new ClientClickWindowPacket(
+                            player.getOpenInventory().getWindowId(),
+                            0,
+                            (short) step[0],
+                            (byte) step[1],
+                            ClientClickWindowPacket.ClickType.QUICK_CRAFT,
+                            Map.of(),
+                            ItemStack.Hash.AIR));
+        }
+        player.interpretPacketQueue();
+
+        assertEquals(
+                ItemStack.of(Material.BUCKET),
+                player.getOpenInventory().getItemStack(Furnace.FUEL));
+        assertEquals(ItemStack.of(Material.BUCKET), player.getInventory().getCursorItem());
+    }
+
+    @Test
     void resultMergesIntoMatchingCursorButNeverTakesItems(Env env) {
         var instance = instanceWith(env);
         var player = load(env, instance, Block.FURNACE, ItemStack.AIR, ItemStack.AIR);

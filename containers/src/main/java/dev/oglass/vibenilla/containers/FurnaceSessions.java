@@ -222,9 +222,9 @@ final class FurnaceSessions {
         var cursor = player.getInventory().getCursorItem();
 
         return switch (click) {
-            case Click.LeftDrag drag -> dragAllowed(drag.slots(), cursor);
-            case Click.RightDrag drag -> dragAllowed(drag.slots(), cursor);
-            case Click.MiddleDrag drag -> dragAllowed(drag.slots(), cursor);
+            case Click.LeftDrag drag -> dragAllowed(furnace, drag.slots(), cursor);
+            case Click.RightDrag drag -> dragAllowed(furnace, drag.slots(), cursor);
+            case Click.MiddleDrag drag -> dragAllowed(furnace, drag.slots(), cursor);
             default ->
                     switch (click.slot()) {
                         case Furnace.OUTPUT -> takesResult(player, click, cursor);
@@ -234,9 +234,16 @@ final class FurnaceSessions {
         };
     }
 
-    private boolean dragAllowed(List<Integer> slots, ItemStack cursor) {
-        return !slots.contains(Furnace.OUTPUT)
-                && (!slots.contains(Furnace.FUEL) || fitsFuelSlot(cursor));
+    private boolean dragAllowed(Furnace furnace, List<Integer> slots, ItemStack cursor) {
+        if (slots.contains(Furnace.OUTPUT)) {
+            return false;
+        }
+        if (!slots.contains(Furnace.FUEL)) {
+            return true;
+        }
+        return fitsFuelSlot(cursor)
+                && (cursor.material() != Material.BUCKET
+                        || furnace.view.getItemStack(Furnace.FUEL).isAir());
     }
 
     private boolean takesResult(Player player, Click click, ItemStack cursor) {
