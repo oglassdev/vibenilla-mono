@@ -201,7 +201,6 @@ final class NonSpecialPlacementBlocks {
                     Block.MYCELIUM,
                     Block.NETHER_BRICKS,
                     Block.NETHER_GOLD_ORE,
-                    Block.NETHER_PORTAL,
                     Block.NETHER_QUARTZ_ORE,
                     Block.NETHER_WART_BLOCK,
                     Block.NETHERITE_BLOCK,

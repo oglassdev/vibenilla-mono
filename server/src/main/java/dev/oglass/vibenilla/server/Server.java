@@ -54,8 +54,12 @@ public final class Server {
 
         var combat = CombatFeatures.modernVanilla();
         var world = new WorldStorage(worldPath, dataPath, Long.getLong("vibenilla.seed"));
-        var overworld = world.instance();
-        overworld.setExplosionSupplier(combat.get(FeatureType.EXPLOSION).getExplosionSupplier());
+        var overworld = world.overworld();
+        world.instances()
+                .forEach(
+                        instance ->
+                                instance.setExplosionSupplier(
+                                        combat.get(FeatureType.EXPLOSION).getExplosionSupplier()));
         var spawn = world.spawn();
         var environment =
                 new WorldEnvironment(worldPath.resolve("environment.properties"), overworld);
@@ -94,7 +98,8 @@ public final class Server {
                 .addChild(Items.events())
                 .addChild(Deaths.events())
                 .addChild(Experience.events())
-                .addChild(Respawns.events(spawn))
+                .addChild(Respawns.events(world))
+                .addChild(new Portals(world).events())
                 .addChild(Sleeping.events(overworld, environment.weathers()))
                 .addChild(crafting.events())
                 .addListener(
@@ -106,10 +111,13 @@ public final class Server {
                                 return;
                             }
                             var data = players.load(player);
-                            var position =
-                                    data == null || PlayerStorage.dead(data)
-                                            ? null
-                                            : PlayerStorage.position(data);
+                            var alive = data != null && !PlayerStorage.dead(data);
+                            var dimension =
+                                    alive ? world.instance(PlayerStorage.dimension(data)) : null;
+                            if (dimension != null) {
+                                event.setSpawningInstance(dimension);
+                            }
+                            var position = dimension == null ? null : PlayerStorage.position(data);
                             if (data != null) {
                                 saved.put(player, data);
                                 if (!player.isOnline()) {
@@ -132,10 +140,9 @@ public final class Server {
                             }
                             PlayerStorage.restore(player, data);
                             crafting.restoreRecipeBook(player, PlayerStorage.recipeBook(data));
-                            var respawn = PlayerStorage.respawnPoint(data);
-                            player.setRespawnPoint(respawn == null ? spawn : respawn);
+                            Respawns.restore(player, PlayerStorage.respawn(data));
                             if (PlayerStorage.dead(data)) {
-                                player.teleport(Respawns.resolve(player));
+                                Respawns.placeDead(player);
                             }
                         })
                 .addListener(
@@ -169,6 +176,11 @@ public final class Server {
         commands.register(new GameModeCommand());
         commands.register(new WeatherCommand(environment.weathers()));
         commands.register(new TimeCommand(overworld));
+
+        var started = System.nanoTime();
+        Respawns.loadSpawnArea();
+        MinecraftServer.LOGGER.info(
+                "Spawn chunks loaded in {} ms", (System.nanoTime() - started) / 1_000_000);
 
         server.start("0.0.0.0", port);
         MinecraftServer.LOGGER.info("Listening on port {} with seed {}", port, world.seed());

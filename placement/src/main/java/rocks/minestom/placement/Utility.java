@@ -5,18 +5,36 @@ import net.kyori.adventure.key.Key;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.collision.BoundingBox;
 import net.minestom.server.coordinate.Point;
+import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
+import net.minestom.server.entity.Player;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.BlockHandler;
 import net.minestom.server.instance.block.BlockManager;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
+import net.minestom.server.tag.Tag;
 import net.minestom.server.world.attribute.EnvironmentAttribute;
 import net.minestom.server.world.attribute.EnvironmentAttributeMap;
 
 public final class Utility {
+    /** The dimension of the player's bed or anchor; absent when they have none. */
+    public static final Tag<String> RESPAWN_DIMENSION = Tag.String("vibenilla:respawn_dimension");
+
     private Utility() {}
+
+    /** Sets a bed or anchor in the instance's dimension as the player's respawn point. */
+    public static void setRespawnPoint(Player player, Instance instance, Pos point) {
+        player.setRespawnPoint(point);
+        player.setTag(RESPAWN_DIMENSION, instance.getDimensionName());
+    }
+
+    /** Whether the player's respawn point is the given bed or anchor position. */
+    public static boolean respawnsAt(Player player, Instance instance, Pos point) {
+        return point.samePoint(player.getRespawnPoint())
+                && instance.getDimensionName().equals(player.getTag(RESPAWN_DIMENSION));
+    }
 
     /**
      * Registers a single placement rule for blocks which share the same registry tag. Silently does

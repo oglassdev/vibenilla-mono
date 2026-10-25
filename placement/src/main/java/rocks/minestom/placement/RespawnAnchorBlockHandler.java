@@ -7,11 +7,11 @@ import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockHandler;
 import net.minestom.server.item.Material;
 import net.minestom.server.sound.SoundEvent;
+import net.minestom.server.world.attribute.EnvironmentAttribute;
 
 public final class RespawnAnchorBlockHandler implements BlockHandler {
     public static final RespawnAnchorBlockHandler INSTANCE = new RespawnAnchorBlockHandler();
     private static final Key KEY = Key.key("placement:respawn_anchor");
-    private static final Key RESPAWN_ANCHOR_WORKS = Key.key("minecraft:respawn_anchor_works");
 
     private RespawnAnchorBlockHandler() {}
 
@@ -54,7 +54,8 @@ public final class RespawnAnchorBlockHandler implements BlockHandler {
             return true;
         }
 
-        if (!Utility.environmentBoolean(instance, RESPAWN_ANCHOR_WORKS, false)) {
+        if (!Utility.environmentBoolean(
+                instance, EnvironmentAttribute.RESPAWN_ANCHOR_WORKS.key(), false)) {
             instance.setBlock(position, Block.AIR);
             instance.explode(
                     (float) position.x() + 0.5F,
@@ -67,10 +68,9 @@ public final class RespawnAnchorBlockHandler implements BlockHandler {
         var respawn =
                 new net.minestom.server.coordinate.Pos(
                         position.x() + 0.5D, position.y() + 0.1D, position.z() + 0.5D);
-        var currentRespawn = player.getRespawnPoint();
 
-        if (currentRespawn == null || !currentRespawn.samePoint(respawn)) {
-            player.setRespawnPoint(respawn);
+        if (!Utility.respawnsAt(player, instance, respawn)) {
+            Utility.setRespawnPoint(player, instance, respawn);
             instance.playSound(
                     Sound.sound(
                             SoundEvent.BLOCK_RESPAWN_ANCHOR_SET_SPAWN,

@@ -4,9 +4,14 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Pos;
@@ -14,30 +19,52 @@ import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.LightingChunk;
 import net.minestom.server.instance.anvil.AnvilLoader;
+import net.minestom.server.instance.generator.Generator;
+import net.minestom.server.registry.RegistryKey;
 import net.minestom.server.world.DimensionType;
 import org.jspecify.annotations.Nullable;
 import rocks.minestom.worldgen.WorldGenerators;
 
 /**
- * Anvil-backed overworld. The seed and world spawn live in {@code vibenilla.properties}, written
- * atomically once when the world is created; chunks are saved through the Anvil loader.
+ * Anvil-backed overworld, nether and end. The seed and world spawn live in {@code
+ * vibenilla.properties}, written atomically once when the world is created; chunks are saved
+ * through one Anvil loader per dimension.
  */
 final class WorldStorage {
-    private static final Key OVERWORLD = Key.key("minecraft:overworld");
+    static final Key OVERWORLD = Key.key("minecraft:overworld");
+    static final Key THE_NETHER = Key.key("minecraft:the_nether");
+    static final Key THE_END = Key.key("minecraft:the_end");
+
     private static final String METADATA = "vibenilla.properties";
 
-    private final InstanceContainer instance;
+    private record Dimension(
+            Key key,
+            RegistryKey<DimensionType> type,
+            Function<WorldGenerators, Generator> generator) {}
+
+    private static final List<Dimension> DIMENSIONS =
+            List.of(
+                    new Dimension(OVERWORLD, DimensionType.OVERWORLD, WorldGenerators::overworld),
+                    new Dimension(THE_NETHER, DimensionType.THE_NETHER, WorldGenerators::nether),
+                    new Dimension(THE_END, DimensionType.THE_END, WorldGenerators::end));
+
+    private final Map<Key, InstanceContainer> instances = new LinkedHashMap<>();
+    private final Map<Key, PortalIndex> portals = new LinkedHashMap<>();
     private final long seed;
     private final Pos spawn;
     private @Nullable CompletableFuture<Void> saving;
 
     WorldStorage(Path worldPath, Path dataPath, @Nullable Long requestedSeed) {
-        var regions = worldPath.resolve("dimensions/minecraft/overworld/region");
         var metadataFile = worldPath.resolve(METADATA);
         try {
-            Files.createDirectories(regions);
+            var hasRegions = false;
+            for (var dimension : DIMENSIONS) {
+                var regions = regions(worldPath, dimension.key());
+                Files.createDirectories(regions);
+                hasRegions |= hasRegions(regions);
+            }
             var metadata = readMetadata(metadataFile);
-            if (metadata == null && hasRegions(regions)) {
+            if (metadata == null && hasRegions) {
                 throw new IllegalStateException(
                         "World "
                                 + worldPath
@@ -47,21 +74,11 @@ final class WorldStorage {
                                 + " world.");
             }
 
-            instance =
-                    MinecraftServer.getInstanceManager()
-                            .createInstanceContainer(
-                                    DimensionType.OVERWORLD, new AnvilLoader(worldPath, OVERWORLD));
-            instance.setChunkSupplier(LightingChunk::new);
-
             if (metadata == null) {
                 seed =
                         requestedSeed != null
                                 ? requestedSeed
                                 : ThreadLocalRandom.current().nextLong();
-                instance.setGenerator(new WorldGenerators(dataPath, seed).overworld());
-                var found = findSurface(instance, 0, 0);
-                spawn = new Pos(found.blockX() + 0.5, found.blockY(), found.blockZ() + 0.5);
-                writeMetadata(metadataFile, seed, found);
             } else {
                 seed = Long.parseLong(metadata.getProperty("seed"));
                 if (requestedSeed != null && requestedSeed != seed) {
@@ -71,7 +88,29 @@ final class WorldStorage {
                             worldPath,
                             seed);
                 }
-                instance.setGenerator(new WorldGenerators(dataPath, seed).overworld());
+            }
+
+            var generators = new WorldGenerators(dataPath, seed);
+            for (var dimension : DIMENSIONS) {
+                var instance =
+                        MinecraftServer.getInstanceManager()
+                                .createInstanceContainer(
+                                        dimension.type(),
+                                        new AnvilLoader(worldPath, dimension.key()));
+                instance.setChunkSupplier(LightingChunk::new);
+                instance.setGenerator(dimension.generator().apply(generators));
+                instances.put(dimension.key(), instance);
+                portals.put(
+                        dimension.key(),
+                        new PortalIndex(
+                                dimensionPath(worldPath, dimension.key()).resolve("portals.txt")));
+            }
+
+            if (metadata == null) {
+                var found = findSurface(overworld(), 0, 0);
+                spawn = new Pos(found.blockX() + 0.5, found.blockY(), found.blockZ() + 0.5);
+                writeMetadata(metadataFile, seed, found);
+            } else {
                 spawn =
                         new Pos(
                                 Integer.parseInt(metadata.getProperty("spawnX")) + 0.5,
@@ -83,8 +122,22 @@ final class WorldStorage {
         }
     }
 
-    InstanceContainer instance() {
-        return instance;
+    InstanceContainer overworld() {
+        return instances.get(OVERWORLD);
+    }
+
+    /** The instance of the dimension, or null if the world has no such dimension. */
+    @Nullable InstanceContainer instance(Key dimension) {
+        return instances.get(dimension);
+    }
+
+    /** The nether portals of the dimension, which must exist. */
+    PortalIndex portals(Key dimension) {
+        return portals.get(dimension);
+    }
+
+    Collection<InstanceContainer> instances() {
+        return instances.values();
     }
 
     long seed() {
@@ -99,7 +152,10 @@ final class WorldStorage {
     synchronized CompletableFuture<Void> save() {
         if (saving == null || saving.isDone()) {
             saving =
-                    instance.saveChunksToStorage()
+                    CompletableFuture.allOf(
+                                    instances.values().stream()
+                                            .map(InstanceContainer::saveChunksToStorage)
+                                            .toArray(CompletableFuture[]::new))
                             .whenComplete(
                                     (ignored, error) -> {
                                         if (error != null) {
@@ -121,6 +177,17 @@ final class WorldStorage {
             running.handle((ignored, error) -> null).join();
         }
         save().join();
+    }
+
+    private static Path dimensionPath(Path worldPath, Key dimension) {
+        return worldPath
+                .resolve("dimensions")
+                .resolve(dimension.namespace())
+                .resolve(dimension.value());
+    }
+
+    private static Path regions(Path worldPath, Key dimension) {
+        return dimensionPath(worldPath, dimension).resolve("region");
     }
 
     private static @Nullable Properties readMetadata(Path file) {
