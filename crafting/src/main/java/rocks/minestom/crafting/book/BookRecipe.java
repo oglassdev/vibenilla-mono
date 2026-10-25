@@ -18,7 +18,8 @@ public record BookRecipe(
         RecipeBookAddPacket.Entry entry,
         @Nullable CraftingRecipe crafting,
         @Nullable Layout layout,
-        Set<Material> ingredients) {
+        Set<Material> ingredients,
+        boolean showNotification) {
     /**
      * Where ingredients go in a grid. Shaped layouts are {@code width * height} cells, shapeless
      * layouts fill the grid in order. Empty cells are null.

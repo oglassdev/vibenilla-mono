@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import net.kyori.adventure.key.Key;
+import net.minestom.server.component.DataComponents;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.network.packet.server.play.RecipeBookAddPacket;
@@ -107,6 +108,53 @@ public final class RecipeCatalog {
         this.add(id, json, display, craftingCategory(json), slots, recipe, layout);
     }
 
+    public void addDye(
+            Key id, JsonObject json, CraftingRecipe recipe, Ingredient target, Ingredient dye) {
+        var onlyDyes = new SlotDisplay.OnlyWithComponent(slot(dye), DataComponents.DYE);
+        var targetSlot = slot(target);
+        var display =
+                new RecipeDisplay.CraftingShapeless(
+                        List.of(targetSlot, onlyDyes),
+                        new SlotDisplay.Dyed(onlyDyes, targetSlot),
+                        new SlotDisplay.Item(Material.CRAFTING_TABLE));
+        var slots = new Ingredient[] {target, dye};
+        var layout = new BookRecipe.Layout(false, 0, 0, slots);
+        this.add(id, json, display, craftingCategory(json), slots, recipe, layout);
+    }
+
+    public void addImbue(
+            Key id,
+            JsonObject json,
+            CraftingRecipe recipe,
+            Ingredient source,
+            Ingredient material,
+            ItemStack result) {
+        var materialSlot = slot(material);
+        var display =
+                new RecipeDisplay.CraftingShaped(
+                        3,
+                        3,
+                        List.of(
+                                materialSlot,
+                                materialSlot,
+                                materialSlot,
+                                materialSlot,
+                                new SlotDisplay.WithAnyPotion(slot(source)),
+                                materialSlot,
+                                materialSlot,
+                                materialSlot,
+                                materialSlot),
+                        new SlotDisplay.WithAnyPotion(new SlotDisplay.ItemStack(result)),
+                        new SlotDisplay.Item(Material.CRAFTING_TABLE));
+        var slots =
+                new Ingredient[] {
+                    material, material, material, material, source, material, material, material,
+                    material
+                };
+        var layout = new BookRecipe.Layout(true, 3, 3, slots);
+        this.add(id, json, display, craftingCategory(json), slots, recipe, layout);
+    }
+
     /** Registers a smelting, blasting or smoking recipe; the entry is display-only. */
     public void addCooking(
             Key id, JsonObject json, String type, Ingredient input, ItemStack result) {
@@ -175,7 +223,15 @@ public final class RecipeCatalog {
                 materials.addAll(input.getMaterials());
             }
         }
-        var recipe = new BookRecipe(id, entry, crafting, layout, materials);
+        var recipe =
+                new BookRecipe(
+                        id,
+                        entry,
+                        crafting,
+                        layout,
+                        materials,
+                        !json.has("show_notification")
+                                || json.get("show_notification").getAsBoolean());
         this.recipes.add(recipe);
         this.byId.put(id, recipe);
         this.byDisplayId.put(entry.displayId(), recipe);

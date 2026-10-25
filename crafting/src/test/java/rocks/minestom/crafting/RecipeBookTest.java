@@ -2,16 +2,20 @@ package rocks.minestom.crafting;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import java.time.Duration;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Player;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.network.packet.client.play.ClientPlaceRecipePacket;
+import net.minestom.server.network.packet.client.play.ClientRecipeBookSeenRecipePacket;
 import net.minestom.server.network.packet.client.play.ClientSetRecipeBookStatePacket;
 import net.minestom.server.network.packet.client.play.ClientSetRecipeBookStatePacket.BookType;
 import net.minestom.server.network.packet.server.play.PlaceGhostRecipePacket;
@@ -76,6 +80,60 @@ final class RecipeBookTest {
         var again = joined.connection().trackIncoming(RecipeBookAddPacket.class);
         inventory.addItemStack(ItemStack.of(Material.OAK_LOG));
         again.assertEmpty();
+    }
+
+    @Test
+    void unlockHonoursShowNotificationButStillHighlights(Env env) {
+        var joined = join(env);
+        var adds = joined.connection().trackIncoming(RecipeBookAddPacket.class);
+        var table = manager.recipeCatalog().byId(CRAFTING_TABLE).displayId();
+
+        manager.restoreRecipeBook(joined.player(), CompoundBinaryTag.empty());
+
+        var entry =
+                adds.collect().stream()
+                        .filter(add -> !add.replace())
+                        .flatMap(add -> add.entries().stream())
+                        .filter(e -> e.displayId() == table)
+                        .findFirst()
+                        .orElseThrow();
+        assertFalse(entry.notification());
+        assertTrue(entry.highlight());
+    }
+
+    @Test
+    void seenRecipePacketRemovesHighlight(Env env) {
+        var joined = join(env);
+        var player = joined.player();
+        player.getInventory().addItemStack(ItemStack.of(Material.OAK_LOG));
+        var book = manager.recipeBook(player);
+        assertTrue(book.isHighlighted(OAK_PLANKS));
+
+        var displayId = manager.recipeCatalog().byId(OAK_PLANKS).displayId();
+        env.process()
+                .packetListener()
+                .processClientPacket(
+                        new ClientRecipeBookSeenRecipePacket(displayId),
+                        player.getPlayerConnection());
+
+        assertFalse(book.isHighlighted(OAK_PLANKS));
+    }
+
+    @Test
+    void dyeAndImbueRecipesAreInTheBook(Env env) {
+        var joined = join(env);
+        var catalog = manager.recipeCatalog();
+        var boots = catalog.byId(Key.key("minecraft:leather_boots_dyed"));
+        var arrows = catalog.byId(Key.key("minecraft:tipped_arrow"));
+
+        assertNotNull(boots);
+        assertNotNull(arrows);
+        assertNotNull(boots.crafting());
+        assertSame(boots, catalog.byCrafting(boots.crafting()));
+        assertSame(arrows, catalog.byCrafting(arrows.crafting()));
+
+        joined.player().getInventory().addItemStack(ItemStack.of(Material.LEATHER_BOOTS));
+        assertTrue(manager.recipeBook(joined.player()).contains(boots.id()));
     }
 
     @Test

@@ -79,7 +79,7 @@ final class PlayerRecipeBooks {
         var entries = new ArrayList<RecipeBookAddPacket.Entry>();
         for (var recipe : recipes) {
             if (book.unlock(recipe.id())) {
-                entries.add(recipe.entry(true, true));
+                entries.add(recipe.entry(recipe.showNotification(), true));
             }
         }
         if (!entries.isEmpty()) {

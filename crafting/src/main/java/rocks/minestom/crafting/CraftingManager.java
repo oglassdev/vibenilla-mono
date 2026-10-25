@@ -10,6 +10,7 @@ import java.util.*;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.text.Component;
+import net.minestom.server.MinecraftServer;
 import net.minestom.server.codec.Transcoder;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
@@ -21,6 +22,7 @@ import net.minestom.server.inventory.InventoryType;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.network.packet.client.play.ClientPlaceRecipePacket;
+import net.minestom.server.network.packet.client.play.ClientRecipeBookSeenRecipePacket;
 import net.minestom.server.network.packet.client.play.ClientSetRecipeBookStatePacket;
 import net.minestom.server.network.packet.server.play.PlaceGhostRecipePacket;
 import org.jetbrains.annotations.Nullable;
@@ -61,7 +63,6 @@ public final class CraftingManager {
         this.recipes.add(new MapExtendingCraftingRecipe());
         this.recipes.add(new RepairItemCraftingRecipe());
         this.recipes.add(new ShieldDecorationCraftingRecipe());
-        this.recipes.add(new TippedArrowCraftingRecipe());
     }
 
     private void loadRecipes(Path recipeDirectory) {
@@ -95,7 +96,8 @@ public final class CraftingManager {
                 case "minecraft:crafting_shaped" -> this.loadShaped(recipeId, recipeObject);
                 case "minecraft:crafting_shapeless" -> this.loadShapeless(recipeId, recipeObject);
                 case "minecraft:crafting_transmute" -> this.loadTransmute(recipeId, recipeObject);
-                case "minecraft:crafting_dye" -> this.loadDye(recipeObject);
+                case "minecraft:crafting_dye" -> this.loadDye(recipeId, recipeObject);
+                case "minecraft:crafting_imbue" -> this.loadImbue(recipeId, recipeObject);
                 case "minecraft:smelting", "minecraft:blasting", "minecraft:smoking" ->
                         this.loadCooking(recipeId, recipeType, recipeObject);
             }
@@ -264,11 +266,26 @@ public final class CraftingManager {
         }
     }
 
-    private void loadDye(JsonObject recipeObject) {
+    private void loadDye(Key recipeId, JsonObject recipeObject) {
         var targetIngredient = this.parseIngredient(recipeObject.get("target"));
+        var dyeIngredient = this.parseIngredient(recipeObject.get("dye"));
 
-        if (targetIngredient != null) {
-            this.recipes.add(new ArmorDyeCraftingRecipe(targetIngredient));
+        if (targetIngredient != null && dyeIngredient != null) {
+            var recipe = new ArmorDyeCraftingRecipe(targetIngredient);
+            this.recipes.add(recipe);
+            this.catalog.addDye(recipeId, recipeObject, recipe, targetIngredient, dyeIngredient);
+        }
+    }
+
+    private void loadImbue(Key recipeId, JsonObject recipeObject) {
+        var source = this.parseIngredient(recipeObject.get("source"));
+        var material = this.parseIngredient(recipeObject.get("material"));
+        var resultStack = this.readResult(recipeObject.get("result"), "imbue");
+
+        if (source != null && material != null && !resultStack.isAir()) {
+            var recipe = new TippedArrowCraftingRecipe();
+            this.recipes.add(recipe);
+            this.catalog.addImbue(recipeId, recipeObject, recipe, source, material, resultStack);
         }
     }
 
@@ -344,6 +361,11 @@ public final class CraftingManager {
     }
 
     public EventNode<Event> events() {
+        // Minestom has no handler for this packet, so PlayerPacketEvent never fires for it.
+        MinecraftServer.getPacketListenerManager()
+                .setPlayListener(
+                        ClientRecipeBookSeenRecipePacket.class,
+                        (packet, player) -> this.recipeSeen(player, packet.index()));
         return EventNode.all("crafting")
                 .addListener(new CraftingPlayerSpawnListener(this))
                 .addListener(new CraftingPlayerDisconnectListener(this))
