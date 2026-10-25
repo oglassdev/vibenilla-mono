@@ -49,6 +49,7 @@ final class WorldStorage {
                     new Dimension(THE_END, DimensionType.THE_END, WorldGenerators::end));
 
     private final Map<Key, InstanceContainer> instances = new LinkedHashMap<>();
+    private final Map<Key, PortalIndex> portals = new LinkedHashMap<>();
     private final long seed;
     private final Pos spawn;
     private @Nullable CompletableFuture<Void> saving;
@@ -99,6 +100,10 @@ final class WorldStorage {
                 instance.setChunkSupplier(LightingChunk::new);
                 instance.setGenerator(dimension.generator().apply(generators));
                 instances.put(dimension.key(), instance);
+                portals.put(
+                        dimension.key(),
+                        new PortalIndex(
+                                dimensionPath(worldPath, dimension.key()).resolve("portals.txt")));
             }
 
             if (metadata == null) {
@@ -124,6 +129,11 @@ final class WorldStorage {
     /** The instance of the dimension, or null if the world has no such dimension. */
     @Nullable InstanceContainer instance(Key dimension) {
         return instances.get(dimension);
+    }
+
+    /** The nether portals of the dimension, which must exist. */
+    PortalIndex portals(Key dimension) {
+        return portals.get(dimension);
     }
 
     Collection<InstanceContainer> instances() {
@@ -169,12 +179,15 @@ final class WorldStorage {
         save().join();
     }
 
-    private static Path regions(Path worldPath, Key dimension) {
+    private static Path dimensionPath(Path worldPath, Key dimension) {
         return worldPath
                 .resolve("dimensions")
                 .resolve(dimension.namespace())
-                .resolve(dimension.value())
-                .resolve("region");
+                .resolve(dimension.value());
+    }
+
+    private static Path regions(Path worldPath, Key dimension) {
+        return dimensionPath(worldPath, dimension).resolve("region");
     }
 
     private static @Nullable Properties readMetadata(Path file) {

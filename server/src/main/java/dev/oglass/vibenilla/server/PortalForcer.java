@@ -2,17 +2,18 @@ package dev.oglass.vibenilla.server;
 
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.instance.Chunk;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
-import org.jspecify.annotations.Nullable;
 import rocks.minestom.placement.PortalShape.Axis;
 
 /**
  * Vanilla {@code PortalForcer}: finds the nether portal a traveller arrives through, or builds one.
- * Every method blocks on chunk loads and must not run on a tick thread.
+ * Chunks load asynchronously; every block read and write runs on the executor passed to the entry
+ * points, which must be the tick thread.
  */
 final class PortalForcer {
     static final BlockVec END_PLATFORM_CENTER = new BlockVec(100, 48, 0);
@@ -21,9 +22,6 @@ final class PortalForcer {
     private static final int OVERWORLD_SEARCH_RADIUS = 128;
     private static final int CREATE_RADIUS = 16;
     private static final int FRAME_MARGIN = 4;
-    private static final int[] PORTAL_STATES = {
-        Block.NETHER_PORTAL.stateId(), Block.NETHER_PORTAL.withProperty("axis", "z").stateId()
-    };
 
     /** A portal's lowest row: {@code x} and {@code z} are its smallest coordinates. */
     private record Frame(Axis axis, int x, int y, int z, int width) {
@@ -41,8 +39,17 @@ final class PortalForcer {
 
     private PortalForcer() {}
 
-    /** Where a traveller at the position arrives in {@code to} through a portal of the axis. */
-    static Pos netherExit(Instance from, Instance to, Pos position, Axis axis) {
+    /**
+     * Where a traveller at the position arrives in {@code to} through a portal of the axis. Call on
+     * the tick thread; the result completes there too.
+     */
+    static CompletableFuture<Pos> netherExit(
+            Instance from,
+            Instance to,
+            PortalIndex portals,
+            Pos position,
+            Axis axis,
+            Executor tick) {
         var scale =
                 from.getCachedDimensionType().coordinateScale()
                         / to.getCachedDimensionType().coordinateScale();
@@ -50,82 +57,66 @@ final class PortalForcer {
         var z = (int) Math.floor(position.z() * scale);
         var toNether = to.getDimensionType().key().equals(WorldStorage.THE_NETHER);
         var radius = toNether ? NETHER_SEARCH_RADIUS : OVERWORLD_SEARCH_RADIUS;
-
-        var portal = findClosestPortal(to, x, position.blockY(), z, radius);
-        var frame =
-                portal != null
-                        ? frameAround(to, portal)
-                        : createPortal(to, x, position.blockY(), z, axis);
-        return frame.exit(position, axis);
+        return exit(to, portals, x, position.blockY(), z, radius, position, axis, tick);
     }
 
     /** Rebuilds the obsidian platform players arrive on and returns where they stand. */
-    static Pos buildEndPlatform(Instance end) {
+    static CompletableFuture<Pos> buildEndPlatform(Instance end, Executor tick) {
         var center = END_PLATFORM_CENTER;
-        loadAround(end, center.blockX(), center.blockZ(), 2);
-        for (var x = center.blockX() - 2; x <= center.blockX() + 2; x++) {
-            for (var z = center.blockZ() - 2; z <= center.blockZ() + 2; z++) {
-                for (var y = center.blockY() + 1; y <= center.blockY() + 3; y++) {
-                    end.setBlock(x, y, z, Block.AIR);
-                }
-                end.setBlock(x, center.blockY(), z, Block.OBSIDIAN);
-            }
-        }
-        return new Pos(center.blockX() + 0.5, center.blockY() + 1, center.blockZ() + 0.5);
+        return loadAround(end, center.blockX(), center.blockZ(), 2)
+                .thenApplyAsync(
+                        ignored -> {
+                            for (var x = center.blockX() - 2; x <= center.blockX() + 2; x++) {
+                                for (var z = center.blockZ() - 2; z <= center.blockZ() + 2; z++) {
+                                    for (var y = center.blockY() + 1;
+                                            y <= center.blockY() + 3;
+                                            y++) {
+                                        end.setBlock(x, y, z, Block.AIR);
+                                    }
+                                    end.setBlock(x, center.blockY(), z, Block.OBSIDIAN);
+                                }
+                            }
+                            return new Pos(
+                                    center.blockX() + 0.5,
+                                    center.blockY() + 1,
+                                    center.blockZ() + 0.5);
+                        },
+                        tick);
     }
 
     /**
-     * The portal block closest to the target within the square around it, lowest first on ties.
-     * Only chunks already generated are read.
+     * Loads only the chunk of the closest indexed portal and checks it is still there, dropping it
+     * from the index if not. With no portal in range, loads the creation area and builds one.
      */
-    private static @Nullable BlockVec findClosestPortal(
-            Instance instance, int x, int y, int z, int radius) {
-        var loads = new ArrayList<CompletableFuture<Chunk>>();
-        for (var chunkX = (x - radius) >> 4; chunkX <= (x + radius) >> 4; chunkX++) {
-            for (var chunkZ = (z - radius) >> 4; chunkZ <= (z + radius) >> 4; chunkZ++) {
-                loads.add(instance.loadOptionalChunk(chunkX, chunkZ));
-            }
+    private static CompletableFuture<Pos> exit(
+            Instance to,
+            PortalIndex portals,
+            int x,
+            int y,
+            int z,
+            int radius,
+            Pos position,
+            Axis axis,
+            Executor tick) {
+        var portal = portals.nearest(x, y, z, radius);
+        if (portal == null) {
+            return loadAround(to, x, z, CREATE_RADIUS + FRAME_MARGIN)
+                    .thenApplyAsync(
+                            ignored ->
+                                    createPortal(to, portals, x, y, z, axis).exit(position, axis),
+                            tick);
         }
-
-        BlockVec best = null;
-        var bestDistance = Long.MAX_VALUE;
-        for (var load : loads) {
-            var chunk = load.join();
-            if (chunk == null) {
-                continue;
-            }
-            var sections = chunk.getSections();
-            for (var index = 0; index < sections.size(); index++) {
-                var palette = sections.get(index).blockPalette();
-                if (!palette.any(PORTAL_STATES[0]) && !palette.any(PORTAL_STATES[1])) {
-                    continue;
-                }
-                var baseY = (chunk.getMinSection() + index) << 4;
-                for (var localX = 0; localX < 16; localX++) {
-                    for (var localZ = 0; localZ < 16; localZ++) {
-                        var worldX = (chunk.getChunkX() << 4) + localX;
-                        var worldZ = (chunk.getChunkZ() << 4) + localZ;
-                        if (Math.abs(worldX - x) > radius || Math.abs(worldZ - z) > radius) {
-                            continue;
-                        }
-                        for (var localY = 0; localY < 16; localY++) {
-                            var state = palette.get(localX, localY, localZ);
-                            if (state != PORTAL_STATES[0] && state != PORTAL_STATES[1]) {
-                                continue;
+        return to.loadChunk(portal.blockX() >> 4, portal.blockZ() >> 4)
+                .thenComposeAsync(
+                        chunk -> {
+                            if (isPortal(to, portal.blockX(), portal.blockY(), portal.blockZ())) {
+                                return CompletableFuture.completedFuture(
+                                        frameAround(to, portal).exit(position, axis));
                             }
-                            var worldY = baseY + localY;
-                            var distance = distanceSquared(x, y, z, worldX, worldY, worldZ);
-                            if (distance < bestDistance
-                                    || distance == bestDistance && worldY < best.blockY()) {
-                                best = new BlockVec(worldX, worldY, worldZ);
-                                bestDistance = distance;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return best;
+                            portals.remove(portal);
+                            return exit(to, portals, x, y, z, radius, position, axis, tick);
+                        },
+                        tick);
     }
 
     private static Frame frameAround(Instance instance, BlockVec portal) {
@@ -151,13 +142,17 @@ final class PortalForcer {
 
     /** Vanilla {@code PortalForcer.createPortal}: a 2x3 portal on the best spot near the origin. */
     private static Frame createPortal(
-            Instance instance, int originX, int originY, int originZ, Axis axis) {
+            Instance instance,
+            PortalIndex portals,
+            int originX,
+            int originY,
+            int originZ,
+            Axis axis) {
         var dimension = instance.getCachedDimensionType();
         var minY = dimension.minY();
         var maxY = Math.min(dimension.maxY() - 1, minY + dimension.logicalHeight() - 1);
         var dx = axis == Axis.X ? 1 : 0;
         var dz = 1 - dx;
-        loadAround(instance, originX, originZ, CREATE_RADIUS + FRAME_MARGIN);
 
         BlockVec best = null;
         var bestDistance = -1L;
@@ -213,6 +208,7 @@ final class PortalForcer {
             site = clearSite(instance, originX, originY, originZ, dx, dz, minY, maxY);
         }
         buildFrame(instance, site, axis, dx, dz);
+        portals.add(site);
         return new Frame(axis, site.blockX(), site.blockY(), site.blockZ(), 2);
     }
 
@@ -315,14 +311,14 @@ final class PortalForcer {
         return instance.getBlock(x, y, z);
     }
 
-    private static void loadAround(Instance instance, int x, int z, int radius) {
+    private static CompletableFuture<Void> loadAround(Instance instance, int x, int z, int radius) {
         var loads = new ArrayList<CompletableFuture<Chunk>>();
         for (var chunkX = (x - radius) >> 4; chunkX <= (x + radius) >> 4; chunkX++) {
             for (var chunkZ = (z - radius) >> 4; chunkZ <= (z + radius) >> 4; chunkZ++) {
                 loads.add(instance.loadChunk(chunkX, chunkZ));
             }
         }
-        loads.forEach(CompletableFuture::join);
+        return CompletableFuture.allOf(loads.toArray(CompletableFuture[]::new));
     }
 
     private static long distanceSquared(int x1, int y1, int z1, int x2, int y2, int z2) {

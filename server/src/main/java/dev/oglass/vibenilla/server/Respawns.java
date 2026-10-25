@@ -61,12 +61,11 @@ public final class Respawns {
         var player = event.getPlayer();
         player.clearEffects();
         var position = resolve(player);
-        if (player.getInstance() == overworld) {
-            event.setRespawnPosition(position);
-            return;
+        event.setRespawnPosition(position);
+        if (player.getInstance() != overworld) {
+            // The player still reads as dead here, so the void can't hurt them while this blocks.
+            player.setInstance(overworld, position).join();
         }
-        event.setRespawnPosition(player.getPosition());
-        player.scheduleNextTick(entity -> player.setInstance(overworld, position));
     }
 
     /**

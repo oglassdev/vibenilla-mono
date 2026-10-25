@@ -1,7 +1,7 @@
 package dev.oglass.vibenilla.server;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.BlockVec;
@@ -12,6 +12,8 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.instance.InstanceBlockUpdateEvent;
+import net.minestom.server.event.player.PlayerDeathEvent;
+import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.event.player.PlayerTickEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
@@ -43,12 +45,18 @@ final class Portals {
         int ticksInside;
         int cooldown;
         boolean traveling;
+        int generation;
+
+        /** Drops the request in flight, if any: its result is no longer wanted. */
+        void cancel() {
+            generation++;
+            traveling = false;
+        }
     }
 
     private record Hit(Block block, BlockVec position) {}
 
     private final WorldStorage world;
-    private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
     Portals(WorldStorage world) {
         this.world = world;
@@ -57,7 +65,16 @@ final class Portals {
     EventNode<Event> events() {
         return EventNode.all("portals")
                 .addListener(InstanceBlockUpdateEvent.class, this::onBlockUpdate)
-                .addListener(PlayerTickEvent.class, this::onTick);
+                .addListener(PlayerTickEvent.class, this::onTick)
+                .addListener(PlayerDeathEvent.class, event -> cancel(event.getPlayer()))
+                .addListener(PlayerSpawnEvent.class, event -> cancel(event.getPlayer()));
+    }
+
+    private static void cancel(Player player) {
+        var travel = player.getTag(TRAVEL);
+        if (travel != null) {
+            travel.cancel();
+        }
     }
 
     /** Fire placed inside an obsidian frame becomes the portal, as vanilla {@code FireBlock}. */
@@ -79,6 +96,7 @@ final class Portals {
         for (var position : shape.interior()) {
             instance.setBlock(position, portal, false);
         }
+        world.portals(dimension).add(shape.interior().getFirst());
     }
 
     private void onTick(PlayerTickEvent event) {
@@ -126,36 +144,54 @@ final class Portals {
                 : SURVIVAL_WAIT_TICKS;
     }
 
+    /**
+     * Starts the transfer on the tick thread. Only chunk loading runs elsewhere; the block work and
+     * the final move happen back on the player's tick, unless the request went stale meanwhile.
+     */
     private void travel(Player player, Instance from, Hit hit, Travel travel) {
         var origin = from.getDimensionType().key();
         var position = player.getPosition();
-        if (hit.block().compare(Block.END_PORTAL) && origin.equals(WorldStorage.THE_END)) {
-            player.scheduleNextTick(
-                    entity -> arrive(player, travel, world.overworld(), Respawns.resolve(player)));
-            return;
-        }
+        var token = travel.generation;
+        Executor tick = task -> player.scheduleNextTick(entity -> task.run());
 
-        var target = destination(origin, hit.block());
+        var endExit = hit.block().compare(Block.END_PORTAL) && origin.equals(WorldStorage.THE_END);
+        var target = endExit ? WorldStorage.OVERWORLD : destination(origin, hit.block());
         if (target == null) {
             travel.traveling = false;
             return;
         }
         var to = world.instance(target);
-        var axis = Axis.of(hit.block());
-        executor.execute(
-                () -> {
-                    try {
-                        var exit =
-                                target.equals(WorldStorage.THE_END)
-                                        ? PortalForcer.buildEndPlatform(to)
-                                        : PortalForcer.netherExit(from, to, position, axis);
-                        player.scheduleNextTick(entity -> arrive(player, travel, to, exit));
-                    } catch (RuntimeException e) {
+        CompletableFuture<Pos> exit;
+        if (endExit) {
+            exit = CompletableFuture.supplyAsync(() -> Respawns.resolve(player), tick);
+        } else if (target.equals(WorldStorage.THE_END)) {
+            exit = PortalForcer.buildEndPlatform(to, tick);
+        } else {
+            exit =
+                    PortalForcer.netherExit(
+                            from, to, world.portals(target), position, Axis.of(hit.block()), tick);
+        }
+
+        exit.whenCompleteAsync(
+                (arrival, error) -> {
+                    if (error != null) {
                         MinecraftServer.LOGGER.error(
-                                "Failed to send {} through a portal", player.getUsername(), e);
-                        travel.traveling = false;
+                                "Failed to send {} through a portal", player.getUsername(), error);
                     }
-                });
+                    var current = travel.generation == token;
+                    if (error != null
+                            || !current
+                            || !player.isOnline()
+                            || player.isDead()
+                            || player.getInstance() != from) {
+                        if (current) {
+                            travel.traveling = false;
+                        }
+                        return;
+                    }
+                    arrive(player, travel, to, arrival);
+                },
+                tick);
     }
 
     private static @Nullable Key destination(Key origin, Block portal) {
@@ -169,20 +205,25 @@ final class Portals {
     }
 
     private static void arrive(Player player, Travel travel, Instance to, Pos position) {
-        if (!player.isOnline()) {
-            return;
+        try {
+            player.setInstance(to, position)
+                    .whenComplete(
+                            (ignored, error) -> {
+                                if (error != null) {
+                                    MinecraftServer.LOGGER.error(
+                                            "Failed to move {} to {}",
+                                            player.getUsername(),
+                                            to,
+                                            error);
+                                }
+                                player.setVelocity(Vec.ZERO);
+                                travel.cooldown = COOLDOWN_TICKS;
+                                travel.traveling = false;
+                            });
+        } catch (RuntimeException e) {
+            MinecraftServer.LOGGER.error("Failed to move {} to {}", player.getUsername(), to, e);
+            travel.traveling = false;
         }
-        player.setInstance(to, position)
-                .whenComplete(
-                        (ignored, error) -> {
-                            if (error != null) {
-                                MinecraftServer.LOGGER.error(
-                                        "Failed to move {} to {}", player.getUsername(), to, error);
-                            }
-                            player.setVelocity(Vec.ZERO);
-                            travel.cooldown = COOLDOWN_TICKS;
-                            travel.traveling = false;
-                        });
     }
 
     /** The portal block whose collision box the player overlaps, if any. */
