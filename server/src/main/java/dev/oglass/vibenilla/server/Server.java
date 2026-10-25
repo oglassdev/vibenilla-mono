@@ -47,6 +47,8 @@ public final class Server {
         var overworld = world.instance();
         overworld.setExplosionSupplier(combat.get(FeatureType.EXPLOSION).getExplosionSupplier());
         var spawn = world.spawn();
+        var environment =
+                new WorldEnvironment(worldPath.resolve("environment.properties"), overworld);
         var players = new PlayerStorage(worldPath.resolve("playerdata"));
         var saved = new ConcurrentHashMap<Player, CompoundBinaryTag>();
 
@@ -82,6 +84,7 @@ public final class Server {
                 .addChild(Deaths.events())
                 .addChild(Experience.events())
                 .addChild(Respawns.events(spawn))
+                .addChild(Sleeping.events(overworld, environment.weathers()))
                 .addChild(crafting.events())
                 .addListener(
                         AsyncPlayerConfigurationEvent.class,
@@ -138,6 +141,7 @@ public final class Server {
                                     .getOnlinePlayers()
                                     .forEach(players::save);
                             world.save();
+                            environment.save();
                         })
                 .repeat(TaskSchedule.minutes(5))
                 .schedule();
@@ -145,10 +149,14 @@ public final class Server {
                 () -> {
                     players.close();
                     world.saveAndWait();
+                    environment.save();
                     MinecraftServer.LOGGER.info("World saved");
                 });
 
-        MinecraftServer.getCommandManager().register(new GameModeCommand());
+        var commands = MinecraftServer.getCommandManager();
+        commands.register(new GameModeCommand());
+        commands.register(new WeatherCommand(environment.weathers()));
+        commands.register(new TimeCommand(overworld));
 
         server.start("0.0.0.0", port);
         MinecraftServer.LOGGER.info("Listening on port {} with seed {}", port, world.seed());
