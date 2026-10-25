@@ -27,7 +27,10 @@ public final class VanillaRandomTicks {
      *       <li>saplings
      *       <li>leaf decay, announced by {@link LeavesDecayEvent}
      *       <li>grass and mycelium spread and decay
-     *       <li>sugar cane and cactus growth
+     *       <li>sugar cane, cactus, bamboo, kelp and vine growth, and vine spread
+     *       <li>pumpkin and melon stems, nether wart, cocoa and sweet berry bushes
+     *       <li>ice and snow melting
+     *       <li>copper oxidation
      *       <li>fire spread and burn-out, announced by {@link TntIgniteEvent} for TNT, and lava
      *           starting fires
      *     </ul>
@@ -44,6 +47,13 @@ public final class VanillaRandomTicks {
         Leaves.register(ticks);
         SpreadingGrass.register(ticks);
         GrowingPlants.register(ticks);
+        Stems.register(ticks);
+        AgingPlants.register(ticks);
+        Bamboo.register(ticks);
+        GrowingPlantHeads.register(ticks);
+        Vines.register(ticks);
+        Melting.register(ticks);
+        Weathering.register(ticks);
         Lava.register(ticks, Fire.register(ticks, humidBiomes));
     }
 }

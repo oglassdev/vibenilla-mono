@@ -1,15 +1,22 @@
 package dev.oglass.vibenilla.ticking;
 
+import java.util.List;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
+import net.minestom.server.instance.block.BlockFace;
 
 /** World access shared by the handlers. Unloaded and out of world positions read as barriers. */
 final class Level {
     private static final Block OUT_OF_WORLD = Block.BARRIER;
     private static final float COLD_ENOUGH_FOR_SNOW = 0.15F;
+
+    /** The horizontal faces in clockwise order seen from above. */
+    static final List<BlockFace> HORIZONTAL =
+            List.of(BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST);
 
     private Level() {}
 
@@ -72,6 +79,11 @@ final class Level {
         }
         var level = property(block, "level");
         return level == 0 || level >= 8;
+    }
+
+    /** The block light at the position. */
+    static int blockLight(Instance instance, int x, int y, int z) {
+        return isLoaded(instance, new BlockVec(x, y, z)) ? instance.getBlockLight(x, y, z) : 0;
     }
 
     /** The light at the position as vanilla's {@code getRawBrightness(pos, 0)}. */

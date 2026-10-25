@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.Set;
 import net.minestom.server.coordinate.BlockVec;
@@ -185,6 +186,177 @@ final class HandlersTest {
         instance.setBlock(ABOVE, Block.CACTUS.withProperty("age", "15"));
         GrowingPlants.cactus(instance, ABOVE, instance.getBlock(ABOVE), new Random(1));
         assertTrue(instance.getBlock(ABOVE.add(0, 1, 0)).compare(Block.CACTUS));
+    }
+
+    @Test
+    void ripeStemPlacesFruitAndAttachesToIt(Env env) {
+        var instance = lit(env);
+        instance.setBlock(GROUND, Block.FARMLAND.withProperty("moisture", "7"));
+        instance.setBlock(ABOVE, Block.PUMPKIN_STEM.withProperty("age", "6"));
+        for (var face : Level.HORIZONTAL) {
+            instance.setBlock(GROUND.relative(face), Block.DIRT);
+        }
+        var random = new Random(1);
+
+        for (var tick = 0; tick < 2000; tick++) {
+            var stem = instance.getBlock(ABOVE);
+            if (!stem.compare(Block.PUMPKIN_STEM)) {
+                break;
+            }
+            Stems.tick(
+                    instance,
+                    ABOVE,
+                    stem,
+                    Block.PUMPKIN,
+                    Block.ATTACHED_PUMPKIN_STEM,
+                    "minecraft:supports_pumpkin_stem_fruit",
+                    random);
+        }
+
+        var attached = instance.getBlock(ABOVE);
+        assertTrue(attached.compare(Block.ATTACHED_PUMPKIN_STEM));
+        var facing = attached.getProperty("facing");
+        var fruit =
+                Level.HORIZONTAL.stream()
+                        .filter(face -> face.name().equalsIgnoreCase(facing))
+                        .findFirst()
+                        .orElseThrow();
+        assertTrue(instance.getBlock(ABOVE.relative(fruit)).compare(Block.PUMPKIN));
+    }
+
+    @Test
+    void netherWartAgesUpToThree(Env env) {
+        var instance = lit(env);
+        instance.setBlock(ABOVE, Block.NETHER_WART);
+        var random = new Random(1);
+
+        for (var tick = 0; tick < 500; tick++) {
+            AgingPlants.age(instance, ABOVE, instance.getBlock(ABOVE), 3, 10, random);
+        }
+        assertEquals(3, age(instance, ABOVE));
+    }
+
+    @Test
+    void kelpOnlyGrowsIntoWaterSources(Env env) {
+        var instance = lit(env);
+        instance.setBlock(GROUND, Block.SAND);
+        instance.setBlock(ABOVE, Block.KELP.withProperty("age", "0"));
+        var random = new Random(1);
+
+        for (var tick = 0; tick < 200; tick++) {
+            GrowingPlantHeads.grow(
+                    instance, ABOVE, instance.getBlock(ABOVE), GrowingPlantHeads.KELP, random);
+        }
+        assertTrue(instance.getBlock(ABOVE).compare(Block.KELP));
+        assertTrue(instance.getBlock(ABOVE.add(0, 1, 0)).air());
+
+        instance.setBlock(ABOVE.add(0, 1, 0), Block.WATER.withProperty("level", "3"));
+        for (var tick = 0; tick < 200; tick++) {
+            GrowingPlantHeads.grow(
+                    instance, ABOVE, instance.getBlock(ABOVE), GrowingPlantHeads.KELP, random);
+        }
+        assertTrue(instance.getBlock(ABOVE.add(0, 1, 0)).compare(Block.WATER));
+
+        instance.setBlock(ABOVE.add(0, 1, 0), Block.WATER);
+        for (var tick = 0; tick < 200 && instance.getBlock(ABOVE).compare(Block.KELP); tick++) {
+            GrowingPlantHeads.grow(
+                    instance, ABOVE, instance.getBlock(ABOVE), GrowingPlantHeads.KELP, random);
+        }
+        assertTrue(instance.getBlock(ABOVE).compare(Block.KELP_PLANT));
+        assertTrue(instance.getBlock(ABOVE.add(0, 1, 0)).compare(Block.KELP));
+    }
+
+    @Test
+    void bambooSaplingBecomesAStalkThatGrowsLeaves(Env env) {
+        var instance = lit(env);
+        instance.setBlock(GROUND, Block.DIRT);
+        instance.setBlock(ABOVE, Block.BAMBOO_SAPLING);
+        var random = new Random(1);
+
+        for (var tick = 0;
+                tick < 200 && instance.getBlock(ABOVE).compare(Block.BAMBOO_SAPLING);
+                tick++) {
+            Bamboo.sapling(instance, ABOVE, instance.getBlock(ABOVE), random);
+        }
+        assertTrue(instance.getBlock(ABOVE).compare(Block.BAMBOO));
+        assertEquals("small", instance.getBlock(ABOVE.add(0, 1, 0)).getProperty("leaves"));
+
+        var top = ABOVE.add(0, 1, 0);
+        for (var tick = 0; tick < 1000 && top.blockY() < ABOVE.blockY() + 4; tick++) {
+            Bamboo.stalk(instance, top, instance.getBlock(top), random);
+            if (instance.getBlock(top.add(0, 1, 0)).compare(Block.BAMBOO)) {
+                top = top.add(0, 1, 0);
+            }
+        }
+        assertEquals("large", instance.getBlock(top).getProperty("leaves"));
+        assertEquals("large", instance.getBlock(top.add(0, -1, 0)).getProperty("leaves"));
+        assertEquals("small", instance.getBlock(top.add(0, -2, 0)).getProperty("leaves"));
+        assertEquals("none", instance.getBlock(top.add(0, -3, 0)).getProperty("leaves"));
+    }
+
+    @Test
+    void vinesSpreadDownTheirWall(Env env) {
+        var instance = lit(env);
+        var wall = ABOVE.add(0, 1, 0);
+        instance.setBlock(wall, Block.STONE);
+        instance.setBlock(wall.add(1, 0, 0), Block.VINE.withProperty("west", "true"));
+        var random = new Random(1);
+
+        for (var tick = 0; tick < 500; tick++) {
+            Vines.tick(instance, wall.add(1, 0, 0), instance.getBlock(wall.add(1, 0, 0)), random);
+        }
+        var below = instance.getBlock(ABOVE.add(1, 0, 0));
+        assertTrue(below.compare(Block.VINE));
+        assertEquals("true", below.getProperty("west"));
+    }
+
+    @Test
+    void iceMeltsOnlyUnderBrightBlockLight(Env env) {
+        var instance = lit(env);
+        instance.setBlock(ABOVE, Block.ICE);
+        Melting.ice(instance, ABOVE, Block.ICE, new Random(1));
+        assertTrue(instance.getBlock(ABOVE).compare(Block.ICE));
+
+        var glow = new byte[2048];
+        Arrays.fill(glow, (byte) 0xFF);
+        for (var section : instance.getChunk(0, 0).getSections()) {
+            section.blockLight().set(glow);
+        }
+        Melting.ice(instance, ABOVE, Block.ICE, new Random(1));
+        assertTrue(instance.getBlock(ABOVE).compare(Block.WATER));
+
+        instance.setBlock(ABOVE, Block.SNOW.withProperty("layers", "3"));
+        Melting.snow(instance, ABOVE, instance.getBlock(ABOVE), new Random(1));
+        assertTrue(instance.getBlock(ABOVE).air());
+    }
+
+    @Test
+    void copperOxidizesUnlessLessWeatheredCopperIsNear(Env env) {
+        var instance = lit(env);
+        instance.setBlock(ABOVE, Block.COPPER_BLOCK);
+        var random = new Random(1);
+
+        for (var tick = 0;
+                tick < 20000 && !instance.getBlock(ABOVE).compare(Block.OXIDIZED_COPPER);
+                tick++) {
+            Weathering.tick(instance, ABOVE, instance.getBlock(ABOVE), random);
+        }
+        assertTrue(instance.getBlock(ABOVE).compare(Block.OXIDIZED_COPPER));
+
+        instance.setBlock(ABOVE, Block.EXPOSED_COPPER);
+        instance.setBlock(ABOVE.add(2, 0, 0), Block.COPPER_BLOCK);
+        instance.setBlock(ABOVE.add(0, 0, 3), Block.WAXED_COPPER_BLOCK);
+        for (var tick = 0; tick < 2000; tick++) {
+            Weathering.tick(instance, ABOVE, instance.getBlock(ABOVE), random);
+        }
+        assertTrue(instance.getBlock(ABOVE).compare(Block.EXPOSED_COPPER));
+
+        instance.setBlock(ABOVE.add(2, 0, 0), Block.AIR);
+        instance.setBlock(ABOVE.add(0, 0, 1), Block.CUT_COPPER_STAIRS.withProperty("half", "top"));
+        for (var tick = 0; tick < 2000; tick++) {
+            Weathering.tick(instance, ABOVE, instance.getBlock(ABOVE), random);
+        }
+        assertTrue(instance.getBlock(ABOVE).compare(Block.EXPOSED_COPPER));
     }
 
     @Test

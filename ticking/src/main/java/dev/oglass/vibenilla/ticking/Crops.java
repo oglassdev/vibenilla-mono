@@ -32,20 +32,22 @@ final class Crops {
 
     static void grow(
             Instance instance, BlockVec position, Block block, int maxAge, RandomGenerator random) {
+        var age = Level.property(block, "age");
+        if (age < maxAge && rollsGrowth(instance, position, block, random)) {
+            Level.set(instance, position, Level.withProperty(block, "age", age + 1));
+        }
+    }
+
+    /** Whether the plant is lit enough and wins its growth roll this tick. */
+    static boolean rollsGrowth(
+            Instance instance, BlockVec position, Block block, RandomGenerator random) {
         if (Level.rawBrightness(instance, position.blockX(), position.blockY(), position.blockZ())
                 < MINIMUM_LIGHT) {
-            return;
-        }
-
-        var age = Level.property(block, "age");
-        if (age >= maxAge) {
-            return;
+            return false;
         }
 
         var speed = growthSpeed(instance, position, block);
-        if (random.nextInt((int) (25.0F / speed) + 1) == 0) {
-            Level.set(instance, position, Level.withProperty(block, "age", age + 1));
-        }
+        return random.nextInt((int) (25.0F / speed) + 1) == 0;
     }
 
     /** Vanilla {@code CropBlock.getGrowthSpeed}: farmland below helps, same-crop rows hurt. */
