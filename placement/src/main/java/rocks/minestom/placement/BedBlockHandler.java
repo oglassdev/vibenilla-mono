@@ -57,10 +57,10 @@ public final class BedBlockHandler implements BlockHandler {
 
         if (bedRule.canSetSpawn() == BedRule.Rule.ALWAYS
                 || bedRule.canSetSpawn() == BedRule.Rule.WHEN_DARK && isDark(instance)) {
-            interaction
-                    .getPlayer()
-                    .setRespawnPoint(
-                            new Pos(position.x() + 0.5D, position.y() + 0.1D, position.z() + 0.5D));
+            Utility.setRespawnPoint(
+                    interaction.getPlayer(),
+                    instance,
+                    new Pos(position.x() + 0.5D, position.y() + 0.1D, position.z() + 0.5D));
         }
 
         return false;
