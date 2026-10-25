@@ -547,11 +547,21 @@ public final class Registrations {
                 Block.CAVE_VINES_PLANT);
         Utility.registerPlacementRules(
                 blockManager,
-                block -> new AttachedStemPlacementRule(block, Block.PUMPKIN, Block.PUMPKIN_STEM),
+                block ->
+                        new AttachedStemPlacementRule(
+                                block,
+                                Block.PUMPKIN,
+                                Block.PUMPKIN_STEM,
+                                Key.key("minecraft:supports_pumpkin_stem")),
                 Block.ATTACHED_PUMPKIN_STEM);
         Utility.registerPlacementRules(
                 blockManager,
-                block -> new AttachedStemPlacementRule(block, Block.MELON, Block.MELON_STEM),
+                block ->
+                        new AttachedStemPlacementRule(
+                                block,
+                                Block.MELON,
+                                Block.MELON_STEM,
+                                Key.key("minecraft:supports_melon_stem")),
                 Block.ATTACHED_MELON_STEM);
         Utility.registerPlacementRules(blockManager, SeagrassPlacementRule::new, Block.SEAGRASS);
         Utility.registerPlacementRules(

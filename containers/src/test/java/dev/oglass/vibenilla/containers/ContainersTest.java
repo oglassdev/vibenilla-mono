@@ -313,6 +313,32 @@ final class ContainersTest {
         assertEquals(0, count(player.getOpenInventory(), Material.GOLD_INGOT));
     }
 
+    @Test
+    void weatheringACopperChestKeepsItsContentsWithoutDropping(Env env) {
+        var instance = instanceWith(env);
+        var handler = env.process().block().getHandlerOrDummy("minecraft:chest");
+        var copper =
+                ContainerItems.write(
+                        Block.COPPER_CHEST
+                                .withProperties(Map.of("facing", "north", "type", "single"))
+                                .withHandler(handler),
+                        List.of(ItemStack.of(Material.GOLD_INGOT, 2)));
+        instance.setBlock(POSITION, copper);
+
+        instance.setBlock(
+                POSITION,
+                Block.EXPOSED_COPPER_CHEST
+                        .withProperties(copper.properties())
+                        .withHandler(copper.handler())
+                        .withNbt(copper.nbt()),
+                false);
+
+        assertTrue(instance.getEntities().stream().noneMatch(ItemEntity.class::isInstance));
+        var items = instance.getBlock(POSITION).nbt().getList("Items", BinaryTagTypes.COMPOUND);
+        assertEquals(1, items.size());
+        assertEquals("minecraft:gold_ingot", items.getCompound(0).getString("id"));
+    }
+
     private static int count(
             net.minestom.server.inventory.AbstractInventory inventory, Material material) {
         return List.of(inventory.getItemStacks()).stream()

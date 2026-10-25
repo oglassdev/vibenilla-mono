@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
+import net.kyori.adventure.key.Key;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.coordinate.Pos;
@@ -403,13 +404,18 @@ final class SupportPlacementTest {
 
     @Test
     void attachedStemRevertsToAFullyGrownStemWhenItsFruitIsGone() {
-        var rule =
-                new AttachedStemPlacementRule(
-                        Block.ATTACHED_PUMPKIN_STEM, Block.PUMPKIN, Block.PUMPKIN_STEM);
+        var rule = attachedPumpkinStemRule();
         var position = new BlockVec(0, 0, 0);
+        var farmland = Map.of(new BlockVec(0, -1, 0), Block.FARMLAND);
         var current = Block.ATTACHED_PUMPKIN_STEM.withProperty("facing", "east");
-        var fruitless = blocksAt(Map.of());
-        var fruited = blocksAt(Map.of(new BlockVec(1, 0, 0), Block.PUMPKIN));
+        var fruitless = blocksAt(farmland);
+        var fruited =
+                blocksAt(
+                        Map.of(
+                                new BlockVec(0, -1, 0),
+                                Block.FARMLAND,
+                                new BlockVec(1, 0, 0),
+                                Block.PUMPKIN));
 
         var reverted =
                 rule.blockUpdate(
@@ -427,6 +433,29 @@ final class SupportPlacementTest {
                 rule.blockUpdate(
                         new BlockPlacementRule.UpdateState(
                                 fruitless, position, current, BlockFace.WEST)));
+    }
+
+    @Test
+    void attachedStemBreaksWhenItsFarmlandIsRemoved() {
+        var rule = attachedPumpkinStemRule();
+        var current = Block.ATTACHED_PUMPKIN_STEM.withProperty("facing", "east");
+
+        var update =
+                new BlockPlacementRule.UpdateState(
+                        blocksAt(Map.of(new BlockVec(1, 0, 0), Block.PUMPKIN)),
+                        new BlockVec(0, 0, 0),
+                        current,
+                        BlockFace.BOTTOM);
+
+        assertEquals(Block.AIR, rule.blockUpdate(update));
+    }
+
+    private static AttachedStemPlacementRule attachedPumpkinStemRule() {
+        return new AttachedStemPlacementRule(
+                Block.ATTACHED_PUMPKIN_STEM,
+                Block.PUMPKIN,
+                Block.PUMPKIN_STEM,
+                Key.key("minecraft:supports_pumpkin_stem"));
     }
 
     @Test
