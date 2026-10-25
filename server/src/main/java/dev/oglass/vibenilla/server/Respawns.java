@@ -92,7 +92,7 @@ public final class Respawns {
         return null;
     }
 
-    private static @Nullable Pos findBedSpawn(Instance instance, Point head, Block block) {
+    static @Nullable Pos findBedSpawn(Instance instance, Point head, Block block) {
         var foot = head.sub(horizontal(block.getProperty("facing")));
         var spawn = findStandUp(instance, List.of(head, foot));
         return spawn == null ? null : spawn.withLookAt(centerOf(head));
