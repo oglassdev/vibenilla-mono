@@ -11,6 +11,7 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.event.inventory.InventoryPreClickEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
+import net.minestom.server.inventory.AbstractInventory;
 import net.minestom.server.inventory.click.Click;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
@@ -25,6 +26,9 @@ import net.minestom.server.timer.TaskSchedule;
  */
 final class FurnaceSessions {
     private record FurnaceKey(Instance instance, BlockVec position) {}
+
+    private static final int HOTBAR_END = 9;
+    private static final int MAIN_END = 36;
 
     private final Map<FurnaceKey, Furnace> furnaces = new ConcurrentHashMap<>();
     private final Furnace.Cooking cooking;
@@ -126,6 +130,11 @@ final class FurnaceSessions {
         }
     }
 
+    /** Writes every tracked furnace into its block, for a shutdown between periodic saves. */
+    void saveAll() {
+        furnaces.values().forEach(Furnace::save);
+    }
+
     void closeChunk(Instance instance, int chunkX, int chunkZ) {
         unload(
                 furnace ->
@@ -148,9 +157,16 @@ final class FurnaceSessions {
         var furnace = view.furnace();
         var click = event.getClick();
 
+        MinecraftServer.getSchedulerManager()
+                .scheduleEndOfTick(() -> limitBucket(furnace, player, click));
+
         if (event.getInventory() == view) {
             if (click.slot() == Furnace.OUTPUT) {
                 furnace.taking(player);
+
+                if (click instanceof Click.Left || click instanceof Click.Right) {
+                    mergeResult(furnace, player);
+                }
             }
 
             if (!allowed(player, click)) {
@@ -263,36 +279,100 @@ final class FurnaceSessions {
         return item.isAir() || cooking.fuels().isFuel(item) || item.material() == Material.BUCKET;
     }
 
-    /** Moves a smeltable item to the input slot or a fuel to the fuel slot, like vanilla. */
-    private void quickMove(Furnace furnace, Player player, int slot, ItemStack stack) {
-        if (stack.isAir()) {
+    /** Moves the result into a carried stack of the same item, up to its maximum size. */
+    private static void mergeResult(Furnace furnace, Player player) {
+        var cursor = player.getInventory().getCursorItem();
+        var output = furnace.view.getItemStack(Furnace.OUTPUT);
+
+        if (cursor.isAir() || !cursor.isSimilar(output)) {
             return;
         }
 
-        var target =
-                cooking.recipes().find(furnace.kind.recipeType(), stack) != null
-                        ? Furnace.INPUT
-                        : cooking.fuels().isFuel(stack) ? Furnace.FUEL : -1;
-
-        if (target < 0) {
-            return;
-        }
-
-        var current = furnace.view.getItemStack(target);
-        var space =
-                current.isAir()
-                        ? stack.maxStackSize()
-                        : current.isSimilar(stack) ? current.maxStackSize() - current.amount() : 0;
-        var moved = Math.min(space, stack.amount());
+        var moved = Math.min(output.amount(), cursor.maxStackSize() - cursor.amount());
 
         if (moved > 0) {
-            furnace.view.setItemStack(target, stack.withAmount(current.amount() + moved));
-            player.getInventory()
-                    .setItemStack(
-                            slot,
+            player.getInventory().setCursorItem(cursor.withAmount(cursor.amount() + moved));
+            furnace.view.setItemStack(
+                    Furnace.OUTPUT,
+                    moved == output.amount()
+                            ? ItemStack.AIR
+                            : output.withAmount(output.amount() - moved));
+        }
+    }
+
+    /**
+     * Vanilla's fuel slot holds a single empty bucket. Whatever a click stacked on top goes back to
+     * the cursor, or to the inventory when the click was a swap.
+     */
+    private void limitBucket(Furnace furnace, Player player, Click click) {
+        var fuel = furnace.view.getItemStack(Furnace.FUEL);
+
+        if (fuel.material() != Material.BUCKET || fuel.amount() <= 1) {
+            return;
+        }
+
+        var excess = fuel.withAmount(fuel.amount() - 1);
+        var inventory = player.getInventory();
+        var cursor = inventory.getCursorItem();
+        var swap = click instanceof Click.HotbarSwap || click instanceof Click.OffhandSwap;
+
+        if (!swap && (cursor.isAir() || cursor.isSimilar(excess))) {
+            inventory.setCursorItem(excess.withAmount(cursor.amount() + excess.amount()));
+        } else if (!inventory.addItemStack(excess)) {
+            return;
+        }
+        furnace.view.setItemStack(Furnace.FUEL, fuel.withAmount(1));
+    }
+
+    /**
+     * Moves a smeltable item to the input slot or a fuel to the fuel slot, and any other item
+     * between the main inventory and the hotbar, like vanilla.
+     */
+    private void quickMove(Furnace furnace, Player player, int slot, ItemStack stack) {
+        if (stack.isAir() || slot >= MAIN_END) {
+            return;
+        }
+
+        var inventory = player.getInventory();
+        var remaining =
+                cooking.recipes().find(furnace.kind.recipeType(), stack) != null
+                        ? insert(furnace.view, Furnace.INPUT, Furnace.INPUT + 1, stack)
+                        : cooking.fuels().isFuel(stack)
+                                ? insert(furnace.view, Furnace.FUEL, Furnace.FUEL + 1, stack)
+                                : slot < HOTBAR_END
+                                        ? insert(inventory, HOTBAR_END, MAIN_END, stack)
+                                        : insert(inventory, 0, HOTBAR_END, stack);
+
+        if (remaining.amount() != stack.amount()) {
+            inventory.setItemStack(slot, remaining);
+        }
+    }
+
+    /** Fills matching stacks in the range first, then empty slots, and returns what is left. */
+    private static ItemStack insert(
+            AbstractInventory inventory, int start, int end, ItemStack stack) {
+        for (var merge = true; ; merge = false) {
+            for (var slot = start; slot < end && !stack.isAir(); slot++) {
+                var current = inventory.getItemStack(slot);
+
+                if (current.isAir() == merge || (merge && !current.isSimilar(stack))) {
+                    continue;
+                }
+
+                var moved = Math.min(stack.amount(), stack.maxStackSize() - current.amount());
+
+                if (moved > 0) {
+                    inventory.setItemStack(slot, stack.withAmount(current.amount() + moved));
+                    stack =
                             moved == stack.amount()
                                     ? ItemStack.AIR
-                                    : stack.withAmount(stack.amount() - moved));
+                                    : stack.withAmount(stack.amount() - moved);
+                }
+            }
+
+            if (!merge) {
+                return stack;
+            }
         }
     }
 }

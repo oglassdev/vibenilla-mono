@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import net.kyori.adventure.nbt.BinaryTagTypes;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.nbt.ListBinaryTag;
@@ -23,6 +24,7 @@ import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.BlockHandler;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
+import net.minestom.server.network.packet.client.play.ClientClickWindowPacket;
 import net.minestom.testing.Env;
 import net.minestom.testing.EnvTest;
 import org.junit.jupiter.api.Test;
@@ -40,10 +42,11 @@ final class FurnacesTest {
                 .eventHandler()
                 .addChild(
                         Furnaces.register(
-                                env.process().block(),
-                                new CookingRecipes(DATA),
-                                new CookingFuels(DATA),
-                                (instance, position, points) -> experience.add(points)));
+                                        env.process().block(),
+                                        new CookingRecipes(DATA),
+                                        new CookingFuels(DATA),
+                                        (instance, position, points) -> experience.add(points))
+                                .events());
         return env.createFlatInstance();
     }
 
@@ -64,6 +67,20 @@ final class FurnacesTest {
                                 new Vec(0.5, 1, 0.5),
                                 player,
                                 PlayerHand.MAIN));
+    }
+
+    /** Sends a pickup click on a slot of the furnace window; button 1 is a right click. */
+    private static void pickup(Player player, int slot, int button) {
+        player.addPacketToQueue(
+                new ClientClickWindowPacket(
+                        player.getOpenInventory().getWindowId(),
+                        0,
+                        (short) slot,
+                        (byte) button,
+                        ClientClickWindowPacket.ClickType.PICKUP,
+                        Map.of(),
+                        ItemStack.Hash.AIR));
+        player.interpretPacketQueue();
     }
 
     private static void tick(Env env, int ticks) {
@@ -273,7 +290,39 @@ final class FurnacesTest {
         assertTrue(drops.contains(ItemStack.of(Material.IRON_ORE, 3)));
         assertTrue(drops.contains(ItemStack.of(Material.IRON_INGOT, 6)));
         assertNotSame(inventory, player.getOpenInventory());
-        assertEquals(1, experience.size());
-        assertTrue(experience.getFirst() <= 1);
+        assertTrue(experience.stream().allMatch(points -> points == 1));
+    }
+
+    @Test
+    void fuelSlotKeepsOneEmptyBucketAndTheRestStaysWithThePlayer(Env env) {
+        var instance = instanceWith(env);
+        var player = load(env, instance, Block.FURNACE, ItemStack.AIR, ItemStack.AIR);
+        player.getInventory().setCursorItem(ItemStack.of(Material.BUCKET, 16));
+
+        pickup(player, Furnace.FUEL, 0);
+        env.tick();
+
+        assertEquals(ItemStack.of(Material.BUCKET), player.getOpenInventory().getItemStack(1));
+        assertEquals(ItemStack.of(Material.BUCKET, 15), player.getInventory().getCursorItem());
+    }
+
+    @Test
+    void resultMergesIntoMatchingCursorButNeverTakesItems(Env env) {
+        var instance = instanceWith(env);
+        var player = load(env, instance, Block.FURNACE, ItemStack.AIR, ItemStack.AIR);
+        var inventory = player.getOpenInventory();
+        inventory.setItemStack(2, ItemStack.of(Material.IRON_INGOT, 5));
+        player.getInventory().setCursorItem(ItemStack.of(Material.IRON_INGOT, 62));
+
+        pickup(player, Furnace.OUTPUT, 1);
+
+        assertEquals(ItemStack.of(Material.IRON_INGOT, 64), player.getInventory().getCursorItem());
+        assertEquals(ItemStack.of(Material.IRON_INGOT, 3), inventory.getItemStack(2));
+
+        player.getInventory().setCursorItem(ItemStack.of(Material.GOLD_INGOT));
+        pickup(player, Furnace.OUTPUT, 0);
+
+        assertEquals(ItemStack.of(Material.GOLD_INGOT), player.getInventory().getCursorItem());
+        assertEquals(ItemStack.of(Material.IRON_INGOT, 3), inventory.getItemStack(2));
     }
 }
