@@ -157,6 +157,11 @@ public final class Server {
 
         MinecraftServer.getCommandManager().register(new GameModeCommand());
 
+        var started = System.nanoTime();
+        Respawns.loadSpawnArea();
+        MinecraftServer.LOGGER.info(
+                "Spawn chunks loaded in {} ms", (System.nanoTime() - started) / 1_000_000);
+
         server.start("0.0.0.0", port);
         MinecraftServer.LOGGER.info("Listening on port {} with seed {}", port, world.seed());
     }

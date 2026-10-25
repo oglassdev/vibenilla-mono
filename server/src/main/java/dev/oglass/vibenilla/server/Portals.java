@@ -6,7 +6,6 @@ import java.util.function.BooleanSupplier;
 import net.kyori.adventure.key.Key;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.BlockVec;
-import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
@@ -171,7 +170,11 @@ final class Portals {
         }
         CompletableFuture<Spawn> exit;
         if (endExit) {
-            exit = Respawns.load(player, tick);
+            exit =
+                    Respawns.preload(player, tick)
+                            .thenApplyAsync(
+                                    ignored -> wanted.getAsBoolean() ? Respawns.exit(player) : null,
+                                    tick);
         } else {
             var to = world.instance(target);
             var arrival =
@@ -188,37 +191,25 @@ final class Portals {
             exit = arrival.thenApply(pos -> pos == null ? null : new Spawn(target, pos));
         }
 
-        exit.thenCompose(
-                        spawn ->
-                                spawn == null
-                                        ? CompletableFuture.<Spawn>completedFuture(null)
-                                        : Chunks.loadView(
-                                                        player,
-                                                        world.instance(spawn.dimension()),
-                                                        spawn.position())
-                                                .thenApply(ignored -> spawn))
-                .whenCompleteAsync(
-                        (spawn, error) -> {
-                            if (error != null) {
-                                MinecraftServer.LOGGER.error(
-                                        "Failed to send {} through a portal",
-                                        player.getUsername(),
-                                        error);
-                            }
-                            if (error != null || spawn == null || !wanted.getAsBoolean()) {
-                                if (travel.generation == token) {
-                                    travel.traveling = false;
-                                }
-                                return;
-                            }
-                            var arrival = endExit ? Respawns.locate(player, true) : spawn;
-                            arrive(
-                                    player,
-                                    travel,
-                                    world.instance(arrival.dimension()),
-                                    arrival.position());
-                        },
-                        tick);
+        exit.whenCompleteAsync(
+                (spawn, error) -> {
+                    if (error != null || spawn == null || !wanted.getAsBoolean()) {
+                        stop(player, travel, token, error);
+                        return;
+                    }
+                    arrive(player, travel, token, wanted, spawn);
+                },
+                tick);
+    }
+
+    private static void stop(Player player, Travel travel, int token, @Nullable Throwable error) {
+        if (error != null) {
+            MinecraftServer.LOGGER.error(
+                    "Failed to send {} through a portal", player.getUsername(), error);
+        }
+        if (travel.generation == token) {
+            travel.traveling = false;
+        }
     }
 
     private static @Nullable Key destination(Key origin, Block portal) {
@@ -231,9 +222,29 @@ final class Portals {
         return origin.equals(WorldStorage.THE_NETHER) ? WorldStorage.OVERWORLD : null;
     }
 
-    private static void arrive(Player player, Travel travel, Instance to, Pos position) {
+    /**
+     * Moves the player once the view area around the spot is loaded. The view distance can change
+     * while the destination loads, so it is checked again right before the move, and loaded again
+     * if it grew.
+     */
+    private void arrive(
+            Player player, Travel travel, int token, BooleanSupplier wanted, Spawn spawn) {
+        var to = world.instance(spawn.dimension());
+        if (!Chunks.isViewLoaded(player, to, spawn.position())) {
+            Chunks.loadView(player, to, spawn.position())
+                    .whenCompleteAsync(
+                            (ignored, error) -> {
+                                if (error != null || !wanted.getAsBoolean()) {
+                                    stop(player, travel, token, error);
+                                    return;
+                                }
+                                arrive(player, travel, token, wanted, spawn);
+                            },
+                            Chunks.tick(player));
+            return;
+        }
         try {
-            player.setInstance(to, position)
+            player.setInstance(to, spawn.position())
                     .whenComplete(
                             (ignored, error) -> {
                                 if (error != null) {

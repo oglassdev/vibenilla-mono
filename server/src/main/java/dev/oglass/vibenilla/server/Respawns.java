@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
@@ -35,26 +36,30 @@ import rocks.minestom.placement.Utility;
  * Chooses where a respawning player appears: a valid bed in its dimension or an anchor that works
  * there, else near the overworld's world spawn.
  *
- * <p>When a player dies, everything the respawn will read is loaded in the background, followed by
- * the view area of the spot it picks. A respawn request that arrives before that finishes is held
- * on the death screen and carried out once it has, so a cold chunk never stalls the server and the
- * player is never revived somewhere that is not there yet.
+ * <p>The world spawn's surroundings are loaded at startup and never unloaded, so respawning there
+ * is immediate. When a player dies, the bed or anchor and the view area around it are loaded in the
+ * background. A respawn request is held on the death screen until that has finished, or until a
+ * deadline passes, and then the bed or anchor is checked again; if it is gone, or its view area is
+ * not loaded, the player appears at world spawn instead.
  */
 final class Respawns {
     /** Where a player respawns. */
     record Spawn(Key dimension, Pos position) {}
 
     private static final class Pending {
-        final CompletableFuture<Spawn> ready;
+        final CompletableFuture<Void> ready;
+        final Pos fallback;
         boolean waiting;
 
-        Pending(CompletableFuture<Spawn> ready) {
+        Pending(CompletableFuture<Void> ready, Pos fallback) {
             this.ready = ready;
+            this.fallback = fallback;
         }
     }
 
     private static final Tag<Pending> PENDING = Tag.Transient("vibenilla:respawn");
 
+    private static final long DEADLINE_SECONDS = 10;
     private static final int SPAWN_RADIUS = 10;
     private static final int SPAWN_ATTEMPTS = 16;
     private static final int SEARCH_RADIUS = 32;
@@ -101,34 +106,58 @@ final class Respawns {
     }
 
     /**
-     * Loads what a respawn of the player reads and then the view area of the spot it would pick,
-     * without using up an anchor charge. The result completes on the executor, which must be the
-     * tick thread.
+     * Loads the world spawn's surroundings, to cover every spot a respawn can pick and the view
+     * area around it. Minestom unloads chunks only on request, and nothing here asks for these.
      */
-    static CompletableFuture<Spawn> load(Player player, Executor tick) {
-        return loadLookup(player)
+    static void loadSpawnArea() {
+        var overworld = world.overworld();
+        var radius = SEARCH_RADIUS + (overworld.viewDistance() + 1) * 16;
+        Chunks.loadAround(overworld, worldSpawn.blockX(), worldSpawn.blockZ(), radius).join();
+    }
+
+    /**
+     * Loads the bed or anchor the player would respawn at and the view area around it, spending
+     * nothing. The result completes on the executor, which must be the tick thread.
+     */
+    static CompletableFuture<Void> preload(Player player, Executor tick) {
+        var instance = respawnInstance(player);
+        var point = player.getRespawnPoint();
+        if (instance == null || point == null) {
+            return CompletableFuture.completedFuture(null);
+        }
+        return Chunks.loadAround(instance, point.blockX(), point.blockZ(), BED_REACH)
                 .thenComposeAsync(
                         ignored -> {
-                            var spawn = locate(player, false);
-                            return Chunks.loadView(
+                            var spawn = personal(player);
+                            return spawn == null
+                                    ? CompletableFuture.<Void>completedFuture(null)
+                                    : Chunks.loadView(
                                             player,
                                             world.instance(spawn.dimension()),
-                                            spawn.position())
-                                    .thenApply(done -> spawn);
+                                            spawn.position());
                         },
                         tick);
     }
 
-    /** Moves a player who joined dead to where they respawn, once the way there is loaded. */
+    /**
+     * Where the player lands when leaving the End: their bed or charged anchor, else near world
+     * spawn, without spending a charge. The bed or anchor must have been preloaded.
+     */
+    static Spawn exit(Player player) {
+        return choose(player, randomSpawn(world.overworld()), false);
+    }
+
+    /** Respawns a player who joined dead, once the way there is loaded or the deadline passes. */
     static void placeDead(Player player) {
-        var tick = Chunks.tick(player);
-        load(player, tick)
+        var pending = begin(player);
+        pending.ready
+                .orTimeout(DEADLINE_SECONDS, TimeUnit.SECONDS)
                 .whenCompleteAsync(
-                        (preview, error) -> {
+                        (ignored, error) -> {
                             if (!player.isOnline()) {
                                 return;
                             }
-                            var spawn = locate(player, true);
+                            var spawn = resolve(player, pending);
                             var to = world.instance(spawn.dimension());
                             if (player.getInstance() == to) {
                                 player.teleport(spawn.position());
@@ -136,12 +165,26 @@ final class Respawns {
                                 player.setInstance(to, spawn.position());
                             }
                         },
-                        tick);
+                        Chunks.tick(player));
+    }
+
+    private static Pending begin(Player player) {
+        var ready = preload(player, Chunks.tick(player));
+        ready.whenComplete(
+                (ignored, error) -> {
+                    if (error != null) {
+                        MinecraftServer.LOGGER.warn(
+                                "Respawning {} at world spawn: preload failed",
+                                player.getUsername(),
+                                error);
+                    }
+                });
+        return new Pending(ready, randomSpawn(world.overworld()));
     }
 
     private static void onDeath(PlayerDeathEvent event) {
         var player = event.getPlayer();
-        player.setTag(PENDING, new Pending(load(player, Chunks.tick(player))));
+        player.setTag(PENDING, begin(player));
     }
 
     private static void onPacket(PlayerPacketEvent event) {
@@ -159,81 +202,94 @@ final class Respawns {
             return;
         }
         pending.waiting = true;
-        pending.ready.whenCompleteAsync(
-                (spawn, error) -> {
-                    if (player.isOnline() && player.isDead()) {
-                        player.respawn();
-                    }
-                },
-                Chunks.tick(player));
+        pending.ready
+                .orTimeout(DEADLINE_SECONDS, TimeUnit.SECONDS)
+                .whenCompleteAsync(
+                        (ignored, error) -> {
+                            if (player.isOnline() && player.isDead()) {
+                                player.respawn();
+                            }
+                        },
+                        Chunks.tick(player));
     }
 
     private static void onRespawn(PlayerRespawnEvent event) {
         var player = event.getPlayer();
+        var pending = player.getTag(PENDING);
         player.removeTag(PENDING);
         player.clearEffects();
-        var spawn = locate(player, true);
+        var spawn =
+                pending == null
+                        ? new Spawn(WorldStorage.OVERWORLD, randomSpawn(world.overworld()))
+                        : resolve(player, pending);
         event.setRespawnPosition(spawn.position());
         var to = world.instance(spawn.dimension());
         if (player.getInstance() != to) {
-            // The player still reads as dead here, so the void can't hurt them while this waits.
-            // The view area was loaded at death, so this only waits if the target changed since.
-            player.setInstance(to, spawn.position()).join();
+            // The player still reads as dead here, so the void can't hurt them if this is late.
+            player.setInstance(to, spawn.position());
         }
     }
 
-    private static CompletableFuture<Void> loadLookup(Player player) {
-        var loads = new ArrayList<CompletableFuture<Void>>();
-        loads.add(
-                Chunks.loadAround(
-                        world.overworld(),
-                        worldSpawn.blockX(),
-                        worldSpawn.blockZ(),
-                        SPAWN_RADIUS + SEARCH_RADIUS));
-        var dimension = player.getTag(Utility.RESPAWN_DIMENSION);
-        var instance = dimension == null ? null : world.instance(Key.key(dimension));
-        var point = player.getRespawnPoint();
-        if (instance != null && point != null) {
-            loads.add(Chunks.loadAround(instance, point.blockX(), point.blockZ(), BED_REACH));
-        }
-        return CompletableFuture.allOf(loads.toArray(CompletableFuture[]::new));
+    private static Spawn resolve(Player player, Pending pending) {
+        var ready = pending.ready.isDone() && !pending.ready.isCompletedExceptionally();
+        return ready ? choose(player, pending.fallback, true) : atWorldSpawn(pending.fallback);
     }
 
     /**
-     * Where the player should appear after dying: their bed, or anchor with a charge, if still
-     * valid, otherwise a safe spot near world spawn. With {@code use}, an anchor charge is spent
-     * and an invalid bed or anchor is forgotten. Call on the tick thread, with the chunks loaded.
+     * The player's bed or anchor if it is still valid and its view area is loaded, else the
+     * fallback. With {@code use}, an anchor charge is spent and an invalid bed or anchor is
+     * forgotten. The chunks around the bed or anchor must be loaded.
      */
-    static Spawn locate(Player player, boolean use) {
-        var dimension = player.getTag(Utility.RESPAWN_DIMENSION);
-        var point = player.getRespawnPoint();
-        if (dimension != null && point != null) {
-            var key = Key.key(dimension);
-            var instance = world.instance(key);
-            var position = instance == null ? null : findPersonalSpawn(instance, point, use);
-            if (position != null) {
-                return new Spawn(key, position);
-            }
+    private static Spawn choose(Player player, Pos fallback, boolean use) {
+        if (player.getTag(Utility.RESPAWN_DIMENSION) == null) {
+            return atWorldSpawn(fallback);
+        }
+        var spawn = personal(player);
+        if (spawn == null) {
             if (use) {
                 player.removeTag(Utility.RESPAWN_DIMENSION);
                 player.setRespawnPoint(worldSpawn);
-                player.sendMessage(Component.translatable("block.minecraft.spawn.not_valid"));
             }
+            player.sendMessage(Component.translatable("block.minecraft.spawn.not_valid"));
+            return atWorldSpawn(fallback);
         }
-        return new Spawn(WorldStorage.OVERWORLD, randomSpawn(world.overworld()));
+        var instance = world.instance(spawn.dimension());
+        if (!Chunks.isViewLoaded(player, instance, spawn.position())) {
+            return atWorldSpawn(fallback);
+        }
+        if (use) {
+            spendCharge(instance, player.getRespawnPoint());
+        }
+        return spawn;
     }
 
-    private static @Nullable Pos findPersonalSpawn(Instance instance, Point point, boolean use) {
+    private static Spawn atWorldSpawn(Pos position) {
+        return new Spawn(WorldStorage.OVERWORLD, position);
+    }
+
+    private static @Nullable Instance respawnInstance(Player player) {
+        var dimension = player.getTag(Utility.RESPAWN_DIMENSION);
+        return dimension == null ? null : world.instance(Key.key(dimension));
+    }
+
+    /** The player's bed, or anchor with a charge, if still valid. Spends nothing. */
+    private static @Nullable Spawn personal(Player player) {
+        var instance = respawnInstance(player);
+        var point = player.getRespawnPoint();
+        if (instance == null || point == null) {
+            return null;
+        }
         instance.loadChunk(point).join();
         var block = instance.getBlock(point);
-
+        Pos position = null;
         if (block.key().value().endsWith("_bed")) {
-            return findBedSpawn(instance, point, block);
+            position = findBedSpawn(instance, point, block);
+        } else if (block.compare(Block.RESPAWN_ANCHOR)) {
+            position = findAnchorSpawn(instance, point, block);
         }
-        if (block.compare(Block.RESPAWN_ANCHOR)) {
-            return useAnchor(instance, point, block, use);
-        }
-        return null;
+        return position == null
+                ? null
+                : new Spawn(Key.key(player.getTag(Utility.RESPAWN_DIMENSION)), position);
     }
 
     private static @Nullable Pos findBedSpawn(Instance instance, Point head, Block block) {
@@ -242,30 +298,27 @@ final class Respawns {
         return spawn == null ? null : spawn.withLookAt(centerOf(head));
     }
 
-    private static @Nullable Pos useAnchor(
-            Instance instance, Point anchor, Block block, boolean use) {
-        var charges = Integer.parseInt(block.getProperty("charges"));
-        if (charges == 0
+    private static @Nullable Pos findAnchorSpawn(Instance instance, Point anchor, Block block) {
+        if (Integer.parseInt(block.getProperty("charges")) == 0
                 || !Utility.environmentBoolean(
                         instance, EnvironmentAttribute.RESPAWN_ANCHOR_WORKS.key(), false)) {
             return null;
         }
         var spawn = findStandUp(instance, List.of(anchor));
-        if (spawn == null) {
-            return null;
-        }
+        return spawn == null ? null : spawn.withLookAt(centerOf(anchor));
+    }
 
-        if (use) {
-            instance.setBlock(anchor, block.withProperty("charges", String.valueOf(charges - 1)));
-            instance.playSound(
-                    Sound.sound(
-                            SoundEvent.BLOCK_RESPAWN_ANCHOR_DEPLETE,
-                            Sound.Source.BLOCK,
-                            1.0F,
-                            1.0F),
-                    centerOf(anchor));
+    private static void spendCharge(Instance instance, Point point) {
+        var block = instance.getBlock(point);
+        if (!block.compare(Block.RESPAWN_ANCHOR)) {
+            return;
         }
-        return spawn.withLookAt(centerOf(anchor));
+        var charges = Integer.parseInt(block.getProperty("charges"));
+        instance.setBlock(point, block.withProperty("charges", String.valueOf(charges - 1)));
+        instance.playSound(
+                Sound.sound(
+                        SoundEvent.BLOCK_RESPAWN_ANCHOR_DEPLETE, Sound.Source.BLOCK, 1.0F, 1.0F),
+                centerOf(point));
     }
 
     /** Nearest standable spot beside the occupied blocks, then on top of them. */
