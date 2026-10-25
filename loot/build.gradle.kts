@@ -10,3 +10,14 @@ dependencies {
 
     testImplementation(libs.minestom.testing)
 }
+
+val vanillaData =
+    tasks.register<VanillaDataTask>("vanillaData") {
+        minecraftVersion = libs.versions.minecraft
+        outputDirectory = layout.buildDirectory.dir("vanilla")
+    }
+
+tasks.test {
+    dependsOn(vanillaData)
+    workingDir = vanillaData.flatMap { it.outputDirectory }.get().asFile
+}

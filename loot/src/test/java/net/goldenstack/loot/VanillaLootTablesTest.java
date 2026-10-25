@@ -1,9 +1,7 @@
 package net.goldenstack.loot;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -32,15 +30,7 @@ class VanillaLootTablesTest {
     static void readVanillaTables() {
         MinecraftServer.init();
 
-        var configured = System.getenv("VIBENILLA_VANILLA_DATA");
-        var data =
-                configured != null
-                        ? Path.of(configured)
-                        : Path.of("..", "server", "run", "vanilla", "data", "minecraft");
-        var lootTables = data.resolve("loot_table");
-        assumeTrue(Files.isDirectory(lootTables), "vanilla data is not extracted at " + data);
-
-        tables = Trove.readTables(lootTables);
+        tables = Trove.readTables(Path.of("data", "minecraft", "loot_table"));
     }
 
     @Test
