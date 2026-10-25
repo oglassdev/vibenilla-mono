@@ -8,8 +8,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.text.Component;
 import net.minestom.server.codec.Transcoder;
+import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
@@ -18,9 +20,14 @@ import net.minestom.server.inventory.Inventory;
 import net.minestom.server.inventory.InventoryType;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
+import net.minestom.server.network.packet.client.play.ClientPlaceRecipePacket;
+import net.minestom.server.network.packet.client.play.ClientSetRecipeBookStatePacket;
+import net.minestom.server.network.packet.server.play.PlaceGhostRecipePacket;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rocks.minestom.crafting.book.RecipeBook;
+import rocks.minestom.crafting.book.RecipeCatalog;
 import rocks.minestom.crafting.listener.*;
 import rocks.minestom.crafting.recipe.*;
 
@@ -30,12 +37,16 @@ public final class CraftingManager {
     private final ItemTagManager tagManager;
     private final List<CraftingRecipe> recipes = new ArrayList<>();
     private final Map<AbstractInventory, CraftingWorkspace> workspaces = new IdentityHashMap<>();
+    private final RecipeCatalog catalog = new RecipeCatalog();
+    private final PlayerRecipeBooks books = new PlayerRecipeBooks(this.catalog);
 
     public CraftingManager(Path dataDirectory) {
         var tagDirectory = dataDirectory.resolve("tags").resolve("item");
         this.tagManager = new ItemTagManager(tagDirectory);
         this.loadRecipes(dataDirectory.resolve("recipe"));
         this.registerSpecialRecipes();
+        this.catalog.indexTriggers(
+                dataDirectory.resolve("advancement").resolve("recipes"), this.tagManager);
         LOGGER.info("Registered {} crafting recipes.", this.recipes.size());
     }
 
@@ -74,19 +85,26 @@ public final class CraftingManager {
         try (var reader = Files.newBufferedReader(recipePath)) {
             var recipeObject = JsonParser.parseReader(reader).getAsJsonObject();
             var recipeType = recipeObject.get("type").getAsString();
+            var fileName = recipePath.getFileName().toString();
+            var recipeId =
+                    Key.key(
+                            Key.MINECRAFT_NAMESPACE,
+                            fileName.substring(0, fileName.length() - ".json".length()));
 
             switch (recipeType) {
-                case "minecraft:crafting_shaped" -> this.loadShaped(recipeObject);
-                case "minecraft:crafting_shapeless" -> this.loadShapeless(recipeObject);
-                case "minecraft:crafting_transmute" -> this.loadTransmute(recipeObject);
+                case "minecraft:crafting_shaped" -> this.loadShaped(recipeId, recipeObject);
+                case "minecraft:crafting_shapeless" -> this.loadShapeless(recipeId, recipeObject);
+                case "minecraft:crafting_transmute" -> this.loadTransmute(recipeId, recipeObject);
                 case "minecraft:crafting_dye" -> this.loadDye(recipeObject);
+                case "minecraft:smelting", "minecraft:blasting", "minecraft:smoking" ->
+                        this.loadCooking(recipeId, recipeType, recipeObject);
             }
         } catch (Exception exception) {
             LOGGER.error("Failed to parse recipe {}", recipePath, exception);
         }
     }
 
-    private void loadShaped(JsonObject recipeObject) {
+    private void loadShaped(Key recipeId, JsonObject recipeObject) {
         var keyObject = recipeObject.getAsJsonObject("key");
         var patternArray = recipeObject.getAsJsonArray("pattern");
         var resultElement = recipeObject.get("result");
@@ -146,12 +164,21 @@ public final class CraftingManager {
             return;
         }
 
-        this.recipes.add(
+        var recipe =
                 new ShapedCraftingRecipe(
-                        patternWidth, patternRows.size(), patternIngredients, resultStack));
+                        patternWidth, patternRows.size(), patternIngredients, resultStack);
+        this.recipes.add(recipe);
+        this.catalog.addShaped(
+                recipeId,
+                recipeObject,
+                recipe,
+                patternWidth,
+                patternRows.size(),
+                patternIngredients,
+                resultStack);
     }
 
-    private void loadShapeless(JsonObject recipeObject) {
+    private void loadShapeless(Key recipeId, JsonObject recipeObject) {
         var ingredientArray = recipeObject.getAsJsonArray("ingredients");
         var resultElement = recipeObject.get("result");
 
@@ -179,10 +206,12 @@ public final class CraftingManager {
             return;
         }
 
-        this.recipes.add(new ShapelessCraftingRecipe(ingredients, resultStack));
+        var recipe = new ShapelessCraftingRecipe(ingredients, resultStack);
+        this.recipes.add(recipe);
+        this.catalog.addShapeless(recipeId, recipeObject, recipe, ingredients, resultStack);
     }
 
-    private void loadTransmute(JsonObject recipeObject) {
+    private void loadTransmute(Key recipeId, JsonObject recipeObject) {
         var inputElement = recipeObject.get("input");
         var materialElement = recipeObject.get("material");
         var resultElement = recipeObject.get("result");
@@ -204,13 +233,35 @@ public final class CraftingManager {
             return;
         }
 
-        this.recipes.add(
+        var recipe =
                 new TransmuteCraftingRecipe(
                         baseIngredient,
                         catalystIngredient,
                         resultStack.material(),
                         resultStack.amount(),
-                        resultStack.componentPatch()));
+                        resultStack.componentPatch());
+        this.recipes.add(recipe);
+        this.catalog.addShapeless(
+                recipeId,
+                recipeObject,
+                recipe,
+                List.of(baseIngredient, catalystIngredient),
+                resultStack);
+    }
+
+    private void loadCooking(Key recipeId, String recipeType, JsonObject recipeObject) {
+        var input = this.parseIngredient(recipeObject.get("ingredient"));
+        var resultElement = recipeObject.get("result");
+
+        if (input == null || resultElement == null) {
+            return;
+        }
+
+        var resultStack = this.readResult(resultElement, "cooking");
+
+        if (!resultStack.isAir()) {
+            this.catalog.addCooking(recipeId, recipeObject, recipeType, input, resultStack);
+        }
     }
 
     private void loadDye(JsonObject recipeObject) {
@@ -299,6 +350,8 @@ public final class CraftingManager {
                 .addListener(new CraftingTableListener(this))
                 .addListener(new CraftingGridListener(this))
                 .addListener(new CraftingShiftClickListener(this))
+                .addListener(new RecipeBookItemListener(this))
+                .addListener(new RecipeBookPacketListener(this))
                 .addListener(new CraftingCloseListener(this));
     }
 
@@ -321,6 +374,7 @@ public final class CraftingManager {
                         this, player, playerInventory, 36, new int[] {37, 38, 39, 40}, 2, 2);
         this.workspaces.put(playerInventory, workspace);
         workspace.refresh();
+        this.books.join(player);
     }
 
     public void unregisterPlayer(Player player) {
@@ -350,5 +404,67 @@ public final class CraftingManager {
 
     public @Nullable CraftingWorkspace workspace(AbstractInventory inventory) {
         return this.workspaces.get(inventory);
+    }
+
+    /** Every recipe the recipe book can show, including smelting-family displays. */
+    public RecipeCatalog recipeCatalog() {
+        return this.catalog;
+    }
+
+    public RecipeBook recipeBook(Player player) {
+        return this.books.of(player);
+    }
+
+    /** The player's recipe book in vanilla's {@code recipeBook} NBT format. */
+    public static CompoundBinaryTag saveRecipeBook(Player player) {
+        return RecipeBook.save(player);
+    }
+
+    /** Replaces the player's recipe book with saved data and sends it to their client. */
+    public void restoreRecipeBook(Player player, CompoundBinaryTag data) {
+        this.books.restore(player, data);
+    }
+
+    public void itemObtained(Player player, ItemStack stack) {
+        this.books.itemObtained(player, stack);
+    }
+
+    public void recipeCrafted(Player player, CraftingRecipe recipe) {
+        this.books.crafted(player, recipe);
+    }
+
+    public void recipeBookSettings(Player player, ClientSetRecipeBookStatePacket packet) {
+        this.books.settings(player, packet);
+    }
+
+    public void recipeSeen(Player player, int displayId) {
+        this.books.seen(player, displayId);
+    }
+
+    /** Handles a place-recipe request. Returns false if the recipe is not a crafting recipe. */
+    public boolean placeRecipe(Player player, ClientPlaceRecipePacket packet) {
+        var recipe = this.catalog.byDisplayId(packet.recipeDisplayId());
+
+        if (recipe == null || recipe.layout() == null) {
+            return false;
+        }
+
+        var open = player.getOpenInventory();
+        var inventory = open == null ? player.getInventory() : open;
+        var windowId = open instanceof Inventory table ? table.getWindowId() : 0;
+        var workspace = this.workspaces.get(inventory);
+
+        if (workspace == null
+                || packet.windowId() != windowId
+                || player.getGameMode() == GameMode.SPECTATOR
+                || !this.books.of(player).contains(recipe.id())) {
+            return true;
+        }
+
+        if (workspace.place(recipe, packet.makeAll()) == RecipePlacer.Result.MISSING_ITEMS) {
+            player.sendPacket(new PlaceGhostRecipePacket(windowId, recipe.display()));
+        }
+
+        return true;
     }
 }
