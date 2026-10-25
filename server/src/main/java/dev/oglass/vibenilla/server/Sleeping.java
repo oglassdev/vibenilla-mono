@@ -1,20 +1,25 @@
 package dev.oglass.vibenilla.server;
 
+import io.github.togar2.pvp.utils.RegistryTags;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import net.kyori.adventure.text.Component;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
+import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.PlayerHand;
 import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityDamageEvent;
+import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.event.player.PlayerBlockInteractEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerLeaveBedEvent;
 import net.minestom.server.instance.Instance;
+import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.timer.TaskSchedule;
 
@@ -31,6 +36,42 @@ final class Sleeping {
     private static final double REACH_VERTICAL = 2.0;
     private static final double BED_SURFACE = 0.6875;
     private static final double HEAD_OFFSET = 0.4;
+    private static final double MONSTER_RANGE_HORIZONTAL = 8.0;
+    private static final double MONSTER_RANGE_VERTICAL = 5.0;
+    private static final Set<EntityType> MONSTERS =
+            Set.of(
+                    EntityType.BLAZE,
+                    EntityType.BOGGED,
+                    EntityType.BREEZE,
+                    EntityType.CAVE_SPIDER,
+                    EntityType.CREAKING,
+                    EntityType.CREEPER,
+                    EntityType.DROWNED,
+                    EntityType.ELDER_GUARDIAN,
+                    EntityType.ENDERMAN,
+                    EntityType.ENDERMITE,
+                    EntityType.EVOKER,
+                    EntityType.GUARDIAN,
+                    EntityType.HUSK,
+                    EntityType.ILLUSIONER,
+                    EntityType.PARCHED,
+                    EntityType.PIGLIN,
+                    EntityType.PIGLIN_BRUTE,
+                    EntityType.PILLAGER,
+                    EntityType.RAVAGER,
+                    EntityType.SILVERFISH,
+                    EntityType.SKELETON,
+                    EntityType.SPIDER,
+                    EntityType.STRAY,
+                    EntityType.VEX,
+                    EntityType.VINDICATOR,
+                    EntityType.WARDEN,
+                    EntityType.WITCH,
+                    EntityType.WITHER,
+                    EntityType.WITHER_SKELETON,
+                    EntityType.ZOGLIN,
+                    EntityType.ZOMBIE,
+                    EntityType.ZOMBIE_VILLAGER);
 
     private final Instance instance;
     private final Weathers weathers;
@@ -46,9 +87,9 @@ final class Sleeping {
         instance.scheduler().buildTask(sleeping::tick).repeat(TaskSchedule.tick(1)).schedule();
         return EventNode.all("sleeping")
                 .addListener(PlayerBlockInteractEvent.class, sleeping::onInteract)
-                .addListener(
-                        PlayerLeaveBedEvent.class, event -> sleeping.standUp(event.getPlayer()))
+                .addListener(PlayerLeaveBedEvent.class, sleeping::onLeaveBed)
                 .addListener(EntityDamageEvent.class, sleeping::onDamage)
+                .addListener(RemoveEntityFromInstanceEvent.class, sleeping::onRemove)
                 .addListener(
                         PlayerDisconnectEvent.class,
                         event -> sleeping.asleepFor.remove(event.getPlayer()));
@@ -69,30 +110,62 @@ final class Sleeping {
         if (!"head".equals(block.getProperty("part"))) {
             head = head.relative(BlockFace.valueOf(block.getProperty("facing").toUpperCase()));
         }
-        trySleep(player, head);
+        trySleep(event, head);
     }
 
-    private void trySleep(Player player, Point head) {
-        if (bedOf(player) != null || player.isDead()) {
+    private void onLeaveBed(PlayerLeaveBedEvent event) {
+        if (event.getPlayer().getInstance() == instance) {
+            standUp(event.getPlayer());
+        }
+    }
+
+    private void onRemove(RemoveEntityFromInstanceEvent event) {
+        if (event.getInstance() == instance && event.getEntity() instanceof Player player) {
+            asleepFor.remove(player);
+            if (bedOf(player) != null) {
+                player.leaveBed();
+            }
+        }
+    }
+
+    /**
+     * Mirrors vanilla's checks in order. Problems vanilla reports before it touches the spawn point
+     * cancel the interaction so the bed handler leaves the spawn alone.
+     */
+    private void trySleep(PlayerBlockInteractEvent event, Point head) {
+        var player = event.getPlayer();
+        if (instance.getPlayers().stream()
+                .map(Sleeping::bedOf)
+                .anyMatch(bed -> bed != null && head.sameBlock(bed))) {
+            reject(event, "block.minecraft.bed.occupied");
             return;
         }
-        if (!inReach(player.getPosition(), head)) {
-            player.sendActionBar(Component.translatable("block.minecraft.bed.too_far_away"));
+        if (bedOf(player) != null || player.isDead()) {
+            reject(event, null);
+            return;
+        }
+
+        var direction =
+                BlockFace.valueOf(instance.getBlock(head).getProperty("facing").toUpperCase());
+        var foot = head.relative(direction.getOppositeFace());
+        if (!inReach(player.getPosition(), head) && !inReach(player.getPosition(), foot)) {
+            reject(event, "block.minecraft.bed.too_far_away");
+            return;
+        }
+        if (suffocates(instance.getBlock(head.add(0, 1, 0)))
+                || suffocates(instance.getBlock(foot.add(0, 1, 0)))) {
+            reject(event, "block.minecraft.bed.obstructed");
             return;
         }
         if (isBrightOutside(instance)) {
             player.sendActionBar(Component.translatable("block.minecraft.bed.no_sleep"));
             return;
         }
-        if (instance.getPlayers().stream()
-                .map(Sleeping::bedOf)
-                .anyMatch(bed -> bed != null && head.sameBlock(bed))) {
-            player.sendActionBar(Component.translatable("block.minecraft.bed.occupied"));
+        if (player.getGameMode() != GameMode.CREATIVE && monsterNear(head)) {
+            player.sendActionBar(Component.translatable("block.minecraft.bed.not_safe"));
             return;
         }
 
-        var facing = instance.getBlock(head).getProperty("facing");
-        var direction = BlockFace.valueOf(facing.toUpperCase());
         player.enterBed(head);
         asleepFor.put(player, 0);
         player.teleport(
@@ -104,8 +177,52 @@ final class Sleeping {
                         player.getPosition().pitch()));
     }
 
+    private static void reject(PlayerBlockInteractEvent event, String message) {
+        event.setBlockingItemUse(true);
+        event.setCancelled(true);
+        if (message != null) {
+            event.getPlayer().sendActionBar(Component.translatable(message));
+        }
+    }
+
+    private boolean monsterNear(Point head) {
+        var x = head.blockX() + 0.5;
+        var z = head.blockZ() + 0.5;
+        var y = head.blockY();
+        return instance.getEntities().stream()
+                .filter(entity -> MONSTERS.contains(entity.getEntityType()))
+                .anyMatch(
+                        entity -> {
+                            var box = entity.getBoundingBox();
+                            var position = entity.getPosition();
+                            return Math.abs(position.x() - x)
+                                            < MONSTER_RANGE_HORIZONTAL + box.width() / 2
+                                    && Math.abs(position.z() - z)
+                                            < MONSTER_RANGE_HORIZONTAL + box.depth() / 2
+                                    && position.y() < y + MONSTER_RANGE_VERTICAL
+                                    && position.y() + box.height() > y - MONSTER_RANGE_VERTICAL;
+                        });
+    }
+
+    /** Whether the block is a full cube that blocks motion, as vanilla's {@code isSuffocating}. */
+    private static boolean suffocates(Block block) {
+        if (block.air()
+                || !RegistryTags.contains(RegistryTags.BLOCKS_MOTION, block.registryKey())) {
+            return false;
+        }
+        var shape = block.collisionShape();
+        for (var face : BlockFace.values()) {
+            if (!shape.isFaceFull(face)) {
+                return false;
+            }
+        }
+        return !block.key().value().endsWith("glass")
+                && !RegistryTags.contains(RegistryTags.LEAVES, block);
+    }
+
     private void onDamage(EntityDamageEvent event) {
         if (event.getEntity() instanceof Player player
+                && player.getInstance() == instance
                 && !event.isCancelled()
                 && bedOf(player) != null) {
             wake(player);

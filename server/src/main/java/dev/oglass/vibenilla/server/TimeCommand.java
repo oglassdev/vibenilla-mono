@@ -17,21 +17,22 @@ final class TimeCommand extends Command {
 
         var set = ArgumentType.Literal("set");
         var preset = ArgumentType.Word("time").from(PRESETS.keySet().toArray(String[]::new));
-        var ticks = ArgumentType.Integer("ticks");
+        var time = TickDuration.argument("time", 0);
+        var amount = TickDuration.argument("amount", Integer.MIN_VALUE);
         this.addSyntax(
                 (sender, context) -> set(instance, sender, PRESETS.get(context.get(preset))),
                 set,
                 preset);
-        this.addSyntax((sender, context) -> set(instance, sender, context.get(ticks)), set, ticks);
+        this.addSyntax((sender, context) -> set(instance, sender, context.get(time)), set, time);
         this.addSyntax(
                 (sender, context) -> {
-                    var amount = context.get(ticks);
-                    instance.setTime(instance.getTime() + amount);
+                    var ticks = context.get(amount);
+                    instance.setTime(instance.getTime() + ticks);
                     sender.sendMessage(
-                            Component.translatable("commands.time.add", Component.text(amount)));
+                            Component.translatable("commands.time.add", Component.text(ticks)));
                 },
                 ArgumentType.Literal("add"),
-                ticks);
+                amount);
     }
 
     private static void set(Instance instance, CommandSender sender, int time) {

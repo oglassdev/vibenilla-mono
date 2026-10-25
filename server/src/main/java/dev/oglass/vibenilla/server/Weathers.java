@@ -52,7 +52,7 @@ final class Weathers {
             thunderLevel = thunder;
             apply();
         }
-        if (rainLevel > RAINING_LEVEL && thunderLevel > THUNDERING_LEVEL) {
+        if (rainLevel > RAINING_LEVEL && rainLevel * thunderLevel > THUNDERING_LEVEL) {
             Lightning.tick(instance, ThreadLocalRandom.current());
         }
     }

@@ -11,17 +11,12 @@ final class WeatherCommand extends Command {
     WeatherCommand(Weathers weathers) {
         super("weather");
 
-        var duration = ArgumentType.Time("duration").min(0);
+        var duration = TickDuration.argument("duration", 1);
         for (var type : new String[] {"clear", "rain", "thunder"}) {
             var literal = ArgumentType.Literal(type);
             this.addSyntax((sender, context) -> set(weathers, sender, type, -1), literal);
             this.addSyntax(
-                    (sender, context) ->
-                            set(
-                                    weathers,
-                                    sender,
-                                    type,
-                                    (int) (context.get(duration).toMillis() / 50)),
+                    (sender, context) -> set(weathers, sender, type, context.get(duration)),
                     literal,
                     duration);
         }

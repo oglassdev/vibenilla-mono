@@ -2,6 +2,7 @@ package dev.oglass.vibenilla.server;
 
 import java.util.HashSet;
 import java.util.random.RandomGenerator;
+import net.kyori.adventure.key.Key;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
@@ -17,6 +18,9 @@ import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.utils.time.TimeUnit;
+import net.minestom.server.world.biome.Biome;
+import rocks.minestom.worldgen.biome.BiomeClimate;
+import rocks.minestom.worldgen.surface.BiomeResolver;
 
 /**
  * Thunderstorm lightning. Each chunk near a player has a 1 in 100000 chance per tick of a strike at
@@ -28,7 +32,7 @@ final class Lightning {
     private static final int FIRE_SPARKS = 4;
     private static final int FIRE_TICKS = 8 * 20;
     private static final float DAMAGE = 5.0F;
-    private static final float COLD_ENOUGH_FOR_SNOW = 0.15F;
+    private static final int SEA_LEVEL = 63;
 
     private Lightning() {}
 
@@ -127,10 +131,28 @@ final class Lightning {
     }
 
     private static boolean isRainingAt(Instance instance, int x, int y, int z) {
-        var biome = instance.getBiome(x, y, z).resolve(instance.registries().biome());
+        var key = instance.getBiome(x, y, z);
+        var biome = key.resolve(instance.registries().biome());
         return biome != null
                 && biome.hasPrecipitation()
-                && biome.temperature() >= COLD_ENOUGH_FOR_SNOW;
+                && BiomeClimate.warmEnoughToRain(new Climate(biome), key.key(), x, y, z, SEA_LEVEL);
+    }
+
+    private record Climate(Biome biome) implements BiomeResolver {
+        @Override
+        public float temperature(Key key) {
+            return biome.temperature();
+        }
+
+        @Override
+        public boolean hasPrecipitation(Key key) {
+            return biome.hasPrecipitation();
+        }
+
+        @Override
+        public boolean frozenTemperatureModifier(Key key) {
+            return biome.temperatureModifier() == Biome.TemperatureModifier.FROZEN;
+        }
     }
 
     private static long chunkIndex(int chunkX, int chunkZ) {
