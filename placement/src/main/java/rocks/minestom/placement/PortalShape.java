@@ -91,6 +91,11 @@ public final class PortalShape {
                 && this.height <= MAX_HEIGHT;
     }
 
+    /** Valid and every position inside the frame is a portal block. */
+    public boolean isComplete() {
+        return isValid() && this.portalBlocks == this.width * this.height;
+    }
+
     /** The positions inside the frame, which must be valid. */
     public List<BlockVec> interior() {
         var positions = new ArrayList<BlockVec>();

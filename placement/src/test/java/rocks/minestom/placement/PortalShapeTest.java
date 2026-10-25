@@ -75,6 +75,22 @@ final class PortalShapeTest {
     }
 
     @Test
+    void portalWithAHoleIsValidButNotComplete() {
+        var level = frame(PortalShape.Axis.X, 2, 3);
+        var shape = PortalShape.findEmpty(blocksAt(level), new BlockVec(0, 1, 0));
+        for (var position : shape.interior()) {
+            level.put(position, Block.NETHER_PORTAL.withProperty("axis", "x"));
+        }
+        var start = new BlockVec(0, 1, 0);
+        assertTrue(PortalShape.at(blocksAt(level), start, PortalShape.Axis.X).isComplete());
+
+        level.remove(new BlockVec(0, 2, 0));
+        var holed = PortalShape.at(blocksAt(level), start, PortalShape.Axis.X);
+        assertTrue(holed.isValid());
+        assertFalse(holed.isComplete());
+    }
+
+    @Test
     void fireInsideTheFrameCountsAsEmpty() {
         var level = frame(PortalShape.Axis.X, 2, 3);
         level.put(new BlockVec(0, 1, 0), Block.FIRE);
