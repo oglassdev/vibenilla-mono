@@ -1,5 +1,6 @@
 package rocks.minestom.placement;
 
+import java.util.List;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
@@ -7,6 +8,14 @@ import net.minestom.server.instance.block.rule.BlockPlacementRule;
 import org.jetbrains.annotations.Nullable;
 
 public final class ChestPlacementRule extends BlockPlacementRule {
+    private static final List<String> COPPER_STAGES =
+            List.of(
+                    "copper_chest",
+                    "exposed_copper_chest",
+                    "weathered_copper_chest",
+                    "oxidized_copper_chest");
+    private static final String WAXED = "waxed_";
+
     public ChestPlacementRule(Block block) {
         super(block);
     }
@@ -45,12 +54,14 @@ public final class ChestPlacementRule extends BlockPlacementRule {
             type = this.getChestType(instance, placePosition, facing, false, true);
         }
 
-        return placementState
-                .block()
-                .withHandler(ConsumeInteractionBlockHandler.INSTANCE)
-                .withProperty("facing", facing.name().toLowerCase())
-                .withProperty("type", type)
-                .withProperty("waterlogged", waterlogged ? "true" : "false");
+        var placed =
+                placementState
+                        .block()
+                        .withHandler(ConsumeInteractionBlockHandler.INSTANCE)
+                        .withProperty("facing", facing.name().toLowerCase())
+                        .withProperty("type", type)
+                        .withProperty("waterlogged", waterlogged ? "true" : "false");
+        return normalizeCopperPair(placed, instance, placePosition);
     }
 
     @Override
@@ -74,7 +85,53 @@ public final class ChestPlacementRule extends BlockPlacementRule {
         var updatedType =
                 this.getChestType(
                         updateState.instance(), updateState.blockPosition(), facing, true, false);
-        return currentBlock.withProperty("type", updatedType);
+        return normalizeCopperPair(
+                currentBlock.withProperty("type", updatedType),
+                updateState.instance(),
+                updateState.blockPosition());
+    }
+
+    private static int copperStage(Block block) {
+        var name = block.key().value();
+        return COPPER_STAGES.indexOf(
+                name.startsWith(WAXED) ? name.substring(WAXED.length()) : name);
+    }
+
+    /**
+     * Vanilla {@code CopperChestBlock}: both halves of a copper double chest become the least
+     * oxidized variant, and unwaxed unless both were waxed.
+     */
+    private static Block normalizeCopperPair(
+            Block chest, Block.Getter blockGetter, Point position) {
+        var facing = parseFacing(chest.getProperty("facing"));
+        var type = chest.getProperty("type");
+
+        if (copperStage(chest) < 0 || facing == null || "single".equals(type)) {
+            return chest;
+        }
+
+        var direction = "left".equals(type) ? clockwise(facing) : counterClockwise(facing);
+        var partner = blockGetter.getBlock(position.relative(direction));
+
+        if (copperStage(partner) < 0) {
+            return chest;
+        }
+
+        var waxed =
+                chest.key().value().startsWith(WAXED) && partner.key().value().startsWith(WAXED);
+        var stage = Math.min(copperStage(chest), copperStage(partner));
+        var name = "minecraft:" + (waxed ? WAXED : "") + COPPER_STAGES.get(stage);
+
+        return Block.fromKey(name)
+                .withProperties(chest.properties())
+                .withHandler(chest.handler())
+                .withNbt(chest.nbt());
+    }
+
+    private boolean connectsTo(Block neighbor) {
+        return copperStage(this.block) >= 0
+                ? copperStage(neighbor) >= 0
+                : neighbor.compare(this.block);
     }
 
     private String getChestType(
@@ -112,7 +169,7 @@ public final class ChestPlacementRule extends BlockPlacementRule {
             boolean allowSinglePartner) {
         var neighborBlock = blockGetter.getBlock(position.relative(neighborDirection));
 
-        if (!neighborBlock.compare(this.block)) {
+        if (!connectsTo(neighborBlock)) {
             return null;
         }
 

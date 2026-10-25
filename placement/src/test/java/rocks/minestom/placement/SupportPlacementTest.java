@@ -525,6 +525,36 @@ final class SupportPlacementTest {
     }
 
     @Test
+    void copperChestVariantsPairIntoTheLeastOxidizedUnwaxedVariant() {
+        var position = new BlockVec(0, 0, 0);
+        var waxedExposed =
+                Block.WAXED_EXPOSED_COPPER_CHEST
+                        .withProperty("facing", "north")
+                        .withProperty("type", "single");
+        var copperRight =
+                Block.COPPER_CHEST.withProperty("facing", "north").withProperty("type", "right");
+        var getter = blocksAt(Map.of(new BlockVec(1, 0, 0), copperRight));
+        var rule = new ChestPlacementRule(waxedExposed);
+        var update =
+                new BlockPlacementRule.UpdateState(getter, position, waxedExposed, BlockFace.EAST);
+
+        var updated = rule.blockUpdate(update);
+
+        assertEquals(Block.COPPER_CHEST.key(), updated.key());
+        assertEquals("left", updated.getProperty("type"));
+
+        var woodenRight = Block.CHEST.withProperty("facing", "north").withProperty("type", "right");
+        var wooden = blocksAt(Map.of(new BlockVec(1, 0, 0), woodenRight));
+
+        assertEquals(
+                "single",
+                rule.blockUpdate(
+                                new BlockPlacementRule.UpdateState(
+                                        wooden, position, waxedExposed, BlockFace.EAST))
+                        .getProperty("type"));
+    }
+
+    @Test
     void chestUpdatesDoNotMergeAdjacentSingleChests() {
         var rule = new ChestPlacementRule(Block.CHEST);
         var position = new BlockVec(0, 0, 0);
