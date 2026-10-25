@@ -10,8 +10,6 @@ import net.goldenstack.loot.LootTable;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.minestom.server.MinecraftServer;
-import net.minestom.server.codec.Codec;
-import net.minestom.server.codec.Transcoder;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.metadata.animal.tameable.CatMeta;
@@ -334,14 +332,10 @@ final class Sessions {
 
     private static Component title(Instance instance, List<BlockVec> halves, ContainerKind kind) {
         for (var half : halves) {
-            var name = instance.getBlock(half).nbtOrEmpty().get("CustomName");
+            var name = ContainerItems.customName(instance.getBlock(half));
 
             if (name != null) {
-                var component = Codec.COMPONENT.decode(Transcoder.NBT, name).orElse(null);
-
-                if (component != null) {
-                    return component;
-                }
+                return name;
             }
         }
 

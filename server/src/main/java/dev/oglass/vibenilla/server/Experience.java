@@ -8,6 +8,7 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.item.PickupExperienceEvent;
+import net.minestom.server.instance.Instance;
 
 /** Experience points: the level curve, collecting orbs, and dropping them on death. */
 final class Experience {
@@ -57,21 +58,27 @@ final class Experience {
 
     /** Spawns the player's death reward as orbs and resets their level and progress. */
     static void dropAndReset(Player player, Point position) {
-        var remaining = deathReward(player.getLevel());
-        var random = ThreadLocalRandom.current();
-        for (var value : ORB_VALUES) {
-            while (remaining >= value) {
-                remaining -= value;
-                var orb = new ExperienceOrb((short) value);
-                orb.setInstance(player.getInstance(), position);
-                orb.setVelocity(
-                        new Vec(
-                                random.nextDouble(-1, 1),
-                                random.nextDouble(1, 3),
-                                random.nextDouble(-1, 1)));
-            }
-        }
+        spawnOrbs(player.getInstance(), position, deathReward(player.getLevel()), true);
         player.setLevel(0);
         player.setExp(0.0F);
+    }
+
+    /** Spawns orbs worth {@code points} in total, thrown outwards when {@code scatter} is set. */
+    static void spawnOrbs(Instance instance, Point position, int points, boolean scatter) {
+        var random = ThreadLocalRandom.current();
+        for (var value : ORB_VALUES) {
+            while (points >= value) {
+                points -= value;
+                var orb = new ExperienceOrb((short) value);
+                orb.setInstance(instance, position);
+                if (scatter) {
+                    orb.setVelocity(
+                            new Vec(
+                                    random.nextDouble(-1, 1),
+                                    random.nextDouble(1, 3),
+                                    random.nextDouble(-1, 1)));
+                }
+            }
+        }
     }
 }

@@ -1,6 +1,8 @@
 package dev.oglass.vibenilla.server;
 
 import dev.oglass.vibenilla.containers.Containers;
+import dev.oglass.vibenilla.containers.CookingFuels;
+import dev.oglass.vibenilla.containers.Furnaces;
 import dev.oglass.vibenilla.ticking.LeavesDecayEvent;
 import dev.oglass.vibenilla.ticking.RandomTicks;
 import dev.oglass.vibenilla.ticking.TntIgniteEvent;
@@ -21,6 +23,7 @@ import net.minestom.server.event.player.AsyncPlayerConfigurationEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.timer.TaskSchedule;
+import rocks.minestom.crafting.CookingRecipes;
 import rocks.minestom.crafting.CraftingManager;
 import rocks.minestom.placement.Registrations;
 
@@ -39,6 +42,13 @@ public final class Server {
         // Placement rules first: fluids wraps whatever rule is already registered.
         Registrations.registerAllVanilla(MinecraftServer.getBlockManager());
         var containers = Containers.register(MinecraftServer.getBlockManager());
+        var furnaces =
+                Furnaces.register(
+                        MinecraftServer.getBlockManager(),
+                        new CookingRecipes(vanillaData),
+                        new CookingFuels(vanillaData),
+                        (instance, position, points) ->
+                                Experience.spawnOrbs(instance, position, points, false));
         MinestomFluids.init();
         MinestomPvP.init();
 
@@ -64,6 +74,7 @@ public final class Server {
         events.addChild(breaking.events())
                 .addChild(combat.createNode())
                 .addChild(containers)
+                .addChild(furnaces)
                 .addChild(MinestomFluids.events())
                 .addChild(MinestomFluids.bucketEvents())
                 .addChild(randomTicks.events())

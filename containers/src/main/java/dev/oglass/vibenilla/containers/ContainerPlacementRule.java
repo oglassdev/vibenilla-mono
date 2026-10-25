@@ -1,16 +1,17 @@
 package dev.oglass.vibenilla.containers;
 
 import net.minestom.server.instance.block.Block;
+import net.minestom.server.instance.block.BlockHandler;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
 import org.jetbrains.annotations.Nullable;
 
 /** Gives placed containers their handler while keeping the rule registered before it. */
 final class ContainerPlacementRule extends BlockPlacementRule {
     private final @Nullable BlockPlacementRule delegate;
-    private final ContainerHandler handler;
+    private final BlockHandler handler;
 
     ContainerPlacementRule(
-            Block block, @Nullable BlockPlacementRule delegate, ContainerHandler handler) {
+            Block block, @Nullable BlockPlacementRule delegate, BlockHandler handler) {
         super(block);
         this.delegate = delegate;
         this.handler = handler;
