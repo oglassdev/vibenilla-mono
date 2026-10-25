@@ -279,7 +279,9 @@ final class Respawns {
         if (instance == null || point == null) {
             return null;
         }
-        instance.loadChunk(point).join();
+        if (!instance.isChunkLoaded(point)) {
+            return null;
+        }
         var block = instance.getBlock(point);
         Pos position = null;
         if (block.key().value().endsWith("_bed")) {
@@ -360,7 +362,9 @@ final class Respawns {
     }
 
     private static @Nullable Pos standAt(Instance instance, int x, int y, int z) {
-        instance.loadChunk(x >> 4, z >> 4).join();
+        if (!instance.isChunkLoaded(x >> 4, z >> 4)) {
+            return null;
+        }
         var cellHeight = height(instance.getBlock(x, y, z));
         var feetY =
                 cellHeight > EPSILON
@@ -388,7 +392,9 @@ final class Respawns {
         var test = pos.add(0, EPSILON, 0);
         for (var x = minX; x <= maxX; x++) {
             for (var z = minZ; z <= maxZ; z++) {
-                instance.loadChunk(x >> 4, z >> 4).join();
+                if (!instance.isChunkLoaded(x >> 4, z >> 4)) {
+                    return false;
+                }
                 for (var y = minY; y <= maxY; y++) {
                     var block = instance.getBlock(x, y, z);
                     if (isUnsafe(block)) {
@@ -474,7 +480,9 @@ final class Respawns {
     }
 
     private static @Nullable Pos surfaceAt(Instance instance, int x, int z) {
-        instance.loadChunk(x >> 4, z >> 4).join();
+        if (!instance.isChunkLoaded(x >> 4, z >> 4)) {
+            return null;
+        }
         var dimension = instance.getCachedDimensionType();
         for (var y = dimension.maxY() - 1; y > dimension.minY(); y--) {
             var block = instance.getBlock(x, y, z);
