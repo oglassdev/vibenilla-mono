@@ -34,6 +34,7 @@ import net.minestom.server.inventory.PlayerInventory;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.utils.inventory.PlayerInventoryUtils;
 import org.jspecify.annotations.Nullable;
+import rocks.minestom.crafting.CraftingManager;
 
 /**
  * Per-player NBT files in {@code playerdata/<uuid>.dat}, using vanilla field names and slots.
@@ -156,6 +157,11 @@ final class PlayerStorage {
                 pos.getDouble(2),
                 rotation.getFloat(0),
                 rotation.getFloat(1));
+    }
+
+    /** The vanilla {@code recipeBook} compound, empty if the data has none. */
+    static CompoundBinaryTag recipeBook(CompoundBinaryTag data) {
+        return data.getCompound("recipeBook");
     }
 
     /** Respawn point stored in the data, or null if none was saved. */
@@ -349,6 +355,7 @@ final class PlayerStorage {
                 .putInt("SelectedItemSlot", player.getHeldSlot())
                 .put("Inventory", inventory.build())
                 .put("Overflow", overflowList.build())
+                .put("recipeBook", CraftingManager.saveRecipeBook(player))
                 .build();
     }
 
