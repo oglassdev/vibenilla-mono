@@ -31,7 +31,7 @@ public final class TrapdoorPlacementRule extends BlockPlacementRule {
         var blockGetter = placementState.instance();
         var position = placementState.placePosition();
         var replaced = blockGetter.getBlock(position);
-        var waterlogged = replaced.compare(Block.WATER);
+        var waterlogged = Utility.isWaterSource(replaced);
         var powered = VanillaPlacementUtils.hasNeighborSignal(blockGetter, position);
 
         return placementState

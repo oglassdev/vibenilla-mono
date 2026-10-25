@@ -33,6 +33,6 @@ public final class WaterloggedHorizontalFacingPlacementRule extends BlockPlaceme
                         ? placementState.block()
                         : placementState.block().withHandler(this.handler);
         return result.withProperty("facing", facing.name().toLowerCase())
-                .withProperty("waterlogged", String.valueOf(replaced.compare(Block.WATER)));
+                .withProperty("waterlogged", String.valueOf(Utility.isWaterSource(replaced)));
     }
 }

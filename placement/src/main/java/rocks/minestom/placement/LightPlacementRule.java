@@ -13,7 +13,7 @@ public final class LightPlacementRule extends BlockPlacementRule {
         var replaced = placementState.instance().getBlock(placementState.placePosition());
         return placementState
                 .block()
-                .withProperty("waterlogged", String.valueOf(replaced.compare(Block.WATER)))
+                .withProperty("waterlogged", String.valueOf(Utility.isWaterSource(replaced)))
                 .withHandler(LightBlockHandler.INSTANCE);
     }
 }

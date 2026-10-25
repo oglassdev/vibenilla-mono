@@ -18,7 +18,7 @@ public final class LeavesPlacementRule extends BlockPlacementRule {
     public Block blockPlace(PlacementState placementState) {
         var placePosition = placementState.placePosition();
         var replaced = placementState.instance().getBlock(placePosition);
-        var waterlogged = replaced.compare(Block.WATER);
+        var waterlogged = Utility.isWaterSource(replaced);
 
         return placementState
                 .block()

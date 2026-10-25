@@ -15,7 +15,7 @@ public final class SeagrassPlacementRule extends BlockPlacementRule {
         var placePosition = placementState.placePosition();
         var replacedBlock = instance.getBlock(placePosition);
 
-        if (!replacedBlock.compare(Block.WATER)) {
+        if (!Utility.isWaterSource(replacedBlock)) {
             return null;
         }
 

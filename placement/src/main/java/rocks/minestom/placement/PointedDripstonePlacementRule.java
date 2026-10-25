@@ -33,7 +33,7 @@ public final class PointedDripstonePlacementRule extends BlockPlacementRule {
                 this.calculateThickness(
                         blockGetter, placePosition, tipDirection, mergeOpposingTips);
         var replaced = blockGetter.getBlock(placePosition);
-        var waterlogged = replaced.compare(Block.WATER);
+        var waterlogged = Utility.isWaterSource(replaced);
 
         return placementState
                 .block()

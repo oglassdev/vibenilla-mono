@@ -44,7 +44,7 @@ public final class BigDripleafPlacementRule extends BlockPlacementRule {
         }
 
         var replaced = instance.getBlock(placePosition);
-        var waterlogged = replaced.compare(Block.WATER) && isWaterSource(replaced);
+        var waterlogged = Utility.isWaterSource(replaced);
 
         return placementState
                 .block()
@@ -78,10 +78,5 @@ public final class BigDripleafPlacementRule extends BlockPlacementRule {
         }
 
         return Block.AIR;
-    }
-
-    private static boolean isWaterSource(Block water) {
-        var level = water.getProperty("level");
-        return level == null || "0".equals(level);
     }
 }

@@ -83,6 +83,6 @@ public final class TallSeagrassPlacementRule extends BlockPlacementRule {
     }
 
     private static boolean isSourceWater(Block block) {
-        return block.compare(Block.WATER) && "0".equals(block.getProperty("level"));
+        return Utility.isWaterSource(block);
     }
 }

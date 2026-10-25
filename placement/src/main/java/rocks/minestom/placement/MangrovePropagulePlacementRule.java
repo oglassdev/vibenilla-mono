@@ -16,7 +16,7 @@ public final class MangrovePropagulePlacementRule extends BlockPlacementRule {
         var instance = placementState.instance();
         var placePosition = placementState.placePosition();
         var replaced = instance.getBlock(placePosition);
-        var waterlogged = replaced.compare(Block.WATER);
+        var waterlogged = Utility.isWaterSource(replaced);
         var aboveBlock = instance.getBlock(placePosition.relative(BlockFace.TOP));
         var registry = MinecraftServer.process().blocks();
         var hangingSupportTag =

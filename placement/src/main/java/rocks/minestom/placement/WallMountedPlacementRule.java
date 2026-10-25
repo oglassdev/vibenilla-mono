@@ -73,7 +73,7 @@ public final class WallMountedPlacementRule extends BlockPlacementRule {
 
         if (this.waterloggable) {
             var replaced = instance.getBlock(placePosition);
-            var waterlogged = replaced.compare(Block.WATER);
+            var waterlogged = Utility.isWaterSource(replaced);
             return configured
                     .withProperty("facing", facing.name().toLowerCase())
                     .withProperty("waterlogged", String.valueOf(waterlogged));

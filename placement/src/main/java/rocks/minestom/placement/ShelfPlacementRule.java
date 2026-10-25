@@ -24,7 +24,7 @@ public final class ShelfPlacementRule extends BlockPlacementRule {
                 .withProperty("facing", facing.name().toLowerCase())
                 .withProperty("powered", String.valueOf(powered))
                 .withProperty("side_chain", "unconnected")
-                .withProperty("waterlogged", String.valueOf(replaced.compare(Block.WATER)));
+                .withProperty("waterlogged", String.valueOf(Utility.isWaterSource(replaced)));
     }
 
     @Override

@@ -29,7 +29,7 @@ public final class GrowingPlantHeadPlacementRule extends BlockPlacementRule {
         if (this.block.compare(Block.KELP)) {
             var replaced = instance.getBlock(placePosition);
 
-            if (!replaced.compare(Block.WATER) || !isWaterSource(replaced)) {
+            if (!Utility.isWaterSource(replaced)) {
                 return null;
             }
         }
@@ -93,10 +93,5 @@ public final class GrowingPlantHeadPlacementRule extends BlockPlacementRule {
         }
 
         return Block.CAVE_VINES_PLANT;
-    }
-
-    private static boolean isWaterSource(Block water) {
-        var level = water.getProperty("level");
-        return level == null || "0".equals(level);
     }
 }

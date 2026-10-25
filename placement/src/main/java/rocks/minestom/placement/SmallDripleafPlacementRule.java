@@ -34,8 +34,8 @@ public final class SmallDripleafPlacementRule extends BlockPlacementRule {
 
         var belowBlock = instance.getBlock(placePosition.relative(BlockFace.BOTTOM));
         var lowerReplaced = instance.getBlock(placePosition);
-        var lowerWaterlogged = lowerReplaced.compare(Block.WATER);
-        var validSupport = supports(belowBlock, lowerWaterlogged && isWaterSource(lowerReplaced));
+        var lowerWaterlogged = Utility.isWaterSource(lowerReplaced);
+        var validSupport = supports(belowBlock, lowerWaterlogged);
 
         if (!validSupport) {
             return null;
@@ -44,7 +44,7 @@ public final class SmallDripleafPlacementRule extends BlockPlacementRule {
         var playerPosition = placementState.playerPosition();
         var yaw = playerPosition == null ? 0.0F : playerPosition.yaw();
         var facing = BlockFace.fromYaw(yaw).getOppositeFace().name().toLowerCase();
-        var upperWaterlogged = existingUpperBlock.compare(Block.WATER);
+        var upperWaterlogged = Utility.isWaterSource(existingUpperBlock);
         var upperBlock =
                 placementState
                         .block()
@@ -109,10 +109,5 @@ public final class SmallDripleafPlacementRule extends BlockPlacementRule {
 
         var supportsVegetation = registry.getTag(Key.key("minecraft:supports_vegetation"));
         return waterlogged && supportsVegetation != null && supportsVegetation.contains(below);
-    }
-
-    private static boolean isWaterSource(Block water) {
-        var level = water.getProperty("level");
-        return level == null || "0".equals(level);
     }
 }

@@ -73,6 +73,13 @@ public final class Utility {
      * Returns whether the block has the given registry tag (e.g. {@code minecraft:doors}). Returns
      * {@code false} when the tag is missing from the loaded registry data.
      */
+    /**
+     * Whether placing into this block makes the new block waterlogged: only a water source does.
+     */
+    public static boolean isWaterSource(Block block) {
+        return block.compare(Block.WATER) && "0".equals(block.getProperty("level"));
+    }
+
     public static boolean hasTag(Block block, Key key) {
         var tag = MinecraftServer.process().blocks().getTag(key);
         return tag != null && tag.contains(block);

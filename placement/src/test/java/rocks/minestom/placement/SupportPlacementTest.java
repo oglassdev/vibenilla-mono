@@ -782,7 +782,7 @@ final class SupportPlacementTest {
     }
 
     @Test
-    void waterloggableBlocksAcceptFlowingWater() {
+    void flowingWaterDoesNotWaterlog() {
         var position = new BlockVec(0, 0, 0);
         var flowingWater = Block.WATER.withProperty("level", "1");
         var rule = new WaterloggedAxisPlacementRule(Block.IRON_CHAIN);
@@ -793,7 +793,7 @@ final class SupportPlacementTest {
                         position,
                         BlockFace.TOP);
 
-        assertEquals("true", rule.blockPlace(state).getProperty("waterlogged"));
+        assertEquals("false", rule.blockPlace(state).getProperty("waterlogged"));
     }
 
     @Test
@@ -802,10 +802,7 @@ final class SupportPlacementTest {
         var light = Block.LIGHT.withProperty("level", "4");
         var state =
                 placementState(
-                        light,
-                        blocksAt(Map.of(position, Block.WATER.withProperty("level", "1"))),
-                        position,
-                        BlockFace.TOP);
+                        light, blocksAt(Map.of(position, Block.WATER)), position, BlockFace.TOP);
         var placed = new LightPlacementRule(Block.LIGHT).blockPlace(state);
 
         assertEquals("4", placed.getProperty("level"));
@@ -904,7 +901,7 @@ final class SupportPlacementTest {
     @Test
     void driedGhastAndCalibratedSensorAreWaterlogged() {
         var position = new BlockVec(0, 0, 0);
-        var blocks = blocksAt(Map.of(position, Block.WATER.withProperty("level", "1")));
+        var blocks = blocksAt(Map.of(position, Block.WATER));
         var state = placementState(Block.DRIED_GHAST, blocks, position, BlockFace.TOP);
         var driedGhast =
                 new WaterloggedHorizontalFacingPlacementRule(Block.DRIED_GHAST, false, null)

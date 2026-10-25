@@ -18,7 +18,7 @@ public final class ScaffoldingPlacementRule extends BlockPlacementRule {
         var instance = placementState.instance();
         var placePosition = placementState.placePosition();
         var replaced = instance.getBlock(placePosition);
-        var waterlogged = replaced.compare(Block.WATER);
+        var waterlogged = Utility.isWaterSource(replaced);
         var distance = computeDistance(placementState);
 
         if (distance >= 7) {

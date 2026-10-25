@@ -36,7 +36,6 @@ public final class LilyPadPlacementRule extends BlockPlacementRule {
     }
 
     private static boolean supports(Block below) {
-        return below.compare(Block.ICE)
-                || below.compare(Block.WATER) && "0".equals(below.getProperty("level"));
+        return below.compare(Block.ICE) || Utility.isWaterSource(below);
     }
 }

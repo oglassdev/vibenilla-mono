@@ -20,7 +20,7 @@ public final class CoralPlantPlacementRule extends BlockPlacementRule {
         }
 
         var replaced = instance.getBlock(placePosition);
-        var waterlogged = replaced.compare(Block.WATER) && isWaterSource(replaced);
+        var waterlogged = Utility.isWaterSource(replaced);
 
         return placementState.block().withProperty("waterlogged", waterlogged ? "true" : "false");
     }
@@ -41,10 +41,5 @@ public final class CoralPlantPlacementRule extends BlockPlacementRule {
         }
 
         return updateState.currentBlock();
-    }
-
-    private static boolean isWaterSource(Block water) {
-        var level = water.getProperty("level");
-        return level == null || "0".equals(level);
     }
 }

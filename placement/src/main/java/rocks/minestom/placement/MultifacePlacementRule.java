@@ -67,9 +67,7 @@ public final class MultifacePlacementRule extends BlockPlacementRule {
 
             if (existingBlock.compare(placementState.block())) {
                 result = existingBlock;
-            } else if (this.waterloggable
-                    && existingBlock.compare(Block.WATER)
-                    && isWaterSource(existingBlock)) {
+            } else if (this.waterloggable && Utility.isWaterSource(existingBlock)) {
                 result = placementState.block().withProperty("waterlogged", "true");
             } else {
                 result = placementState.block();
@@ -155,11 +153,6 @@ public final class MultifacePlacementRule extends BlockPlacementRule {
 
         var above = getter.getBlock(position.relative(BlockFace.TOP));
         return above.compare(this.block) && "true".equals(above.getProperty(faceProperty(face)));
-    }
-
-    private static boolean isWaterSource(Block water) {
-        var level = water.getProperty("level");
-        return level == null || "0".equals(level);
     }
 
     private static String faceProperty(BlockFace face) {

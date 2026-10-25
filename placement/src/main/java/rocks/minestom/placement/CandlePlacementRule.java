@@ -30,7 +30,7 @@ public final class CandlePlacementRule extends BlockPlacementRule {
             return null;
         }
 
-        var waterlogged = existingBlock.compare(Block.WATER);
+        var waterlogged = Utility.isWaterSource(existingBlock);
 
         return placementState
                 .block()

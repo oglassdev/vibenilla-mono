@@ -47,7 +47,7 @@ public final class CoralWallFanPlacementRule extends BlockPlacementRule {
         }
 
         var replaced = instance.getBlock(placePosition);
-        var waterlogged = replaced.compare(Block.WATER) && isWaterSource(replaced);
+        var waterlogged = Utility.isWaterSource(replaced);
 
         return placementState
                 .block()
@@ -88,11 +88,6 @@ public final class CoralWallFanPlacementRule extends BlockPlacementRule {
             case "west" -> BlockFace.WEST;
             case null, default -> null;
         };
-    }
-
-    private static boolean isWaterSource(Block water) {
-        var level = water.getProperty("level");
-        return level == null || "0".equals(level);
     }
 
     private static boolean isHorizontal(BlockFace face) {

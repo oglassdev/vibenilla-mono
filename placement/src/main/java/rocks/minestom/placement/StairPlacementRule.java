@@ -26,7 +26,7 @@ public final class StairPlacementRule extends BlockPlacementRule {
                         && (clickedFace == BlockFace.TOP || cursorY <= 0.5D);
         var half = bottom ? "bottom" : "top";
         var replaced = placementState.instance().getBlock(placementState.placePosition());
-        var waterlogged = replaced.compare(Block.WATER);
+        var waterlogged = Utility.isWaterSource(replaced);
         var shape =
                 computeShape(
                         placementState.instance(),

@@ -60,7 +60,7 @@ public final class WallPlacementRule extends BlockPlacementRule {
         var leavesTag = blockRegistry.getTag(Key.key("minecraft:leaves"));
         var shulkerBoxesTag = blockRegistry.getTag(Key.key("minecraft:shulker_boxes"));
         var replaced = blockGetter.getBlock(placePosition);
-        var waterlogged = replaced.compare(Block.WATER);
+        var waterlogged = Utility.isWaterSource(replaced);
         var north =
                 connectsTo(
                         blockGetter,

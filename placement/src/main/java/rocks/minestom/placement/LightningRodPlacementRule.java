@@ -15,8 +15,7 @@ public final class LightningRodPlacementRule extends BlockPlacementRule {
         var facing = Objects.requireNonNullElse(placementState.blockFace(), BlockFace.TOP);
         var placePosition = placementState.placePosition();
         var replaced = placementState.instance().getBlock(placePosition);
-        var waterlogged =
-                replaced.compare(Block.WATER) && "0".equals(replaced.getProperty("level"));
+        var waterlogged = Utility.isWaterSource(replaced);
 
         return placementState
                 .block()

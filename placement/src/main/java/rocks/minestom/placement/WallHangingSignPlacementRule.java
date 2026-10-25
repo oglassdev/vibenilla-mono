@@ -54,7 +54,7 @@ public final class WallHangingSignPlacementRule extends BlockPlacementRule {
         }
 
         var replaced = instance.getBlock(placePosition);
-        var waterlogged = replaced.compare(Block.WATER);
+        var waterlogged = Utility.isWaterSource(replaced);
 
         return placementState
                 .block()
