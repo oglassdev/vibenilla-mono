@@ -66,11 +66,8 @@ final class GrowingPlantHeads {
         Level.set(instance, position, body);
     }
 
-    /** Kelp only grows into water sources, the vines into air. */
+    /** Kelp grows into water, the vines into air. */
     private static boolean canGrowInto(Block target, Plant plant) {
-        if (plant == KELP) {
-            return target.compare(Block.WATER) && Level.property(target, "level") == 0;
-        }
-        return target.air();
+        return plant == KELP ? target.compare(Block.WATER) : target.air();
     }
 }

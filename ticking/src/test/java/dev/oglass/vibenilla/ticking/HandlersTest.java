@@ -237,7 +237,7 @@ final class HandlersTest {
     }
 
     @Test
-    void kelpOnlyGrowsIntoWaterSources(Env env) {
+    void kelpGrowsIntoWaterOfAnyLevel(Env env) {
         var instance = lit(env);
         instance.setBlock(GROUND, Block.SAND);
         instance.setBlock(ABOVE, Block.KELP.withProperty("age", "0"));
@@ -251,13 +251,6 @@ final class HandlersTest {
         assertTrue(instance.getBlock(ABOVE.add(0, 1, 0)).air());
 
         instance.setBlock(ABOVE.add(0, 1, 0), Block.WATER.withProperty("level", "3"));
-        for (var tick = 0; tick < 200; tick++) {
-            GrowingPlantHeads.grow(
-                    instance, ABOVE, instance.getBlock(ABOVE), GrowingPlantHeads.KELP, random);
-        }
-        assertTrue(instance.getBlock(ABOVE.add(0, 1, 0)).compare(Block.WATER));
-
-        instance.setBlock(ABOVE.add(0, 1, 0), Block.WATER);
         for (var tick = 0; tick < 200 && instance.getBlock(ABOVE).compare(Block.KELP); tick++) {
             GrowingPlantHeads.grow(
                     instance, ABOVE, instance.getBlock(ABOVE), GrowingPlantHeads.KELP, random);
@@ -308,6 +301,24 @@ final class HandlersTest {
         var below = instance.getBlock(ABOVE.add(1, 0, 0));
         assertTrue(below.compare(Block.VINE));
         assertEquals("true", below.getProperty("west"));
+    }
+
+    @Test
+    void vinesSpreadSidewaysAlongAOneBlockThickWall(Env env) {
+        var instance = lit(env);
+        var wall = ABOVE.add(0, 1, 0);
+        instance.setBlock(wall, Block.STONE);
+        instance.setBlock(wall.add(0, 0, -1), Block.STONE);
+        var vine = wall.add(1, 0, 0);
+        instance.setBlock(vine, Block.VINE.withProperty("west", "true"));
+        var random = new Random(1);
+
+        for (var tick = 0; tick < 500; tick++) {
+            Vines.tick(instance, vine, instance.getBlock(vine), random);
+        }
+        var sideways = instance.getBlock(vine.add(0, 0, -1));
+        assertTrue(sideways.compare(Block.VINE));
+        assertEquals("true", sideways.getProperty("west"));
     }
 
     @Test

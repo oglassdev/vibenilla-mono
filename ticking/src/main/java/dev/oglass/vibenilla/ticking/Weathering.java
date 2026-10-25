@@ -6,10 +6,13 @@ import java.util.random.RandomGenerator;
 import net.minestom.server.coordinate.BlockVec;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
+import net.minestom.server.instance.block.BlockFace;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Vanilla {@code WeatheringCopper} and {@code ChangeOverTimeBlock}: unwaxed copper oxidizes one
- * stage at a time, held back by less oxidized copper nearby.
+ * stage at a time, held back by less oxidized copper nearby. Doors weather from their lower half
+ * and double chests from their left half, taking the other half along.
  */
 final class Weathering {
     private static final float CHANGE_CHANCE = 0.05688889F;
@@ -63,7 +66,9 @@ final class Weathering {
     }
 
     static void tick(Instance instance, BlockVec position, Block block, RandomGenerator random) {
-        if (random.nextFloat() >= CHANGE_CHANCE) {
+        if ("upper".equals(block.getProperty("half"))
+                || "right".equals(block.getProperty("type"))
+                || random.nextFloat() >= CHANGE_CHANCE) {
             return;
         }
 
@@ -99,9 +104,38 @@ final class Weathering {
         var ratio = (float) (higher + 1) / (float) (higher + same + 1);
         var modifier = stage == 0 ? UNAFFECTED_MODIFIER : 1.0F;
         if (random.nextFloat() < ratio * ratio * modifier) {
-            var next = NEXT.get(name).withProperties(block.properties());
-            Level.setAndUpdate(
-                    instance, position, next.withHandler(block.handler()).withNbt(block.nbt()));
+            advance(instance, position, block);
         }
+    }
+
+    /** Weathers the block and its other half, which is placed first so the pair never splits. */
+    private static void advance(Instance instance, BlockVec position, Block block) {
+        var other = otherHalf(position, block);
+        if (other != null) {
+            var otherBlock = Level.block(instance, other);
+            if (otherBlock.compare(block)) {
+                Level.set(instance, other, next(otherBlock));
+            }
+        }
+        Level.setAndUpdate(instance, position, next(block));
+    }
+
+    private static Block next(Block block) {
+        return NEXT.get(block.key().value())
+                .withProperties(block.properties())
+                .withHandler(block.handler())
+                .withNbt(block.nbt());
+    }
+
+    private static @Nullable BlockVec otherHalf(BlockVec position, Block block) {
+        if ("lower".equals(block.getProperty("half"))) {
+            return position.add(0, 1, 0);
+        }
+        if ("left".equals(block.getProperty("type"))) {
+            var facing = BlockFace.valueOf(block.getProperty("facing").toUpperCase());
+            var turned = (Level.HORIZONTAL.indexOf(facing) + 1) % Level.HORIZONTAL.size();
+            return position.relative(Level.HORIZONTAL.get(turned));
+        }
+        return null;
     }
 }

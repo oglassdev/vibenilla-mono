@@ -61,7 +61,7 @@ final class Vines {
             RandomGenerator random) {
         var target = position.relative(face);
         if (!Level.block(instance, target).air()) {
-            if (canAttachTo(Level.block(instance, target), face)) {
+            if (attachable(instance, target, face)) {
                 Level.set(instance, position, with(block, face, true));
             }
             return;
@@ -74,21 +74,21 @@ final class Vines {
         var clockwiseTarget = target.relative(clockwise);
         var counterClockwiseTarget = target.relative(counterClockwise);
         var opposite = face.getOppositeFace();
-        if (hasClockwise && canSupportAtFace(instance, clockwiseTarget, clockwise)) {
+        if (hasClockwise && attachable(instance, clockwiseTarget, clockwise)) {
             Level.set(instance, target, only(clockwise));
         } else if (hasCounterClockwise
-                && canSupportAtFace(instance, counterClockwiseTarget, counterClockwise)) {
+                && attachable(instance, counterClockwiseTarget, counterClockwise)) {
             Level.set(instance, target, only(counterClockwise));
         } else if (hasClockwise
                 && Level.block(instance, clockwiseTarget).air()
-                && canSupportAtFace(instance, position.relative(clockwise), opposite)) {
+                && attachable(instance, position.relative(clockwise), opposite)) {
             Level.set(instance, clockwiseTarget, only(opposite));
         } else if (hasCounterClockwise
                 && Level.block(instance, counterClockwiseTarget).air()
-                && canSupportAtFace(instance, position.relative(counterClockwise), opposite)) {
+                && attachable(instance, position.relative(counterClockwise), opposite)) {
             Level.set(instance, counterClockwiseTarget, only(opposite));
         } else if (random.nextFloat() < TOP_SPREAD_ODDS
-                && canSupportAtFace(instance, target.add(0, 1, 0), BlockFace.TOP)) {
+                && attachable(instance, target.add(0, 1, 0), BlockFace.TOP)) {
             Level.set(instance, target, only(BlockFace.TOP));
         }
     }
@@ -97,7 +97,7 @@ final class Vines {
             Instance instance, BlockVec above, Block block, RandomGenerator random) {
         var grown = block;
         for (var face : Level.HORIZONTAL) {
-            if (random.nextBoolean() || !canSupportAtFace(instance, above.relative(face), face)) {
+            if (random.nextBoolean() || !attachable(instance, above.relative(face), face)) {
                 grown = with(grown, face, false);
             }
         }
@@ -142,12 +142,19 @@ final class Vines {
         return true;
     }
 
+    /**
+     * Whether the block at the position has a full face for a vine reaching toward {@code face}.
+     */
+    private static boolean attachable(Instance instance, BlockVec position, BlockFace face) {
+        return canAttachTo(Level.block(instance, position), face);
+    }
+
     /** Whether a vine at the position could hold on to the face: a full block or a vine above. */
     private static boolean canSupportAtFace(Instance instance, BlockVec position, BlockFace face) {
         if (face == BlockFace.BOTTOM) {
             return false;
         }
-        if (canAttachTo(Level.block(instance, position.relative(face)), face)) {
+        if (attachable(instance, position.relative(face), face)) {
             return true;
         }
         if (face == BlockFace.TOP) {

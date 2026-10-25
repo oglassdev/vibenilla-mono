@@ -2,6 +2,7 @@ package rocks.minestom.placement;
 
 import net.kyori.adventure.key.Key;
 import net.minestom.server.instance.block.Block;
+import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.BlockManager;
 
 public final class Registrations {
@@ -521,8 +522,37 @@ public final class Registrations {
                 Block.CAVE_VINES);
         Utility.registerPlacementRules(
                 blockManager,
-                block -> new HandlerAttachingPlacementRule(block, BerryBlockHandler.INSTANCE),
+                block -> new GrowingPlantBodyPlacementRule(block, Block.KELP, BlockFace.TOP, null),
+                Block.KELP_PLANT);
+        Utility.registerPlacementRules(
+                blockManager,
+                block ->
+                        new GrowingPlantBodyPlacementRule(
+                                block, Block.TWISTING_VINES, BlockFace.TOP, null),
+                Block.TWISTING_VINES_PLANT);
+        Utility.registerPlacementRules(
+                blockManager,
+                block ->
+                        new GrowingPlantBodyPlacementRule(
+                                block, Block.WEEPING_VINES, BlockFace.BOTTOM, null),
+                Block.WEEPING_VINES_PLANT);
+        Utility.registerPlacementRules(
+                blockManager,
+                block ->
+                        new GrowingPlantBodyPlacementRule(
+                                block,
+                                Block.CAVE_VINES,
+                                BlockFace.BOTTOM,
+                                BerryBlockHandler.INSTANCE),
                 Block.CAVE_VINES_PLANT);
+        Utility.registerPlacementRules(
+                blockManager,
+                block -> new AttachedStemPlacementRule(block, Block.PUMPKIN, Block.PUMPKIN_STEM),
+                Block.ATTACHED_PUMPKIN_STEM);
+        Utility.registerPlacementRules(
+                blockManager,
+                block -> new AttachedStemPlacementRule(block, Block.MELON, Block.MELON_STEM),
+                Block.ATTACHED_MELON_STEM);
         Utility.registerPlacementRules(blockManager, SeagrassPlacementRule::new, Block.SEAGRASS);
         Utility.registerPlacementRules(
                 blockManager, MangrovePropagulePlacementRule::new, Block.MANGROVE_PROPAGULE);

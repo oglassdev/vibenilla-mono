@@ -7,6 +7,8 @@ import net.minestom.server.instance.block.BlockFace;
 import net.minestom.server.instance.block.rule.BlockPlacementRule;
 
 public final class BambooStalkPlacementRule extends BlockPlacementRule {
+    private static final int MAX_HEIGHT = 16;
+
     public BambooStalkPlacementRule(Block block) {
         super(block);
     }
@@ -65,6 +67,9 @@ public final class BambooStalkPlacementRule extends BlockPlacementRule {
 
     @Override
     public Block blockUpdate(UpdateState updateState) {
+        if (updateState.fromFace() == BlockFace.TOP) {
+            return thickenedBy(updateState);
+        }
         if (updateState.fromFace() != BlockFace.BOTTOM) {
             return updateState.currentBlock();
         }
@@ -74,6 +79,25 @@ public final class BambooStalkPlacementRule extends BlockPlacementRule {
                         .instance()
                         .getBlock(updateState.blockPosition().relative(BlockFace.BOTTOM));
         return supports(below) ? updateState.currentBlock() : Block.AIR;
+    }
+
+    @Override
+    public int maxUpdateDistance() {
+        return MAX_HEIGHT;
+    }
+
+    /** A stalk below a thick one becomes thick too. */
+    private static Block thickenedBy(UpdateState updateState) {
+        var currentBlock = updateState.currentBlock();
+        var above =
+                updateState
+                        .instance()
+                        .getBlock(updateState.blockPosition().relative(BlockFace.TOP));
+        return above.compare(Block.BAMBOO)
+                        && "1".equals(above.getProperty("age"))
+                        && "0".equals(currentBlock.getProperty("age"))
+                ? currentBlock.withProperty("age", "1")
+                : currentBlock;
     }
 
     private static boolean supports(Block block) {

@@ -402,6 +402,65 @@ final class SupportPlacementTest {
     }
 
     @Test
+    void attachedStemRevertsToAFullyGrownStemWhenItsFruitIsGone() {
+        var rule =
+                new AttachedStemPlacementRule(
+                        Block.ATTACHED_PUMPKIN_STEM, Block.PUMPKIN, Block.PUMPKIN_STEM);
+        var position = new BlockVec(0, 0, 0);
+        var current = Block.ATTACHED_PUMPKIN_STEM.withProperty("facing", "east");
+        var fruitless = blocksAt(Map.of());
+        var fruited = blocksAt(Map.of(new BlockVec(1, 0, 0), Block.PUMPKIN));
+
+        var reverted =
+                rule.blockUpdate(
+                        new BlockPlacementRule.UpdateState(
+                                fruitless, position, current, BlockFace.EAST));
+
+        assertEquals(Block.PUMPKIN_STEM.withProperty("age", "7"), reverted);
+        assertEquals(
+                current,
+                rule.blockUpdate(
+                        new BlockPlacementRule.UpdateState(
+                                fruited, position, current, BlockFace.EAST)));
+        assertEquals(
+                current,
+                rule.blockUpdate(
+                        new BlockPlacementRule.UpdateState(
+                                fruitless, position, current, BlockFace.WEST)));
+    }
+
+    @Test
+    void exposedPlantBodyBecomesAHeadAgainKeepingItsBerries() {
+        var rule =
+                new GrowingPlantBodyPlacementRule(
+                        Block.CAVE_VINES_PLANT,
+                        Block.CAVE_VINES,
+                        BlockFace.BOTTOM,
+                        BerryBlockHandler.INSTANCE);
+        var position = new BlockVec(0, 0, 0);
+        var current =
+                Block.CAVE_VINES_PLANT
+                        .withProperty("berries", "true")
+                        .withHandler(BerryBlockHandler.INSTANCE);
+
+        var head =
+                rule.blockUpdate(
+                        new BlockPlacementRule.UpdateState(
+                                blocksAt(Map.of()), position, current, BlockFace.BOTTOM));
+
+        assertTrue(head.compare(Block.CAVE_VINES));
+        assertEquals("true", head.getProperty("berries"));
+        assertEquals(BerryBlockHandler.INSTANCE, head.handler());
+
+        var continued = blocksAt(Map.of(new BlockVec(0, -1, 0), Block.CAVE_VINES));
+        assertEquals(
+                current,
+                rule.blockUpdate(
+                        new BlockPlacementRule.UpdateState(
+                                continued, position, current, BlockFace.BOTTOM)));
+    }
+
+    @Test
     void chestPairingUpdatesBothHalves() {
         var rule = new ChestPlacementRule(Block.CHEST);
         var position = new BlockVec(0, 0, 0);
